@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+vendor/
+.pnp.*
+.yarn/install-state.gz
+
+# Build output
+dist/
+build/
+out/
+*.egg-info/
+__pycache__/
+*.pyc
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing / Coverage
+coverage/
+.nyc_output/
+.pytest_cache/
+
+# OS files
+.DS_Store
+Thumbs.db

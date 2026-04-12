@@ -11,8 +11,11 @@ info:
 servers:
   - url: http://localhost:8000
     description: Local development
-  - url: https://staging.exampl.com
+  - url: https://staging.example.com
     description: Staging
+
+# All routes are public for now. Auth will be added in a later sprint.
+security: []
 
 # ════════════════════════════════════════════════════════════
 #  MVP — Sensor monitoring and live harbor map
@@ -20,11 +23,17 @@ servers:
 
 tags:
   - name: system
+    description: System health and status
   - name: harbors
+    description: Harbor management
   - name: docks
+    description: Dock management
   - name: berths
+    description: Berth monitoring and status
   - name: events
+    description: Berth occupancy events
   - name: alerts
+    description: Alert management
 
 paths:
   /api/health:
@@ -47,6 +56,8 @@ paths:
                   uptime:
                     type: number
                     description: Uptime in seconds
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "503":
           description: Service unavailable
           content:

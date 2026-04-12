@@ -1,5 +1,6 @@
 services:
   db:
+    container_name: dockpulse-db
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
@@ -10,8 +11,14 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   mosquitto:
+    container_name: dockpulse-mosquitto
     image: eclipse-mosquitto:2
     restart: unless-stopped
     ports:
@@ -20,7 +27,10 @@ services:
       - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
 
   backend:
-    build: ./backend
+    container_name: dockpulse-backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     restart: unless-stopped
     ports:
       - "8000:8000"
@@ -29,16 +39,21 @@ services:
       MQTT_BROKER: mosquitto
       MQTT_PORT: ${MQTT_PORT}
     depends_on:
-      - db
-      - mosquitto
+      db:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
 
   frontend:
+    container_name: dockpulse-frontend
     build: ./frontend
     restart: unless-stopped
     ports:
       - "5173:5173"
     depends_on:
       - backend
+    profiles:
+      - prod
 
 volumes:
   pgdata:

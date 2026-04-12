@@ -1,0 +1,31 @@
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:mock": "bunx concurrently -k \"API_URL=http://localhost:4010 vite\" \"bunx @stoplight/prism-cli mock ../docs/api/openapi.yml\"",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "tsc -p tsconfig.app.json && tsc -p tsconfig.node.json",
+    "lint": "biome check .",
+    "lint:fix": "biome check --fix .",
+    "format": "biome format --write .",
+    "gen:api": "openapi-typescript ../docs/api/openapi.yml -o src/api-types.ts"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.11",
+    "@types/node": "^24.12.2",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@vitejs/plugin-react": "^6.0.1",
+    "openapi-typescript": "^7.13.0",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.4"
+  }
+}

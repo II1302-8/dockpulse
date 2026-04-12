@@ -2,18 +2,34 @@ name: Lint
 
 on:
   pull_request:
-    paths:
-      - "backend/**"
-      - "docs/api/openapi.yml"
   push:
     branches: [main]
-    paths:
-      - "backend/**"
-      - "docs/api/openapi.yml"
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      openapi: ${{ steps.filter.outputs.openapi }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            openapi:
+              - 'docs/api/**'
+              - '.redocly.yaml'
+
   ruff:
     name: Ruff (backend)
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,6 +42,8 @@ jobs:
 
   openapi:
     name: OpenAPI lint
+    needs: changes
+    if: needs.changes.outputs.openapi == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

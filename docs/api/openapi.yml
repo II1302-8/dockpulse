@@ -1,0 +1,337 @@
+openapi: 3.0.3
+info:
+  title: DockPulse API
+  description: |
+    REST API for the DockPulse harbor berth availability system.
+
+    This spec is the between backend and frontend during
+    Sprint 1. Both teams implement against it.
+  version: 0.1.0
+
+servers:
+  - url: http://localhost:8000
+    description: Local development
+  - url: https://dockpulse-staging.example.com
+    description: Staging (TBD)
+
+# ════════════════════════════════════════════════════════════
+#  MVP — Sensor monitoring and live harbor map
+# ════════════════════════════════════════════════════════════
+
+paths:
+  /api/health:
+    get:
+      summary: Health check
+      operationId: getHealth
+      tags: [system]
+      responses:
+        "200":
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  uptime:
+                    type: number
+                    description: Uptime in seconds
+
+  /api/docks:
+    get:
+      summary: List all docks
+      operationId: listDocks
+      tags: [docks]
+      responses:
+        "200":
+          description: List of docks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Dock"
+
+  /api/docks/{dock_id}:
+    get:
+      summary: Get a single dock with its berths
+      operationId: getDock
+      tags: [docks]
+      parameters:
+        - name: dock_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Dock with berths
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Dock"
+                  - type: object
+                    properties:
+                      berths:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Berth"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/berths:
+    get:
+      summary: List all berths
+      operationId: listBerths
+      tags: [berths]
+      parameters:
+        - name: dock_id
+          in: query
+          schema:
+            type: string
+          description: Filter by dock
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/BerthStatus"
+          description: Filter by occupancy status
+      responses:
+        "200":
+          description: List of berths
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Berth"
+
+  /api/berths/{berth_id}:
+    get:
+      summary: Get a single berth
+      operationId: getBerth
+      tags: [berths]
+      parameters:
+        - name: berth_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Berth details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Berth"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/berths/{berth_id}/events:
+    get:
+      summary: Get occupancy event history for a berth
+      operationId: getBerthEvents
+      tags: [berths, events]
+      parameters:
+        - name: berth_id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: since
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Return events after this timestamp
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 500
+      responses:
+        "200":
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Event"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/alerts:
+    get:
+      summary: List active alerts
+      operationId: listAlerts
+      tags: [alerts]
+      parameters:
+        - name: acknowledged
+          in: query
+          schema:
+            type: boolean
+          description: Filter by acknowledgement status
+      responses:
+        "200":
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Alert"
+
+  /api/alerts/{alert_id}/acknowledge:
+    post:
+      summary: Acknowledge an alert
+      operationId: acknowledgeAlert
+      tags: [alerts]
+      parameters:
+        - name: alert_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Alert acknowledged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alert"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+# ════════════════════════════════════════════════════════════
+#  FUTURE — Owners, assignments, bookings
+# ════════════════════════════════════════════════════════════
+
+components:
+  schemas:
+    BerthStatus:
+      type: string
+      enum: [free, occupied]
+
+    Berth:
+      type: object
+      required: [berth_id, dock_id, status]
+      properties:
+        berth_id:
+          type: string
+          example: berth-001
+        dock_id:
+          type: string
+          example: dock-a
+        label:
+          type: string
+          example: A-01
+        lat:
+          type: number
+          format: double
+          example: 59.3293
+        lng:
+          type: number
+          format: double
+          example: 18.0686
+        length_m:
+          type: number
+          format: double
+          description: Berth length in meters
+          example: 12.0
+        width_m:
+          type: number
+          format: double
+          description: Berth width in meters
+          example: 4.0
+        depth_m:
+          type: number
+          format: double
+          description: Water depth in meters
+          example: 2.5
+        status:
+          $ref: "#/components/schemas/BerthStatus"
+        sensor_raw:
+          type: integer
+          description: Latest raw sensor reading
+        battery_pct:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Node battery level (0-100)
+        last_updated:
+          type: string
+          format: date-time
+
+    Dock:
+      type: object
+      required: [dock_id, name]
+      properties:
+        dock_id:
+          type: string
+          example: dock-a
+        name:
+          type: string
+          example: North Dock
+        lat:
+          type: number
+          format: double
+        lng:
+          type: number
+          format: double
+
+    Event:
+      type: object
+      required: [event_id, berth_id, event_type, timestamp]
+      properties:
+        event_id:
+          type: string
+        berth_id:
+          type: string
+        event_type:
+          type: string
+          enum: [occupied, freed, alert_unauthorized, heartbeat]
+        timestamp:
+          type: string
+          format: date-time
+
+    Alert:
+      type: object
+      required: [alert_id, berth_id, type, message, acknowledged, timestamp]
+      properties:
+        alert_id:
+          type: string
+        berth_id:
+          type: string
+        type:
+          type: string
+          enum: [unauthorized_mooring, sensor_offline, low_battery]
+        message:
+          type: string
+        acknowledged:
+          type: boolean
+        timestamp:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+          example: not_found
+        message:
+          type: string
+
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"

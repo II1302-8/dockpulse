@@ -6,28 +6,35 @@ Harbor berth availability monitoring system.
 
 ```
 backend/     FastAPI + SQLAlchemy + aiomqtt
-frontend/    TBD
+frontend/    React + TypeScript + Vite
 docs/api/    OpenAPI spec
 ```
 
 ## Quick start
 
 ```bash
+cp .env.example .env
 docker compose up
 ```
 
-| Service    | URL / Port                 |
+This starts the backend stack (PostgreSQL, Mosquitto, backend with hot reload).
+
+Frontend runs natively:
+
+```bash
+cd frontend
+bun install
+bun run dev
+```
+
+| Service    | URL                        |
 | ---------- | -------------------------- |
+| Frontend   | http://localhost:5173      |
 | Backend    | http://localhost:8000      |
 | Swagger UI | http://localhost:8000/docs |
 | Postgres   | localhost:5432             |
 | Mosquitto  | localhost:1883             |
-| Frontend   | http://localhost:5173      |
 
-## Environment
+## Contributing
 
-Copy `.env.example` to `.env` for local development outside Docker.
-
-## Docs
-
-- [OpenAPI spec](docs/api/openapi.yml)
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, workflow, and team guides.

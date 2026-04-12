@@ -39,6 +39,12 @@ paths:
                   uptime:
                     type: number
                     description: Uptime in seconds
+        "503":
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /api/docks:
     get:
@@ -54,6 +60,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Dock"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /api/docks/{dock_id}:
     get:
@@ -108,6 +116,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Berth"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /api/berths/{berth_id}:
     get:
@@ -185,6 +195,8 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Alert"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /api/alerts/{alert_id}/acknowledge:
     post:
@@ -329,6 +341,12 @@ components:
           type: string
 
   responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
     NotFound:
       description: Resource not found
       content:

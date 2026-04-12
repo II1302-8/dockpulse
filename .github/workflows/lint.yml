@@ -30,4 +30,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - run: bunx @redocly/cli lint docs/api/openapi.yml
+      - run: bunx @redocly/cli lint docs/api/openapi.yml --config .redocly.yaml

@@ -1,0 +1,12 @@
+extends:
+  - recommended
+
+rules:
+  # No auth in MVP — re-enable when auth is added
+  security-defined: off
+  # Dev/staging URLs are intentional
+  no-server-example.com: off
+  # License TBD
+  info-license: off
+  # Health endpoint has no 4xx — intentional
+  operation-4xx-response: warn

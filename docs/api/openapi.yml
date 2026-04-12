@@ -11,12 +11,20 @@ info:
 servers:
   - url: http://localhost:8000
     description: Local development
-  - url: https://dockpulse-staging.example.com
-    description: Staging (TBD)
+  - url: https://staging.exampl.com
+    description: Staging
 
 # ════════════════════════════════════════════════════════════
 #  MVP — Sensor monitoring and live harbor map
 # ════════════════════════════════════════════════════════════
+
+tags:
+  - name: system
+  - name: harbors
+  - name: docks
+  - name: berths
+  - name: events
+  - name: alerts
 
 paths:
   /api/health:
@@ -46,11 +54,62 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /api/harbors:
+    get:
+      summary: List all harbors
+      operationId: listHarbors
+      tags: [harbors]
+      responses:
+        "200":
+          description: List of harbors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Harbor"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/harbors/{harbor_id}:
+    get:
+      summary: Get a single harbor with its docks
+      operationId: getHarbor
+      tags: [harbors]
+      parameters:
+        - name: harbor_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Harbor with docks
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Harbor"
+                  - type: object
+                    properties:
+                      docks:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Dock"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /api/docks:
     get:
       summary: List all docks
       operationId: listDocks
       tags: [docks]
+      parameters:
+        - name: harbor_id
+          in: query
+          schema:
+            type: string
+          description: Filter by harbor
       responses:
         "200":
           description: List of docks
@@ -279,13 +338,35 @@ components:
           type: string
           format: date-time
 
+    Harbor:
+      type: object
+      required: [harbor_id, name]
+      properties:
+        harbor_id:
+          type: string
+          example: harbor-stockholm
+        name:
+          type: string
+          example: Stockholm Harbor
+        lat:
+          type: number
+          format: double
+          example: 59.3293
+        lng:
+          type: number
+          format: double
+          example: 18.0686
+
     Dock:
       type: object
-      required: [dock_id, name]
+      required: [dock_id, harbor_id, name]
       properties:
         dock_id:
           type: string
           example: dock-a
+        harbor_id:
+          type: string
+          example: harbor-stockholm
         name:
           type: string
           example: North Dock

@@ -1,0 +1,33 @@
+name: Lint
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - "docs/api/openapi.yml"
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "docs/api/openapi.yml"
+
+jobs:
+  ruff:
+    name: Ruff (backend)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - working-directory: backend
+        run: |
+          uv sync --frozen --only-dev
+          uv run ruff check .
+          uv run ruff format --check .
+
+  openapi:
+    name: OpenAPI lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bunx @redocly/cli lint docs/api/openapi.yml

@@ -19,7 +19,6 @@ __pycache__/
 
 # IDE / Editor
 .idea/
-.vscode/
 *.swp
 *.swo
 *~
@@ -41,3 +40,10 @@ coverage/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Python virtual env
+.venv/
+venv/
+
+# Docker
+pgdata/

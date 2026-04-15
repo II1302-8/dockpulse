@@ -36,6 +36,7 @@ yarn-error.log*
 coverage/
 .nyc_output/
 .pytest_cache/
+.hypothesis/
 
 # OS files
 .DS_Store

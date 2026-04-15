@@ -89,8 +89,8 @@ backend/
 1. Add the endpoint to `docs/api/openapi.yml`
 2. Add/update the Pydantic model in `models.py` to match the spec schema
 3. Create the route in `routes/`
-4. Test: `uv run pytest`
-5. Verify against spec: `uv run schemathesis run docs/api/openapi.yml --base-url http://localhost:8000`
+4. Test (from `backend/`): `uv run pytest`
+5. Verify against spec (from `backend/`): `uv run schemathesis run ../docs/api/openapi.yml --url http://localhost:8000`
 
 ### Database migrations
 

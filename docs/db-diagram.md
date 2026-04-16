@@ -35,7 +35,9 @@ erDiagram
     events {
         string event_id PK
         string berth_id FK
+        string node_id
         event_type event_type
+        int sensor_raw
         datetime timestamp
     }
 

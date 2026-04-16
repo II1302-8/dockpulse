@@ -376,15 +376,21 @@ components:
 
     Event:
       type: object
-      required: [event_id, berth_id, event_type, timestamp]
+      required: [event_id, berth_id, node_id, event_type, sensor_raw, timestamp]
       properties:
         event_id:
           type: string
         berth_id:
           type: string
+        node_id:
+          type: string
+          description: ID of the sensor node that triggered the event
         event_type:
           type: string
           enum: [occupied, freed, alert_unauthorized, heartbeat]
+        sensor_raw:
+          type: integer
+          description: Raw sensor value at time of event
         timestamp:
           type: string
           format: date-time

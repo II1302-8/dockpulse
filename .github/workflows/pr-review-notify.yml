@@ -1,0 +1,11 @@
+name: PR Review Notify
+
+on:
+  pull_request:
+    types: [ready_for_review, review_requested]
+
+jobs:
+  notify:
+    uses: II1302-8/.github/.github/workflows/pr-review-notify.yml@main
+    secrets:
+      DISCORD_PR_WEBHOOK_URL: ${{ secrets.DISCORD_PR_WEBHOOK_URL }}

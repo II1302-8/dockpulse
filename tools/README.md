@@ -15,29 +15,25 @@ Start the Mosquitto broker (from the repo root):
 docker compose up mosquitto -d
 ```
 
-Install the Python dependency:
-
-```bash
-pip install -r tools/requirements.txt
-```
+Dependencies are declared inline via [PEP 723](https://peps.python.org/pep-0723/) and resolved automatically by `uv run`.
 
 ### Usage
 
 ```bash
 # Publish "occupied" status for berth-001 every 5 seconds (default)
-python tools/fake_publisher.py
+uv run tools/fake_publisher.py
 
 # Publish "free" for a specific berth every 2 seconds
-python tools/fake_publisher.py --berth-id berth-042 --status free --rate 2
+uv run tools/fake_publisher.py --berth-id berth-042 --status free --rate 2
 
 # Send exactly 10 messages then exit
-python tools/fake_publisher.py --count 10
+uv run tools/fake_publisher.py --count 10
 
 # Alternate between free/occupied each publish (good for demos)
-python tools/fake_publisher.py --status toggle --rate 3
+uv run tools/fake_publisher.py --status toggle --rate 3
 
 # Connect to a remote broker
-python tools/fake_publisher.py --host 192.168.1.50 --port 1883
+uv run tools/fake_publisher.py --host 192.168.1.50 --port 1883
 ```
 
 ### CLI flags

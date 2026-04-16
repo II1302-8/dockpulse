@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#   "paho-mqtt>=2.0,<3.0",
+# ]
+# ///
 """Fake MQTT publisher for Sprint 1 demos.
 
 Publishes R3-contract-compliant berth status messages so the full stack

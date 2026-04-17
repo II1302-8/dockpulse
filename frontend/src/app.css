@@ -35,11 +35,7 @@ body {
   color: var(--color-text-primary);
   background: var(--color-bg-primary);
   background-image:
-    radial-gradient(
-      circle at 15% 50%,
-      rgba(0, 229, 255, 0.04),
-      transparent 50%
-    ),
+    radial-gradient(circle at 15% 50%, rgba(0, 229, 255, 0.04), transparent 50%),
     radial-gradient(circle at 85% 30%, rgba(0, 80, 158, 0.04), transparent 50%);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;

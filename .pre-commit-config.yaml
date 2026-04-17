@@ -14,5 +14,4 @@ repos:
     hooks:
       - id: biome-check
         additional_dependencies: ["@biomejs/biome@2.4.11"]
-        args: ["--config-path=frontend"]
         files: ^frontend/

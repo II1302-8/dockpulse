@@ -1,0 +1,30 @@
+# CODEOWNERS for II1302-8/dockpulse
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-security/customizing-your-repository/about-code-owners
+# Last matching pattern wins. Patterns are relative to repo root.
+
+# Fallback — maintainer / system architect
+*                           @XiShell
+
+# Backend (FastAPI app, OpenAPI source of truth)
+/backend/**                 @Johnybooi @pntzf @XiShell
+/docs/api/**                @Johnybooi @pntzf @XiShell
+
+# Frontend
+/frontend/**                @LellesBodega @Roblethe1 @XiShell
+
+# IoT / MQTT broker config
+/mosquitto.conf             @Doodlejnoodle @XiShell
+
+# Infra / CI / tooling
+/.github/**                 @XiShell
+/docker-compose*.yml        @XiShell
+/.pre-commit-config.yaml    @XiShell
+/.redocly.yaml              @XiShell @Johnybooi @pntzf
+/.editorconfig              @XiShell
+/.dockerignore              @XiShell
+/.gitignore                 @XiShell
+
+# Repo-level docs
+/README.md                  @XiShell
+/CONTRIBUTING.md            @XiShell
+/docs/db-diagram.md         @Johnybooi @pntzf @XiShell

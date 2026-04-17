@@ -33,8 +33,6 @@ class Dock(Base):
         ForeignKey("harbors.harbor_id"), nullable=False
     )
     name: Mapped[str] = mapped_column(String, nullable=False)
-    lat: Mapped[float | None] = mapped_column(Double)
-    lng: Mapped[float | None] = mapped_column(Double)
 
     harbor: Mapped["Harbor"] = relationship(back_populates="docks")
     berths: Mapped[list["Berth"]] = relationship(back_populates="dock")
@@ -46,8 +44,6 @@ class Berth(Base):
     berth_id: Mapped[str] = mapped_column(String, primary_key=True)
     dock_id: Mapped[str] = mapped_column(ForeignKey("docks.dock_id"), nullable=False)
     label: Mapped[str | None] = mapped_column(String)
-    lat: Mapped[float | None] = mapped_column(Double)
-    lng: Mapped[float | None] = mapped_column(Double)
     length_m: Mapped[float | None] = mapped_column(Double)
     width_m: Mapped[float | None] = mapped_column(Double)
     depth_m: Mapped[float | None] = mapped_column(Double)

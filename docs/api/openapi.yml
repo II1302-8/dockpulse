@@ -312,14 +312,6 @@ components:
         label:
           type: string
           example: A-01
-        lat:
-          type: number
-          format: double
-          example: 59.3293
-        lng:
-          type: number
-          format: double
-          example: 18.0686
         length_m:
           type: number
           format: double
@@ -381,12 +373,6 @@ components:
         name:
           type: string
           example: North Dock
-        lat:
-          type: number
-          format: double
-        lng:
-          type: number
-          format: double
 
     Event:
       type: object

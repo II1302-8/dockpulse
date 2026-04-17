@@ -134,6 +134,23 @@ ul {
   color: var(--color-text-primary);
 }
 
+.header-subtitle {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  opacity: 0.8;
+  font-weight: 500;
+  align-self: flex-end;
+  margin-bottom: 0.25rem;
+  margin-left: 0.25rem;
+}
+
+.header-profile-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(0, 80, 158, 0.1);
+}
+
 /* Main Content Area */
 .app-main {
   flex: 1;
@@ -220,10 +237,12 @@ ul {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* biome-ignore-start lint/complexity/noImportantStyles: accessibility reset requires !important to override all animations */
   * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+  /* biome-ignore-end lint/complexity/noImportantStyles: accessibility reset requires !important to override all animations */
 }

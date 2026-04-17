@@ -7,7 +7,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/saltsjobaden" replace />} />
-        <Route path="/saltsjobaden" element={<MainLayout />}>
+        <Route path="/:marinaSlug" element={<MainLayout />}>
           <Route index element={<Dashboard />} />
         </Route>
       </Routes>

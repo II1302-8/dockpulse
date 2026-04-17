@@ -1,10 +1,5 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.4.11/schema.json",
-  "root": true,
-  "files": {
-    "includes": ["frontend/**/*"],
-    "ignoreUnknown": false
-  },
   "vcs": {
     "enabled": true,
     "clientKind": "git",

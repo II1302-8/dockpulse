@@ -1,15 +1,15 @@
-import { useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { getMarinaNameCB } from "../lib/marinas";
-import HarborMap from "../HarborMap";
+import { useEffect } from "react"; // Import the React effect hook.
+import { useParams } from "react-router-dom"; // Import route parameter access.
+import { getMarinaNameCB } from "../lib/marinas"; // Import the marina name helper.
+import HarborMap from "../HarborMap"; // Import the harbor map component.
 
 const Dashboard = () => {
-  const { marinaSlug } = useParams();
-  const marinaName = getMarinaNameCB(marinaSlug);
+  const { marinaSlug } = useParams(); // Read the marina slug from the route.
+  const marinaName = getMarinaNameCB(marinaSlug); // Convert the slug into a marina name.
 
   useEffect(function setTitleEffect() {
-    document.title = `${marinaName} - Dashboard | DockPulse`;
-  }, [marinaName]);
+    document.title = `${marinaName} - Dashboard | DockPulse`; // Update the browser title.
+  }, [marinaName]); // Re-run when the marina name changes.
 
   return (
     <main className="app-main">
@@ -20,41 +20,41 @@ const Dashboard = () => {
         </div>
       </div>
     </main>
-  );
+  ); // Render the dashboard layout.
 };
 
-export default Dashboard;
+export default Dashboard; // Export the dashboard component.
 
 const styles = {
   container: {
-    backgroundColor: "#ffffff",
-    height: "100vh",
-    width: "100%",
-    margin: 0,
-    padding: "20px 0 20px 0",
-    display: "flex",
-    flexDirection: "column" as const,
-    alignItems: "center",
-    boxSizing: "border-box" as const,
-    overflow: "hidden",
+    backgroundColor: "#ffffff", // Use a white page background.
+    height: "100vh", // Fill the viewport height.
+    width: "100%", // Fill the available width.
+    margin: 0, // Remove outer margin.
+    padding: "20px 0 20px 0", // Add vertical padding.
+    display: "flex", // Use flex layout.
+    flexDirection: "column" as const, // Stack items vertically.
+    alignItems: "center", // Center content horizontally.
+    boxSizing: "border-box" as const, // Include padding in element size.
+    overflow: "hidden", // Hide overflow.
   },
   title: {
-    fontSize: "48px",
-    fontWeight: "800",
-    color: "#111111",
-    margin: "0 0 20px 0",
-    letterSpacing: "0.4px",
-    lineHeight: 1.1,
+    fontSize: "48px", // Use a large title size.
+    fontWeight: "800", // Make the title bold.
+    color: "#111111", // Use dark text.
+    margin: "0 0 20px 0", // Add spacing below the title.
+    letterSpacing: "0.4px", // Slightly space the letters.
+    lineHeight: 1.1, // Keep line height compact.
   },
   mapWrapper: {
-    backgroundColor: "#ffffff",
-    padding: "12px",
-    borderRadius: "12px",
-    border: "2px solid #111111",
-    width: "95%",
-    maxWidth: "1500px",
-    flex: 1,
-    boxSizing: "border-box" as const,
-    overflow: "hidden",
+    backgroundColor: "#ffffff", // Use a white background.
+    padding: "12px", // Add inner spacing.
+    borderRadius: "12px", // Round the corners.
+    border: "2px solid #111111", // Add a dark border.
+    width: "95%", // Use most of the horizontal space.
+    maxWidth: "1500px", // Prevent the map area from getting too wide.
+    flex: 1, // Let the map area take the remaining height.
+    boxSizing: "border-box" as const, // Include padding and border in size.
+    overflow: "hidden", // Hide overflow.
   },
-};
+}; // Store component styles.

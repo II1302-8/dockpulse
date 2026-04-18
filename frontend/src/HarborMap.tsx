@@ -436,3 +436,4 @@ const styles = {
     textAlign: "center" as const, // Center the text.
   },
 }; // Define inline styles for the component.
+

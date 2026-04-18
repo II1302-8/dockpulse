@@ -1,5 +1,4 @@
-import { useState } from "react"; // Import React state hook.
-import type { KeyboardEvent } from "react"; // Import the keyboard event type.
+import { useState } from "react"; // Import the React state hook.
 import {
   horizontalPier, // Import horizontal pier geometry.
   verticalPier, // Import vertical pier geometry.
@@ -105,19 +104,40 @@ export default function SvgMap() {
     });
   }; // Define click behavior for a berth.
 
-  const handleKeyDown = (
-    event: KeyboardEvent<SVGCircleElement>,
-    index: number,
-  ) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault(); // Prevent scrolling when Space is pressed.
-      handleClick(index); // Toggle the berth when keyboard-activated.
-    }
-  }; // Define keyboard behavior for a berth.
-
   const topOffset = 0; // Start top circles at index 0.
   const leftOffset = topCirclePositions.length; // Start left circles after the top circles.
   const rightOffset = topCirclePositions.length + leftCirclePositions.length; // Start right circles after top and left circles.
+  const buttonSize = 24; // Store the clickable button size.
+
+  const renderCircleButton = (point: CirclePoint, stateIndex: number) => {
+    return (
+      <foreignObject
+        key={point.id} // Use a stable key.
+        x={point.cx - buttonSize / 2} // Position the button around the circle center.
+        y={point.cy - buttonSize / 2} // Position the button around the circle center.
+        width={buttonSize} // Set the button width.
+        height={buttonSize} // Set the button height.
+      >
+        <button
+          type="button" // Use a semantic button element.
+          aria-label={point.label} // Add an accessible label.
+          onClick={() => handleClick(stateIndex)} // Toggle berth state on click.
+          style={{
+            width: `${buttonSize}px`, // Match the foreignObject width.
+            height: `${buttonSize}px`, // Match the foreignObject height.
+            borderRadius: "9999px", // Make the button circular.
+            border: "2px solid #111111", // Draw the border.
+            backgroundColor: getColor(berthStates[stateIndex]), // Fill with the berth color.
+            padding: 0, // Remove default button padding.
+            margin: 0, // Remove default button margin.
+            cursor: "pointer", // Show pointer cursor.
+            display: "block", // Prevent inline layout quirks.
+            boxSizing: "border-box", // Keep border inside the button size.
+          }}
+        />
+      </foreignObject>
+    ); // Render one semantic circular berth button.
+  };
 
   return (
     <svg
@@ -188,63 +208,15 @@ export default function SvgMap() {
       ))}
       {topCirclePositions.map((point, positionIndex) => {
         const stateIndex = topOffset + positionIndex; // Compute the matching state index.
-        return (
-          <circle
-            key={point.id} // Use a stable key.
-            cx={point.cx} // Set circle center x.
-            cy={point.cy} // Set circle center y.
-            r="10" // Set the circle radius.
-            fill={getColor(berthStates[stateIndex])} // Fill with the berth state color.
-            stroke="#111111" // Draw the circle border.
-            strokeWidth="2" // Set the border thickness.
-            role="button" // Mark the circle as interactive.
-            tabIndex={0} // Make the circle keyboard focusable.
-            aria-label={point.label} // Add an accessible label.
-            style={{ cursor: "pointer", pointerEvents: "auto" }} // Show pointer cursor and allow interaction.
-            onClick={() => handleClick(stateIndex)} // Toggle on click.
-            onKeyDown={(event) => handleKeyDown(event, stateIndex)} // Toggle on keyboard activation.
-          />
-        );
+        return renderCircleButton(point, stateIndex); // Render a semantic button for the top berth.
       })}
       {leftCirclePositions.map((point, positionIndex) => {
         const stateIndex = leftOffset + positionIndex; // Compute the matching state index.
-        return (
-          <circle
-            key={point.id} // Use a stable key.
-            cx={point.cx} // Set circle center x.
-            cy={point.cy} // Set circle center y.
-            r="10" // Set the circle radius.
-            fill={getColor(berthStates[stateIndex])} // Fill with the berth state color.
-            stroke="#111111" // Draw the circle border.
-            strokeWidth="2" // Set the border thickness.
-            role="button" // Mark the circle as interactive.
-            tabIndex={0} // Make the circle keyboard focusable.
-            aria-label={point.label} // Add an accessible label.
-            style={{ cursor: "pointer", pointerEvents: "auto" }} // Show pointer cursor and allow interaction.
-            onClick={() => handleClick(stateIndex)} // Toggle on click.
-            onKeyDown={(event) => handleKeyDown(event, stateIndex)} // Toggle on keyboard activation.
-          />
-        );
+        return renderCircleButton(point, stateIndex); // Render a semantic button for the left berth.
       })}
       {rightCirclePositions.map((point, positionIndex) => {
         const stateIndex = rightOffset + positionIndex; // Compute the matching state index.
-        return (
-          <circle
-            key={point.id} // Use a stable key.
-            cx={point.cx} // Set circle center x.
-            cy={point.cy} // Set circle center y.
-            r="10" // Set the circle radius.
-            fill={getColor(berthStates[stateIndex])} // Fill with the berth state color.
-            stroke="#111111" // Draw the circle border.
-            strokeWidth="2" // Set the border thickness.
-            role="button" // Mark the circle as interactive.
-            tabIndex={0} // Make the circle keyboard focusable.
-            aria-label={point.label} // Add an accessible label.
-            style={{ cursor: "pointer", pointerEvents: "auto" }} // Show pointer cursor and allow interaction.
-            onClick={() => handleClick(stateIndex)} // Toggle on click.
-            onKeyDown={(event) => handleKeyDown(event, stateIndex)} // Toggle on keyboard activation.
-          />
-        );
+        return renderCircleButton(point, stateIndex); // Render a semantic button for the right berth.
       })}
     </svg>
   ); // Return the full SVG harbor map.

@@ -46,3 +46,4 @@ export const rightSideBerths = verticalBerthYPositions.map((y) => ({
   x2: verticalPier.x + verticalPier.width + berthLength, // Extend the line to the right.
   y2: y, // Keep the same y position.
 }));
+

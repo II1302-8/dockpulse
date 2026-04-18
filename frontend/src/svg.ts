@@ -29,9 +29,14 @@ const verticalUsableHeight =
   verticalPier.height - verticalBerthTopOffset - verticalBerthBottomOffset; // Calculate usable height between offsets.
 const verticalBerthSpacing = verticalUsableHeight / (berthCount - 1); // Calculate even spacing between lines.
 
-const verticalBerthYPositions = Array.from({ length: berthCount }, (_, index) => {
-  return verticalPier.y + verticalBerthTopOffset + index * verticalBerthSpacing; // Generate all y positions for the vertical pier divider lines.
-});
+const verticalBerthYPositions = Array.from(
+  { length: berthCount },
+  (_, index) => {
+    return (
+      verticalPier.y + verticalBerthTopOffset + index * verticalBerthSpacing
+    ); // Generate all y positions for the vertical pier divider lines.
+  },
+);
 
 export const leftSideBerths = verticalBerthYPositions.map((y) => ({
   x1: verticalPier.x, // Start at the left edge of the vertical pier.
@@ -46,4 +51,3 @@ export const rightSideBerths = verticalBerthYPositions.map((y) => ({
   x2: verticalPier.x + verticalPier.width + berthLength, // Extend the line to the right.
   y2: y, // Keep the same y position.
 }));
-

@@ -1,10 +1,10 @@
 import { useState } from "react"; // Import the React state hook.
 import {
   horizontalPier, // Import horizontal pier geometry.
-  verticalPier, // Import vertical pier geometry.
-  topBerths, // Import top divider lines.
   leftSideBerths, // Import left-side divider lines.
   rightSideBerths, // Import right-side divider lines.
+  topBerths, // Import top divider lines.
+  verticalPier, // Import vertical pier geometry.
 } from "./svg"; // Import SVG layout data.
 
 const stroke = "#111111"; // Store the common stroke color.
@@ -154,7 +154,8 @@ export default function SvgMap() {
       }}
     >
       <title id="harbor-berth-map-title">Harbor berth map</title>
-      <rect x="0" y="0" width="850" height="600" fill="#ffffff" /> {/* Draw the white background. */}
+      <rect x="0" y="0" width="850" height="600" fill="#ffffff" />{" "}
+      {/* Draw the white background. */}
       <rect
         x={horizontalPier.x} // Set horizontal pier x position.
         y={horizontalPier.y} // Set horizontal pier y position.

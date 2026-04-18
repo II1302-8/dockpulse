@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"; // Import React hooks.
-import { createRoot } from "react-dom/client"; // Import React root creation for the overlay.
 import type { Root } from "react-dom/client"; // Import the React root type only.
+import { createRoot } from "react-dom/client"; // Import React root creation for the overlay.
 import SvgMap from "./svgMap"; // Import the SVG harbor overlay component.
 
 const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY; // Read the API key from the local .env file through Vite.
@@ -46,10 +46,7 @@ type GoogleMapInstance = {
   getCenter: () => MapCenter | null; // Read the current map center.
   setMapTypeId: (mapTypeId: string) => void; // Change the map type.
   setOptions: (options: { styles: typeof WHITE_MAP_STYLES | null }) => void; // Change map styles.
-  addListener: (
-    eventName: string,
-    handler: () => void,
-  ) => MapsEventListener; // Register a map event listener.
+  addListener: (eventName: string, handler: () => void) => MapsEventListener; // Register a map event listener.
 };
 
 type OverlayPanes = {
@@ -86,10 +83,7 @@ type OverlayViewInstance = {
 
 type OverlayViewConstructor = new () => OverlayViewInstance; // Describe the OverlayView class constructor.
 
-type LatLngConstructor = new (
-  lat: number,
-  lng: number,
-) => LatLngInstance; // Describe the LatLng class constructor.
+type LatLngConstructor = new (lat: number, lng: number) => LatLngInstance; // Describe the LatLng class constructor.
 
 type LatLngBoundsConstructor = new (
   southWest: LatLngInstance,
@@ -134,9 +128,7 @@ function loadGoogleMaps(): Promise<void> {
   }
 
   if (!GOOGLE_MAPS_API_KEY) {
-    return Promise.reject(
-      new Error("Google Maps configuration is missing."),
-    ); // Reject if the local env key is missing.
+    return Promise.reject(new Error("Google Maps configuration is missing.")); // Reject if the local env key is missing.
   }
 
   if (googleMapsLoadingPromise) {
@@ -167,8 +159,7 @@ function loadGoogleMaps(): Promise<void> {
     script.dataset.googleMaps = "true"; // Mark the script so it can be found later.
 
     script.onload = () => resolve(); // Resolve on successful load.
-    script.onerror = () =>
-      reject(new Error("Failed to load Google Maps.")); // Reject on load failure.
+    script.onerror = () => reject(new Error("Failed to load Google Maps.")); // Reject on load failure.
 
     document.head.appendChild(script); // Add the script to the page.
   });
@@ -341,10 +332,8 @@ export default function HarborMap() {
           const center = map.getCenter(); // Read the current center.
           const nearHarbor = isCenterNearHarbor(center); // Check whether the center is near the harbor.
 
-          const shouldUseWhiteMap =
-            zoom >= WHITE_MAP_ZOOM && nearHarbor; // Decide whether to use the white roadmap.
-          const shouldShowOverlay =
-            zoom >= MIN_OVERLAY_ZOOM && nearHarbor; // Decide whether to show the SVG overlay.
+          const shouldUseWhiteMap = zoom >= WHITE_MAP_ZOOM && nearHarbor; // Decide whether to use the white roadmap.
+          const shouldShowOverlay = zoom >= MIN_OVERLAY_ZOOM && nearHarbor; // Decide whether to show the SVG overlay.
 
           if (shouldUseWhiteMap) {
             map.setMapTypeId("roadmap"); // Switch to roadmap when near the harbor.
@@ -367,9 +356,7 @@ export default function HarborMap() {
         updateVisibility(); // Apply the correct initial map and overlay state.
       } catch (err: unknown) {
         const message =
-          err instanceof Error
-            ? err.message
-            : "Failed to load Google Map."; // Build a safe error message.
+          err instanceof Error ? err.message : "Failed to load Google Map."; // Build a safe error message.
 
         setError(message); // Save the error message for rendering.
       }
@@ -436,4 +423,3 @@ const styles = {
     textAlign: "center" as const, // Center the text.
   },
 }; // Define inline styles for the component.
-

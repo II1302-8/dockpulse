@@ -1,15 +1,18 @@
 import { useEffect } from "react"; // Import the React effect hook.
 import { useParams } from "react-router-dom"; // Import route parameter access.
-import { getMarinaNameCB } from "../lib/marinas"; // Import the marina name helper.
 import HarborMap from "../HarborMap"; // Import the harbor map component.
+import { getMarinaNameCB } from "../lib/marinas"; // Import the marina name helper.
 
 const Dashboard = () => {
   const { marinaSlug } = useParams(); // Read the marina slug from the route.
   const marinaName = getMarinaNameCB(marinaSlug); // Convert the slug into a marina name.
 
-  useEffect(function setTitleEffect() {
-    document.title = `${marinaName} - Dashboard | DockPulse`; // Update the browser title.
-  }, [marinaName]); // Re-run when the marina name changes.
+  useEffect(
+    function setTitleEffect() {
+      document.title = `${marinaName} - Dashboard | DockPulse`; // Update the browser title.
+    },
+    [marinaName],
+  ); // Re-run when the marina name changes.
 
   return (
     <main className="app-main">
@@ -58,4 +61,3 @@ const styles = {
     overflow: "hidden", // Hide overflow.
   },
 }; // Store component styles.
-

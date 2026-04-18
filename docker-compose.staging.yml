@@ -18,6 +18,20 @@ services:
     container_name: dockpulse-staging-frontend
     profiles: !reset []
 
+  cloudflared:
+    container_name: dockpulse-staging-cloudflared
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      frontend:
+        condition: service_started
+      backend:
+        condition: service_started
+    networks: [internal]
+
   fake-publisher-b1:
     container_name: dockpulse-staging-fake-publisher-b1
     image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim

@@ -3,6 +3,7 @@ repos:
     rev: 3.2.1
     hooks:
       - id: editorconfig-checker
+        exclude: ^backend/alembic/(README|script\.py\.mako|versions/)
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.10
     hooks:
@@ -15,3 +16,11 @@ repos:
       - id: biome-check
         additional_dependencies: ["@biomejs/biome@2.4.11"]
         files: ^frontend/
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.14.0
+    hooks:
+      - id: hadolint-docker
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.8
+    hooks:
+      - id: actionlint

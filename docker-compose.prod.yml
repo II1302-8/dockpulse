@@ -1,0 +1,44 @@
+services:
+  db:
+    container_name: dockpulse-prod-db
+
+  mosquitto:
+    container_name: dockpulse-prod-mosquitto
+
+  migrate:
+    container_name: dockpulse-prod-migrate
+
+  backend:
+    container_name: dockpulse-prod-backend
+    networks:
+      - internal
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.dockpulse-api.rule=Host(`dockpulse.xyz`) && PathPrefix(`/api`)
+      - traefik.http.routers.dockpulse-api.entrypoints=https
+      - traefik.http.routers.dockpulse-api.tls=true
+      - traefik.http.routers.dockpulse-api.tls.certresolver=cloudflare
+      - traefik.http.services.dockpulse-api.loadbalancer.server.port=8000
+
+  frontend:
+    container_name: dockpulse-prod-frontend
+    profiles: !reset []
+    networks:
+      - internal
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=proxy
+      - traefik.http.routers.dockpulse-web.rule=Host(`dockpulse.xyz`) || Host(`www.dockpulse.xyz`)
+      - traefik.http.routers.dockpulse-web.entrypoints=https
+      - traefik.http.routers.dockpulse-web.tls=true
+      - traefik.http.routers.dockpulse-web.tls.certresolver=cloudflare
+      - traefik.http.routers.dockpulse-web.tls.domains[0].main=dockpulse.xyz
+      - traefik.http.routers.dockpulse-web.tls.domains[0].sans=www.dockpulse.xyz
+      - traefik.http.services.dockpulse-web.loadbalancer.server.port=5173
+
+networks:
+  proxy:
+    external: true

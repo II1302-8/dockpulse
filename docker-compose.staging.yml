@@ -1,0 +1,70 @@
+services:
+  db:
+    container_name: dockpulse-staging-db
+    volumes: !reset []
+    tmpfs:
+      - /var/lib/postgresql/data
+
+  mosquitto:
+    container_name: dockpulse-staging-mosquitto
+
+  migrate:
+    container_name: dockpulse-staging-migrate
+
+  backend:
+    container_name: dockpulse-staging-backend
+
+  frontend:
+    container_name: dockpulse-staging-frontend
+    profiles: !reset []
+
+  fake-publisher-b1:
+    container_name: dockpulse-staging-fake-publisher-b1
+    image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+    restart: unless-stopped
+    command: >
+      uv run /tools/fake_publisher.py
+      --host mosquitto
+      --berth-id ksss-saltsjobaden-pier-1-b1
+      --rate 3
+      --status toggle
+    volumes:
+      - ./tools:/tools
+    depends_on:
+      mosquitto:
+        condition: service_started
+    networks: [internal]
+
+  fake-publisher-b2:
+    container_name: dockpulse-staging-fake-publisher-b2
+    image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+    restart: unless-stopped
+    command: >
+      uv run /tools/fake_publisher.py
+      --host mosquitto
+      --berth-id ksss-saltsjobaden-pier-1-b2
+      --rate 10
+      --status occupied
+    volumes:
+      - ./tools:/tools
+    depends_on:
+      mosquitto:
+        condition: service_started
+    networks: [internal]
+
+  fake-publisher-b3:
+    container_name: dockpulse-staging-fake-publisher-b3
+    image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+    restart: unless-stopped
+    command: >
+      uv run /tools/fake_publisher.py
+      --host mosquitto
+      --berth-id ksss-saltsjobaden-pier-1-b3
+      --rate 10
+      --status free
+    volumes:
+      - ./tools:/tools
+    depends_on:
+      mosquitto:
+        condition: service_started
+    networks: [internal]

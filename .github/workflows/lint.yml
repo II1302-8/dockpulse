@@ -6,68 +6,29 @@ on:
     branches: [main]
 
 jobs:
-  changes:
-    name: Detect changes
+  editorconfig:
+    name: EditorConfig
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: read
-    outputs:
-      backend: ${{ steps.filter.outputs.backend }}
-      frontend: ${{ steps.filter.outputs.frontend }}
-      openapi: ${{ steps.filter.outputs.openapi }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: filter
+      - uses: actions/setup-python@v5
         with:
-          filters: |
-            backend:
-              - 'backend/**'
-            frontend:
-              - 'frontend/**'
-            openapi:
-              - 'docs/api/**'
-              - '.redocly.yaml'
+          python-version: "3.12"
+      - run: pipx run pre-commit run --all-files editorconfig-checker
 
   ruff:
-    name: Ruff (backend)
-    needs: changes
-    if: needs.changes.outputs.backend == 'true'
+    name: Ruff
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
-      - working-directory: backend
-        run: |
-          uv sync --frozen --only-dev
-          uv run ruff check .
-          uv run ruff format --check .
-
-  openapi:
-    name: OpenAPI lint
-    needs: changes
-    if: needs.changes.outputs.openapi == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - run: bunx @redocly/cli lint docs/api/openapi.yml --config .redocly.yaml
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pipx run pre-commit run --all-files ruff
+      - run: pipx run pre-commit run --all-files ruff-format
 
   biome:
-    name: Biome (frontend)
-    needs: changes
-    if: needs.changes.outputs.frontend == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - working-directory: frontend
-        run: |
-          bun install --frozen-lockfile
-          bun run lint
-
-  pre-commit:
-    name: pre-commit
+    name: Biome
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -75,4 +36,32 @@ jobs:
         with:
           python-version: "3.12"
       - uses: oven-sh/setup-bun@v2
-      - uses: pre-commit/action@v3.0.1
+      - run: pipx run pre-commit run --all-files biome-check
+
+  hadolint:
+    name: Hadolint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pipx run pre-commit run --all-files hadolint-docker
+
+  actionlint:
+    name: Actionlint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pipx run pre-commit run --all-files actionlint
+
+  openapi:
+    name: OpenAPI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bunx @redocly/cli lint docs/api/openapi.yml --config .redocly.yaml

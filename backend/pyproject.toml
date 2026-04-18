@@ -19,6 +19,7 @@ dev = ["pytest>=9.0", "httpx>=0.28", "schemathesis>=4.15", "ruff>=0.11", "pre-co
 [tool.ruff]
 target-version = "py312"
 line-length = 88
+extend-exclude = ["alembic/versions"]
 
 [tool.ruff.lint]
 select = [

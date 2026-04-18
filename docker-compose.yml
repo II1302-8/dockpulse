@@ -24,21 +24,6 @@ services:
       - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
     networks: [internal]
 
-  migrate:
-    container_name: dockpulse-migrate
-    image: ghcr.io/ii1302-8/dockpulse-backend:${TAG:-staging}
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
-    command: uv run alembic upgrade head
-    environment:
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-    depends_on:
-      db:
-        condition: service_healthy
-    networks: [internal]
-    restart: "no"
-
   backend:
     container_name: dockpulse-backend
     image: ghcr.io/ii1302-8/dockpulse-backend:${TAG:-staging}
@@ -46,6 +31,7 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     restart: unless-stopped
+    command: sh -c "uv run alembic upgrade head && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000"
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       MQTT_BROKER: mosquitto
@@ -55,8 +41,6 @@ services:
         condition: service_healthy
       mosquitto:
         condition: service_started
-      migrate:
-        condition: service_completed_successfully
     networks: [internal]
 
   frontend:

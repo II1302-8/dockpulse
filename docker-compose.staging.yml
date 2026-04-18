@@ -8,9 +8,6 @@ services:
   mosquitto:
     container_name: dockpulse-staging-mosquitto
 
-  migrate:
-    container_name: dockpulse-staging-migrate
-
   backend:
     container_name: dockpulse-staging-backend
 

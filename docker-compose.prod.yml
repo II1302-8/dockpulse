@@ -5,9 +5,6 @@ services:
   mosquitto:
     container_name: dockpulse-prod-mosquitto
 
-  migrate:
-    container_name: dockpulse-prod-migrate
-
   backend:
     container_name: dockpulse-prod-backend
     networks:

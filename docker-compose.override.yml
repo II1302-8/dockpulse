@@ -1,5 +1,15 @@
 services:
+  db:
+    ports:
+      - "5432:5432"
+
+  mosquitto:
+    ports:
+      - "1883:1883"
+
   backend:
     command: uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - ./docs:/docs
+    ports:
+      - "8000:8000"

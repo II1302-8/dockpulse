@@ -7,10 +7,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-    ports:
-      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks: [internal]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 5s
@@ -21,19 +20,32 @@ services:
     container_name: dockpulse-mosquitto
     image: eclipse-mosquitto:2
     restart: unless-stopped
-    ports:
-      - "1883:1883"
     volumes:
       - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+    networks: [internal]
+
+  migrate:
+    container_name: dockpulse-migrate
+    image: ghcr.io/ii1302-8/dockpulse-backend:${TAG:-staging}
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    command: uv run alembic upgrade head
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [internal]
+    restart: "no"
 
   backend:
     container_name: dockpulse-backend
+    image: ghcr.io/ii1302-8/dockpulse-backend:${TAG:-staging}
     build:
       context: .
       dockerfile: backend/Dockerfile
     restart: unless-stopped
-    ports:
-      - "8000:8000"
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       MQTT_BROKER: mosquitto
@@ -43,17 +55,22 @@ services:
         condition: service_healthy
       mosquitto:
         condition: service_started
+      migrate:
+        condition: service_completed_successfully
+    networks: [internal]
 
   frontend:
     container_name: dockpulse-frontend
+    image: ghcr.io/ii1302-8/dockpulse-frontend:${TAG:-staging}
     build: ./frontend
     restart: unless-stopped
-    ports:
-      - "5173:5173"
     depends_on:
       - backend
-    profiles:
-      - prod
+    networks: [internal]
+    profiles: [prod]
+
+networks:
+  internal:
 
 volumes:
   pgdata:

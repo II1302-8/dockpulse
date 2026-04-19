@@ -15,6 +15,7 @@
     "gen:api": "openapi-typescript ../docs/api/openapi.yml -o src/api-types.ts"
   },
   "dependencies": {
+    "panzoom": "^9.4.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.14.1"

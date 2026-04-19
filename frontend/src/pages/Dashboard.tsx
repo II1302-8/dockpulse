@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
+import HarborMap from "../HarborMap";
 import { getMarinaNameCB } from "../lib/marinas";
 
 const Dashboard = () => {
@@ -15,9 +16,8 @@ const Dashboard = () => {
 
   return (
     <main className="app-main">
-      <div className="dashboard-empty-state">
-        <h2>Dashboard</h2>
-        <p>The maaaaap</p>
+      <div className="map-wrapper">
+        <HarborMap />
       </div>
     </main>
   );

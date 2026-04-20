@@ -5,6 +5,7 @@ import {
   topBerths,
   verticalPier,
 } from "./svg";
+import type { components } from "./api-types";
 
 const stroke = "#111111";
 const pierFill = "#ffffff";
@@ -15,11 +16,15 @@ const greenSymbol = "#1f8f3f";
 const redSymbol = "#a11818";
 const symbolStrokeWidth = 3;
 const symbolScale = 0.2;
-const occupiedBerthIndices = new Set([2, 5, 7, 10]);
 
 type BerthState = "green" | "red";
 
+interface SvgMapProps {
+  berths: components["schemas"]["Berth"][];
+}
+
 type DividerLine = {
+  id: string;
   x1: number;
   y1: number;
   x2: number;
@@ -28,6 +33,7 @@ type DividerLine = {
 
 type BerthSlot = {
   id: string;
+  berth_id: string;
   x: number;
   y: number;
   width: number;
@@ -49,12 +55,13 @@ function getTopBerthSlots(lines: DividerLine[]): BerthSlot[] {
     const bottomY = Math.max(left.y1, left.y2, right.y1, right.y2);
 
     slots.push({
-      id: `top-slot-${left.x1}-${right.x1}`,
+      id: `top-slot-${left.id}-${right.id}`,
+      berth_id: left.id, // Assign the ID from the left divider
       x: left.x1,
       y: topY,
       width: right.x1 - left.x1,
       height: bottomY - topY,
-      label: `Top berth ${index + 1}`,
+      label: `Top berth ${left.id.split("-").pop()}`,
     });
   }
 
@@ -74,30 +81,30 @@ function getSideBerthSlots(
     const rightX = Math.max(upper.x1, upper.x2);
 
     slots.push({
-      id: `${prefix}-slot-${upper.y1}-${lower.y1}`,
+      id: `${prefix}-slot-${upper.id}-${lower.id}`,
+      berth_id: upper.id,
       x: leftX,
       y: upper.y1,
       width: rightX - leftX,
       height: lower.y1 - upper.y1,
-      label: `${prefix === "left" ? "Left" : "Right"} berth ${index + 1}`,
+      label: `${prefix === "left" ? "Left" : "Right"} berth ${upper.id.split("-").pop()}`,
     });
   }
 
   return slots;
 }
 
-export default function SvgMap() {
+export default function SvgMap({ berths }: SvgMapProps) {
   const topSlots = getTopBerthSlots(topBerths);
   const leftSlots = getSideBerthSlots(leftSideBerths, "left");
   const rightSlots = getSideBerthSlots(rightSideBerths, "right");
 
   const allSlots = [...topSlots, ...leftSlots, ...rightSlots];
-  const berthStates: BerthState[] = allSlots.map((_, index) =>
-    occupiedBerthIndices.has(index) ? "red" : "green",
-  );
 
-  const renderBerth = (slot: BerthSlot, stateIndex: number) => {
-    const state = berthStates[stateIndex];
+  const renderBerthCB = (slot: BerthSlot) => {
+    const apiBerth = berths.find((b) => b.berth_id === slot.berth_id);
+    const state: BerthState = apiBerth?.status === "occupied" ? "red" : "green";
+
     const fill = state === "green" ? greenFill : redFill;
     const symbolColor = state === "green" ? greenSymbol : redSymbol;
     const cx = slot.x + slot.width / 2;
@@ -177,9 +184,9 @@ export default function SvgMap() {
         stroke={stroke}
         strokeWidth="3"
       />
-      {topSlots.map((slot, i) => renderBerth(slot, topOffset + i))}
-      {leftSlots.map((slot, i) => renderBerth(slot, leftOffset + i))}
-      {rightSlots.map((slot, i) => renderBerth(slot, rightOffset + i))}
+      {topSlots.map((slot) => renderBerthCB(slot))}
+      {leftSlots.map((slot) => renderBerthCB(slot))}
+      {rightSlots.map((slot) => renderBerthCB(slot))}
       {topBerths.map((berth) => (
         <line
           key={getLineKey("top-line", berth)}

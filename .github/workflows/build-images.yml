@@ -3,12 +3,16 @@ name: Build Images
 on:
   push:
     branches: [main]
-    tags: ["v*"]
+    tags: ["v[0-9]*"]
   pull_request:
 
 permissions:
   contents: read
   packages: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   changes:
@@ -97,3 +101,21 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend
+
+  deploy:
+    name: Deploy
+    needs: [backend, frontend]
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      (needs.backend.result == 'success' || needs.frontend.result == 'success')
+    runs-on: [self-hosted, homelab]
+    steps:
+      - name: Trigger Komodo redeploy
+        run: |
+          curl --fail-with-body -sS -X POST http://komodo-core:9120/execute/DeployStack \
+          -H "X-Api-Key: ${{ secrets.KOMODO_API_KEY }}" \
+          -H "X-Api-Secret: ${{ secrets.KOMODO_API_SECRET }}" \
+          -H "Content-Type: application/json" \
+          -d '{"stack": "69e36a4c42fca375ca446a69"}'

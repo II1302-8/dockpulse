@@ -7,8 +7,10 @@
 # ///
 """Fake MQTT publisher for Sprint 1 demos.
 
-Publishes R3-contract-compliant berth status messages so the full stack
+Publishes contract-compliant berth status messages so the full stack
 can be tested end-to-end without real sensor hardware.
+
+Contract: II1302-8/.github docs/mqtt-contract.yml
 """
 
 import argparse
@@ -16,20 +18,32 @@ import json
 import random
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import paho.mqtt.client as mqtt
 
-TOPIC_PREFIX = "dockpulse/status"
+DEFAULT_HARBOR_ID = "ksss-saltsjobaden"
+DEFAULT_DOCK_ID = "ksss-saltsjobaden-pier-1"
+
+# Mirrors alembic seed migration ebf9af948b5b and the frontend harbor map.
+DEFAULT_BERTH_SUFFIXES = [
+    f"{side}{idx}" for side in ("t", "l", "r") for idx in range(1, 5)
+]
 
 
-def build_payload(berth_id: str, status: str) -> dict:
+def _node_id_for(berth_id: str) -> str:
+    # berth_id format: {dock_id}-{suffix}; take the last segment as node tag.
+    return f"node-{berth_id.rsplit('-', 1)[-1]}"
+
+
+def build_status_payload(node_id: str, berth_id: str, occupied: bool) -> dict:
     return {
+        "node_id": node_id,
         "berth_id": berth_id,
-        "status": status,
+        "occupied": occupied,
         "sensor_raw": random.randint(0, 1023),
         "battery_pct": random.randint(20, 100),
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
 
@@ -37,10 +51,22 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Publish fake berth status messages to the MQTT broker."
     )
+    parser.add_argument("--harbor-id", default=DEFAULT_HARBOR_ID)
+    parser.add_argument("--dock-id", default=DEFAULT_DOCK_ID)
     parser.add_argument(
         "--berth-id",
-        default="berth-001",
-        help="Berth identifier (default: berth-001)",
+        default=f"{DEFAULT_DOCK_ID}-{DEFAULT_BERTH_SUFFIXES[0]}",
+        help="Single berth to publish for (ignored when --all is set)",
+    )
+    parser.add_argument(
+        "--node-id",
+        default=None,
+        help="Node identifier. Derived from berth-id when omitted.",
+    )
+    parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Publish for every berth on the seeded harbor map (12 berths)",
     )
     parser.add_argument(
         "--status",
@@ -69,14 +95,29 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--count",
         type=int,
         default=0,
-        help="Number of messages to send (0 = unlimited, default: 0)",
+        help="Number of ticks to send (0 = unlimited, default: 0)",
     )
     return parser.parse_args(argv)
 
 
+def _resolve_berths(args: argparse.Namespace) -> list[tuple[str, str]]:
+    """Return (berth_id, node_id) tuples to publish for each tick."""
+    if args.all:
+        return [
+            (f"{args.dock_id}-{suffix}", f"node-{suffix}")
+            for suffix in DEFAULT_BERTH_SUFFIXES
+        ]
+    node_id = args.node_id or _node_id_for(args.berth_id)
+    return [(args.berth_id, node_id)]
+
+
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
-    topic = f"{TOPIC_PREFIX}/{args.berth_id}"
+    berths = _resolve_berths(args)
+    states = {
+        berth_id: "free" if args.status == "toggle" else args.status
+        for berth_id, _ in berths
+    }
 
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
     try:
@@ -87,17 +128,24 @@ def main(argv: list[str] | None = None) -> None:
 
     client.loop_start()
     sent = 0
-    current_status = "free" if args.status == "toggle" else args.status
+    ticks = 0
     try:
         while True:
-            payload = build_payload(args.berth_id, current_status)
-            client.publish(topic, json.dumps(payload))
-            sent += 1
-            print(f"[{sent}] {topic} -> {json.dumps(payload)}")
-            if args.status == "toggle":
-                current_status = "free" if current_status == "occupied" else "occupied"
+            for berth_id, node_id in berths:
+                topic = (
+                    f"harbor/{args.harbor_id}/{args.dock_id}/{berth_id}/status"
+                )
+                current = states[berth_id]
+                occupied = current == "occupied"
+                payload = build_status_payload(node_id, berth_id, occupied)
+                client.publish(topic, json.dumps(payload), qos=1, retain=True)
+                sent += 1
+                print(f"[{sent}] {topic} -> {json.dumps(payload)}")
+                if args.status == "toggle":
+                    states[berth_id] = "free" if occupied else "occupied"
 
-            if args.count and sent >= args.count:
+            ticks += 1
+            if args.count and ticks >= args.count:
                 break
             time.sleep(args.rate)
     except KeyboardInterrupt:
@@ -105,7 +153,7 @@ def main(argv: list[str] | None = None) -> None:
     finally:
         client.loop_stop()
         client.disconnect()
-        print(f"\nDone. Sent {sent} message(s).")
+        print(f"\nDone. Sent {sent} message(s) across {ticks} tick(s).")
 
 
 if __name__ == "__main__":

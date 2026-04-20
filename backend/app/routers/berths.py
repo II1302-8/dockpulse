@@ -20,7 +20,7 @@ async def get_berth(berth_id: str, session: sessiondep):
     return berth
 
 
-@router.get("", response_model=list[BerthOut], operation_id="getBerth")
+@router.get("", response_model=list[BerthOut], operation_id="listBerths")
 async def list_berths(
     session: sessiondep,
     dock_id: str | None = Query(None, description="filter by dock"),

@@ -1,4 +1,4 @@
-export const horizontalPier = {
+﻿export const horizontalPier = {
   x: 220, // Set the horizontal pier x position.
   y: 120, // Set the horizontal pier y position.
   width: 410, // Set the horizontal pier width.

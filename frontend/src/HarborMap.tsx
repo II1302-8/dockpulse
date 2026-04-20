@@ -1,11 +1,14 @@
-import panzoom from "panzoom";
-import { useEffect, useRef } from "react";
+﻿import panzoom from "panzoom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import BerthDetailPanel from "./components/BerthDetailPanel";
+import HarborOverview from "./components/HarborOverview";
 import { useBerths } from "./hooks/useBerths";
 import SvgMap from "./svgMap";
 
 export default function HarborMap() {
   const contentRef = useRef<HTMLDivElement>(null);
   const { berths, isLoading, error, refetch } = useBerths();
+  const [selectedBerthId, setSelectedBerthId] = useState<string | null>(null);
 
   useEffect(function panzoomEffect() {
     if (!contentRef.current) return;
@@ -18,6 +21,14 @@ export default function HarborMap() {
     });
 
     return () => instance.dispose();
+  }, []);
+
+  const handleBerthClickCB = useCallback((berthId: string) => {
+    setSelectedBerthId(berthId);
+  }, []);
+
+  const handleClosePanelCB = useCallback(() => {
+    setSelectedBerthId(null);
   }, []);
 
   if (isLoading) {
@@ -53,10 +64,25 @@ export default function HarborMap() {
   }
 
   return (
-    <div className="harbor-map-wrapper">
-      <div ref={contentRef} className="harbor-map-content">
-        <SvgMap berths={berths} />
-      </div>
-    </div>
+    <main className="harbor-map-container">
+      <section className="harbor-map-wrapper">
+        <div ref={contentRef} className="harbor-map-content">
+          <SvgMap
+            berths={berths}
+            selectedBerthId={selectedBerthId}
+            onBerthClickCB={handleBerthClickCB}
+          />
+        </div>
+      </section>
+
+      {selectedBerthId ? (
+        <BerthDetailPanel
+          berthId={selectedBerthId}
+          onCloseCB={handleClosePanelCB}
+        />
+      ) : (
+        <HarborOverview berths={berths} />
+      )}
+    </main>
   );
 }

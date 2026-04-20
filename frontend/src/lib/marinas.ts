@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Marina "metadata" configuration
  */
 export interface MarinaInfo {
@@ -8,7 +8,7 @@ export interface MarinaInfo {
 
 export const MARINAS: Record<string, MarinaInfo> = {
   saltsjobaden: {
-    name: "Saltsjöbaden",
+    name: "SaltsjÃ¶baden",
     slug: "saltsjobaden",
   },
 };

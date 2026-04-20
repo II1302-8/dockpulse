@@ -3,6 +3,8 @@ from pathlib import Path
 import yaml
 from fastapi import FastAPI
 
+from app.routers import berths
+
 SPEC_PATH = Path(__file__).parents[2] / "docs" / "api" / "openapi.yml"
 
 app = FastAPI(
@@ -11,6 +13,8 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+app.include_router(berths.router)
 
 
 def custom_openapi():

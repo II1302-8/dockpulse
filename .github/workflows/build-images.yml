@@ -106,7 +106,7 @@ jobs:
     name: Deploy
     needs: [backend, frontend]
     if: >-
-      always() &&
+      !failure() && !cancelled() &&
       github.event_name == 'push' &&
       github.ref == 'refs/heads/main' &&
       (needs.backend.result == 'success' || needs.frontend.result == 'success')
@@ -114,8 +114,12 @@ jobs:
     steps:
       - name: Trigger Komodo redeploy
         run: |
-          curl --fail-with-body -sS -X POST http://komodo-core:9120/execute/DeployStack \
-          -H "X-Api-Key: ${{ secrets.KOMODO_API_KEY }}" \
-          -H "X-Api-Secret: ${{ secrets.KOMODO_API_SECRET }}" \
-          -H "Content-Type: application/json" \
-          -d '{"stack": "69e36a4c42fca375ca446a69"}'
+          status=$(curl -sS -o /tmp/komodo.out -w "%{http_code}" \
+            -X POST http://komodo-core:9120/execute/DeployStack \
+            -H "X-Api-Key: ${{ secrets.KOMODO_API_KEY }}" \
+            -H "X-Api-Secret: ${{ secrets.KOMODO_API_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d '{"stack": "69e36a4c42fca375ca446a69"}')
+          cat /tmp/komodo.out
+          echo
+          [ "$status" -lt 400 ] || { echo "Komodo returned HTTP $status"; exit 1; }

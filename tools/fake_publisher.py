@@ -132,9 +132,7 @@ def main(argv: list[str] | None = None) -> None:
     try:
         while True:
             for berth_id, node_id in berths:
-                topic = (
-                    f"harbor/{args.harbor_id}/{args.dock_id}/{berth_id}/status"
-                )
+                topic = f"harbor/{args.harbor_id}/{args.dock_id}/{berth_id}/status"
                 current = states[berth_id]
                 occupied = current == "occupied"
                 payload = build_status_payload(node_id, berth_id, occupied)

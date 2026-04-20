@@ -14,14 +14,13 @@ export const verticalPier = {
 };
 
 export const topBerths = [
-  { id: "ksss-saltsjobaden-pier-1-b1", x1: 288, y1: 120, x2: 288, y2: 78 }, // Define the first top divider line.
-  { id: "ksss-saltsjobaden-pier-1-b2", x1: 357, y1: 120, x2: 357, y2: 78 }, // Define the second top divider line.
-  { id: "ksss-saltsjobaden-pier-1-b3", x1: 425, y1: 120, x2: 425, y2: 78 }, // Define the third top divider line.
-  { id: "ksss-saltsjobaden-pier-1-b4", x1: 493, y1: 120, x2: 493, y2: 78 }, // Define the fourth top divider line.
-  { id: "ksss-saltsjobaden-pier-1-b5", x1: 562, y1: 120, x2: 562, y2: 78 }, // Define the fifth top divider line.
+  { id: "ksss-saltsjobaden-pier-1-t1", x1: 310, y1: 120, x2: 310, y2: 78 },
+  { id: "ksss-saltsjobaden-pier-1-t2", x1: 385, y1: 120, x2: 385, y2: 78 },
+  { id: "ksss-saltsjobaden-pier-1-t3", x1: 465, y1: 120, x2: 465, y2: 78 },
+  { id: "ksss-saltsjobaden-pier-1-t4", x1: 540, y1: 120, x2: 540, y2: 78 },
 ];
 
-const berthCount = 5; // Store the number of divider lines on the vertical pier.
+const berthCount = 4; // Store the number of divider lines on the vertical pier.
 const berthLength = 77; // Store the berth line length.
 
 const verticalBerthTopOffset = 40; // Leave top space on the vertical pier.
@@ -40,7 +39,7 @@ const verticalBerthYPositions = Array.from(
 );
 
 export const leftSideBerths = verticalBerthYPositions.map((y, i) => ({
-  id: `ksss-saltsjobaden-pier-1-b${6 + i}`,
+  id: `ksss-saltsjobaden-pier-1-l${i + 1}`,
   x1: verticalPier.x, // Start at the left edge of the vertical pier.
   y1: y, // Use the generated y position.
   x2: verticalPier.x - berthLength, // Extend the line to the left.
@@ -48,7 +47,7 @@ export const leftSideBerths = verticalBerthYPositions.map((y, i) => ({
 }));
 
 export const rightSideBerths = verticalBerthYPositions.map((y, i) => ({
-  id: `ksss-saltsjobaden-pier-1-b${11 + i}`,
+  id: `ksss-saltsjobaden-pier-1-r${i + 1}`,
   x1: verticalPier.x + verticalPier.width, // Start at the right edge of the vertical pier.
   y1: y, // Use the generated y position.
   x2: verticalPier.x + verticalPier.width + berthLength, // Extend the line to the right.

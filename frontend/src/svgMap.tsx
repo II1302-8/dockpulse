@@ -1,3 +1,4 @@
+import type { components } from "./api-types";
 import {
   horizontalPier,
   leftSideBerths,
@@ -5,19 +6,20 @@ import {
   topBerths,
   verticalPier,
 } from "./svg";
-import type { components } from "./api-types";
 
 const stroke = "#111111";
 const pierFill = "#ffffff";
 
 const greenFill = "rgba(52, 199, 89, 0.28)";
 const redFill = "rgba(255, 59, 48, 0.28)";
+const greyFill = "rgba(10, 37, 64, 0.05)";
 const greenSymbol = "#1f8f3f";
 const redSymbol = "#a11818";
+const greySymbol = "rgba(10, 37, 64, 0.2)";
 const symbolStrokeWidth = 3;
 const symbolScale = 0.2;
 
-type BerthState = "green" | "red";
+type BerthState = "green" | "red" | "grey";
 
 interface SvgMapProps {
   berths: components["schemas"]["Berth"][];
@@ -99,14 +101,22 @@ export default function SvgMap({ berths }: SvgMapProps) {
   const leftSlots = getSideBerthSlots(leftSideBerths, "left");
   const rightSlots = getSideBerthSlots(rightSideBerths, "right");
 
-  const allSlots = [...topSlots, ...leftSlots, ...rightSlots];
-
   const renderBerthCB = (slot: BerthSlot) => {
     const apiBerth = berths.find((b) => b.berth_id === slot.berth_id);
-    const state: BerthState = apiBerth?.status === "occupied" ? "red" : "green";
+    const state: BerthState = apiBerth
+      ? apiBerth.status === "occupied"
+        ? "red"
+        : "green"
+      : "grey";
 
-    const fill = state === "green" ? greenFill : redFill;
-    const symbolColor = state === "green" ? greenSymbol : redSymbol;
+    const fill =
+      state === "green" ? greenFill : state === "red" ? redFill : greyFill;
+    const symbolColor =
+      state === "green"
+        ? greenSymbol
+        : state === "red"
+          ? redSymbol
+          : greySymbol;
     const cx = slot.x + slot.width / 2;
     const cy = slot.y + slot.height / 2;
     const symbolSize = Math.min(slot.width, slot.height) * symbolScale;
@@ -120,7 +130,7 @@ export default function SvgMap({ berths }: SvgMapProps) {
           height={slot.height}
           fill={fill}
         />
-        {state === "green" ? (
+        {state === "green" && (
           <circle
             cx={cx}
             cy={cy}
@@ -129,7 +139,8 @@ export default function SvgMap({ berths }: SvgMapProps) {
             stroke={symbolColor}
             strokeWidth={symbolStrokeWidth}
           />
-        ) : (
+        )}
+        {state === "red" && (
           <g stroke={symbolColor} strokeWidth={symbolStrokeWidth}>
             <line
               x1={cx - symbolSize}
@@ -145,14 +156,19 @@ export default function SvgMap({ berths }: SvgMapProps) {
             />
           </g>
         )}
+        {state === "grey" && (
+          <circle
+            cx={cx}
+            cy={cy}
+            r={symbolSize * 0.5}
+            fill={symbolColor}
+            opacity="0.3"
+          />
+        )}
         <title>{slot.label}</title>
       </g>
     );
   };
-
-  const topOffset = 0;
-  const leftOffset = topSlots.length;
-  const rightOffset = topSlots.length + leftSlots.length;
 
   return (
     <svg

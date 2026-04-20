@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { components } from "../api-types";
 
 type Berth = components["schemas"]["Berth"];
@@ -18,22 +18,27 @@ export function useBerths() {
       setBerths(data);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An unknown error occurred");
+      setError(
+        err instanceof Error ? err.message : "An unknown error occurred",
+      );
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  useEffect(function pollingEffect() {
-    // Initial fetch
-    fetchBerthsACB();
+  useEffect(
+    function pollingEffect() {
+      // Initial fetch
+      fetchBerthsACB();
 
-    // Set up polling interval (5 seconds)
-    const intervalId = setInterval(fetchBerthsACB, 5000);
+      // Set up polling interval (5 seconds)
+      const intervalId = setInterval(fetchBerthsACB, 5000);
 
-    // Cleanup on unmount
-    return () => clearInterval(intervalId);
-  }, [fetchBerthsACB]);
+      // Cleanup on unmount
+      return () => clearInterval(intervalId);
+    },
+    [fetchBerthsACB],
+  );
 
   return {
     berths,

@@ -75,6 +75,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Berth status to publish, or 'toggle' to alternate (default: occupied)",
     )
     parser.add_argument(
+        "--flip-prob",
+        type=float,
+        default=0.0,
+        help=(
+            "Per-berth probability (0..1) of flipping occupancy each tick. "
+            "Overrides --status: initial states are randomized and each berth "
+            "flips independently, so the fleet no longer moves in lockstep."
+        ),
+    )
+    parser.add_argument(
         "--rate",
         type=float,
         default=5.0,
@@ -113,11 +123,19 @@ def _resolve_berths(args: argparse.Namespace) -> list[tuple[str, str]]:
 
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
+    if not 0.0 <= args.flip_prob <= 1.0:
+        print("--flip-prob must be between 0.0 and 1.0")
+        sys.exit(2)
     berths = _resolve_berths(args)
-    states = {
-        berth_id: "free" if args.status == "toggle" else args.status
-        for berth_id, _ in berths
-    }
+    if args.flip_prob > 0:
+        states = {
+            berth_id: random.choice(["free", "occupied"]) for berth_id, _ in berths
+        }
+    else:
+        states = {
+            berth_id: "free" if args.status == "toggle" else args.status
+            for berth_id, _ in berths
+        }
 
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
     try:
@@ -139,7 +157,10 @@ def main(argv: list[str] | None = None) -> None:
                 client.publish(topic, json.dumps(payload), qos=1, retain=True)
                 sent += 1
                 print(f"[{sent}] {topic} -> {json.dumps(payload)}")
-                if args.status == "toggle":
+                if args.flip_prob > 0:
+                    if random.random() < args.flip_prob:
+                        states[berth_id] = "free" if occupied else "occupied"
+                elif args.status == "toggle":
                     states[berth_id] = "free" if occupied else "occupied"
 
             ticks += 1

@@ -38,7 +38,7 @@ services:
       --host mosquitto
       --all
       --rate 10
-      --status toggle
+      --flip-prob 0.15
     volumes:
       - ./tools:/tools
     depends_on:

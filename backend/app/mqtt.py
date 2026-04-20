@@ -103,3 +103,8 @@ async def mqtt_listener() -> None:
                 RECONNECT_DELAY,
             )
             await asyncio.sleep(RECONNECT_DELAY)
+        except Exception:
+            logger.exception(
+                "MQTT listener crashed, reconnecting in %ds...", RECONNECT_DELAY
+            )
+            await asyncio.sleep(RECONNECT_DELAY)

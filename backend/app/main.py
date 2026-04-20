@@ -1,5 +1,6 @@
 import asyncio
 import contextlib
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -12,10 +13,22 @@ from app.routers import berths
 
 SPEC_PATH = Path(__file__).parents[2] / "docs" / "api" / "openapi.yml"
 
+logger = logging.getLogger(__name__)
+
+
+def _log_task_exception(task: asyncio.Task) -> None:
+    if task.cancelled():
+        return
+    exc = task.exception()
+    if exc is not None:
+        logger.error("mqtt_listener task exited with exception", exc_info=exc)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    logging.getLogger("app").setLevel(logging.INFO)
     task = asyncio.create_task(mqtt_listener())
+    task.add_done_callback(_log_task_exception)
     yield
     task.cancel()
     with contextlib.suppress(asyncio.CancelledError):

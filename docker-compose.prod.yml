@@ -14,6 +14,7 @@ services:
       - traefik.enable=true
       - traefik.docker.network=dockpulse
       - traefik.http.routers.dockpulse-api.rule=Host(`dockpulse.xyz`) && PathPrefix(`/api`)
+      - traefik.http.routers.dockpulse-api.priority=100
       - traefik.http.routers.dockpulse-api.entrypoints=https
       - traefik.http.routers.dockpulse-api.tls=true
       - traefik.http.routers.dockpulse-api.tls.certresolver=cloudflare

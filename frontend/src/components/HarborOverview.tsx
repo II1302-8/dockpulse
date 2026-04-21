@@ -1,4 +1,4 @@
-﻿import type { components } from "../api-types";
+import type { components } from "../api-types";
 
 type Berth = components["schemas"]["Berth"];
 
@@ -8,8 +8,7 @@ interface HarborOverviewProps {
 
 export default function HarborOverview({ berths }: HarborOverviewProps) {
   const totalBerths = berths.length;
-  const freeBerths = berths.filter((b) => b.status === "free").length;
-  const occupiedBerths = totalBerths - freeBerths;
+  const occupiedBerths = berths.filter((b) => b.status === "occupied").length;
   const occupancyRate =
     totalBerths > 0 ? (occupiedBerths / totalBerths) * 100 : 0;
 

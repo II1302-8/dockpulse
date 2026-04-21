@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   /* Minimalist "marine tech" theme */
   --color-bg-primary: #f4f9ff; /* Crisp ice blue/white */
   --color-text-primary: #0a2540; /* Dark midnight blue */
@@ -390,9 +390,9 @@ ul {
   fill-opacity: 0.6;
 }
 
-/* Side Panel - Iteration 1 Flawless Style */
+/* Side Panel */
 .berth-detail-panel {
-  width: 0;
+  width: 400px;
   height: 100%;
   background: var(--color-glass-bg);
   backdrop-filter: blur(16px);
@@ -402,13 +402,8 @@ ul {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   z-index: 100;
   position: relative;
-}
-
-.berth-detail-panel.is-open {
-  width: 400px;
 }
 
 .panel-header {
@@ -446,7 +441,6 @@ ul {
   flex: 1;
   padding: 1.5rem;
   overflow-y: auto;
-  min-height: 500px;
 }
 
 .panel-footer {
@@ -586,6 +580,19 @@ ul {
   transform: translateY(0);
 }
 
+.btn-primary-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.4);
+  box-shadow: none;
+}
+
+.btn-primary-action:disabled:hover {
+  transform: none;
+  box-shadow: none;
+  filter: grayscale(0.4);
+}
+
 .skeleton-loader {
   height: 14px;
   background: linear-gradient(
@@ -640,7 +647,7 @@ ul {
 
 /* Responsive transitions */
 @media (max-width: 1024px) {
-  .berth-detail-panel.is-open {
+  .berth-detail-panel {
     width: 340px;
   }
 }
@@ -655,15 +662,9 @@ ul {
     bottom: 0;
     right: 0;
     width: 100%;
-    height: 0;
+    height: 60%;
     border-left: none;
     border-top: 1px solid var(--color-glass-border);
-    transition: height 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  .berth-detail-panel.is-open {
-    width: 100%;
-    height: 60%;
   }
 }
 
@@ -698,6 +699,12 @@ ul {
 }
 .stagger-5 {
   animation-delay: 0.5s;
+}
+.stagger-6 {
+  animation-delay: 0.6s;
+}
+.stagger-7 {
+  animation-delay: 0.7s;
 }
 
 /* Harbor Overview Dashboard */

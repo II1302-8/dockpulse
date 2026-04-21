@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import type { components } from "./api-types";
 import {
   horizontalPier,
@@ -99,22 +98,16 @@ function getSideBerthSlots(
   return slots;
 }
 
+const topSlots = getTopBerthSlots(topBerths);
+const leftSlots = getSideBerthSlots(leftSideBerths, "left");
+const rightSlots = getSideBerthSlots(rightSideBerths, "right");
+
 export default function SvgMap({
   berths,
   selectedBerthId,
   onBerthClickCB,
 }: SvgMapProps) {
-  const topSlots = useMemo(() => getTopBerthSlots(topBerths), []);
-  const leftSlots = useMemo(
-    () => getSideBerthSlots(leftSideBerths, "left"),
-    [],
-  );
-  const rightSlots = useMemo(
-    () => getSideBerthSlots(rightSideBerths, "right"),
-    [],
-  );
-
-  const renderBerthCB = (slot: BerthSlot) => {
+  const renderBerth = (slot: BerthSlot) => {
     const apiBerth = berths.find((b) => b.berth_id === slot.berth_id);
     const isSelected = selectedBerthId === slot.berth_id;
 
@@ -230,9 +223,9 @@ export default function SvgMap({
         stroke={stroke}
         strokeWidth="3"
       />
-      {topSlots.map((slot) => renderBerthCB(slot))}
-      {leftSlots.map((slot) => renderBerthCB(slot))}
-      {rightSlots.map((slot) => renderBerthCB(slot))}
+      {topSlots.map(renderBerth)}
+      {leftSlots.map(renderBerth)}
+      {rightSlots.map(renderBerth)}
       {topBerths.map((berth) => (
         <line
           key={getLineKey("top-line", berth)}

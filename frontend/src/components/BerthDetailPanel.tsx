@@ -1,7 +1,7 @@
-﻿import { useBerthDetail } from "../hooks/useBerthDetail";
+import { useBerthDetail } from "../hooks/useBerthDetail";
 
 interface BerthDetailPanelProps {
-  berthId: string | null;
+  berthId: string;
   onCloseCB: () => void;
 }
 
@@ -11,10 +11,8 @@ export default function BerthDetailPanel({
 }: BerthDetailPanelProps) {
   const { berth, isLoading, error } = useBerthDetail(berthId);
 
-  if (!berthId) return null;
-
   return (
-    <aside className={`berth-detail-panel ${berthId ? "is-open" : ""}`}>
+    <aside className="berth-detail-panel is-open">
       <div className="panel-header animate-fade-slide-up stagger-1">
         <h2 className="panel-title">Berth Details</h2>
         <button
@@ -32,7 +30,6 @@ export default function BerthDetailPanel({
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
-            role="img"
             aria-hidden="true"
           >
             <line x1="18" y1="6" x2="6" y2="18" />
@@ -105,11 +102,8 @@ export default function BerthDetailPanel({
               </span>
             </div>
 
-            {berth.battery_pct !== undefined && (
-              <div
-                className="info-group animate-fade-slide-up"
-                style={{ animationDelay: "0.6s" }}
-              >
+            {berth.battery_pct != null && (
+              <div className="info-group animate-fade-slide-up stagger-6">
                 <span className="label">Node Battery</span>
                 <div className="battery-level">
                   <div
@@ -126,16 +120,9 @@ export default function BerthDetailPanel({
         )}
       </div>
 
-      <div
-        className="panel-footer animate-fade-slide-up"
-        style={{ animationDelay: "0.7s" }}
-      >
-        <button
-          type="button"
-          className="btn-primary-action"
-          onClick={() => alert("Booking feature coming soon!")}
-        >
-          Request Berth Access
+      <div className="panel-footer animate-fade-slide-up stagger-7">
+        <button type="button" className="btn-primary-action" disabled>
+          Request Berth Access (coming soon)
         </button>
       </div>
     </aside>

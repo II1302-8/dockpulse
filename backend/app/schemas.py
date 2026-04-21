@@ -1,9 +1,9 @@
 from datetime import datetime
 
-from pydantic import Basemodel, ConfigDict
+from pydantic import BaseModel, ConfigDict
 
 
-class _Base(Basemodel):
+class _Base(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     # Something about this being better for pydantic
 

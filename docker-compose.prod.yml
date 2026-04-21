@@ -9,7 +9,7 @@ services:
     container_name: dockpulse-prod-backend
     networks:
       - internal
-      - proxy
+      - dockpulse
     labels:
       - traefik.enable=true
       - traefik.docker.network=proxy
@@ -27,7 +27,7 @@ services:
       - proxy
     labels:
       - traefik.enable=true
-      - traefik.docker.network=proxy
+      - traefik.docker.network=dockpulse
       - traefik.http.routers.dockpulse-web.rule=Host(`dockpulse.xyz`) || Host(`www.dockpulse.xyz`)
       - traefik.http.routers.dockpulse-web.entrypoints=https
       - traefik.http.routers.dockpulse-web.tls=true
@@ -37,5 +37,5 @@ services:
       - traefik.http.services.dockpulse-web.loadbalancer.server.port=5173
 
 networks:
-  proxy:
+  dockpulse:
     external: true

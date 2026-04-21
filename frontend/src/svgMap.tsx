@@ -101,7 +101,7 @@ export default function SvgMap({ berths }: SvgMapProps) {
   const leftSlots = getSideBerthSlots(leftSideBerths, "left");
   const rightSlots = getSideBerthSlots(rightSideBerths, "right");
 
-  const renderBerthCB = (slot: BerthSlot) => {
+  const renderBerth = (slot: BerthSlot) => {
     const apiBerth = berths.find((b) => b.berth_id === slot.berth_id);
     const state: BerthState = apiBerth
       ? apiBerth.status === "occupied"
@@ -200,9 +200,9 @@ export default function SvgMap({ berths }: SvgMapProps) {
         stroke={stroke}
         strokeWidth="3"
       />
-      {topSlots.map((slot) => renderBerthCB(slot))}
-      {leftSlots.map((slot) => renderBerthCB(slot))}
-      {rightSlots.map((slot) => renderBerthCB(slot))}
+      {topSlots.map(renderBerth)}
+      {leftSlots.map(renderBerth)}
+      {rightSlots.map(renderBerth)}
       {topBerths.map((berth) => (
         <line
           key={getLineKey("top-line", berth)}

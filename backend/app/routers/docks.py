@@ -10,12 +10,12 @@ from app.schemas import DockOut, DockWithBerthsOut
 
 router = APIRouter(prefix="/api/docks", tags=["docks"])
 
-SessionDep = Annotated[AsyncSession, Depends(get_session)]
+Sessiondep = Annotated[AsyncSession, Depends(get_session)]
 
 
 @router.get("", response_model=list[DockOut], operation_id="listDocks")
 async def list_docks(
-    session: SessionDep,
+    session: Sessiondep,
     harbor_id: str | None = Query(None, description="Filter by harbor"),
 ) -> list[DockOut]:
     stmt = select(Dock)
@@ -26,7 +26,7 @@ async def list_docks(
 
 
 @router.get("/{dock_id}", response_model=DockWithBerthsOut, operation_id="getDock")
-async def get_dock(dock_id: str, session: SessionDep) -> DockWithBerthsOut:
+async def get_dock(dock_id: str, session: Sessiondep) -> DockWithBerthsOut:
     dock = await session.get(Dock, dock_id)
     if not dock:
         raise HTTPException(

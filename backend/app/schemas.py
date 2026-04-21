@@ -1,15 +1,14 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import Basemodel, ConfigDict
 
-"""
+
 class _Base(Basemodel):
-    model_config = {"from_attributes": True}
+    model_config = ConfigDict(from_attributes=True)
     # Something about this being better for pydantic
-"""
 
 
-class BerthOut(BaseModel):  # Grundläggande begränsningar
+class BerthOut(_Base):  # Grundläggande begränsningar
     berth_id: str
     dock_id: str
     label: str | None = None
@@ -22,15 +21,13 @@ class BerthOut(BaseModel):  # Grundläggande begränsningar
     last_updated: datetime | None = None
 
 
-class DockOut(BaseModel):
-    model_config = {"from_attributes": True}
+class DockOut(_Base):
     dock_id: str
     harbor_id: str
     name: str
 
 
-class DockWithBerthsOut(BaseModel):
-    model_config = {"from_attributes": True}
+class DockWithBerthsOut(_Base):
     dock_id: str
     harbor_id: str
     name: str

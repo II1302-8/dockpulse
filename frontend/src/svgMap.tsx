@@ -1,4 +1,4 @@
-﻿import { useMemo } from "react";
+import { useMemo } from "react";
 import type { components } from "./api-types";
 import {
   horizontalPier,
@@ -196,7 +196,6 @@ export default function SvgMap({
             opacity="0.3"
           />
         )}
-        <title>{slot.label}</title>
       </g>
     );
   };

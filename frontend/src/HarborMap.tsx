@@ -1,4 +1,4 @@
-﻿import panzoom from "panzoom";
+import panzoom from "panzoom";
 import { useCallback, useEffect, useRef, useState } from "react";
 import BerthDetailPanel from "./components/BerthDetailPanel";
 import HarborOverview from "./components/HarborOverview";
@@ -31,37 +31,7 @@ export default function HarborMap() {
     setSelectedBerthId(null);
   }, []);
 
-  if (isLoading) {
-    return (
-      <div className="harbor-map-wrapper">
-        <div className="loading-container">
-          <div className="spinner" />
-          <p
-            style={{
-              color: "var(--color-text-secondary)",
-              fontWeight: 500,
-              fontSize: "0.9rem",
-            }}
-          >
-            Fetching harbor status...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="harbor-map-wrapper">
-        <div className="error-container">
-          <p className="error-message">{error}</p>
-          <button type="button" className="btn-retry" onClick={refetch}>
-            Retry Connection
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const showInitialSpinner = isLoading && berths.length === 0;
 
   return (
     <main className="harbor-map-container">
@@ -73,6 +43,20 @@ export default function HarborMap() {
             onBerthClickCB={handleBerthClickCB}
           />
         </div>
+        {showInitialSpinner && (
+          <div className="map-overlay">
+            <div className="spinner" />
+            <p className="map-overlay-text">Fetching harbor status...</p>
+          </div>
+        )}
+        {error && !showInitialSpinner && (
+          <div className="map-banner" role="alert">
+            <span className="map-banner-text">{error}</span>
+            <button type="button" className="btn-retry" onClick={refetch}>
+              Retry
+            </button>
+          </div>
+        )}
       </section>
 
       {selectedBerthId ? (

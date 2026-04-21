@@ -5,6 +5,23 @@ services:
   mosquitto:
     container_name: dockpulse-prod-mosquitto
 
+  fake-publisher:
+    container_name: dockpulse-staging-fake-publisher
+    image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+    restart: unless-stopped
+    command: >
+      uv run /tools/fake_publisher.py
+      --host mosquitto
+      --all
+      --rate 10
+      --flip-prob 0.10
+    volumes:
+      - ./tools:/tools
+    depends_on:
+      mosquitto:
+        condition: service_started
+    networks: [internal]
+
   backend:
     container_name: dockpulse-prod-backend
     networks:

@@ -23,6 +23,8 @@ type BerthState = "green" | "red" | "grey";
 
 interface SvgMapProps {
   berths: components["schemas"]["Berth"][];
+  selectedBerthId: string | null;
+  onBerthClickCB?: (berthId: string) => void;
 }
 
 type DividerLine = {
@@ -58,7 +60,7 @@ function getTopBerthSlots(lines: DividerLine[]): BerthSlot[] {
 
     slots.push({
       id: `top-slot-${left.id}-${right.id}`,
-      berth_id: left.id, // Assign the ID from the left divider
+      berth_id: left.id,
       x: left.x1,
       y: topY,
       width: right.x1 - left.x1,
@@ -96,13 +98,19 @@ function getSideBerthSlots(
   return slots;
 }
 
-export default function SvgMap({ berths }: SvgMapProps) {
-  const topSlots = getTopBerthSlots(topBerths);
-  const leftSlots = getSideBerthSlots(leftSideBerths, "left");
-  const rightSlots = getSideBerthSlots(rightSideBerths, "right");
+const topSlots = getTopBerthSlots(topBerths);
+const leftSlots = getSideBerthSlots(leftSideBerths, "left");
+const rightSlots = getSideBerthSlots(rightSideBerths, "right");
 
+export default function SvgMap({
+  berths,
+  selectedBerthId,
+  onBerthClickCB,
+}: SvgMapProps) {
   const renderBerth = (slot: BerthSlot) => {
     const apiBerth = berths.find((b) => b.berth_id === slot.berth_id);
+    const isSelected = selectedBerthId === slot.berth_id;
+
     const state: BerthState = apiBerth
       ? apiBerth.status === "occupied"
         ? "red"
@@ -122,13 +130,29 @@ export default function SvgMap({ berths }: SvgMapProps) {
     const symbolSize = Math.min(slot.width, slot.height) * symbolScale;
 
     return (
-      <g key={slot.id}>
+      // biome-ignore lint/a11y/useSemanticElements: <button> is not valid in SVG
+      <g
+        key={slot.id}
+        className={`berth-group ${isSelected ? "selected" : ""}`}
+        onClick={() => onBerthClickCB?.(slot.berth_id)}
+        role="button"
+        tabIndex={0}
+        aria-label={`View details for ${slot.label}`}
+        aria-pressed={isSelected}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            onBerthClickCB?.(slot.berth_id);
+          }
+        }}
+      >
+        <title>{slot.label}</title>
         <rect
           x={slot.x}
           y={slot.y}
           width={slot.width}
           height={slot.height}
           fill={fill}
+          className="berth-rect"
         />
         {state === "green" && (
           <circle
@@ -165,7 +189,6 @@ export default function SvgMap({ berths }: SvgMapProps) {
             opacity="0.3"
           />
         )}
-        <title>{slot.label}</title>
       </g>
     );
   };

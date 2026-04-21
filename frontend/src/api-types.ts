@@ -189,16 +189,6 @@ export interface components {
       label?: string;
       /**
        * Format: double
-       * @example 59.3293
-       */
-      lat?: number;
-      /**
-       * Format: double
-       * @example 18.0686
-       */
-      lng?: number;
-      /**
-       * Format: double
        * @description Berth length in meters
        * @example 12
        */
@@ -246,16 +236,16 @@ export interface components {
       harbor_id: string;
       /** @example North Dock */
       name: string;
-      /** Format: double */
-      lat?: number;
-      /** Format: double */
-      lng?: number;
     };
     Event: {
       event_id: string;
       berth_id: string;
+      /** @description ID of the sensor node that triggered the event */
+      node_id: string;
       /** @enum {string} */
       event_type: "occupied" | "freed" | "alert_unauthorized" | "heartbeat";
+      /** @description Raw sensor value at time of event */
+      sensor_raw: number;
       /** Format: date-time */
       timestamp: string;
     };

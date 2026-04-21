@@ -1,13 +1,16 @@
 import panzoom from "panzoom";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import BerthDetailPanel from "./components/BerthDetailPanel";
+import HarborOverview from "./components/HarborOverview";
 import { useBerths } from "./hooks/useBerths";
 import SvgMap from "./svgMap";
 
 export default function HarborMap() {
   const contentRef = useRef<HTMLDivElement>(null);
   const { berths, isLoading, error, refetch } = useBerths();
+  const [selectedBerthId, setSelectedBerthId] = useState<string | null>(null);
 
-  useEffect(() => {
+  useEffect(function panzoomEffect() {
     if (!contentRef.current) return;
 
     const instance = panzoom(contentRef.current, {
@@ -20,27 +23,50 @@ export default function HarborMap() {
     return () => instance.dispose();
   }, []);
 
+  const handleBerthClickCB = useCallback((berthId: string) => {
+    setSelectedBerthId(berthId);
+  }, []);
+
+  const handleClosePanelCB = useCallback(() => {
+    setSelectedBerthId(null);
+  }, []);
+
   const showInitialSpinner = isLoading && berths.length === 0;
 
   return (
-    <div className="harbor-map-wrapper">
-      <div ref={contentRef} className="harbor-map-content">
-        <SvgMap berths={berths} />
-      </div>
-      {showInitialSpinner && (
-        <div className="map-overlay">
-          <div className="spinner" />
-          <p className="map-overlay-text">Fetching harbor status...</p>
+    <main className="harbor-map-container">
+      <section className="harbor-map-wrapper">
+        <div ref={contentRef} className="harbor-map-content">
+          <SvgMap
+            berths={berths}
+            selectedBerthId={selectedBerthId}
+            onBerthClickCB={handleBerthClickCB}
+          />
         </div>
+        {showInitialSpinner && (
+          <div className="map-overlay">
+            <div className="spinner" />
+            <p className="map-overlay-text">Fetching harbor status...</p>
+          </div>
+        )}
+        {error && !showInitialSpinner && (
+          <div className="map-banner" role="alert">
+            <span className="map-banner-text">{error}</span>
+            <button type="button" className="btn-retry" onClick={refetch}>
+              Retry
+            </button>
+          </div>
+        )}
+      </section>
+
+      {selectedBerthId ? (
+        <BerthDetailPanel
+          berthId={selectedBerthId}
+          onCloseCB={handleClosePanelCB}
+        />
+      ) : (
+        <HarborOverview berths={berths} />
       )}
-      {error && !showInitialSpinner && (
-        <div className="map-banner" role="alert">
-          <span className="map-banner-text">{error}</span>
-          <button type="button" className="btn-retry" onClick={refetch}>
-            Retry
-          </button>
-        </div>
-      )}
-    </div>
+    </main>
   );
 }

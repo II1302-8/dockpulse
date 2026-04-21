@@ -6,7 +6,7 @@ services:
     container_name: dockpulse-prod-mosquitto
 
   fake-publisher:
-    container_name: dockpulse-staging-fake-publisher
+    container_name: dockpulse-prod-fake-publisher
     image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
     restart: unless-stopped
     command: >

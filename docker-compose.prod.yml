@@ -24,7 +24,7 @@ services:
     profiles: !reset []
     networks:
       - internal
-      - proxy
+      - dockpulse
     labels:
       - traefik.enable=true
       - traefik.docker.network=dockpulse

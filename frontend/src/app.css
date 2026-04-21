@@ -5,6 +5,7 @@
   --color-text-secondary: #00509e; /* Deep Sea Blue */
   --color-accent-primary: #00e5ff; /* Cyan */
   --color-accent-secondary: #0093e9;
+  --color-error: #ff3b30;
 
   --color-glass-bg: rgba(255, 255, 255, 0.75);
   --color-glass-border: rgba(255, 255, 255, 0.4);
@@ -224,6 +225,88 @@ ul {
 .harbor-svg {
   display: block;
   background: #ffffff;
+}
+
+/* Map loading overlay (first load only) */
+.map-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(2px);
+  pointer-events: none;
+}
+
+.map-overlay-text {
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(0, 229, 255, 0.1);
+  border-top-color: var(--color-accent-primary);
+  border-radius: 50%;
+  animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  filter: drop-shadow(0 0 8px rgba(0, 229, 255, 0.3));
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Non-blocking error banner — keeps map interactive */
+.map-banner {
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--color-error);
+  border-radius: var(--border-radius-soft);
+  box-shadow: 0 4px 12px rgba(10, 37, 64, 0.15);
+  z-index: 5;
+}
+
+.map-banner-text {
+  color: var(--color-error);
+  font-weight: 500;
+  font-size: 0.85rem;
+}
+
+.btn-retry {
+  padding: 0.4rem 1rem;
+  background: var(--color-text-primary);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-pill);
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  box-shadow: 0 2px 6px rgba(10, 37, 64, 0.15);
+}
+
+.btn-retry:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(10, 37, 64, 0.2);
+  background: var(--color-text-secondary);
+}
+
+.btn-retry:active {
+  transform: translateY(0);
 }
 
 /* Footer */

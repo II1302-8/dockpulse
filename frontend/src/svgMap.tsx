@@ -1,3 +1,4 @@
+import type { components } from "./api-types";
 import {
   horizontalPier,
   leftSideBerths,
@@ -11,15 +12,21 @@ const pierFill = "#ffffff";
 
 const greenFill = "rgba(52, 199, 89, 0.28)";
 const redFill = "rgba(255, 59, 48, 0.28)";
+const greyFill = "rgba(10, 37, 64, 0.05)";
 const greenSymbol = "#1f8f3f";
 const redSymbol = "#a11818";
+const greySymbol = "rgba(10, 37, 64, 0.2)";
 const symbolStrokeWidth = 3;
 const symbolScale = 0.2;
-const occupiedBerthIndices = new Set([2, 5, 7, 10]);
 
-type BerthState = "green" | "red";
+type BerthState = "green" | "red" | "grey";
+
+interface SvgMapProps {
+  berths: components["schemas"]["Berth"][];
+}
 
 type DividerLine = {
+  id: string;
   x1: number;
   y1: number;
   x2: number;
@@ -28,6 +35,7 @@ type DividerLine = {
 
 type BerthSlot = {
   id: string;
+  berth_id: string;
   x: number;
   y: number;
   width: number;
@@ -49,12 +57,13 @@ function getTopBerthSlots(lines: DividerLine[]): BerthSlot[] {
     const bottomY = Math.max(left.y1, left.y2, right.y1, right.y2);
 
     slots.push({
-      id: `top-slot-${left.x1}-${right.x1}`,
+      id: `top-slot-${left.id}-${right.id}`,
+      berth_id: left.id, // Assign the ID from the left divider
       x: left.x1,
       y: topY,
       width: right.x1 - left.x1,
       height: bottomY - topY,
-      label: `Top berth ${index + 1}`,
+      label: `Top berth ${left.id.split("-").pop()}`,
     });
   }
 
@@ -74,32 +83,40 @@ function getSideBerthSlots(
     const rightX = Math.max(upper.x1, upper.x2);
 
     slots.push({
-      id: `${prefix}-slot-${upper.y1}-${lower.y1}`,
+      id: `${prefix}-slot-${upper.id}-${lower.id}`,
+      berth_id: upper.id,
       x: leftX,
       y: upper.y1,
       width: rightX - leftX,
       height: lower.y1 - upper.y1,
-      label: `${prefix === "left" ? "Left" : "Right"} berth ${index + 1}`,
+      label: `${prefix === "left" ? "Left" : "Right"} berth ${upper.id.split("-").pop()}`,
     });
   }
 
   return slots;
 }
 
-export default function SvgMap() {
+export default function SvgMap({ berths }: SvgMapProps) {
   const topSlots = getTopBerthSlots(topBerths);
   const leftSlots = getSideBerthSlots(leftSideBerths, "left");
   const rightSlots = getSideBerthSlots(rightSideBerths, "right");
 
-  const allSlots = [...topSlots, ...leftSlots, ...rightSlots];
-  const berthStates: BerthState[] = allSlots.map((_, index) =>
-    occupiedBerthIndices.has(index) ? "red" : "green",
-  );
+  const renderBerth = (slot: BerthSlot) => {
+    const apiBerth = berths.find((b) => b.berth_id === slot.berth_id);
+    const state: BerthState = apiBerth
+      ? apiBerth.status === "occupied"
+        ? "red"
+        : "green"
+      : "grey";
 
-  const renderBerth = (slot: BerthSlot, stateIndex: number) => {
-    const state = berthStates[stateIndex];
-    const fill = state === "green" ? greenFill : redFill;
-    const symbolColor = state === "green" ? greenSymbol : redSymbol;
+    const fill =
+      state === "green" ? greenFill : state === "red" ? redFill : greyFill;
+    const symbolColor =
+      state === "green"
+        ? greenSymbol
+        : state === "red"
+          ? redSymbol
+          : greySymbol;
     const cx = slot.x + slot.width / 2;
     const cy = slot.y + slot.height / 2;
     const symbolSize = Math.min(slot.width, slot.height) * symbolScale;
@@ -113,7 +130,7 @@ export default function SvgMap() {
           height={slot.height}
           fill={fill}
         />
-        {state === "green" ? (
+        {state === "green" && (
           <circle
             cx={cx}
             cy={cy}
@@ -122,7 +139,8 @@ export default function SvgMap() {
             stroke={symbolColor}
             strokeWidth={symbolStrokeWidth}
           />
-        ) : (
+        )}
+        {state === "red" && (
           <g stroke={symbolColor} strokeWidth={symbolStrokeWidth}>
             <line
               x1={cx - symbolSize}
@@ -138,14 +156,19 @@ export default function SvgMap() {
             />
           </g>
         )}
+        {state === "grey" && (
+          <circle
+            cx={cx}
+            cy={cy}
+            r={symbolSize * 0.5}
+            fill={symbolColor}
+            opacity="0.3"
+          />
+        )}
         <title>{slot.label}</title>
       </g>
     );
   };
-
-  const topOffset = 0;
-  const leftOffset = topSlots.length;
-  const rightOffset = topSlots.length + leftSlots.length;
 
   return (
     <svg
@@ -177,9 +200,9 @@ export default function SvgMap() {
         stroke={stroke}
         strokeWidth="3"
       />
-      {topSlots.map((slot, i) => renderBerth(slot, topOffset + i))}
-      {leftSlots.map((slot, i) => renderBerth(slot, leftOffset + i))}
-      {rightSlots.map((slot, i) => renderBerth(slot, rightOffset + i))}
+      {topSlots.map(renderBerth)}
+      {leftSlots.map(renderBerth)}
+      {rightSlots.map(renderBerth)}
       {topBerths.map((berth) => (
         <line
           key={getLineKey("top-line", berth)}

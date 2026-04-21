@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:mock": "bunx concurrently -k \"API_URL=http://localhost:4010 vite\" \"bunx @stoplight/prism-cli mock ../docs/api/openapi.yml\"",
+    "dev:mock": "bunx concurrently -k \"API_URL=http://localhost:4010 MOCK_SSE_URL=http://localhost:4011 vite\" \"bunx @stoplight/prism-cli mock ../docs/api/openapi.yml\" \"bun run mock/sse-server.ts\"",
     "build": "vite build",
     "preview": "vite preview",
     "check": "tsc -p tsconfig.app.json && tsc -p tsconfig.node.json",

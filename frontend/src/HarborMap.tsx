@@ -2,12 +2,12 @@ import panzoom from "panzoom";
 import { useCallback, useEffect, useRef, useState } from "react";
 import BerthDetailPanel from "./components/BerthDetailPanel";
 import HarborOverview from "./components/HarborOverview";
-import { useBerths } from "./hooks/useBerths";
+import { useBerthsStream } from "./hooks/useBerthsStream";
 import SvgMap from "./svgMap";
 
 export default function HarborMap() {
   const contentRef = useRef<HTMLDivElement>(null);
-  const { berths, isLoading, error, refetch } = useBerths();
+  const { berths, isLoading, error, refetch } = useBerthsStream();
   const [selectedBerthId, setSelectedBerthId] = useState<string | null>(null);
 
   useEffect(function panzoomEffect() {

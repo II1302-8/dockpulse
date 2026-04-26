@@ -12,7 +12,9 @@
     "lint": "biome check .",
     "lint:fix": "biome check --fix .",
     "format": "biome format --write .",
-    "gen:api": "openapi-typescript ../docs/api/openapi.yml -o src/api-types.ts"
+    "gen:api": "openapi-typescript ../docs/api/openapi.yml -o src/api-types.ts",
+    "test": "bunx concurrently -k -s first -n prism,vitest \"bunx @stoplight/prism-cli mock ../docs/api/openapi.yml -p 4010\" \"vitest run --config ./src/vitest.config.ts\"",
+    "test:watch": "vitest --config ./src/vitest.config.ts"
   },
   "dependencies": {
     "panzoom": "^9.4.4",
@@ -22,12 +24,17 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.11",
+    "@stoplight/prism-cli": "^5.15.10",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^24.12.2",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^6.0.1",
+    "concurrently": "^9.2.1",
+    "jsdom": "^29.0.2",
     "openapi-typescript": "^7.13.0",
-    "typescript": "~6.0.2",
-    "vite": "^8.0.4"
+    "vitest": "^4.1.5"
   }
 }

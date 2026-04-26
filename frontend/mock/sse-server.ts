@@ -14,29 +14,18 @@ type Berth = {
   last_updated?: string;
 };
 
-const BERTHS: Berth[] = [
-  {
-    berth_id: "b1",
-    dock_id: "d1",
-    label: "A-01",
-    status: "free",
-    battery_pct: 90,
-  },
-  {
-    berth_id: "b2",
-    dock_id: "d1",
-    label: "A-02",
-    status: "occupied",
-    battery_pct: 72,
-  },
-  {
-    berth_id: "b3",
-    dock_id: "d1",
-    label: "A-03",
-    status: "free",
-    battery_pct: 55,
-  },
-];
+const DOCK_ID = "ksss-saltsjobaden-pier-1";
+const SIDES: Array<"t" | "l" | "r"> = ["t", "l", "r"];
+
+const BERTHS: Berth[] = SIDES.flatMap((side) =>
+  [1, 2, 3, 4].map((idx) => ({
+    berth_id: `${DOCK_ID}-${side}${idx}`,
+    dock_id: DOCK_ID,
+    label: `${side.toUpperCase()}${idx}`,
+    status: "free" as const,
+    battery_pct: 80,
+  })),
+);
 
 const PORT = Number(process.env.MOCK_SSE_PORT ?? 4011);
 const INTERVAL_MS = 3000;

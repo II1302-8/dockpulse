@@ -1,15 +1,37 @@
+import asyncio
+import json
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sse_starlette.sse import EventSourceResponse
 
+from app import broadcaster
 from app.db import get_session
 from app.models import Berth
 from app.schemas import BerthOut
 
 router = APIRouter(prefix="/api/berths", tags=["berths"])
 sessiondep = Annotated[AsyncSession, Depends(get_session)]
+
+SSE_PING_SECONDS = 15
+
+
+@router.get("/stream", operation_id="streamBerths")
+async def stream_berths(request: Request):
+    async def event_gen():
+        async with broadcaster.subscribe() as queue:
+            while True:
+                if await request.is_disconnected():
+                    return
+                try:
+                    event = await asyncio.wait_for(queue.get(), timeout=1.0)
+                except TimeoutError:
+                    continue
+                yield {"event": event["type"], "data": json.dumps(event)}
+
+    return EventSourceResponse(event_gen(), ping=SSE_PING_SECONDS)
 
 
 @router.get("/{berth_id}", response_model=BerthOut, operation_id="getBerth")

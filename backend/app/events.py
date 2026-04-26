@@ -3,7 +3,14 @@ from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app import broadcaster
 from app.models import Berth, Event
+from app.schemas import BerthUpdateEvent
+
+
+def _publish_berth_update(berth: Berth) -> None:
+    event = BerthUpdateEvent(berth=berth)
+    broadcaster.publish(event.model_dump(mode="json"))
 
 
 async def process_sensor_reading(
@@ -30,6 +37,7 @@ async def process_sensor_reading(
 
     if new_status == berth.status:
         await session.commit()
+        _publish_berth_update(berth)
         return None
 
     event = Event(
@@ -43,6 +51,7 @@ async def process_sensor_reading(
     berth.status = new_status
     session.add(event)
     await session.commit()
+    _publish_berth_update(berth)
     return event
 
 
@@ -60,3 +69,4 @@ async def process_heartbeat(
     if battery_pct is not None:
         berth.battery_pct = battery_pct
     await session.commit()
+    _publish_berth_update(berth)

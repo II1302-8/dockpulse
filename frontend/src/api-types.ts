@@ -106,6 +106,30 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/berths/stream": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Subscribe to live berth updates via Server-Sent Events
+     * @description Opens a long-lived `text/event-stream` connection. Each message is a
+     *     JSON-encoded `BerthEvent`. Clients should first fetch a snapshot via
+     *     `GET /api/berths` and then merge streamed updates by `berth_id`.
+     *     Reconnects re-subscribe but do not replay missed events — re-fetch the
+     *     snapshot after an `open` that follows a disconnection.
+     */
+    get: operations["streamBerths"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/berths/{berth_id}": {
     parameters: {
       query?: never;
@@ -258,6 +282,12 @@ export interface components {
       acknowledged: boolean;
       /** Format: date-time */
       timestamp: string;
+    };
+    /** @description Event sent over `/api/berths/stream`. */
+    BerthEvent: {
+      /** @enum {string} */
+      type: "berth.update";
+      berth: components["schemas"]["Berth"];
     };
     Error: {
       /** @example not_found */
@@ -446,6 +476,26 @@ export interface operations {
         };
       };
       400: components["responses"]["BadRequest"];
+    };
+  };
+  streamBerths: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description An SSE stream of berth update events. */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "text/event-stream": components["schemas"]["BerthEvent"];
+        };
+      };
     };
   };
   getBerth: {

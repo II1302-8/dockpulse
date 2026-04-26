@@ -2,11 +2,15 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 // https://vite.dev/config/
+const sseMockUrl = process.env.MOCK_SSE_URL;
+const apiUrl = process.env.API_URL || "http://localhost:8000";
+
 export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "/api": process.env.API_URL || "http://localhost:8000",
+      ...(sseMockUrl ? { "/api/berths/stream": sseMockUrl } : {}),
+      "/api": apiUrl,
     },
   },
 });

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -32,3 +33,8 @@ class DockWithBerthsOut(_Base):
     harbor_id: str
     name: str
     berths: list[BerthOut] = []
+
+
+class BerthUpdateEvent(BaseModel):
+    type: Literal["berth.update"] = "berth.update"
+    berth: BerthOut

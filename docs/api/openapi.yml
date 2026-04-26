@@ -189,6 +189,25 @@ paths:
         "400":
           $ref: "#/components/responses/BadRequest"
 
+  /api/berths/stream:
+    get:
+      summary: Subscribe to live berth updates via Server-Sent Events
+      description: |
+        Opens a long-lived `text/event-stream` connection. Each message is a
+        JSON-encoded `BerthEvent`. Clients should first fetch a snapshot via
+        `GET /api/berths` and then merge streamed updates by `berth_id`.
+        Reconnects re-subscribe but do not replay missed events — re-fetch the
+        snapshot after an `open` that follows a disconnection.
+      operationId: streamBerths
+      tags: [berths]
+      responses:
+        "200":
+          description: An SSE stream of berth update events.
+          content:
+            text/event-stream:
+              schema:
+                $ref: "#/components/schemas/BerthEvent"
+
   /api/berths/{berth_id}:
     get:
       summary: Get a single berth
@@ -413,6 +432,17 @@ components:
         timestamp:
           type: string
           format: date-time
+
+    BerthEvent:
+      type: object
+      required: [type, berth]
+      description: Event sent over `/api/berths/stream`.
+      properties:
+        type:
+          type: string
+          enum: [berth.update]
+        berth:
+          $ref: "#/components/schemas/Berth"
 
     Error:
       type: object

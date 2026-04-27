@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Battery,
   Clock,
@@ -7,8 +6,9 @@ import {
   Thermometer,
   X,
 } from "lucide-react";
-import { useBerthDetail } from "../hooks/useBerthDetail";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useBerthDetail } from "../hooks/useBerthDetail";
 
 interface BerthDetailPanelProps {
   berthId: string;

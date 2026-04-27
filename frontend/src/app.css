@@ -51,18 +51,30 @@
 }
 
 @keyframes accordion-down {
-  from { height: 0; }
-  to { height: var(--radix-accordion-content-height); }
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
 }
 
 @keyframes accordion-up {
-  from { height: var(--radix-accordion-content-height); }
-  to { height: 0; }
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
 }
 
 @keyframes wave-flow {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @layer base {
@@ -89,7 +101,9 @@
     --secondary-foreground: 214 100% 98%;
     --shadow-deep: 0 20px 50px -12px rgba(10, 37, 64, 0.15);
     --shadow-subtle: 0 4px 6px rgba(10, 37, 64, 0.04);
-    --glass-bevel: inset 0 2px 2px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 2px 0 rgba(10, 37, 64, 0.08);
+    --glass-bevel:
+      inset 0 2px 2px 0 rgba(255, 255, 255, 0.9),
+      inset 0 -1px 2px 0 rgba(10, 37, 64, 0.08);
   }
 }
 
@@ -196,11 +210,11 @@
     box-shadow: var(--glass-bevel), var(--shadow-deep);
   }
   .glow-emerald {
-    filter: drop-shadow(0 0 3px rgba(16, 185, 129, 0.8)) 
-            drop-shadow(0 0 10px rgba(16, 185, 129, 0.4));
+    filter: drop-shadow(0 0 3px rgba(16, 185, 129, 0.8))
+      drop-shadow(0 0 10px rgba(16, 185, 129, 0.4));
   }
   .glow-brand {
-    filter: drop-shadow(0 0 3px rgba(0, 147, 233, 0.8)) 
-            drop-shadow(0 0 10px rgba(0, 147, 233, 0.4));
+    filter: drop-shadow(0 0 3px rgba(0, 147, 233, 0.8))
+      drop-shadow(0 0 10px rgba(0, 147, 233, 0.4));
   }
 }

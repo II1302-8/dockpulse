@@ -32,6 +32,7 @@ export default function HarborMap() {
   }, []);
 
   const showInitialSpinner = isLoading && berths.length === 0;
+  const selectedBerth = berths.find((b) => b.berth_id === selectedBerthId);
 
   return (
     <main className="harbor-map-container">
@@ -62,6 +63,7 @@ export default function HarborMap() {
       {selectedBerthId ? (
         <BerthDetailPanel
           berthId={selectedBerthId}
+          berth={selectedBerth}
           onCloseCB={handleClosePanelCB}
         />
       ) : (

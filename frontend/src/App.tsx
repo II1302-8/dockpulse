@@ -3,14 +3,14 @@ import { MainLayout } from "./components/layout/MainLayout";
 import { Dashboard } from "./pages/Dashboard";
 
 export function App() {
-	return (
-		<BrowserRouter>
-			<Routes>
-				<Route path="/" element={<Navigate to="/saltsjobaden" replace />} />
-				<Route path="/:marinaSlug" element={<MainLayout />}>
-					<Route index element={<Dashboard />} />
-				</Route>
-			</Routes>
-		</BrowserRouter>
-	);
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Navigate to="/saltsjobaden" replace />} />
+        <Route path="/:marinaSlug" element={<MainLayout />}>
+          <Route index element={<Dashboard />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
 }

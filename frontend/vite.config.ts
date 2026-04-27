@@ -7,16 +7,16 @@ const sseMockUrl = process.env.MOCK_SSE_URL;
 const apiUrl = process.env.API_URL || "http://localhost:8000";
 
 export default defineConfig({
-	plugins: [react()],
-	resolve: {
-		alias: {
-			"@": path.resolve(process.cwd(), "./src"),
-		},
-	},
-	server: {
-		proxy: {
-			...(sseMockUrl ? { "/api/berths/stream": sseMockUrl } : {}),
-			"/api": apiUrl,
-		},
-	},
+  plugins: [react()],
+  resolve: {
+    alias: {
+      "@": path.resolve(process.cwd(), "./src"),
+    },
+  },
+  server: {
+    proxy: {
+      ...(sseMockUrl ? { "/api/berths/stream": sseMockUrl } : {}),
+      "/api": apiUrl,
+    },
+  },
 });

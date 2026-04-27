@@ -2,15 +2,15 @@
  * Marina "metadata" configuration
  */
 export interface MarinaInfo {
-	name: string;
-	slug: string;
+  name: string;
+  slug: string;
 }
 
 export const MARINAS: Record<string, MarinaInfo> = {
-	saltsjobaden: {
-		name: "Saltsjöbaden",
-		slug: "saltsjobaden",
-	},
+  saltsjobaden: {
+    name: "Saltsjöbaden",
+    slug: "saltsjobaden",
+  },
 };
 
 /**
@@ -18,6 +18,6 @@ export const MARINAS: Record<string, MarinaInfo> = {
  * @returns Formatted name
  */
 export const getMarinaNameCB = (slug: string | undefined): string => {
-	if (!slug) return "";
-	return MARINAS[slug]?.name || slug.charAt(0).toUpperCase() + slug.slice(1);
+  if (!slug) return "";
+  return MARINAS[slug]?.name || slug.charAt(0).toUpperCase() + slug.slice(1);
 };

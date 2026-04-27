@@ -1,3 +1,4 @@
+<<<<<<< feature/69-implement-shadcn-and-tailwind-framework
 import {
   Battery,
   Clock,
@@ -8,17 +9,25 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+=======
+import type { components } from "../api-types";
+>>>>>>> main
 import { useBerthDetail } from "../hooks/useBerthDetail";
+
+type Berth = components["schemas"]["Berth"];
 
 interface BerthDetailPanelProps {
   berthId: string;
   onCloseCB: () => void;
+  berth?: Berth;
 }
 
 export function BerthDetailPanel({
   berthId,
   onCloseCB,
+  berth: liveBerth,
 }: BerthDetailPanelProps) {
+<<<<<<< feature/69-implement-shadcn-and-tailwind-framework
   const { berth, isLoading, error } = useBerthDetail(berthId);
   const [isClosing, setIsClosing] = useState(false);
 
@@ -29,6 +38,11 @@ export function BerthDetailPanel({
       onCloseCB();
     }, 500);
   };
+=======
+  const { berth: fetchedBerth, isLoading, error } = useBerthDetail(berthId);
+
+  const berth = liveBerth || fetchedBerth;
+>>>>>>> main
 
   return (
     <aside
@@ -159,7 +173,16 @@ export function BerthDetailPanel({
               </div>
               <span className="text-[10px] font-mono font-bold text-brand-navy bg-white/60 px-3 py-1.5 rounded-xl border border-brand-blue/10 block w-fit shadow-sm">
                 {berth.last_updated
-                  ? new Date(berth.last_updated).toLocaleString()
+                  ? (() => {
+                      const d = new Date(berth.last_updated);
+                      const y = d.getFullYear();
+                      const m = String(d.getMonth() + 1).padStart(2, "0");
+                      const day = String(d.getDate()).padStart(2, "0");
+                      const h = String(d.getHours()).padStart(2, "0");
+                      const min = String(d.getMinutes()).padStart(2, "0");
+                      const s = String(d.getSeconds()).padStart(2, "0");
+                      return `${y}/${m}/${day} ${h}:${min}:${s}`;
+                    })()
                   : "Never"}
               </span>
             </div>

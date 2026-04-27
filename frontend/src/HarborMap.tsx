@@ -36,6 +36,7 @@ export function HarborMap() {
   }, []);
 
   const showInitialSpinner = isLoading && berths.length === 0;
+  const selectedBerth = berths.find((b) => b.berth_id === selectedBerthId);
 
   return (
     <div className="w-full h-full relative overflow-hidden font-body bg-transparent">
@@ -97,6 +98,7 @@ export function HarborMap() {
       {selectedBerthId && (
         <BerthDetailPanel
           berthId={selectedBerthId}
+          berth={selectedBerth}
           onCloseCB={handleClosePanelCB}
         />
       )}

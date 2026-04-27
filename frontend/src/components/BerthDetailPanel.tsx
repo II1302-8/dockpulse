@@ -103,20 +103,18 @@ export default function BerthDetailPanel({
             <div className="info-group animate-fade-slide-up stagger-5">
               <span className="label">Last Updated</span>
               <span className="value time">
-                {berth.last_updated ? (
-                  (() => {
-                    const d = new Date(berth.last_updated);
-                    const y = d.getFullYear();
-                    const m = String(d.getMonth() + 1).padStart(2, "0");
-                    const day = String(d.getDate()).padStart(2, "0");
-                    const h = String(d.getHours()).padStart(2, "0");
-                    const min = String(d.getMinutes()).padStart(2, "0");
-                    const s = String(d.getSeconds()).padStart(2, "0");
-                    return `${y}/${m}/${day} ${h}:${min}:${s}`;
-                  })()
-                ) : (
-                  "Never"
-                )}
+                {berth.last_updated
+                  ? (() => {
+                      const d = new Date(berth.last_updated);
+                      const y = d.getFullYear();
+                      const m = String(d.getMonth() + 1).padStart(2, "0");
+                      const day = String(d.getDate()).padStart(2, "0");
+                      const h = String(d.getHours()).padStart(2, "0");
+                      const min = String(d.getMinutes()).padStart(2, "0");
+                      const s = String(d.getSeconds()).padStart(2, "0");
+                      return `${y}/${m}/${day} ${h}:${min}:${s}`;
+                    })()
+                  : "Never"}
               </span>
             </div>
 

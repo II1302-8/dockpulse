@@ -1,15 +1,22 @@
+import type { components } from "../api-types";
 import { useBerthDetail } from "../hooks/useBerthDetail";
+
+type Berth = components["schemas"]["Berth"];
 
 interface BerthDetailPanelProps {
   berthId: string;
   onCloseCB: () => void;
+  berth?: Berth;
 }
 
 export default function BerthDetailPanel({
   berthId,
   onCloseCB,
+  berth: liveBerth,
 }: BerthDetailPanelProps) {
-  const { berth, isLoading, error } = useBerthDetail(berthId);
+  const { berth: fetchedBerth, isLoading, error } = useBerthDetail(berthId);
+
+  const berth = liveBerth || fetchedBerth;
 
   return (
     <aside className="berth-detail-panel is-open">
@@ -97,7 +104,16 @@ export default function BerthDetailPanel({
               <span className="label">Last Updated</span>
               <span className="value time">
                 {berth.last_updated
-                  ? new Date(berth.last_updated).toLocaleString()
+                  ? (() => {
+                      const d = new Date(berth.last_updated);
+                      const y = d.getFullYear();
+                      const m = String(d.getMonth() + 1).padStart(2, "0");
+                      const day = String(d.getDate()).padStart(2, "0");
+                      const h = String(d.getHours()).padStart(2, "0");
+                      const min = String(d.getMinutes()).padStart(2, "0");
+                      const s = String(d.getSeconds()).padStart(2, "0");
+                      return `${y}/${m}/${day} ${h}:${min}:${s}`;
+                    })()
                   : "Never"}
               </span>
             </div>

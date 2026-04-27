@@ -188,6 +188,7 @@ ul {
     var(--color-text-secondary)
   );
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -803,7 +804,7 @@ ul {
   height: 100%;
   background: linear-gradient(
     90deg,
-    var(--color-primary),
+    var(--color-accent-secondary),
     var(--color-accent-primary)
   );
   transition: width 1s ease-in-out;

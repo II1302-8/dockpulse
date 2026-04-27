@@ -1,7 +1,62 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap");
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
+
+@theme {
+  /* Fonts */
+  --font-heading: "Montserrat", sans-serif;
+  --font-body: "Inter", sans-serif;
+
+  /* Brand Colors */
+  --color-brand-navy: #0a2540;
+  --color-brand-blue: #0093e9;
+  --color-brand-cyan: #00e5ff;
+
+  /* Shadcn Variables mapping */
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  /* Animations & Keyframes */
+  --keyframes-accordion-down: {
+    from: { height: 0; }
+    to: { height: var(--radix-accordion-content-height); }
+  };
+  --keyframes-accordion-up: {
+    from: { height: var(--radix-accordion-content-height); }
+    to: { height: 0; }
+  };
+
+  --animation-accordion-down: accordion-down 0.2s ease-out;
+  --animation-accordion-up: accordion-up 0.2s ease-out;
+}
 
 @layer base {
   :root {
@@ -59,8 +114,7 @@
   body {
     @apply antialiased bg-background font-body text-foreground;
     background-attachment: fixed;
-    background-image:
-      radial-gradient(
+    background-image: radial-gradient(
         circle at 15% 50%,
         rgba(0, 147, 233, 0.04),
         transparent 50%
@@ -84,9 +138,9 @@
 
 @layer components {
   .glass-panel {
-    backdrop-filter: blur(16px);
-    background: rgba(255, 255, 255, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     box-shadow: 0 4px 15px rgba(10, 37, 64, 0.08);
   }
 

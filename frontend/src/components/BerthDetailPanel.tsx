@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Battery,
   Clock,
@@ -7,6 +8,7 @@ import {
   X,
 } from "lucide-react";
 import { useBerthDetail } from "../hooks/useBerthDetail";
+import { cn } from "@/lib/utils";
 
 interface BerthDetailPanelProps {
   berthId: string;
@@ -18,22 +20,47 @@ export function BerthDetailPanel({
   onCloseCB,
 }: BerthDetailPanelProps) {
   const { berth, isLoading, error } = useBerthDetail(berthId);
+  const [isClosing, setIsClosing] = useState(false);
+
+  const handleClose = () => {
+    setIsClosing(true);
+    // Match this timeout with the duration-500 class in the aside
+    setTimeout(() => {
+      onCloseCB();
+    }, 500);
+  };
 
   return (
-    <aside className="animate-in backdrop-blur-2xl bg-white/70 border border-white/60 bottom-6 duration-700 fade-in fill-mode-both fixed flex flex-col font-body left-6 lg:bottom-auto lg:left-auto lg:right-8 lg:top-32 lg:w-80 max-h-[calc(100vh-160px)] overflow-hidden p-0 right-6 rounded-[32px] shadow-deep slide-in-from-bottom-6 lg:slide-in-from-right-8 z-50 transition-all duration-500 md:max-w-md md:left-auto md:right-8">
+    <aside
+      className={cn(
+        "fixed z-50 flex flex-col overflow-hidden transition-all duration-500",
+        "bg-white/40 backdrop-blur-xl border border-white/40 shadow-deep",
+        "rounded-[32px] p-0 font-body",
+        "bottom-6 left-6 right-6 max-h-[calc(100vh-160px)]",
+        "md:max-w-md md:left-auto md:right-8",
+        "lg:top-32 lg:bottom-auto lg:w-80 lg:right-8",
+        // Enter animations
+        "animate-in fade-in slide-in-from-bottom-6 lg:slide-in-from-right-8 duration-700 fill-mode-both",
+        // Exit animations
+        isClosing && [
+          "animate-out fade-out duration-500 fill-mode-both",
+          "slide-out-to-bottom-6 lg:slide-out-to-right-8",
+        ],
+      )}
+    >
       <div className="p-6 flex items-center justify-between border-b border-black/5 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both">
         <div>
-          <h2 className="text-sm font-black tracking-tight text-[#0A2540] uppercase">
+          <h2 className="text-sm font-black tracking-tight text-brand-navy uppercase">
             Berth Detail
           </h2>
-          <p className="text-[9px] font-bold text-[#0A2540]/40 uppercase tracking-widest">
+          <p className="text-[9px] font-bold text-brand-navy/40 uppercase tracking-widest">
             Live Telemetry
           </p>
         </div>
         <button
           type="button"
-          className="w-11 h-11 flex items-center justify-center rounded-full bg-[#0A2540]/5 hover:bg-[#0A2540]/10 text-[#0A2540]/60 transition-all hover:scale-110 active:scale-95"
-          onClick={onCloseCB}
+          className="w-11 h-11 flex items-center justify-center rounded-full bg-brand-navy/5 hover:bg-brand-navy/10 text-brand-navy/60 transition-all hover:scale-110 active:scale-95"
+          onClick={handleClose}
           aria-label="Close panel"
         >
           <X size={20} strokeWidth={3} />
@@ -58,16 +85,16 @@ export function BerthDetailPanel({
         ) : berth ? (
           <div className="space-y-6" key={berth.berth_id}>
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150 fill-mode-both">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-[#0A2540]/40 mb-1 block">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40 mb-1 block">
                 Identification
               </span>
-              <span className="text-4xl font-black text-[#0093E9] tracking-tighter">
+              <span className="text-4xl font-black text-brand-blue tracking-tighter">
                 {berth.label || berth.berth_id}
               </span>
             </div>
 
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-[#0A2540]/40 mb-2 block">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40 mb-2 block">
                 Current Status
               </span>
               <div
@@ -113,22 +140,22 @@ export function BerthDetailPanel({
                   key={item.label}
                   className="bg-white/80 p-3 rounded-[20px] border border-white/50 shadow-subtle"
                 >
-                  <span className="text-[8px] font-bold uppercase tracking-widest text-[#0A2540]/40 mb-1 block">
+                  <span className="text-[8px] font-bold uppercase tracking-widest text-brand-navy/40 mb-1 block">
                     {item.label}
                   </span>
-                  <span className="text-xs font-black text-[#0A2540] tracking-tight">
+                  <span className="text-xs font-black text-brand-navy tracking-tight">
                     {item.value ? `${item.value}${item.unit}` : "N/A"}
                   </span>
                 </div>
               ))}
             </div>
 
-            <div className="bg-[#0093E9]/5 p-5 rounded-[24px] border border-[#0093E9]/10 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-400 fill-mode-both">
-              <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-[#0093E9]/60 mb-3">
+            <div className="bg-brand-blue/5 p-5 rounded-[24px] border border-brand-blue/10 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-400 fill-mode-both">
+              <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-brand-blue/60 mb-3">
                 <Clock size={12} strokeWidth={3} />
                 Node Check-in
               </div>
-              <span className="text-[10px] font-mono font-bold text-[#0A2540] bg-white/60 px-3 py-1.5 rounded-xl border border-[#0093E9]/10 block w-fit shadow-sm">
+              <span className="text-[10px] font-mono font-bold text-brand-navy bg-white/60 px-3 py-1.5 rounded-xl border border-brand-blue/10 block w-fit shadow-sm">
                 {berth.last_updated
                   ? new Date(berth.last_updated).toLocaleString()
                   : "Never"}
@@ -138,11 +165,11 @@ export function BerthDetailPanel({
             {berth.battery_pct != null && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500 fill-mode-both">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-[#0A2540]/50 flex items-center gap-1">
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/50 flex items-center gap-1">
                     <Battery size={12} strokeWidth={3} />
                     Node Battery
                   </span>
-                  <span className="text-[10px] font-black text-[#0A2540] tracking-tighter">
+                  <span className="text-[10px] font-black text-brand-navy tracking-tighter">
                     {berth.battery_pct}%
                   </span>
                 </div>
@@ -160,16 +187,16 @@ export function BerthDetailPanel({
             )}
           </div>
         ) : (
-          <div className="text-center py-12 text-[#0A2540]/20 text-[10px] font-bold uppercase tracking-widest">
+          <div className="text-center py-12 text-brand-navy/20 text-[10px] font-bold uppercase tracking-widest">
             No berth found
           </div>
         )}
       </div>
 
-      <div className="p-6 border-t border-black/5 animate-in fade-in slide-in-from-top-4 duration-500 delay-600 fill-mode-both bg-white/40">
+      <div className="p-6 border-t border-black/5 animate-in fade-in slide-in-from-top-4 duration-500 delay-600 fill-mode-both bg-white/20">
         <button
           type="button"
-          className="w-full py-4 bg-gradient-to-r from-[#0093E9] to-[#00E5FF] text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-[#0093E9]/20 hover:shadow-xl hover:shadow-[#0093E9]/40 hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-3"
+          className="w-full py-4 bg-gradient-to-r from-brand-blue to-brand-cyan text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-brand-blue/20 hover:shadow-xl hover:shadow-brand-blue/40 hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-3"
           disabled
         >
           <ShieldCheck size={16} strokeWidth={3} />

@@ -1,5 +1,5 @@
-import panzoom from "panzoom";
 import { LayoutDashboard, X } from "lucide-react";
+import panzoom from "panzoom";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BerthDetailPanel } from "./components/BerthDetailPanel";
 import { HarborOverview } from "./components/HarborOverview";
@@ -81,7 +81,11 @@ export function HarborMap() {
         onClick={() => setIsOverviewOpen(!isOverviewOpen)}
         aria-label={isOverviewOpen ? "Close Overview" : "Open Overview"}
       >
-        {isOverviewOpen ? <X size={20} strokeWidth={3} /> : <LayoutDashboard size={20} strokeWidth={3} />}
+        {isOverviewOpen ? (
+          <X size={20} strokeWidth={3} />
+        ) : (
+          <LayoutDashboard size={20} strokeWidth={3} />
+        )}
       </button>
 
       <HarborOverview
@@ -99,4 +103,3 @@ export function HarborMap() {
     </div>
   );
 }
-

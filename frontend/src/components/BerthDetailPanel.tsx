@@ -1,4 +1,3 @@
-<<<<<<< feature/69-implement-shadcn-and-tailwind-framework
 import {
   Battery,
   Clock,
@@ -9,9 +8,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-=======
 import type { components } from "../api-types";
->>>>>>> main
 import { useBerthDetail } from "../hooks/useBerthDetail";
 
 type Berth = components["schemas"]["Berth"];
@@ -27,8 +24,8 @@ export function BerthDetailPanel({
   onCloseCB,
   berth: liveBerth,
 }: BerthDetailPanelProps) {
-<<<<<<< feature/69-implement-shadcn-and-tailwind-framework
-  const { berth, isLoading, error } = useBerthDetail(berthId);
+  const { berth: fetchedBerth, isLoading, error } = useBerthDetail(berthId);
+  const berth = liveBerth || fetchedBerth;
   const [isClosing, setIsClosing] = useState(false);
 
   const handleClose = () => {
@@ -38,11 +35,6 @@ export function BerthDetailPanel({
       onCloseCB();
     }, 500);
   };
-=======
-  const { berth: fetchedBerth, isLoading, error } = useBerthDetail(berthId);
-
-  const berth = liveBerth || fetchedBerth;
->>>>>>> main
 
   return (
     <aside

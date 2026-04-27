@@ -1,26 +1,24 @@
 import { useEffect } from "react";
 import { useParams } from "react-router-dom";
-import HarborMap from "../HarborMap";
+import { HarborMap } from "../HarborMap";
 import { getMarinaNameCB } from "../lib/marinas";
 
-const Dashboard = () => {
-  const { marinaSlug } = useParams();
-  const marinaName = getMarinaNameCB(marinaSlug);
+function Dashboard() {
+	const { marinaSlug } = useParams();
+	const marinaName = getMarinaNameCB(marinaSlug);
 
-  useEffect(
-    function setTitleEffect() {
-      document.title = `${marinaName} - Dashboard | DockPulse`;
-    },
-    [marinaName],
-  );
+	useEffect(
+		function setTitleEffectCB() {
+			document.title = `${marinaName} - Dashboard | DockPulse`;
+		},
+		[marinaName],
+	);
 
-  return (
-    <main className="app-main">
-      <div className="map-wrapper">
-        <HarborMap />
-      </div>
-    </main>
-  );
-};
+	return (
+		<div className="animate-in duration-1000 fade-in h-full w-full">
+			<HarborMap />
+		</div>
+	);
+}
 
-export default Dashboard;
+export { Dashboard };

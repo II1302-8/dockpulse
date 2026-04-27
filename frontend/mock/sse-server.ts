@@ -51,9 +51,7 @@ Bun.serve({
           i++;
           berth.status = berth.status === "free" ? "occupied" : "free";
           berth.last_updated = new Date().toISOString();
-          controller.enqueue(
-            encodeFrame("berth.update", { type: "berth.update", berth }),
-          );
+          controller.enqueue(encodeFrame("berth.update", { type: "berth.update", berth }));
         };
         const handle = setInterval(tick, INTERVAL_MS);
         req.signal.addEventListener("abort", () => {

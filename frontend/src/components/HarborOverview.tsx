@@ -1,13 +1,19 @@
-import { Activity, BatteryLow } from "lucide-react";
+import { Activity, BatteryLow, X } from "lucide-react";
 import type { components } from "../api-types";
 
 type Berth = components["schemas"]["Berth"];
 
 interface HarborOverviewProps {
   berths: Berth[];
+  isOpen?: boolean;
+  onCloseCB?: () => void;
 }
 
-export function HarborOverview({ berths }: HarborOverviewProps) {
+export function HarborOverview({
+  berths,
+  isOpen,
+  onCloseCB,
+}: HarborOverviewProps) {
   const totalBerths = berths.length;
   const occupiedBerths = berths.filter((b) => b.status === "occupied").length;
   const occupancyRate =
@@ -18,11 +24,24 @@ export function HarborOverview({ berths }: HarborOverviewProps) {
   );
 
   return (
-    <section className="fixed top-32 left-8 w-72 max-h-[calc(100vh-160px)] bg-white/70 backdrop-blur-2xl border border-white/60 shadow-deep flex flex-col z-40 p-6 font-body rounded-[32px] overflow-hidden animate-in fade-in slide-in-from-left-8 duration-700 fill-mode-both hidden lg:flex">
-      <header className="mb-4 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both">
+    <section
+      className={`fixed top-32 left-8 w-72 max-h-[calc(100vh-160px)] bg-white/70 backdrop-blur-2xl border border-white/60 shadow-deep flex flex-col z-[55] p-6 font-body rounded-[32px] overflow-hidden transition-all duration-500 ease-in-out lg:translate-x-0 lg:opacity-100 lg:flex ${
+        isOpen
+          ? "translate-x-0 opacity-100 pointer-events-auto"
+          : "-translate-x-[120%] opacity-0 pointer-events-none lg:pointer-events-auto"
+      }`}
+    >
+      <header className="mb-4 flex items-center justify-between animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both">
         <h2 className="text-xs font-black text-[#0A2540]/40 uppercase tracking-[0.2em]">
           Harbour Overview
         </h2>
+        <button
+          type="button"
+          className="lg:hidden p-2 rounded-full bg-[#0A2540]/5 text-[#0A2540]/60"
+          onClick={onCloseCB}
+        >
+          <X size={14} strokeWidth={3} />
+        </button>
       </header>
 
       <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar">
@@ -95,3 +114,4 @@ export function HarborOverview({ berths }: HarborOverviewProps) {
     </section>
   );
 }
+

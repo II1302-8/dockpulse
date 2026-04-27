@@ -20,7 +20,7 @@ export function BerthDetailPanel({
   const { berth, isLoading, error } = useBerthDetail(berthId);
 
   return (
-    <aside className="animate-in backdrop-blur-2xl bg-white/70 border border-white/60 bottom-6 duration-700 fade-in fill-mode-both fixed flex flex-col font-body left-6 lg:bottom-auto lg:left-auto lg:right-8 lg:top-32 lg:w-80 max-h-[calc(100vh-160px)] overflow-hidden p-0 right-6 rounded-[32px] shadow-deep slide-in-from-bottom-6 lg:slide-in-from-right-8 z-50">
+    <aside className="animate-in backdrop-blur-2xl bg-white/70 border border-white/60 bottom-6 duration-700 fade-in fill-mode-both fixed flex flex-col font-body left-6 lg:bottom-auto lg:left-auto lg:right-8 lg:top-32 lg:w-80 max-h-[calc(100vh-160px)] overflow-hidden p-0 right-6 rounded-[32px] shadow-deep slide-in-from-bottom-6 lg:slide-in-from-right-8 z-50 transition-all duration-500 md:max-w-md md:left-auto md:right-8">
       <div className="p-6 flex items-center justify-between border-b border-black/5 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both">
         <div>
           <h2 className="text-sm font-black tracking-tight text-[#0A2540] uppercase">
@@ -32,11 +32,11 @@ export function BerthDetailPanel({
         </div>
         <button
           type="button"
-          className="p-2 rounded-full bg-[#0A2540]/5 hover:bg-[#0A2540]/10 text-[#0A2540]/60 transition-all hover:scale-110 active:scale-95"
+          className="w-11 h-11 flex items-center justify-center rounded-full bg-[#0A2540]/5 hover:bg-[#0A2540]/10 text-[#0A2540]/60 transition-all hover:scale-110 active:scale-95"
           onClick={onCloseCB}
           aria-label="Close panel"
         >
-          <X size={16} strokeWidth={3} />
+          <X size={20} strokeWidth={3} />
         </button>
       </div>
 

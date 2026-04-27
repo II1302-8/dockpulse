@@ -1,4 +1,5 @@
 import panzoom from "panzoom";
+import { LayoutDashboard, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BerthDetailPanel } from "./components/BerthDetailPanel";
 import { HarborOverview } from "./components/HarborOverview";
@@ -9,6 +10,7 @@ export function HarborMap() {
   const contentRef = useRef<HTMLDivElement>(null);
   const { berths, isLoading, error, refetchACB } = useBerthsStream();
   const [selectedBerthId, setSelectedBerthId] = useState<string | null>(null);
+  const [isOverviewOpen, setIsOverviewOpen] = useState(false);
 
   useEffect(function panzoomEffectCB() {
     if (!contentRef.current) return;
@@ -73,7 +75,20 @@ export function HarborMap() {
         </div>
       )}
 
-      <HarborOverview berths={berths} />
+      <button
+        type="button"
+        className={`fixed bottom-6 left-6 lg:hidden z-[60] p-4 bg-[#0A2540] text-white rounded-full shadow-deep hover:scale-110 active:scale-95 transition-all duration-300 ${isOverviewOpen ? "bg-[#0093E9] rotate-90" : ""}`}
+        onClick={() => setIsOverviewOpen(!isOverviewOpen)}
+        aria-label={isOverviewOpen ? "Close Overview" : "Open Overview"}
+      >
+        {isOverviewOpen ? <X size={20} strokeWidth={3} /> : <LayoutDashboard size={20} strokeWidth={3} />}
+      </button>
+
+      <HarborOverview
+        berths={berths}
+        isOpen={isOverviewOpen}
+        onCloseCB={() => setIsOverviewOpen(false)}
+      />
 
       {selectedBerthId && (
         <BerthDetailPanel
@@ -84,3 +99,4 @@ export function HarborMap() {
     </div>
   );
 }
+

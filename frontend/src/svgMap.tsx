@@ -134,7 +134,7 @@ export function SvgMap({
       // biome-ignore lint/a11y/useSemanticElements: <button> is not valid in SVG
       <g
         key={slot.id}
-        className={`berth-group ${isSelected ? "selected" : ""}`}
+        className={`berth-group cursor-pointer outline-none ${isSelected ? "selected" : ""}`}
         onClick={() => onBerthClickCB?.(slot.berth_id)}
         role="button"
         tabIndex={0}
@@ -145,8 +145,18 @@ export function SvgMap({
             onBerthClickCB?.(slot.berth_id);
           }
         }}
+        style={{ pointerEvents: "all" }}
       >
         <title>{slot.label}</title>
+        {/* Hit area - invisible but ensures the entire slot is clickable */}
+        <rect
+          x={slot.x}
+          y={slot.y}
+          width={slot.width}
+          height={slot.height}
+          fill="transparent"
+          style={{ pointerEvents: "all" }}
+        />
         <rect
           x={slot.x}
           y={slot.y}

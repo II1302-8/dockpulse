@@ -6,7 +6,7 @@ function Header() {
   const marinaName = getMarinaNameCB(marinaSlug);
 
   return (
-    <header className="animate-in backdrop-blur-2xl bg-white/70 border border-white/60 duration-700 fade-in fixed flex h-16 items-center justify-between left-6 px-10 right-6 rounded-[32px] shadow-deep slide-in-from-top-6 top-6 z-50">
+    <header className="animate-in backdrop-blur-2xl bg-white/70 border border-white/60 duration-700 fade-in fixed flex h-16 items-center justify-between left-4 px-4 md:left-6 md:px-10 right-4 md:right-6 rounded-[32px] shadow-deep slide-in-from-top-6 top-4 md:top-6 z-50 transition-all duration-500">
       <div className="flex items-center gap-3">
         <Link to="/" className="block">
           <h1 className="flex items-center gap-4 group cursor-pointer">

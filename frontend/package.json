@@ -9,10 +9,12 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "tsc -p tsconfig.app.json && tsc -p tsconfig.node.json",
-    "lint": "biome check ./src tailwind.config.js vite.config.ts",
-    "lint:fix": "biome check --write ./src tailwind.config.js vite.config.ts",
-    "format": "biome format --write ./src tailwind.config.js vite.config.ts",
-    "gen:api": "openapi-typescript ../docs/api/openapi.yml -o src/api-types.ts"
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "gen:api": "openapi-typescript ../docs/api/openapi.yml -o src/api-types.ts",
+    "test": "bunx concurrently -k -s first -n prism,vitest \"bunx @stoplight/prism-cli mock ../docs/api/openapi.yml -p 4010\" \"vitest run\"",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
@@ -28,15 +30,22 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.11",
+    "@stoplight/prism-cli": "^5.15.10",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^24.12.2",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.5.0",
+    "concurrently": "^9.2.1",
+    "jsdom": "^29.0.2",
     "openapi-typescript": "^7.13.0",
     "postcss": "^8.5.12",
     "tailwindcss": "3",
     "typescript": "~6.0.2",
-    "vite": "^8.0.4"
+    "vite": "^8.0.4",
+    "vitest": "^4.1.5"
   }
 }

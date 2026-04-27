@@ -33,7 +33,7 @@ export function HarborOverview({
     >
       <header className="mb-4 flex items-center justify-between animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both">
         <h2 className="text-xs font-black text-[#0A2540]/40 uppercase tracking-[0.2em]">
-          Harbour Overview
+          Harbor Overview
         </h2>
         <button
           type="button"

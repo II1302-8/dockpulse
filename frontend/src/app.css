@@ -1,11 +1,11 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&family=Jost:wght@300;400;500;600;700&display=swap");
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
 
 @theme {
   /* Fonts */
   --font-heading: "Montserrat", sans-serif;
-  --font-body: "Inter", sans-serif;
+  --font-body: "Jost", sans-serif;
 
   /* Brand Colors */
   --color-brand-navy: #0a2540;
@@ -44,18 +44,25 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 
-  /* Animations & Keyframes */
-  --keyframes-accordion-down: {
-    from: { height: 0; }
-    to: { height: var(--radix-accordion-content-height); }
-  };
-  --keyframes-accordion-up: {
-    from: { height: var(--radix-accordion-content-height); }
-    to: { height: 0; }
-  };
-
   --animation-accordion-down: accordion-down 0.2s ease-out;
   --animation-accordion-up: accordion-up 0.2s ease-out;
+  --animation-wave: wave-flow 40s linear infinite;
+  --animation-wave-slow: wave-flow 60s linear infinite reverse;
+}
+
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}
+
+@keyframes wave-flow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @layer base {
@@ -80,30 +87,9 @@
     --ring: 202 100% 46%;
     --secondary: 210 100% 31%;
     --secondary-foreground: 214 100% 98%;
-    --shadow-deep: 0 10px 30px rgba(10, 37, 64, 0.1);
+    --shadow-deep: 0 20px 50px -12px rgba(10, 37, 64, 0.15);
     --shadow-subtle: 0 4px 6px rgba(10, 37, 64, 0.04);
-  }
-
-  .dark {
-    --accent: 186 100% 50%;
-    --accent-foreground: 214 100% 98%;
-    --background: 210 73% 15%;
-    --border: 217.2 32.6% 17.5%;
-    --card: 210 73% 15%;
-    --card-foreground: 214 100% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 214 100% 98%;
-    --foreground: 214 100% 98%;
-    --input: 217.2 32.6% 17.5%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --popover: 210 73% 15%;
-    --popover-foreground: 214 100% 98%;
-    --primary: 214 100% 98%;
-    --primary-foreground: 202 100% 46%;
-    --secondary: 210 100% 31%;
-    --secondary-foreground: 214 100% 98%;
-    --ring: 186 100% 50%;
+    --glass-bevel: inset 0 2px 2px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 2px 0 rgba(10, 37, 64, 0.08);
   }
 }
 
@@ -112,18 +98,40 @@
     @apply border-border;
   }
   body {
-    @apply antialiased bg-background font-body text-foreground;
-    background-attachment: fixed;
-    background-image: radial-gradient(
-        circle at 15% 50%,
-        rgba(0, 147, 233, 0.04),
-        transparent 50%
-      ),
-      radial-gradient(
-        circle at 85% 30%,
-        rgba(0, 229, 255, 0.04),
-        transparent 50%
-      );
+    @apply antialiased font-body text-foreground overflow-hidden min-h-screen relative;
+    background-color: #f4f9ff;
+  }
+
+  /* Marine Wave 1 */
+  body::before {
+    content: "";
+    position: fixed;
+    top: -10%;
+    left: -10%;
+    width: 90vw;
+    height: 90vh;
+    background: rgba(0, 147, 233, 0.15);
+    border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+    filter: blur(60px);
+    animation: wave-flow 15s linear infinite;
+    z-index: -2;
+    pointer-events: none;
+  }
+
+  /* Marine Wave 2 */
+  body::after {
+    content: "";
+    position: fixed;
+    bottom: -20%;
+    right: -10%;
+    width: 80vw;
+    height: 80vh;
+    background: rgba(0, 229, 255, 0.15);
+    border-radius: 60% 40% 30% 70% / 50% 60% 40% 50%;
+    filter: blur(60px);
+    animation: wave-flow 20s linear infinite reverse;
+    z-index: -1;
+    pointer-events: none;
   }
 
   h1,
@@ -138,10 +146,10 @@
 
 @layer components {
   .glass-panel {
-    backdrop-filter: blur(12px);
-    background: rgba(255, 255, 255, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 4px 15px rgba(10, 37, 64, 0.08);
+    backdrop-filter: blur(16px);
+    background: rgba(255, 255, 255, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: var(--glass-bevel), var(--shadow-deep);
   }
 
   .btn-primary {
@@ -151,11 +159,12 @@
     font-weight: 700;
     padding: 12px 24px;
     transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0, 147, 233, 0.2);
   }
 
   .btn-primary:hover {
-    box-shadow: 0 4px 12px rgba(0, 147, 233, 0.3);
-    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(0, 147, 233, 0.3);
+    transform: translateY(-2px);
   }
 
   .badge-status {
@@ -184,9 +193,14 @@
     box-shadow: var(--shadow-subtle);
   }
   .shadow-deep {
-    box-shadow: var(--shadow-deep);
+    box-shadow: var(--glass-bevel), var(--shadow-deep);
   }
-  .berth-group.selected .berth-rect {
-    filter: drop-shadow(0 0 8px rgba(0, 147, 233, 0.4));
+  .glow-emerald {
+    filter: drop-shadow(0 0 3px rgba(16, 185, 129, 0.8)) 
+            drop-shadow(0 0 10px rgba(16, 185, 129, 0.4));
+  }
+  .glow-brand {
+    filter: drop-shadow(0 0 3px rgba(0, 147, 233, 0.8)) 
+            drop-shadow(0 0 10px rgba(0, 147, 233, 0.4));
   }
 }

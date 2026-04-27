@@ -24,7 +24,7 @@ function Header() {
               <span className="text-lg font-black text-brand-blue">Pulse</span>
             </div>
             <div className="flex items-center gap-2 border-l border-brand-navy/10 pl-4">
-              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse glow-emerald" />
               <span className="text-[9px] font-black text-brand-navy/30 uppercase tracking-[0.2em]">
                 {marinaName}
               </span>

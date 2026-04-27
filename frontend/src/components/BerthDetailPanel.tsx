@@ -84,7 +84,7 @@ export function BerthDetailPanel({
           </div>
         ) : berth ? (
           <div className="space-y-6" key={berth.berth_id}>
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-150 fill-mode-both">
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both">
               <span className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40 mb-1 block">
                 Identification
               </span>
@@ -93,29 +93,31 @@ export function BerthDetailPanel({
               </span>
             </div>
 
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both">
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both">
               <span className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40 mb-2 block">
                 Current Status
               </span>
               <div
-                className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full font-bold text-[10px] uppercase tracking-wider border ${
+                className={cn(
+                  "inline-flex items-center gap-2 px-4 py-1.5 rounded-full font-bold text-[10px] uppercase tracking-wider border",
                   berth.status === "occupied"
                     ? "bg-red-500/10 text-red-500 border-red-500/20"
-                    : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                }`}
+                    : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+                )}
               >
                 <span
-                  className={`w-2 h-2 rounded-full ${
+                  className={cn(
+                    "w-2 h-2 rounded-full",
                     berth.status === "occupied"
-                      ? "bg-red-500 animate-pulse"
-                      : "bg-emerald-500"
-                  }`}
+                      ? "bg-red-500 animate-pulse drop-shadow-[0_0_4px_rgba(239,68,68,0.5)]"
+                      : "bg-emerald-500 glow-emerald",
+                  )}
                 />
                 {berth.status}
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both">
+            <div className="grid grid-cols-3 gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-400 fill-mode-both">
               {[
                 {
                   label: "Length",
@@ -150,7 +152,7 @@ export function BerthDetailPanel({
               ))}
             </div>
 
-            <div className="bg-brand-blue/5 p-5 rounded-[24px] border border-brand-blue/10 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-400 fill-mode-both">
+            <div className="bg-brand-blue/5 p-5 rounded-[24px] border border-brand-blue/10 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500 fill-mode-both">
               <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-brand-blue/60 mb-3">
                 <Clock size={12} strokeWidth={3} />
                 Node Check-in
@@ -163,7 +165,7 @@ export function BerthDetailPanel({
             </div>
 
             {berth.battery_pct != null && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500 fill-mode-both">
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-600 fill-mode-both">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/50 flex items-center gap-1">
                     <Battery size={12} strokeWidth={3} />
@@ -193,7 +195,7 @@ export function BerthDetailPanel({
         )}
       </div>
 
-      <div className="p-6 border-t border-black/5 animate-in fade-in slide-in-from-top-4 duration-500 delay-600 fill-mode-both bg-white/20">
+      <div className="p-6 border-t border-black/5 animate-in fade-in slide-in-from-top-4 duration-500 delay-700 fill-mode-both bg-white/20">
         <button
           type="button"
           className="w-full py-4 bg-gradient-to-r from-brand-blue to-brand-cyan text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-brand-blue/20 hover:shadow-xl hover:shadow-brand-blue/40 hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-3"

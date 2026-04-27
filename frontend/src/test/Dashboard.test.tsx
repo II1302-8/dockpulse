@@ -1,20 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { beforeEach, describe, expect, test, vi } from "vitest";
+import { describe, expect, test } from "vitest";
 import Dashboard from "../pages/Dashboard";
 
-beforeEach(() => {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => [],
-    }),
-  );
-});
-
 describe("Dashboard", () => {
-  test("renders dashboard view", async () => {
+  test("renders dashboard view using Prism mock API", async () => {
     render(
       <MemoryRouter initialEntries={["/saltsjobaden"]}>
         <Routes>

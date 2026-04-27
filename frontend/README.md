@@ -56,3 +56,4 @@ The test command starts a Prism mock API from the OpenAPI specification at `docs
 cd frontend
 bun install
 bun run test
+```

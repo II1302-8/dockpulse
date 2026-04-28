@@ -1,8 +1,8 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import MainLayout from "./components/layout/MainLayout";
-import Dashboard from "./pages/Dashboard";
+import { MainLayout } from "./components/layout/MainLayout";
+import { Dashboard } from "./pages/Dashboard";
 
-export default function App() {
+export function App() {
   return (
     <BrowserRouter>
       <Routes>

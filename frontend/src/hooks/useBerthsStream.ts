@@ -10,7 +10,7 @@ export function useBerthsStream() {
   const [error, setError] = useState<string | null>(null);
   const snapshotAbortRef = useRef<AbortController | null>(null);
 
-  const loadSnapshot = useCallback(async () => {
+  const loadSnapshotACB = useCallback(async () => {
     snapshotAbortRef.current?.abort();
     const ac = new AbortController();
     snapshotAbortRef.current = ac;
@@ -35,7 +35,7 @@ export function useBerthsStream() {
 
   useEffect(() => {
     let hasOpenedOnce = false;
-    loadSnapshot();
+    loadSnapshotACB();
 
     const source = new EventSource("/api/berths/stream");
 
@@ -55,7 +55,7 @@ export function useBerthsStream() {
     source.onopen = () => {
       if (hasOpenedOnce) {
         // Reconnect: stream gap may have dropped events. Re-sync via snapshot.
-        loadSnapshot();
+        loadSnapshotACB();
       }
       hasOpenedOnce = true;
     };
@@ -64,7 +64,7 @@ export function useBerthsStream() {
       source.close();
       snapshotAbortRef.current?.abort();
     };
-  }, [loadSnapshot]);
+  }, [loadSnapshotACB]);
 
   const berths = useMemo(() => Array.from(berthsById.values()), [berthsById]);
 
@@ -72,6 +72,6 @@ export function useBerthsStream() {
     berths,
     isLoading,
     error,
-    refetch: loadSnapshot,
+    refetchACB: loadSnapshotACB,
   };
 }

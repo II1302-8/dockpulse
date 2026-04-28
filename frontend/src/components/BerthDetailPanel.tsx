@@ -1,3 +1,13 @@
+import {
+  Battery,
+  Clock,
+  Ruler,
+  ShieldCheck,
+  Thermometer,
+  X,
+} from "lucide-react";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 import type { components } from "../api-types";
 import { useBerthDetail } from "../hooks/useBerthDetail";
 
@@ -9,100 +19,151 @@ interface BerthDetailPanelProps {
   berth?: Berth;
 }
 
-export default function BerthDetailPanel({
+export function BerthDetailPanel({
   berthId,
   onCloseCB,
   berth: liveBerth,
 }: BerthDetailPanelProps) {
   const { berth: fetchedBerth, isLoading, error } = useBerthDetail(berthId);
-
   const berth = liveBerth || fetchedBerth;
+  const [isClosing, setIsClosing] = useState(false);
+
+  const handleClose = () => {
+    setIsClosing(true);
+    // Match this timeout with the duration-500 class in the aside
+    setTimeout(() => {
+      onCloseCB();
+    }, 500);
+  };
 
   return (
-    <aside className="berth-detail-panel is-open">
-      <div className="panel-header animate-fade-slide-up stagger-1">
-        <h2 className="panel-title">Berth Details</h2>
+    <aside
+      className={cn(
+        "fixed z-50 flex flex-col overflow-hidden transition-all duration-500",
+        "bg-white/40 backdrop-blur-xl border border-white/40 shadow-deep",
+        "rounded-[32px] p-0 font-body",
+        "bottom-6 left-6 right-6 max-h-[calc(100vh-160px)]",
+        "md:max-w-md md:left-auto md:right-8",
+        "lg:top-32 lg:bottom-auto lg:w-80 lg:right-8",
+        // Enter animations
+        "animate-in fade-in slide-in-from-bottom-6 lg:slide-in-from-right-8 duration-700 fill-mode-both",
+        // Exit animations
+        isClosing && [
+          "animate-out fade-out duration-500 fill-mode-both",
+          "slide-out-to-bottom-6 lg:slide-out-to-right-8",
+        ],
+      )}
+    >
+      <div className="p-6 flex items-center justify-between border-b border-black/5 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both">
+        <div>
+          <h2 className="text-sm font-black tracking-tight text-brand-navy uppercase">
+            Berth Detail
+          </h2>
+          <p className="text-[9px] font-bold text-brand-navy/40 uppercase tracking-widest">
+            Live Telemetry
+          </p>
+        </div>
         <button
           type="button"
-          className="btn-close"
-          onClick={onCloseCB}
+          className="w-11 h-11 flex items-center justify-center rounded-full bg-brand-navy/5 hover:bg-brand-navy/10 text-brand-navy/60 transition-all hover:scale-110 active:scale-95"
+          onClick={handleClose}
           aria-label="Close panel"
         >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+          <X size={20} strokeWidth={3} />
         </button>
       </div>
 
-      <div className="panel-content">
+      <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
         {isLoading ? (
-          <div className="loading-state animate-fade-slide-up stagger-2">
-            <div className="skeleton-loader skeleton-title" />
-            <div className="skeleton-loader skeleton-badge" />
-            <div className="skeleton-grid">
-              <div className="skeleton-loader" />
-              <div className="skeleton-loader" />
-              <div className="skeleton-loader" />
+          <div className="space-y-6">
+            <div className="h-20 w-full bg-slate-100 rounded-2xl animate-pulse" />
+            <div className="h-10 w-24 bg-slate-100 rounded-full animate-pulse" />
+            <div className="grid grid-cols-3 gap-3">
+              <div className="h-12 bg-slate-100 rounded-xl animate-pulse" />
+              <div className="h-12 bg-slate-100 rounded-xl animate-pulse" />
+              <div className="h-12 bg-slate-100 rounded-xl animate-pulse" />
             </div>
-            <div className="skeleton-loader" style={{ width: "30%" }} />
-            <div className="skeleton-loader" style={{ width: "80%" }} />
           </div>
         ) : error ? (
-          <div className="error-state animate-fade-slide-up stagger-2">
-            <p>Error: {error}</p>
+          <div className="p-4 bg-red-500/5 border border-red-500/10 rounded-2xl text-red-500 text-xs font-bold animate-in zoom-in-95 duration-300">
+            Error: {error}
           </div>
         ) : berth ? (
-          <div className="berth-info" key={berth.berth_id}>
-            <div className="info-group animate-fade-slide-up stagger-2">
-              <span className="label">Berth ID</span>
-              <span className="value highlighting">
+          <div className="space-y-6" key={berth.berth_id}>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40 mb-1 block">
+                Identification
+              </span>
+              <span className="text-4xl font-black text-brand-blue tracking-tighter">
                 {berth.label || berth.berth_id}
               </span>
             </div>
 
-            <div className="info-group animate-fade-slide-up stagger-3">
-              <span className="label">Status</span>
-              <div className={`status-badge ${berth.status}`}>
-                <span className="status-dot" />
-                {berth.status.charAt(0).toUpperCase() + berth.status.slice(1)}
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40 mb-2 block">
+                Current Status
+              </span>
+              <div
+                className={cn(
+                  "inline-flex items-center gap-2 px-4 py-1.5 rounded-full font-bold text-[10px] uppercase tracking-wider border",
+                  berth.status === "occupied"
+                    ? "bg-red-500/10 text-red-500 border-red-500/20"
+                    : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
+                )}
+              >
+                <span
+                  className={cn(
+                    "w-2 h-2 rounded-full",
+                    berth.status === "occupied"
+                      ? "bg-red-500 animate-pulse drop-shadow-[0_0_4px_rgba(239,68,68,0.5)]"
+                      : "bg-emerald-500 glow-emerald",
+                  )}
+                />
+                {berth.status}
               </div>
             </div>
 
-            <div className="info-grid animate-fade-slide-up stagger-4">
-              <div className="info-group">
-                <span className="label">Length</span>
-                <span className="value">
-                  {berth.length_m ? `${berth.length_m} m` : "N/A"}
-                </span>
-              </div>
-              <div className="info-group">
-                <span className="label">Width</span>
-                <span className="value">
-                  {berth.width_m ? `${berth.width_m} m` : "N/A"}
-                </span>
-              </div>
-              <div className="info-group">
-                <span className="label">Depth</span>
-                <span className="value">
-                  {berth.depth_m ? `${berth.depth_m} m` : "N/A"}
-                </span>
-              </div>
+            <div className="grid grid-cols-3 gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-400 fill-mode-both">
+              {[
+                {
+                  label: "Length",
+                  value: berth.length_m,
+                  unit: "m",
+                  icon: Ruler,
+                },
+                {
+                  label: "Width",
+                  value: berth.width_m,
+                  unit: "m",
+                  icon: Ruler,
+                },
+                {
+                  label: "Depth",
+                  value: berth.depth_m,
+                  unit: "m",
+                  icon: Thermometer,
+                },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="bg-white/80 p-3 rounded-[20px] border border-white/50 shadow-subtle"
+                >
+                  <span className="text-[8px] font-bold uppercase tracking-widest text-brand-navy/40 mb-1 block">
+                    {item.label}
+                  </span>
+                  <span className="text-xs font-black text-brand-navy tracking-tight">
+                    {item.value ? `${item.value}${item.unit}` : "N/A"}
+                  </span>
+                </div>
+              ))}
             </div>
 
-            <div className="info-group animate-fade-slide-up stagger-5">
-              <span className="label">Last Updated</span>
-              <span className="value time">
+            <div className="bg-brand-blue/5 p-5 rounded-[24px] border border-brand-blue/10 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500 fill-mode-both">
+              <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-brand-blue/60 mb-3">
+                <Clock size={12} strokeWidth={3} />
+                Node Check-in
+              </div>
+              <span className="text-[10px] font-mono font-bold text-brand-navy bg-white/60 px-3 py-1.5 rounded-xl border border-brand-blue/10 block w-fit shadow-sm">
                 {berth.last_updated
                   ? (() => {
                       const d = new Date(berth.last_updated);
@@ -119,26 +180,44 @@ export default function BerthDetailPanel({
             </div>
 
             {berth.battery_pct != null && (
-              <div className="info-group animate-fade-slide-up stagger-6">
-                <span className="label">Node Battery</span>
-                <div className="battery-level">
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-600 fill-mode-both">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/50 flex items-center gap-1">
+                    <Battery size={12} strokeWidth={3} />
+                    Node Battery
+                  </span>
+                  <span className="text-[10px] font-black text-brand-navy tracking-tighter">
+                    {berth.battery_pct}%
+                  </span>
+                </div>
+                <div className="h-3 bg-slate-100 rounded-full overflow-hidden border border-black/5 p-0.5">
                   <div
-                    className="battery-fill"
+                    className={`h-full rounded-full transition-all duration-1000 ease-out ${
+                      berth.battery_pct < 20
+                        ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]"
+                        : "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"
+                    }`}
                     style={{ width: `${berth.battery_pct}%` }}
                   />
-                  <span className="battery-text">{berth.battery_pct}%</span>
                 </div>
               </div>
             )}
           </div>
         ) : (
-          <div className="empty-state">No berth found</div>
+          <div className="text-center py-12 text-brand-navy/20 text-[10px] font-bold uppercase tracking-widest">
+            No berth found
+          </div>
         )}
       </div>
 
-      <div className="panel-footer animate-fade-slide-up stagger-7">
-        <button type="button" className="btn-primary-action" disabled>
-          Request Berth Access (coming soon)
+      <div className="p-6 border-t border-black/5 animate-in fade-in slide-in-from-top-4 duration-500 delay-700 fill-mode-both bg-white/20">
+        <button
+          type="button"
+          className="w-full py-4 bg-gradient-to-r from-brand-blue to-brand-cyan text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-brand-blue/20 hover:shadow-xl hover:shadow-brand-blue/40 hover:-translate-y-0.5 transition-all active:translate-y-0 disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-3"
+          disabled
+        >
+          <ShieldCheck size={16} strokeWidth={3} />
+          Book Berth
         </button>
       </div>
     </aside>

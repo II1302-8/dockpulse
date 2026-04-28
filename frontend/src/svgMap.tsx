@@ -7,14 +7,15 @@ import {
   verticalPier,
 } from "./svg";
 
-const stroke = "#111111";
+const stroke = "rgba(10, 37, 64, 0.2)";
+const selectedStroke = "#0093E9";
 const pierFill = "#ffffff";
 
-const greenFill = "rgba(52, 199, 89, 0.28)";
-const redFill = "rgba(255, 59, 48, 0.28)";
+const greenFill = "rgba(16, 185, 129, 0.15)";
+const redFill = "rgba(239, 68, 68, 0.15)";
 const greyFill = "rgba(10, 37, 64, 0.05)";
-const greenSymbol = "#1f8f3f";
-const redSymbol = "#a11818";
+const greenSymbol = "#10B981";
+const redSymbol = "#EF4444";
 const greySymbol = "rgba(10, 37, 64, 0.2)";
 const symbolStrokeWidth = 3;
 const symbolScale = 0.2;
@@ -102,12 +103,12 @@ const topSlots = getTopBerthSlots(topBerths);
 const leftSlots = getSideBerthSlots(leftSideBerths, "left");
 const rightSlots = getSideBerthSlots(rightSideBerths, "right");
 
-export default function SvgMap({
+export function SvgMap({
   berths,
   selectedBerthId,
   onBerthClickCB,
 }: SvgMapProps) {
-  const renderBerth = (slot: BerthSlot) => {
+  const renderBerthCB = (slot: BerthSlot) => {
     const apiBerth = berths.find((b) => b.berth_id === slot.berth_id);
     const isSelected = selectedBerthId === slot.berth_id;
 
@@ -133,7 +134,7 @@ export default function SvgMap({
       // biome-ignore lint/a11y/useSemanticElements: <button> is not valid in SVG
       <g
         key={slot.id}
-        className={`berth-group ${isSelected ? "selected" : ""}`}
+        className={`berth-group cursor-pointer outline-none ${isSelected ? "selected" : ""}`}
         onClick={() => onBerthClickCB?.(slot.berth_id)}
         role="button"
         tabIndex={0}
@@ -144,15 +145,27 @@ export default function SvgMap({
             onBerthClickCB?.(slot.berth_id);
           }
         }}
+        style={{ pointerEvents: "all" }}
       >
         <title>{slot.label}</title>
+        {/* Hit area - invisible but ensures the entire slot is clickable */}
+        <rect
+          x={slot.x}
+          y={slot.y}
+          width={slot.width}
+          height={slot.height}
+          fill="transparent"
+          style={{ pointerEvents: "all" }}
+        />
         <rect
           x={slot.x}
           y={slot.y}
           width={slot.width}
           height={slot.height}
           fill={fill}
-          className="berth-rect"
+          stroke={isSelected ? selectedStroke : "none"}
+          strokeWidth={isSelected ? 4 : 0}
+          className="berth-rect transition-all duration-300"
         />
         {state === "green" && (
           <circle
@@ -204,7 +217,7 @@ export default function SvgMap({
       aria-labelledby="harbor-berth-map-title"
     >
       <title id="harbor-berth-map-title">Harbor berth map</title>
-      <rect x="0" y="0" width="850" height="600" fill="#ffffff" />
+      <rect x="0" y="0" width="850" height="600" fill="transparent" />
       <rect
         x={horizontalPier.x}
         y={horizontalPier.y}
@@ -223,9 +236,9 @@ export default function SvgMap({
         stroke={stroke}
         strokeWidth="3"
       />
-      {topSlots.map(renderBerth)}
-      {leftSlots.map(renderBerth)}
-      {rightSlots.map(renderBerth)}
+      {topSlots.map(renderBerthCB)}
+      {leftSlots.map(renderBerthCB)}
+      {rightSlots.map(renderBerthCB)}
       {topBerths.map((berth) => (
         <line
           key={getLineKey("top-line", berth)}

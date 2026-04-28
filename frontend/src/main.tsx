@@ -1,6 +1,6 @@
 import { StrictMode } from "react"; // Import React StrictMode.
 import { createRoot } from "react-dom/client"; // Import React root creation.
-import App from "./App"; // Import the main app component.
+import { App } from "./App"; // Import the main app component.
 import "./app.css"; // Import global styles.
 
 const rootElement = document.getElementById("app"); // Read the root element safely.

@@ -9,6 +9,35 @@ class _Base(BaseModel):
     # Something about this being better for pydantic
 
 
+class UserBase(_Base):
+    first_name: str
+    last_name: str
+    email: str
+    telephone: str
+    home_harbor: str | None = None
+
+
+class User(UserBase):
+    user_id: str
+
+
+class UserCreate(UserBase):
+    password: str
+
+
+class UserInDB(User):
+    hashed_password: str
+
+
+class Token(_Base):
+    access_token: str
+    token_type: str
+
+
+class TokenData(_Base):
+    user_id: str | None = None
+
+
 class BerthOut(_Base):  # Grundläggande begränsningar
     berth_id: str
     dock_id: str

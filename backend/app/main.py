@@ -5,11 +5,10 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-import yaml
 from fastapi import FastAPI
 
 from app.mqtt import mqtt_listener
-from app.routers import berths, docks
+from app.routers import berths, docks, users
 
 SPEC_PATH = Path(__file__).parents[2] / "docs" / "api" / "openapi.yml"
 
@@ -43,19 +42,20 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.include_router(users.router)
 app.include_router(berths.router)
 app.include_router(docks.router)
 
 
-def custom_openapi():
-    if app.openapi_schema:
-        return app.openapi_schema
-    with open(SPEC_PATH) as f:
-        app.openapi_schema = yaml.safe_load(f)
-    return app.openapi_schema
+# def custom_openapi():
+#    if app.openapi_schema:
+#        return app.openapi_schema
+#    with open(SPEC_PATH) as f:
+#        app.openapi_schema = yaml.safe_load(f)
+#    return app.openapi_schema
 
 
-app.openapi = custom_openapi
+# app.openapi = custom_openapi
 
 
 @app.get("/api/health", tags=["system"])

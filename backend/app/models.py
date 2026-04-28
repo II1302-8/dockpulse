@@ -14,6 +14,20 @@ alert_type_enum = Enum(
 )
 
 
+class Users(Base):
+    __tablename__ = "users"
+
+    user_id: Mapped[str] = mapped_column(String, primary_key=True)
+    first_name: Mapped[str] = mapped_column(String, nullable=False)
+    last_name: Mapped[str] = mapped_column(String, nullable=False)
+    email: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    telephone: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    home_harbor: Mapped[str | None] = mapped_column(
+        String, ForeignKey("harbors.harbor_id")
+    )
+    hashed_password: Mapped[str] = mapped_column(String)
+
+
 class Harbor(Base):
     __tablename__ = "harbors"
 

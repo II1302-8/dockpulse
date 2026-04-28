@@ -53,3 +53,17 @@ export const rightSideBerths = verticalBerthYPositions.map((y, i) => ({
   x2: verticalPier.x + verticalPier.width + berthLength, // Extend the line to the right.
   y2: y, // Keep the same y position.
 }));
+
+// Each side renders one berth slot per pair of adjacent divider lines, so
+// the slot's berth_id is the id of the *upper/left* line in the pair —
+// the trailing divider has no slot. This means N divider lines yield N-1
+// rendered berths. Anything in the API outside this set has no place on
+// the map and is dropped before counting / rendering.
+const slotBerthIds = (lines: { id: string }[]) =>
+  lines.slice(0, lines.length - 1).map((l) => l.id);
+
+export const mapBerthIds: ReadonlySet<string> = new Set([
+  ...slotBerthIds(topBerths),
+  ...slotBerthIds(leftSideBerths),
+  ...slotBerthIds(rightSideBerths),
+]);

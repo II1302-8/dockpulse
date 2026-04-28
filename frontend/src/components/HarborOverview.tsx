@@ -1,5 +1,7 @@
 import { Activity, BatteryLow, X } from "lucide-react";
 import type { components } from "../api-types";
+import { useNow } from "../hooks/useNow";
+import { isOnline } from "../lib/freshness";
 
 type Berth = components["schemas"]["Berth"];
 
@@ -14,14 +16,20 @@ export function HarborOverview({
   isOpen,
   onCloseCB,
 }: HarborOverviewProps) {
-  const totalBerths = berths.length;
-  const occupiedBerths = berths.filter((b) => b.status === "occupied").length;
+  const now = useNow();
+  const onlineBerths = berths.filter((b) => isOnline(b.last_updated, now));
+  const occupiedBerths = onlineBerths.filter(
+    (b) => b.status === "occupied",
+  ).length;
   const occupancyRate =
-    totalBerths > 0 ? (occupiedBerths / totalBerths) * 100 : 0;
+    onlineBerths.length > 0 ? (occupiedBerths / onlineBerths.length) * 100 : 0;
+  const offlineCount = berths.length - onlineBerths.length;
 
-  const lowBatteryNodes = berths.filter(
+  // Battery alerts only meaningful for berths we're hearing from.
+  const lowBatteryNodes = onlineBerths.filter(
     (b) => b.battery_pct != null && b.battery_pct < 20,
   );
+  const allClear = lowBatteryNodes.length === 0 && offlineCount === 0;
 
   return (
     <section
@@ -61,10 +69,10 @@ export function HarborOverview({
             <span className="text-3xl font-black text-[#0A2540] tracking-tighter">
               {occupiedBerths}
               <span className="text-lg text-[#0A2540]/20 mx-1">/</span>
-              {totalBerths}
+              {onlineBerths.length}
             </span>
             <span className="text-[9px] font-bold text-[#0A2540]/40 uppercase tracking-widest">
-              Berths
+              Online berths
             </span>
           </div>
 
@@ -77,6 +85,12 @@ export function HarborOverview({
               }}
             />
           </div>
+
+          {offlineCount > 0 && (
+            <div className="mt-3 text-[10px] font-bold text-[#0A2540]/50">
+              {offlineCount} sensor{offlineCount === 1 ? "" : "s"} offline
+            </div>
+          )}
         </article>
 
         {/* Node Health (More compact) */}
@@ -85,8 +99,25 @@ export function HarborOverview({
             <BatteryLow size={12} strokeWidth={3} />
             Node Alerts
           </div>
-          {lowBatteryNodes.length > 0 ? (
+          {allClear ? (
+            <div className="flex items-center gap-2 p-2 bg-emerald-500/5 rounded-xl border border-emerald-500/10">
+              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+              <span className="text-[10px] font-bold text-emerald-600/80">
+                All Systems Online
+              </span>
+            </div>
+          ) : (
             <div className="space-y-2">
+              {offlineCount > 0 && (
+                <div className="flex items-center justify-between p-2 bg-[#0A2540]/5 rounded-xl border border-[#0A2540]/10">
+                  <span className="text-[10px] font-bold text-[#0A2540]">
+                    Offline sensors
+                  </span>
+                  <span className="text-[10px] font-black text-[#0A2540]/70">
+                    {offlineCount}
+                  </span>
+                </div>
+              )}
               {lowBatteryNodes.map((node) => (
                 <div
                   key={node.berth_id}
@@ -100,13 +131,6 @@ export function HarborOverview({
                   </span>
                 </div>
               ))}
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 p-2 bg-emerald-500/5 rounded-xl border border-emerald-500/10">
-              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-              <span className="text-[10px] font-bold text-emerald-600/80">
-                All Systems Online
-              </span>
             </div>
           )}
         </article>

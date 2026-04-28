@@ -1,14 +1,22 @@
 import { LayoutDashboard, X } from "lucide-react";
 import panzoom from "panzoom";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BerthDetailPanel } from "./components/BerthDetailPanel";
 import { HarborOverview } from "./components/HarborOverview";
 import { useBerthsStream } from "./hooks/useBerthsStream";
+import { mapBerthIds } from "./svg";
 import { SvgMap } from "./svgMap";
 
 export function HarborMap() {
   const contentRef = useRef<HTMLDivElement>(null);
-  const { berths, isLoading, error, refetchACB } = useBerthsStream();
+  const { berths: apiBerths, isLoading, error, refetchACB } = useBerthsStream();
+  // Drop API rows that have no slot on the rendered map. They'd otherwise
+  // skew the overview counts (and any future aggregates) without ever
+  // appearing visually.
+  const berths = useMemo(
+    () => apiBerths.filter((b) => mapBerthIds.has(b.berth_id)),
+    [apiBerths],
+  );
   const [selectedBerthId, setSelectedBerthId] = useState<string | null>(null);
   const [isOverviewOpen, setIsOverviewOpen] = useState(false);
 

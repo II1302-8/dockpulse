@@ -1,4 +1,6 @@
 import type { components } from "./api-types";
+import { useNow } from "./hooks/useNow";
+import { isOnline } from "./lib/freshness";
 import {
   horizontalPier,
   leftSideBerths,
@@ -108,15 +110,18 @@ export function SvgMap({
   selectedBerthId,
   onBerthClickCB,
 }: SvgMapProps) {
+  const now = useNow();
+
   const renderBerthCB = (slot: BerthSlot) => {
     const apiBerth = berths.find((b) => b.berth_id === slot.berth_id);
     const isSelected = selectedBerthId === slot.berth_id;
 
-    const state: BerthState = apiBerth
-      ? apiBerth.status === "occupied"
-        ? "red"
-        : "green"
-      : "grey";
+    const state: BerthState =
+      apiBerth && isOnline(apiBerth.last_updated, now)
+        ? apiBerth.status === "occupied"
+          ? "red"
+          : "green"
+        : "grey";
 
     const fill =
       state === "green" ? greenFill : state === "red" ? redFill : greyFill;

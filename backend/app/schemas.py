@@ -35,6 +35,24 @@ class DockWithBerthsOut(_Base):
     berths: list[BerthOut] = []
 
 
+class UserOut(_Base):
+    user_id: str
+    firstname: str
+    lastname: str
+    email: str
+    phone: str | None = None
+    boat_club: str | None = None
+
+
+class UserPatch(BaseModel):
+    firstname: str | None = None
+    lastname: str | None = None
+    email: str | None = None
+    phone: str | None = None
+    boat_club: str | None = None
+    password: str | None = None
+
+
 class BerthUpdateEvent(BaseModel):
     type: Literal["berth.update"] = "berth.update"
     berth: BerthOut

@@ -10,7 +10,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
-from app.schemas import TokenData, User
+from app.models import Users
+from app.schemas import TokenData
 
 sessiondep = Annotated[AsyncSession, Depends(get_session)]
 
@@ -25,7 +26,7 @@ password_hash = PasswordHash.recommended()
 
 DUMMY_HASH = password_hash.hash("dummypassword")
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/users/token")
 
 
 def verify_password(plain_password, hashed_password):
@@ -37,7 +38,7 @@ def get_password_hash(password):
 
 
 async def get_user(email: str, session: sessiondep):
-    stmt = select(User).where(User.email == email)
+    stmt = select(Users).where(Users.email == email)
     result = await session.execute(stmt)
     user = result.scalars().first()
     return user

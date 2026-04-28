@@ -36,12 +36,19 @@ services:
     command: >
       uv run /tools/fake_publisher.py
       --host mosquitto
+      --port 8883
+      --cafile /certs/service-ca/ca.crt
+      --certfile /certs/clients/fake-publisher/fake-publisher.crt
+      --keyfile /certs/clients/fake-publisher/fake-publisher.key
       --all
       --rate 10
       --flip-prob 0.15
     volumes:
       - ./tools:/tools
+      - mqtt-pki:/certs:ro
     depends_on:
       mosquitto:
         condition: service_started
+      cert-tools:
+        condition: service_completed_successfully
     networks: [internal]

@@ -16,6 +16,7 @@ Contract: II1302-8/.github docs/mqtt-contract.yml
 import argparse
 import json
 import random
+import ssl
 import sys
 import time
 from datetime import UTC, datetime
@@ -98,8 +99,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--port",
         type=int,
-        default=1883,
-        help="MQTT broker port (default: 1883)",
+        default=None,
+        help="MQTT broker port (default: 8883 with TLS, 1883 plain)",
     )
     parser.add_argument(
         "--count",
@@ -107,7 +108,27 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=0,
         help="Number of ticks to send (0 = unlimited, default: 0)",
     )
-    return parser.parse_args(argv)
+    parser.add_argument(
+        "--cafile",
+        default=None,
+        help="Path to CA cert. Enables TLS when set.",
+    )
+    parser.add_argument(
+        "--certfile",
+        default=None,
+        help="Path to client cert (required for mTLS).",
+    )
+    parser.add_argument(
+        "--keyfile",
+        default=None,
+        help="Path to client key (required for mTLS).",
+    )
+    args = parser.parse_args(argv)
+    if args.port is None:
+        args.port = 8883 if args.cafile else 1883
+    if args.cafile and not (args.certfile and args.keyfile):
+        parser.error("--certfile and --keyfile are required when --cafile is set")
+    return args
 
 
 def _resolve_berths(args: argparse.Namespace) -> list[tuple[str, str]]:
@@ -138,6 +159,13 @@ def main(argv: list[str] | None = None) -> None:
         }
 
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+    if args.cafile:
+        client.tls_set(
+            ca_certs=args.cafile,
+            certfile=args.certfile,
+            keyfile=args.keyfile,
+            tls_version=ssl.PROTOCOL_TLS_CLIENT,
+        )
     try:
         client.connect(args.host, args.port)
     except ConnectionRefusedError:

@@ -4,22 +4,38 @@ services:
 
   mosquitto:
     container_name: dockpulse-prod-mosquitto
-
-  fake-publisher:
-    container_name: dockpulse-prod-fake-publisher
-    image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim
-    restart: unless-stopped
-    command: >
-      uv run /tools/fake_publisher.py
-      --host mosquitto
-      --all
-      --rate 10
-      --flip-prob 0.10
-    volumes:
-      - ./tools:/tools
+    volumes: !override
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mqtt-pki:/mosquitto/certs:ro
+      - mqtt-certs:/mosquitto/certs/server:ro
+    ports:
+      - "8883:8883"
     depends_on:
-      mosquitto:
-        condition: service_started
+      cert-tools:
+        condition: service_completed_successfully
+      mqtt-cert-renew:
+        condition: service_healthy
+
+  mqtt-cert-renew:
+    container_name: dockpulse-prod-mqtt-cert-renew
+    image: alpine:3.20
+    restart: unless-stopped
+    command: ["sh", "/scripts/renew.sh"]
+    environment:
+      LEGO_EMAIL: ${LEGO_EMAIL}
+      LEGO_DOMAIN: ${MQTT_PUBLIC_HOSTNAME:-mqtt.dockpulse.xyz}
+      CLOUDFLARE_DNS_API_TOKEN: ${CLOUDFLARE_DNS_API_TOKEN}
+      MOSQUITTO_CONTAINER: dockpulse-prod-mosquitto
+    volumes:
+      - ./tools/lego-renew.sh:/scripts/renew.sh:ro
+      - mqtt-certs:/le
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD", "test", "-f", "/le/server.crt"]
+      interval: 10s
+      timeout: 3s
+      retries: 60
+      start_period: 5s
     networks: [internal]
 
   backend:
@@ -57,3 +73,6 @@ services:
 networks:
   dockpulse:
     external: true
+
+volumes:
+  mqtt-certs:

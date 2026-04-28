@@ -143,5 +143,8 @@ Defined in `.env` (copied from `.env.example`). Docker Compose reads them automa
 | `POSTGRES_USER`     | DB username      | `dockpulse` |
 | `POSTGRES_PASSWORD` | DB password      | `dockpulse` |
 | `POSTGRES_DB`       | DB name          | `dockpulse` |
-| `MQTT_BROKER`       | MQTT broker host | `localhost` |
-| `MQTT_PORT`         | MQTT broker port | `1883`      |
+| `MQTT_BROKER`       | MQTT broker host                          | `localhost`                              |
+| `MQTT_PORT`         | MQTT broker port (8883 TLS, 1883 plain)   | `8883`                                   |
+| `MQTT_TLS_CA`       | CA cert path for broker verification      | `/certs/service-ca/ca.crt`               |
+| `MQTT_TLS_CERT`     | Client cert path (mTLS)                   | `/certs/clients/backend/backend.crt`     |
+| `MQTT_TLS_KEY`      | Client key path (mTLS)                    | `/certs/clients/backend/backend.key`     |

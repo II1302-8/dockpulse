@@ -1,7 +1,5 @@
 import os
 
-os.environ["SECRET_KEY"] = "test-secret"
-
 import jwt
 import pytest_asyncio
 from argon2 import PasswordHasher
@@ -10,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import User
 
-SECRET_KEY = "test-secret"
+SECRET_KEY = os.environ.get("SECRET_KEY", "test-secret")
 ALGORITHM = "HS256"
 
 

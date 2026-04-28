@@ -174,21 +174,13 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required: [status]
-                properties:
-                  status:
-                    type: string
-                    example: ok
-                  uptime:
-                    type: number
-                    description: Uptime in seconds
+                $ref: "#/components/schemas/HealthStatus"
         "503":
-          description: Service unavailable
+          description: Service is degraded — at least one dependency is unreachable
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/HealthStatus"
 
   /api/harbors:
     get:
@@ -631,6 +623,23 @@ components:
         token_type:
           type: string
           enum: [bearer]
+
+    HealthStatus:
+      type: object
+      required: [status, uptime, database, mqtt]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        uptime:
+          type: number
+          description: Process uptime in seconds
+        database:
+          type: string
+          enum: [ok, error]
+        mqtt:
+          type: string
+          enum: [ok, error]
 
     Error:
       type: object

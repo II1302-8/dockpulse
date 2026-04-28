@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class _Base(BaseModel):
@@ -47,7 +47,7 @@ class UserOut(_Base):
 class UserPatch(BaseModel):
     firstname: str | None = None
     lastname: str | None = None
-    email: str | None = None
+    email: EmailStr | None = None
     phone: str | None = None
     boat_club: str | None = None
     password: str | None = None

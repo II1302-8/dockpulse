@@ -24,6 +24,7 @@ class User(Base):
     phone: Mapped[str | None] = mapped_column(String)
     password_hash: Mapped[str] = mapped_column(String, nullable=False)
     boat_club: Mapped[str | None] = mapped_column(String)
+    token_version: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
 
 class Harbor(Base):

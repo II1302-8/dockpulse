@@ -14,8 +14,10 @@ SECRET_KEY = "test-secret"
 ALGORITHM = "HS256"
 
 
-def make_token(user_id: str) -> str:
-    return jwt.encode({"sub": user_id}, SECRET_KEY, algorithm=ALGORITHM)
+def make_token(user_id: str, token_version: int = 0) -> str:
+    return jwt.encode(
+        {"sub": user_id, "ver": token_version}, SECRET_KEY, algorithm=ALGORITHM
+    )
 
 
 _ph = PasswordHasher()
@@ -35,6 +37,7 @@ async def test_user(session: AsyncSession) -> User:
         phone="0701234567",
         password_hash=_hash("secret"),
         boat_club="Göteborgs Segelsällskap",
+        token_version=0,
     )
     session.add(user)
     await session.commit()

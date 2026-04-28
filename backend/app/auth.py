@@ -24,10 +24,11 @@ async def get_current_user(
             credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM]
         )
         user_id: str = payload["sub"]
+        token_version: int = payload["ver"]
     except (jwt.PyJWTError, KeyError) as err:
         raise HTTPException(status_code=401, detail="Invalid or expired token") from err
 
     user = await session.get(User, user_id)
-    if user is None:
-        raise HTTPException(status_code=401, detail="User not found")
+    if user is None or user.token_version != token_version:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
     return user

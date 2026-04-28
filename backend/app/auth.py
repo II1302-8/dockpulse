@@ -10,6 +10,7 @@ from app.db import get_session
 from app.models import User
 
 ALGORITHM = "HS256"
+SECRET_KEY = os.environ["SECRET_KEY"]
 
 _bearer = HTTPBearer()
 
@@ -18,9 +19,10 @@ async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials, Depends(_bearer)],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> User:
-    secret = os.environ.get("SECRET_KEY", "dev-secret-change-in-production")
     try:
-        payload = jwt.decode(credentials.credentials, secret, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM]
+        )
         user_id: str = payload["sub"]
     except (jwt.PyJWTError, KeyError) as err:
         raise HTTPException(status_code=401, detail="Invalid or expired token") from err

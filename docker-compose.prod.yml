@@ -1,4 +1,7 @@
 services:
+  cert-tools:
+    container_name: dockpulse-prod-cert-tools
+
   db:
     container_name: dockpulse-prod-db
 
@@ -12,7 +15,7 @@ services:
       - "8883:8883"
     depends_on:
       cert-tools:
-        condition: service_completed_successfully
+        condition: service_healthy
       mqtt-cert-renew:
         condition: service_healthy
 

@@ -45,10 +45,10 @@ producing:
 - `device-ca/` — signs ESP32 nodes. Short-lived (90 days), no CRL.
 - `ca-bundle.crt` — both CAs concatenated; what mosquitto trusts.
 
-Issue a per-device client cert:
+Issue a per-device client cert (cert-tools is already running):
 
 ```bash
-docker compose run --rm cert-tools device <node-id>
+docker compose exec cert-tools bash /scripts/gen_certs.sh device <node-id>
 ```
 
 The new files land inside the `mqtt-pki` volume. Extract them onto the host:

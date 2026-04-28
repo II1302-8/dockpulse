@@ -1,4 +1,7 @@
 services:
+  cert-tools:
+    container_name: dockpulse-staging-cert-tools
+
   db:
     container_name: dockpulse-staging-db
     volumes: !reset []
@@ -50,5 +53,5 @@ services:
       mosquitto:
         condition: service_started
       cert-tools:
-        condition: service_completed_successfully
+        condition: service_healthy
     networks: [internal]

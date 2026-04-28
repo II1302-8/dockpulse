@@ -1,17 +1,22 @@
 import asyncio
 import contextlib
 import logging
+import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 import yaml
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
+from sqlalchemy import text
 
-from app.mqtt import mqtt_listener
+from app.db import engine
+from app.mqtt import is_mqtt_connected, mqtt_listener
 from app.routers import berths, docks, users
 
 SPEC_PATH = Path(__file__).parents[2] / "docs" / "api" / "openapi.yml"
+_start_time = time.monotonic()
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +64,24 @@ def custom_openapi():
 app.openapi = custom_openapi
 
 
-@app.get("/api/health", tags=["system"])
+@app.get("/api/health", tags=["system"], operation_id="getHealth")
 async def health():
-    return {"status": "ok"}
+    db_ok = True
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+    except Exception:
+        db_ok = False
+
+    mqtt_ok = is_mqtt_connected()
+    status = "ok" if db_ok and mqtt_ok else "degraded"
+
+    return JSONResponse(
+        status_code=200 if status == "ok" else 503,
+        content={
+            "status": status,
+            "uptime": time.monotonic() - _start_time,
+            "database": "ok" if db_ok else "error",
+            "mqtt": "ok" if mqtt_ok else "error",
+        },
+    )

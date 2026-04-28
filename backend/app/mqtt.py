@@ -21,6 +21,12 @@ STATUS_TOPIC = "harbor/+/+/+/status"
 HEARTBEAT_TOPIC = "harbor/+/+/+/heartbeat"
 RECONNECT_DELAY = 5
 
+_connected: bool = False
+
+
+def is_mqtt_connected() -> bool:
+    return _connected
+
 
 def _build_tls_context() -> ssl.SSLContext | None:
     if not (MQTT_TLS_CA and MQTT_TLS_CERT and MQTT_TLS_KEY):
@@ -103,12 +109,14 @@ async def _handle_message(message: aiomqtt.Message) -> None:
 
 
 async def mqtt_listener() -> None:
+    global _connected
     tls_context = _build_tls_context()
     while True:
         try:
             async with aiomqtt.Client(
                 MQTT_BROKER, MQTT_PORT, tls_context=tls_context
             ) as client:
+                _connected = True
                 logger.info(
                     "Connected to MQTT broker %s:%s (tls=%s)",
                     MQTT_BROKER,
@@ -120,6 +128,7 @@ async def mqtt_listener() -> None:
                 async for message in client.messages:
                     await _handle_message(message)
         except aiomqtt.MqttError as e:
+            _connected = False
             logger.warning(
                 "MQTT connection lost (%s), reconnecting in %ds...",
                 e,
@@ -127,6 +136,7 @@ async def mqtt_listener() -> None:
             )
             await asyncio.sleep(RECONNECT_DELAY)
         except Exception:
+            _connected = False
             logger.exception(
                 "MQTT listener crashed, reconnecting in %ds...", RECONNECT_DELAY
             )

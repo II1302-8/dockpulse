@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
 from app.db import engine
-from app.mqtt import mqtt_listener
+from app.mqtt import is_mqtt_connected, mqtt_listener
 from app.routers import berths, docks, users
 
 SPEC_PATH = Path(__file__).parents[2] / "docs" / "api" / "openapi.yml"
@@ -66,12 +66,22 @@ app.openapi = custom_openapi
 
 @app.get("/api/health", tags=["system"], operation_id="getHealth")
 async def health():
+    db_ok = True
     try:
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
-    except Exception as exc:
-        return JSONResponse(
-            status_code=503,
-            content={"error": "db_unavailable", "message": str(exc)},
-        )
-    return {"status": "ok", "uptime": time.monotonic() - _start_time}
+    except Exception:
+        db_ok = False
+
+    mqtt_ok = is_mqtt_connected()
+    status = "ok" if db_ok and mqtt_ok else "degraded"
+
+    return JSONResponse(
+        status_code=200 if status == "ok" else 503,
+        content={
+            "status": status,
+            "uptime": time.monotonic() - _start_time,
+            "database": "ok" if db_ok else "error",
+            "mqtt": "ok" if mqtt_ok else "error",
+        },
+    )

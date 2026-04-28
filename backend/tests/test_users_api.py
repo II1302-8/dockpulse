@@ -2,9 +2,9 @@ import os
 
 os.environ["SECRET_KEY"] = "test-secret"
 
-import bcrypt
 import jwt
 import pytest_asyncio
+from argon2 import PasswordHasher
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,8 +18,11 @@ def make_token(user_id: str) -> str:
     return jwt.encode({"sub": user_id}, SECRET_KEY, algorithm=ALGORITHM)
 
 
+_ph = PasswordHasher()
+
+
 def _hash(password: str) -> str:
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    return _ph.hash(password)
 
 
 @pytest_asyncio.fixture
@@ -82,7 +85,7 @@ async def test_patch_me_updates_password(
     )
     assert r.status_code == 200
     await session.refresh(test_user)
-    assert bcrypt.checkpw(b"newpassword", test_user.password_hash.encode())
+    assert _ph.verify(test_user.password_hash, "newpassword")
 
 
 async def test_patch_me_email_conflict(

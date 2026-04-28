@@ -1,6 +1,6 @@
 from typing import Annotated
 
-import bcrypt
+from argon2 import PasswordHasher
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,9 +14,11 @@ router = APIRouter(prefix="/api/users", tags=["users"])
 currentuser_dep = Annotated[User, Depends(get_current_user)]
 sessiondep = Annotated[AsyncSession, Depends(get_session)]
 
+_ph = PasswordHasher()
+
 
 def _hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    return _ph.hash(password)
 
 
 @router.get("/me", response_model=UserOut, operation_id="getMe")

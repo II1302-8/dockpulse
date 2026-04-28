@@ -43,6 +43,15 @@ services:
 
   backend:
     container_name: dockpulse-prod-backend
+    # In prod the broker presents an LE cert (CN=mqtt.dockpulse.xyz). Our
+    # private service CA can't validate it, so the backend connects via
+    # the public hostname and trusts the system CA store — same path the
+    # ESP32 gateways use. The client cert (issued by service-ca) still
+    # authenticates us to the broker.
+    environment:
+      MQTT_BROKER: ${MQTT_PUBLIC_HOSTNAME:-mqtt.dockpulse.xyz}
+      MQTT_PORT: 8883
+      MQTT_TLS_CA: /etc/ssl/certs/ca-certificates.crt
     networks:
       - internal
       - dockpulse

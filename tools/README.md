@@ -34,18 +34,31 @@ uv run tools/fake_publisher.py --status toggle --rate 3
 
 # Connect to a remote broker
 uv run tools/fake_publisher.py --host 192.168.1.50 --port 1883
+
+# Connect over mTLS (matches docker-compose default broker setup).
+# Cert material lives in the mqtt-pki named volume; extract first:
+docker run --rm -v dockpulse_mqtt-pki:/pki:ro -v "$(pwd)/out":/out alpine \
+  sh -c 'cp /pki/service-ca/ca.crt /pki/clients/fake-publisher/fake-publisher.* /out/'
+uv run tools/fake_publisher.py \
+  --host localhost --port 8883 \
+  --cafile out/ca.crt \
+  --certfile out/fake-publisher.crt \
+  --keyfile out/fake-publisher.key
 ```
 
 ### CLI flags
 
-| Flag         | Default     | Description                      |
-| ------------ | ----------- | -------------------------------- |
-| `--berth-id` | `berth-001` | Berth identifier                 |
-| `--status`   | `occupied`  | `free`, `occupied`, or `toggle`  |
-| `--rate`     | `5`         | Publish interval in seconds      |
-| `--host`     | `localhost` | MQTT broker host                 |
-| `--port`     | `1883`      | MQTT broker port                 |
-| `--count`    | `0`         | Messages to send (0 = unlimited) |
+| Flag          | Default      | Description                                      |
+| ------------- | ------------ | ------------------------------------------------ |
+| `--berth-id`  | `berth-001`  | Berth identifier                                 |
+| `--status`    | `occupied`   | `free`, `occupied`, or `toggle`                  |
+| `--rate`      | `5`          | Publish interval in seconds                      |
+| `--host`      | `localhost`  | MQTT broker host                                 |
+| `--port`      | auto         | `8883` with TLS, `1883` plain                    |
+| `--count`     | `0`          | Messages to send (0 = unlimited)                 |
+| `--cafile`    | none         | CA cert path. Setting it enables TLS.            |
+| `--certfile`  | none         | Client cert path (required with `--cafile`).    |
+| `--keyfile`   | none         | Client key path (required with `--cafile`).     |
 
 ### Message format
 

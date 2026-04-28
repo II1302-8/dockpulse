@@ -49,3 +49,9 @@ venv/
 
 # Docker
 pgdata/
+
+# TLS certs — historical guard. Cert material now lives in the
+# mqtt-pki named volume; this directory should never appear, but
+# guard against accidental commits if anyone runs gen_certs.sh
+# directly on the host.
+certs/

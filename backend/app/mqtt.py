@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import os
+import ssl
 
 import aiomqtt
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,10 +13,24 @@ from app.events import process_heartbeat, process_sensor_reading
 logger = logging.getLogger(__name__)
 
 MQTT_BROKER = os.environ.get("MQTT_BROKER", "localhost")
-MQTT_PORT = int(os.environ.get("MQTT_PORT", "1883"))
+MQTT_TLS_CA = os.environ.get("MQTT_TLS_CA")
+MQTT_TLS_CERT = os.environ.get("MQTT_TLS_CERT")
+MQTT_TLS_KEY = os.environ.get("MQTT_TLS_KEY")
+MQTT_PORT = int(os.environ.get("MQTT_PORT", "8883" if MQTT_TLS_CA else "1883"))
 STATUS_TOPIC = "harbor/+/+/+/status"
 HEARTBEAT_TOPIC = "harbor/+/+/+/heartbeat"
 RECONNECT_DELAY = 5
+
+
+def _build_tls_context() -> ssl.SSLContext | None:
+    if not (MQTT_TLS_CA and MQTT_TLS_CERT and MQTT_TLS_KEY):
+        return None
+    ctx = ssl.create_default_context(
+        purpose=ssl.Purpose.SERVER_AUTH, cafile=MQTT_TLS_CA
+    )
+    ctx.load_cert_chain(certfile=MQTT_TLS_CERT, keyfile=MQTT_TLS_KEY)
+    ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+    return ctx
 
 
 def _parse_berth_topic(topic: str) -> tuple[str, str, str, str] | None:
@@ -88,10 +103,18 @@ async def _handle_message(message: aiomqtt.Message) -> None:
 
 
 async def mqtt_listener() -> None:
+    tls_context = _build_tls_context()
     while True:
         try:
-            async with aiomqtt.Client(MQTT_BROKER, MQTT_PORT) as client:
-                logger.info("Connected to MQTT broker %s:%s", MQTT_BROKER, MQTT_PORT)
+            async with aiomqtt.Client(
+                MQTT_BROKER, MQTT_PORT, tls_context=tls_context
+            ) as client:
+                logger.info(
+                    "Connected to MQTT broker %s:%s (tls=%s)",
+                    MQTT_BROKER,
+                    MQTT_PORT,
+                    tls_context is not None,
+                )
                 await client.subscribe(STATUS_TOPIC)
                 await client.subscribe(HEARTBEAT_TOPIC)
                 async for message in client.messages:

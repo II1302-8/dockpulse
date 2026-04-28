@@ -183,8 +183,6 @@ paths:
                   uptime:
                     type: number
                     description: Uptime in seconds
-        "400":
-          $ref: "#/components/responses/BadRequest"
         "503":
           description: Service unavailable
           content:

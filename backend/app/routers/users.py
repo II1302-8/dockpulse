@@ -1,24 +1,71 @@
+import uuid
 from typing import Annotated
 
 from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import get_current_user
+from app.auth import create_access_token, get_current_user
 from app.db import get_session
 from app.models import User
-from app.schemas import UserOut, UserPatch
+from app.schemas import LoginIn, TokenOut, UserCreate, UserOut, UserPatch
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 currentuser_dep = Annotated[User, Depends(get_current_user)]
 sessiondep = Annotated[AsyncSession, Depends(get_session)]
 
 _ph = PasswordHasher()
+# Precomputed dummy hash so unknown-email logins still pay the verify cost,
+# preventing user enumeration via response timing.
+_DUMMY_HASH = _ph.hash("dummy-password-for-timing-equalization")
 
 
 def _hash_password(password: str) -> str:
     return _ph.hash(password)
+
+
+@router.post(
+    "",
+    response_model=UserOut,
+    status_code=201,
+    operation_id="registerUser",
+)
+async def register_user(body: UserCreate, session: sessiondep):
+    existing = await session.execute(select(User).where(User.email == body.email))
+    if existing.scalar_one_or_none() is not None:
+        raise HTTPException(status_code=409, detail="Email already in use")
+
+    user = User(
+        user_id=str(uuid.uuid4()),
+        firstname=body.firstname,
+        lastname=body.lastname,
+        email=body.email,
+        phone=body.phone,
+        boat_club=body.boat_club,
+        password_hash=_hash_password(body.password),
+    )
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+    return user
+
+
+@router.post("/token", response_model=TokenOut, operation_id="login")
+async def login(body: LoginIn, session: sessiondep):
+    result = await session.execute(select(User).where(User.email == body.email))
+    user = result.scalar_one_or_none()
+
+    target_hash = user.password_hash if user is not None else _DUMMY_HASH
+    try:
+        _ph.verify(target_hash, body.password)
+    except VerifyMismatchError:
+        raise HTTPException(status_code=401, detail="Invalid credentials") from None
+    if user is None:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    return TokenOut(access_token=create_access_token(user))
 
 
 @router.get("/me", response_model=UserOut, operation_id="getMe")

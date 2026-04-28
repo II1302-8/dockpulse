@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class _Base(BaseModel):
@@ -51,6 +51,25 @@ class UserPatch(BaseModel):
     phone: str | None = None
     boat_club: str | None = None
     password: str | None = None
+
+
+class UserCreate(BaseModel):
+    firstname: str = Field(min_length=1)
+    lastname: str = Field(min_length=1)
+    email: EmailStr
+    phone: str | None = None
+    boat_club: str | None = None
+    password: str = Field(min_length=8)
+
+
+class LoginIn(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class TokenOut(BaseModel):
+    access_token: str
+    token_type: Literal["bearer"] = "bearer"
 
 
 class BerthUpdateEvent(BaseModel):

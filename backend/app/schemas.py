@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class _Base(BaseModel):
@@ -33,6 +33,24 @@ class DockWithBerthsOut(_Base):
     harbor_id: str
     name: str
     berths: list[BerthOut] = []
+
+
+class UserOut(_Base):
+    user_id: str
+    firstname: str
+    lastname: str
+    email: str
+    phone: str | None = None
+    boat_club: str | None = None
+
+
+class UserPatch(BaseModel):
+    firstname: str | None = None
+    lastname: str | None = None
+    email: EmailStr | None = None
+    phone: str | None = None
+    boat_club: str | None = None
+    password: str | None = None
 
 
 class BerthUpdateEvent(BaseModel):

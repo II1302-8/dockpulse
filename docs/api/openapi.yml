@@ -34,8 +34,79 @@ tags:
     description: Berth occupancy events
   - name: alerts
     description: Alert management
+  - name: users
+    description: User profile
 
 paths:
+  /api/users/me:
+    get:
+      summary: Get current user profile
+      operationId: getMe
+      tags: [users]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user's profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserOut"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      summary: Update current user profile
+      operationId: updateMe
+      tags: [users]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                firstname:
+                  type: string
+                lastname:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                  nullable: true
+                boat_club:
+                  type: string
+                  nullable: true
+                password:
+                  type: string
+                  minLength: 8
+      responses:
+        "200":
+          description: Updated user profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserOut"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /api/health:
     get:
       summary: Health check
@@ -444,6 +515,26 @@ components:
         berth:
           $ref: "#/components/schemas/Berth"
 
+    UserOut:
+      type: object
+      required: [user_id, firstname, lastname, email]
+      properties:
+        user_id:
+          type: string
+        firstname:
+          type: string
+        lastname:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          nullable: true
+        boat_club:
+          type: string
+          nullable: true
+
     Error:
       type: object
       required: [error, message]
@@ -453,6 +544,12 @@ components:
           example: not_found
         message:
           type: string
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
 
   responses:
     BadRequest:

@@ -9,7 +9,7 @@ import yaml
 from fastapi import FastAPI
 
 from app.mqtt import mqtt_listener
-from app.routers import berths, docks
+from app.routers import berths, docks, users
 
 SPEC_PATH = Path(__file__).parents[2] / "docs" / "api" / "openapi.yml"
 
@@ -45,6 +45,7 @@ app = FastAPI(
 
 app.include_router(berths.router)
 app.include_router(docks.router)
+app.include_router(users.router)
 
 
 def custom_openapi():

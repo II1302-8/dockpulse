@@ -28,6 +28,7 @@ jobs:
           --health-retries 10
     env:
       TEST_DATABASE_URL: postgresql+asyncpg://dockpulse:dockpulse@localhost:5432/dockpulse_test
+      SECRET_KEY: ci-test-secret-key-not-for-production
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6

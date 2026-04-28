@@ -38,6 +38,62 @@ tags:
     description: User profile
 
 paths:
+  /api/users:
+    post:
+      summary: Register a new user
+      operationId: registerUser
+      tags: [users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreate"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserOut"
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /api/users/token:
+    post:
+      summary: Log in and obtain an access token
+      operationId: login
+      tags: [users]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginIn"
+      responses:
+        "200":
+          description: Bearer token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenOut"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
   /api/users/me:
     get:
       summary: Get current user profile
@@ -534,6 +590,49 @@ components:
         boat_club:
           type: string
           nullable: true
+
+    UserCreate:
+      type: object
+      required: [firstname, lastname, email, password]
+      properties:
+        firstname:
+          type: string
+          minLength: 1
+        lastname:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+          nullable: true
+        boat_club:
+          type: string
+          nullable: true
+        password:
+          type: string
+          minLength: 8
+
+    LoginIn:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    TokenOut:
+      type: object
+      required: [access_token, token_type]
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          enum: [bearer]
 
     Error:
       type: object

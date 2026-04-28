@@ -1,4 +1,5 @@
 import os
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 import jwt
@@ -11,8 +12,18 @@ from app.models import User
 
 ALGORITHM = "HS256"
 SECRET_KEY = os.environ["SECRET_KEY"]
+ACCESS_TOKEN_TTL = timedelta(hours=1)
 
 _bearer = HTTPBearer()
+
+
+def create_access_token(user: User, expires_in: timedelta = ACCESS_TOKEN_TTL) -> str:
+    payload = {
+        "sub": user.user_id,
+        "ver": user.token_version,
+        "exp": datetime.now(UTC) + expires_in,
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
 async def get_current_user(

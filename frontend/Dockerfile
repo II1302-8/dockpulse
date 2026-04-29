@@ -14,6 +14,9 @@ FROM base AS build
 COPY --from=install /temp/dev/node_modules node_modules
 COPY . .
 RUN bun run build
+# Precompress static assets for nginx gzip_static
+RUN find dist -type f \( -name '*.js' -o -name '*.css' -o -name '*.html' -o -name '*.svg' -o -name '*.json' \) \
+    -exec sh -c 'gzip -9 -k -f "$1"' _ {} \;
 
 # serve with nginx
 FROM nginx:alpine

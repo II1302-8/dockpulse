@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
+from app.config import get_settings
 from app.db import get_session
 from app.models import User
 
@@ -22,7 +22,7 @@ def create_access_token(user: User, expires_in: timedelta = ACCESS_TOKEN_TTL) ->
         "ver": user.token_version,
         "exp": datetime.now(UTC) + expires_in,
     }
-    secret = settings.jwt_secret_key.get_secret_value()
+    secret = get_settings().jwt_secret_key.get_secret_value()
     return jwt.encode(payload, secret, algorithm=ALGORITHM)
 
 
@@ -31,7 +31,7 @@ async def get_current_user(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> User:
     try:
-        secret = settings.jwt_secret_key.get_secret_value()
+        secret = get_settings().jwt_secret_key.get_secret_value()
         payload = jwt.decode(credentials.credentials, secret, algorithms=[ALGORITHM])
         user_id: str = payload["sub"]
         token_version: int = payload["ver"]

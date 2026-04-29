@@ -6,16 +6,15 @@ import ssl
 import aiomqtt
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
+from app.config import get_settings
 from app.db import async_session
 from app.events import process_heartbeat, process_sensor_reading
 
 logger = logging.getLogger(__name__)
 
+_s = get_settings()
 MQTT_PORT = (
-    settings.mqtt_port
-    if settings.mqtt_port is not None
-    else (8883 if settings.mqtt_tls_ca else 1883)
+    _s.mqtt_port if _s.mqtt_port is not None else (8883 if _s.mqtt_tls_ca else 1883)
 )
 STATUS_TOPIC = "harbor/+/+/+/status"
 HEARTBEAT_TOPIC = "harbor/+/+/+/heartbeat"
@@ -29,12 +28,13 @@ def is_mqtt_connected() -> bool:
 
 
 def _build_tls_context() -> ssl.SSLContext | None:
-    if not (settings.mqtt_tls_ca and settings.mqtt_tls_cert and settings.mqtt_tls_key):
+    s = get_settings()
+    if not (s.mqtt_tls_ca and s.mqtt_tls_cert and s.mqtt_tls_key):
         return None
     ctx = ssl.create_default_context(
-        purpose=ssl.Purpose.SERVER_AUTH, cafile=settings.mqtt_tls_ca
+        purpose=ssl.Purpose.SERVER_AUTH, cafile=s.mqtt_tls_ca
     )
-    ctx.load_cert_chain(certfile=settings.mqtt_tls_cert, keyfile=settings.mqtt_tls_key)
+    ctx.load_cert_chain(certfile=s.mqtt_tls_cert, keyfile=s.mqtt_tls_key)
     ctx.minimum_version = ssl.TLSVersion.TLSv1_2
     return ctx
 
@@ -114,12 +114,12 @@ async def mqtt_listener() -> None:
     while True:
         try:
             async with aiomqtt.Client(
-                settings.mqtt_broker, MQTT_PORT, tls_context=tls_context
+                get_settings().mqtt_broker, MQTT_PORT, tls_context=tls_context
             ) as client:
                 _connected = True
                 logger.info(
                     "Connected to MQTT broker %s:%s (tls=%s)",
-                    settings.mqtt_broker,
+                    get_settings().mqtt_broker,
                     MQTT_PORT,
                     tls_context is not None,
                 )

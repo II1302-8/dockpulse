@@ -13,12 +13,7 @@ class Settings(BaseSettings):
     mqtt_tls_cert: str | None = None
     mqtt_tls_key: str | None = None
 
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore",
-        env_ignore_missing=True,
-    )
+    model_config = SettingsConfigDict(env_file=".env")
 
     @field_validator("jwt_secret_key")
     @classmethod
@@ -31,6 +26,3 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
-
-
-settings = get_settings()

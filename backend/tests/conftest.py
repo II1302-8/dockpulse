@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from app import models as _models  # noqa: F401
-from app.config import settings
+from app.config import get_settings
 from app.db import Base, get_session
 from app.main import app
 from app.models import Berth, Dock, Harbor
@@ -15,7 +15,7 @@ from app.models import Berth, Dock, Harbor
 
 @pytest_asyncio.fixture(scope="session")
 async def engine():
-    eng = create_async_engine(settings.database_url)
+    eng = create_async_engine(get_settings().database_url)
     async with eng.begin() as conn:
         await conn.execute(text("DROP SCHEMA public CASCADE"))
         await conn.execute(text("CREATE SCHEMA public"))

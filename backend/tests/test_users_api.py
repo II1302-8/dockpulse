@@ -4,7 +4,7 @@ from argon2 import PasswordHasher
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config import settings
+from app.config import get_settings
 from app.models import User
 
 ALGORITHM = "HS256"
@@ -13,7 +13,7 @@ ALGORITHM = "HS256"
 def make_token(user_id: str, token_version: int = 0) -> str:
     return jwt.encode(
         {"sub": user_id, "ver": token_version},
-        settings.jwt_secret_key.get_secret_value(),
+        get_settings().jwt_secret_key.get_secret_value(),
         algorithm=ALGORITHM,
     )
 

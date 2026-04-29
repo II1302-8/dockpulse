@@ -18,11 +18,9 @@ export function HarborOverview({
 }: HarborOverviewProps) {
   const now = useNow();
   const onlineBerths = berths.filter((b) => isOnline(b.last_updated, now));
-  const occupiedBerths = onlineBerths.filter(
-    (b) => b.status === "occupied",
-  ).length;
-  const occupancyRate =
-    onlineBerths.length > 0 ? (occupiedBerths / onlineBerths.length) * 100 : 0;
+  const freeBerths = onlineBerths.filter((b) => b.status === "free").length;
+  const availabilityRate =
+    onlineBerths.length > 0 ? (freeBerths / onlineBerths.length) * 100 : 0;
   const offlineCount = berths.length - onlineBerths.length;
 
   // Battery alerts only meaningful for berths we're hearing from.
@@ -61,18 +59,18 @@ export function HarborOverview({
               Live Status
             </div>
             <span className="text-[10px] font-black text-[#0093E9] bg-[#0093E9]/10 px-2 py-0.5 rounded-full border border-[#0093E9]/20">
-              {occupancyRate.toFixed(0)}%
+              {availabilityRate.toFixed(0)}%
             </span>
           </div>
 
           <div className="flex items-baseline gap-2 mb-3">
             <span className="text-3xl font-black text-[#0A2540] tracking-tighter">
-              {occupiedBerths}
+              {freeBerths}
               <span className="text-lg text-[#0A2540]/20 mx-1">/</span>
               {onlineBerths.length}
             </span>
             <span className="text-[9px] font-bold text-[#0A2540]/40 uppercase tracking-widest">
-              Online berths
+              Berths available
             </span>
           </div>
 
@@ -80,8 +78,8 @@ export function HarborOverview({
             <div
               className="h-full bg-gradient-to-r from-[#0093E9] to-[#00E5FF] rounded-full transition-all duration-1000 shadow-[0_0_12px_rgba(0,147,233,0.5)]"
               style={{
-                width: `${occupancyRate}%`,
-                minWidth: occupancyRate > 0 ? "4px" : "0",
+                width: `${availabilityRate}%`,
+                minWidth: availabilityRate > 0 ? "4px" : "0",
               }}
             />
           </div>

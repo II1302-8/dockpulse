@@ -48,13 +48,13 @@ docker compose exec db psql -U dockpulse -c "CREATE DATABASE dockpulse_test;"
 **Run tests:**
 
 ```bash
-SECRET_KEY=any-local-secret uv run pytest -v
+uv run pytest -v
 ```
 
-The test database URL defaults to `postgresql+asyncpg://dockpulse:dockpulse@localhost:5432/dockpulse_test`. Override with:
+Defaults are set in `pyproject.toml` under `[tool.pytest.ini_options] env`. Override at the command line:
 
 ```bash
-TEST_DATABASE_URL=postgresql+asyncpg://user:pass@host/dbname uv run pytest
+DATABASE_URL=postgresql+asyncpg://user:pass@host/dbname uv run pytest
 ```
 
 The test suite drops and recreates all tables on each run, so it is safe to run repeatedly.
@@ -64,6 +64,7 @@ The test suite drops and recreates all tables on each run, so it is safe to run 
 ```text
 app/
 ├── main.py           <- FastAPI app entry point, lifespan, OpenAPI spec
+├── config.py         <- pydantic-settings config, reads from env / .env
 ├── db.py             <- SQLAlchemy engine + session
 ├── models.py         <- SQLAlchemy ORM models
 ├── schemas.py        <- Pydantic request/response schemas
@@ -74,5 +75,5 @@ app/
 └── routers/
     ├── berths.py     <- GET /api/berths/*
     ├── docks.py      <- GET /api/docks/*
-    └── users.py      <- POST /api/users/register, login, logout, refresh
+    └── users.py      <- POST /api/users, /api/users/token, GET/PATCH /api/users/me
 ```

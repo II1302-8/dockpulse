@@ -6,10 +6,9 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 class _Base(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    # Something about this being better for pydantic
 
 
-class BerthOut(_Base):  # Grundläggande begränsningar
+class BerthOut(_Base):
     berth_id: str
     dock_id: str
     label: str | None = None

@@ -1,4 +1,3 @@
-import os
 from collections.abc import AsyncIterator
 
 import pytest_asyncio
@@ -7,19 +6,16 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
+from app import models as _models  # noqa: F401
+from app.config import settings
 from app.db import Base, get_session
 from app.main import app
 from app.models import Berth, Dock, Harbor
 
-TEST_DATABASE_URL = os.environ.get(
-    "TEST_DATABASE_URL",
-    "postgresql+asyncpg://dockpulse:dockpulse@localhost:5432/dockpulse_test",
-)
-
 
 @pytest_asyncio.fixture(scope="session")
 async def engine():
-    eng = create_async_engine(TEST_DATABASE_URL)
+    eng = create_async_engine(settings.database_url)
     async with eng.begin() as conn:
         await conn.execute(text("DROP SCHEMA public CASCADE"))
         await conn.execute(text("CREATE SCHEMA public"))

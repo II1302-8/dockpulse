@@ -1,20 +1,20 @@
-import os
-
 import jwt
 import pytest_asyncio
 from argon2 import PasswordHasher
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.models import User
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "test-secret")
 ALGORITHM = "HS256"
 
 
 def make_token(user_id: str, token_version: int = 0) -> str:
     return jwt.encode(
-        {"sub": user_id, "ver": token_version}, SECRET_KEY, algorithm=ALGORITHM
+        {"sub": user_id, "ver": token_version},
+        settings.jwt_secret_key.get_secret_value(),
+        algorithm=ALGORITHM,
     )
 
 

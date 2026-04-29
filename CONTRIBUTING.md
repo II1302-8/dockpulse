@@ -70,16 +70,20 @@ Both teams implement against `docs/api/openapi.yml`.
 ```
 backend/
 ├── app/
-│   ├── __init__.py
-│   ├── main.py          <- FastAPI app, OpenAPI override
-│   ├── models.py         <- Pydantic schemas (mirror openapi.yml)
+│   ├── main.py           <- FastAPI app entry point, lifespan, OpenAPI spec
+│   ├── config.py         <- pydantic-settings config, reads from env / .env
 │   ├── db.py             <- SQLAlchemy engine + session
-│   └── routes/
-│       ├── health.py
-│       ├── docks.py
+│   ├── models.py         <- SQLAlchemy ORM models
+│   ├── schemas.py        <- Pydantic request/response schemas
+│   ├── auth.py           <- JWT creation and verification
+│   ├── events.py         <- Berth state machine and event processing
+│   ├── mqtt.py           <- MQTT listener
+│   ├── broadcaster.py    <- SSE broadcast bus
+│   └── routers/
 │       ├── berths.py
-│       └── alerts.py
-├── alembic/               <- DB migrations
+│       ├── docks.py
+│       └── users.py
+├── alembic/              <- DB migrations
 ├── pyproject.toml
 └── Dockerfile
 ```
@@ -87,8 +91,8 @@ backend/
 ### Adding a new endpoint
 
 1. Add the endpoint to `docs/api/openapi.yml`
-2. Add/update the Pydantic model in `models.py` to match the spec schema
-3. Create the route in `routes/`
+2. Add/update the Pydantic schema in `schemas.py` to match the spec
+3. Create the route in `routers/`
 4. Test (from `backend/`): `uv run pytest`
 5. Verify against spec (from `backend/`): `uv run schemathesis run ../docs/api/openapi.yml --url http://localhost:8000`
 
@@ -138,13 +142,15 @@ Re-run this whenever `docs/api/openapi.yml` changes.
 
 Defined in `.env` (copied from `.env.example`). Docker Compose reads them automatically.
 
-| Variable            | Description      | Default     |
-| ------------------- | ---------------- | ----------- |
-| `POSTGRES_USER`     | DB username      | `dockpulse` |
-| `POSTGRES_PASSWORD` | DB password      | `dockpulse` |
-| `POSTGRES_DB`       | DB name          | `dockpulse` |
-| `MQTT_BROKER`       | MQTT broker host                          | `localhost`                              |
-| `MQTT_PORT`         | MQTT broker port (8883 TLS, 1883 plain)   | `8883`                                   |
-| `MQTT_TLS_CA`       | CA cert path for broker verification      | `/certs/service-ca/ca.crt`               |
-| `MQTT_TLS_CERT`     | Client cert path (mTLS)                   | `/certs/clients/backend/backend.crt`     |
-| `MQTT_TLS_KEY`      | Client key path (mTLS)                    | `/certs/clients/backend/backend.key`     |
+| Variable            | Description                                     | Default                              |
+| ------------------- | ----------------------------------------------- | ------------------------------------ |
+| `POSTGRES_USER`     | DB username                                     | `dockpulse`                          |
+| `POSTGRES_PASSWORD` | DB password                                     | `dockpulse`                          |
+| `POSTGRES_DB`       | DB name                                         | `dockpulse`                          |
+| `DATABASE_URL`      | Backend DB connection string (set by Compose)   | —                                    |
+| `JWT_SECRET_KEY`    | Signs JWTs,generate with `openssl rand -hex 32` | **required**                         |
+| `MQTT_BROKER`       | MQTT broker host                                | `localhost`                          |
+| `MQTT_PORT`         | MQTT broker port (8883 TLS, 1883 plain)         | `8883`                               |
+| `MQTT_TLS_CA`       | CA cert path for broker verification            | `/certs/service-ca/ca.crt`           |
+| `MQTT_TLS_CERT`     | Client cert path (mTLS)                         | `/certs/clients/backend/backend.crt` |
+| `MQTT_TLS_KEY`      | Client key path (mTLS)                          | `/certs/clients/backend/backend.key` |

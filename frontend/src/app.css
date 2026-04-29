@@ -1,11 +1,12 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&family=Jost:wght@300;400;500;600;700&display=swap");
+@import "@fontsource-variable/jost";
+@import "@fontsource-variable/montserrat";
 @import "tailwindcss";
 @plugin "tailwindcss-animate";
 
 @theme {
   /* Fonts */
-  --font-heading: "Montserrat", sans-serif;
-  --font-body: "Jost", sans-serif;
+  --font-heading: "Montserrat Variable", "Montserrat", sans-serif;
+  --font-body: "Jost Variable", "Jost", sans-serif;
 
   /* Brand Colors */
   --color-brand-navy: #0a2540;

@@ -14,6 +14,7 @@ from app.adoption.claims import ClaimError, FactoryClaim, verify_claim_jwt
 from app.auth import get_current_user
 from app.db import get_session
 from app.models import AdoptionRequest, Berth, Gateway, Node, User
+from app.mqtt import publish_provision_req
 from app.schemas import AdoptIn, AdoptionRequestOut
 
 router = APIRouter(prefix="/api/nodes", tags=["nodes"])
@@ -107,5 +108,14 @@ async def adopt_node(
         ) from err
 
     await session.refresh(request)
-    # TODO(MQTT): publish provision/req on dockpulse/v1/gw/{gateway_id}/provision/req
+
+    oob = qr.get("oob")
+    if isinstance(oob, str):
+        await publish_provision_req(
+            gateway_id=body.gateway_id,
+            request_id=request.request_id,
+            mesh_uuid=claim.mesh_uuid,
+            oob=oob,
+            ttl_s=int(ADOPTION_TTL.total_seconds()),
+        )
     return request

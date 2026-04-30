@@ -125,3 +125,8 @@ class AdoptIn(BaseModel):
     )
     berth_id: str
     gateway_id: str
+
+
+class AdoptionUpdateEvent(BaseModel):
+    type: Literal["adoption.update"] = "adoption.update"
+    request: AdoptionRequestOut

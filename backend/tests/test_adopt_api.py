@@ -338,3 +338,33 @@ async def test_adopt_persists_creator(
     )
     request = result.scalar_one()
     assert request.created_by_user_id == harbor_master.user_id
+
+
+async def test_adopt_publishes_provision_req(
+    client: AsyncClient,
+    harbor_master: User,
+    harbor_with_gateway,
+    factory_pubkey,
+    monkeypatch,
+):
+    captured: list[dict] = []
+
+    async def fake_publish(**kwargs):
+        captured.append(kwargs)
+
+    monkeypatch.setattr("app.routers.nodes.publish_provision_req", fake_publish)
+
+    qr = _make_qr_payload(factory_pubkey)
+    r = await client.post(
+        "/api/nodes/adopt",
+        json=_adopt_body(qr),
+        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+    )
+    assert r.status_code == 202
+    assert len(captured) == 1
+    call = captured[0]
+    assert call["gateway_id"] == "gw1"
+    assert call["mesh_uuid"] == "0123456789abcdef0123456789abcdef"
+    assert call["oob"] == "00112233445566778899aabbccddeeff"
+    assert call["ttl_s"] == 60
+    assert call["request_id"] == r.json()["request_id"]

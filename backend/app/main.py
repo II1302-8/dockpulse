@@ -11,7 +11,7 @@ from sqlalchemy import text
 
 from app.db import get_engine
 from app.mqtt import is_mqtt_connected, mqtt_listener
-from app.routers import berths, docks, users
+from app.routers import berths, docks, nodes, users
 from app.schemas import HealthStatus
 
 _start_time = time.monotonic()
@@ -71,6 +71,7 @@ app = FastAPI(
 
 app.include_router(berths.router)
 app.include_router(docks.router)
+app.include_router(nodes.router)
 app.include_router(users.router)
 
 

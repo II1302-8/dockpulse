@@ -12,7 +12,7 @@ event_type_enum = Enum(
 alert_type_enum = Enum(
     "unauthorized_mooring", "sensor_offline", "low_battery", name="alert_type"
 )
-user_role_enum = Enum("harbor_master", "owner", name="user_role")
+user_role_enum = Enum("harbormaster", "boat_owner", name="user_role")
 gateway_status_enum = Enum("online", "offline", name="gateway_status")
 node_status_enum = Enum(
     "provisioned", "offline", "decommissioned", name="node_status"
@@ -31,7 +31,9 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String, nullable=False)
     boat_club: Mapped[str | None] = mapped_column(String)
     token_version: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    role: Mapped[str] = mapped_column(user_role_enum, nullable=False, default="owner")
+    role: Mapped[str] = mapped_column(
+        user_role_enum, nullable=False, default="boat_owner"
+    )
 
 
 class Harbor(Base):

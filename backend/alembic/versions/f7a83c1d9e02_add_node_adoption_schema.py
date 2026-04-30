@@ -5,7 +5,7 @@ Revises: 792f79a69290
 Create Date: 2026-04-30
 
 Adds the schema needed to adopt and provision IoT nodes:
-- users.role enum (harbor_master/owner)
+- users.role enum (harbormaster/boat_owner)
 - gateways table (one per dock)
 - nodes table (provisioned mesh nodes bound to a berth)
 - adoption_requests table (in-flight provisioning attempts)
@@ -25,7 +25,7 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    user_role = sa.Enum("harbor_master", "owner", name="user_role")
+    user_role = sa.Enum("harbormaster", "boat_owner", name="user_role")
     user_role.create(op.get_bind(), checkfirst=False)
     op.add_column(
         "users",
@@ -33,7 +33,7 @@ def upgrade() -> None:
             "role",
             user_role,
             nullable=False,
-            server_default="owner",
+            server_default="boat_owner",
         ),
     )
     op.alter_column("users", "role", server_default=None)

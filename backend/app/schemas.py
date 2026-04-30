@@ -42,7 +42,7 @@ class UserOut(_Base):
     email: str
     phone: str | None = None
     boat_club: str | None = None
-    role: Literal["harbor_master", "owner"]
+    role: Literal["harbormaster", "boat_owner"]
 
 
 class UserPatch(BaseModel):

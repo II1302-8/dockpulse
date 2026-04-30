@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy import Boolean, DateTime, Double, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.db import Base
+from app.db import Base  # Random kommentar som ska bort snart
 
 berth_status_enum = Enum("free", "occupied", name="berth_status")
 event_type_enum = Enum(

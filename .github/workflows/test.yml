@@ -34,3 +34,5 @@ jobs:
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --all-groups
       - run: uv run pytest -v
+      - name: OpenAPI spec is in sync with FastAPI app
+        run: uv run python -m scripts.dump_openapi --check

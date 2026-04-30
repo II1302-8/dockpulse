@@ -24,3 +24,11 @@ repos:
     rev: v1.7.8
     hooks:
       - id: actionlint
+  - repo: local
+    hooks:
+      - id: openapi-up-to-date
+        name: openapi spec matches FastAPI app
+        language: system
+        entry: bash -c 'cd backend && uv run python -m scripts.dump_openapi --check'
+        files: ^(backend/app/|backend/scripts/dump_openapi\.py|docs/api/openapi\.yml)
+        pass_filenames: false

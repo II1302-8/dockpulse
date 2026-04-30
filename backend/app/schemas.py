@@ -73,6 +73,13 @@ class TokenOut(BaseModel):
     token_type: Literal["bearer"] = "bearer"
 
 
+class HealthStatus(BaseModel):
+    status: Literal["ok", "degraded"]
+    uptime: float
+    database: Literal["ok", "error"]
+    mqtt: Literal["ok", "error"]
+
+
 class BerthUpdateEvent(BaseModel):
     type: Literal["berth.update"] = "berth.update"
     berth: BerthOut

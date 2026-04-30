@@ -3,7 +3,7 @@ import type { components } from "../api-types";
 import { useNow } from "../hooks/useNow";
 import { isOnline } from "../lib/freshness";
 
-type Berth = components["schemas"]["Berth"];
+type Berth = components["schemas"]["BerthOut"];
 
 interface HarborOverviewProps {
   berths: Berth[];

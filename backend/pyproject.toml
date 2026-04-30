@@ -52,5 +52,9 @@ select = [
   "T20",   # flake8-print (catch stray prints)
 ]
 
+[tool.ruff.lint.per-file-ignores]
+# CLI scripts legitimately use print for user feedback.
+"scripts/*" = ["T201"]
+
 [tool.ruff.format]
 quote-style = "double"

@@ -13,7 +13,12 @@ router = APIRouter(prefix="/api/docks", tags=["docks"])
 sessiondep = Annotated[AsyncSession, Depends(get_session)]
 
 
-@router.get("", response_model=list[DockOut], operation_id="listDocks")
+@router.get(
+    "",
+    response_model=list[DockOut],
+    operation_id="listDocks",
+    summary="List all docks",
+)
 async def list_docks(
     session: sessiondep,
     harbor_id: str | None = Query(None, description="Filter by harbor"),
@@ -25,7 +30,12 @@ async def list_docks(
     return result.scalars().all()
 
 
-@router.get("/{dock_id}", response_model=DockWithBerthsOut, operation_id="getDock")
+@router.get(
+    "/{dock_id}",
+    response_model=DockWithBerthsOut,
+    operation_id="getDock",
+    summary="Get a single dock with its berths",
+)
 async def get_dock(dock_id: str, session: sessiondep) -> DockWithBerthsOut:
     dock = await session.get(Dock, dock_id)
     if not dock:

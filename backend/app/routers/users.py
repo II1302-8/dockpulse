@@ -31,6 +31,7 @@ def _hash_password(password: str) -> str:
     response_model=UserOut,
     status_code=201,
     operation_id="registerUser",
+    summary="Register a new user",
 )
 async def register_user(body: UserCreate, session: sessiondep):
     existing = await session.execute(select(User).where(User.email == body.email))
@@ -52,7 +53,12 @@ async def register_user(body: UserCreate, session: sessiondep):
     return user
 
 
-@router.post("/token", response_model=TokenOut, operation_id="login")
+@router.post(
+    "/token",
+    response_model=TokenOut,
+    operation_id="login",
+    summary="Log in and obtain an access token",
+)
 async def login(body: LoginIn, session: sessiondep):
     result = await session.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
@@ -68,12 +74,22 @@ async def login(body: LoginIn, session: sessiondep):
     return TokenOut(access_token=create_access_token(user))
 
 
-@router.get("/me", response_model=UserOut, operation_id="getMe")
+@router.get(
+    "/me",
+    response_model=UserOut,
+    operation_id="getMe",
+    summary="Get current user profile",
+)
 async def get_me(current_user: currentuser_dep):
     return current_user
 
 
-@router.patch("/me", response_model=UserOut, operation_id="updateMe")
+@router.patch(
+    "/me",
+    response_model=UserOut,
+    operation_id="updateMe",
+    summary="Update current user profile",
+)
 async def update_me(
     body: UserPatch, current_user: currentuser_dep, session: sessiondep
 ):

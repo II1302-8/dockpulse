@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import type { components } from "../api-types";
 import { useBerthDetail } from "../hooks/useBerthDetail";
 
-type Berth = components["schemas"]["Berth"];
+type Berth = components["schemas"]["BerthOut"];
 
 interface BerthDetailPanelProps {
   berthId: string;

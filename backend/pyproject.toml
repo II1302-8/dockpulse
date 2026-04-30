@@ -19,6 +19,7 @@ dependencies = [
   "sse-starlette>=2.4",
   "PyJWT[crypto]>=2.8",
   "argon2-cffi>=21.0",
+  "resend>=2.29.0",
 ]
 
 [project.scripts]

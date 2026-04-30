@@ -42,6 +42,7 @@ class UserOut(_Base):
     email: str
     phone: str | None = None
     boat_club: str | None = None
+    role: Literal["harbormaster", "boat_owner"]
 
 
 class UserPatch(BaseModel):
@@ -75,3 +76,45 @@ class TokenOut(BaseModel):
 class BerthUpdateEvent(BaseModel):
     type: Literal["berth.update"] = "berth.update"
     berth: BerthOut
+
+
+class GatewayOut(_Base):
+    gateway_id: str
+    dock_id: str
+    name: str
+    status: Literal["online", "offline"]
+    last_seen: datetime | None = None
+
+
+class NodeOut(_Base):
+    node_id: str
+    mesh_uuid: str
+    serial_number: str
+    berth_id: str
+    gateway_id: str
+    mesh_unicast_addr: str
+    status: Literal["provisioned", "offline", "decommissioned"]
+    adopted_at: datetime
+
+
+class AdoptionRequestOut(_Base):
+    request_id: str
+    mesh_uuid: str
+    serial_number: str
+    gateway_id: str
+    berth_id: str
+    status: Literal["pending", "ok", "err"]
+    error_code: str | None = None
+    error_msg: str | None = None
+    mesh_unicast_addr: str | None = None
+    expires_at: datetime
+    created_at: datetime
+    completed_at: datetime | None = None
+
+
+class AdoptIn(BaseModel):
+    qr_payload: str = Field(
+        description="Base64url-encoded JSON from QR fragment (uuid, oob, sn, jwt)"
+    )
+    berth_id: str
+    gateway_id: str

@@ -12,6 +12,12 @@ event_type_enum = Enum(
 alert_type_enum = Enum(
     "unauthorized_mooring", "sensor_offline", "low_battery", name="alert_type"
 )
+user_role_enum = Enum("harbor_master", "owner", name="user_role")
+gateway_status_enum = Enum("online", "offline", name="gateway_status")
+node_status_enum = Enum(
+    "provisioned", "offline", "decommissioned", name="node_status"
+)
+adoption_status_enum = Enum("pending", "ok", "err", name="adoption_status")
 
 
 class User(Base):
@@ -25,6 +31,7 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String, nullable=False)
     boat_club: Mapped[str | None] = mapped_column(String)
     token_version: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    role: Mapped[str] = mapped_column(user_role_enum, nullable=False, default="owner")
 
 
 class Harbor(Base):
@@ -94,3 +101,84 @@ class Alert(Base):
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     berth: Mapped["Berth"] = relationship(back_populates="alerts")
+
+
+class Gateway(Base):
+    __tablename__ = "gateways"
+
+    gateway_id: Mapped[str] = mapped_column(String, primary_key=True)
+    dock_id: Mapped[str] = mapped_column(
+        ForeignKey("docks.dock_id"), nullable=False, unique=True
+    )
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    status: Mapped[str] = mapped_column(
+        gateway_status_enum, nullable=False, default="offline"
+    )
+    last_seen: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class Node(Base):
+    __tablename__ = "nodes"
+
+    node_id: Mapped[str] = mapped_column(String, primary_key=True)
+    mesh_uuid: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    serial_number: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    berth_id: Mapped[str] = mapped_column(
+        ForeignKey("berths.berth_id"), nullable=False
+    )
+    gateway_id: Mapped[str] = mapped_column(
+        ForeignKey("gateways.gateway_id"), nullable=False
+    )
+    mesh_unicast_addr: Mapped[str] = mapped_column(String, nullable=False)
+    dev_key_fp: Mapped[str] = mapped_column(String, nullable=False)
+    status: Mapped[str] = mapped_column(node_status_enum, nullable=False)
+    adopted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    adopted_by_user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.user_id"), nullable=False
+    )
+
+
+class AdoptionRequest(Base):
+    __tablename__ = "adoption_requests"
+
+    request_id: Mapped[str] = mapped_column(String, primary_key=True)
+    mesh_uuid: Mapped[str] = mapped_column(String, nullable=False)
+    serial_number: Mapped[str] = mapped_column(String, nullable=False)
+    claim_jti: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    gateway_id: Mapped[str] = mapped_column(
+        ForeignKey("gateways.gateway_id"), nullable=False
+    )
+    berth_id: Mapped[str] = mapped_column(
+        ForeignKey("berths.berth_id"), nullable=False
+    )
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    status: Mapped[str] = mapped_column(
+        adoption_status_enum, nullable=False, default="pending"
+    )
+    error_code: Mapped[str | None] = mapped_column(String)
+    error_msg: Mapped[str | None] = mapped_column(String)
+    mesh_unicast_addr: Mapped[str | None] = mapped_column(String)
+    dev_key_fp: Mapped[str | None] = mapped_column(String)
+    created_by_user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.user_id"), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class FactoryKey(Base):
+    __tablename__ = "factory_keys"
+
+    key_id: Mapped[str] = mapped_column(String, primary_key=True)
+    algorithm: Mapped[str] = mapped_column(String, nullable=False)
+    public_key_pem: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

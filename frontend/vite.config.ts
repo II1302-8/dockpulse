@@ -14,6 +14,28 @@ export default defineConfig({
       "@": path.resolve(import.meta.dirname, "./src"),
     },
   },
+  build: {
+    target: "es2022",
+    cssCodeSplit: true,
+    reportCompressedSize: false,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (id.includes("/panzoom/")) return "panzoom";
+            if (
+              id.includes("/react/") ||
+              id.includes("/react-dom/") ||
+              id.includes("/react-router") ||
+              id.includes("/scheduler/")
+            ) {
+              return "react";
+            }
+          }
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       ...(sseMockUrl ? { "/api/berths/stream": sseMockUrl } : {}),

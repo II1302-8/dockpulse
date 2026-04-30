@@ -67,6 +67,8 @@ async def adopt_node(
     gateway = await session.get(Gateway, body.gateway_id)
     if gateway is None:
         raise HTTPException(status_code=404, detail="Gateway not found")
+    if gateway.status != "online":
+        raise HTTPException(status_code=409, detail="Gateway is offline")
 
     berth = await session.get(Berth, body.berth_id)
     if berth is None:

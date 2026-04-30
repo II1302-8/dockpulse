@@ -340,6 +340,75 @@ async def test_adopt_persists_creator(
     assert request.created_by_user_id == harbor_master.user_id
 
 
+async def test_adopt_rejects_offline_gateway(
+    client: AsyncClient,
+    session: AsyncSession,
+    harbor_master: User,
+    harbor_with_gateway,
+    factory_pubkey,
+):
+    gateway = await session.get(Gateway, "gw1")
+    gateway.status = "offline"
+    await session.commit()
+
+    qr = _make_qr_payload(factory_pubkey)
+    r = await client.post(
+        "/api/nodes/adopt",
+        json=_adopt_body(qr),
+        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+    )
+    assert r.status_code == 409
+
+
+async def test_get_adoption_returns_request(
+    client: AsyncClient,
+    harbor_master: User,
+    harbor_with_gateway,
+    factory_pubkey,
+):
+    qr = _make_qr_payload(factory_pubkey)
+    create = await client.post(
+        "/api/nodes/adopt",
+        json=_adopt_body(qr),
+        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+    )
+    assert create.status_code == 202
+    request_id = create.json()["request_id"]
+
+    r = await client.get(
+        f"/api/adoptions/{request_id}",
+        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+    )
+    assert r.status_code == 200
+    assert r.json()["request_id"] == request_id
+    assert r.json()["status"] == "pending"
+
+
+async def test_get_adoption_404_unknown(
+    client: AsyncClient, harbor_master: User, harbor_with_gateway
+):
+    r = await client.get(
+        "/api/adoptions/missing",
+        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+    )
+    assert r.status_code == 404
+
+
+async def test_get_adoption_requires_harbormaster(
+    client: AsyncClient, boat_owner: User, harbor_with_gateway
+):
+    r = await client.get(
+        "/api/adoptions/anything",
+        headers={"Authorization": f"Bearer {_auth_token(boat_owner.user_id)}"},
+    )
+    assert r.status_code == 403
+
+
+async def test_get_adoption_requires_auth(client: AsyncClient):
+    r = await client.get("/api/adoptions/anything")
+    assert r.status_code == 401
+
+
 async def test_adopt_publishes_provision_req(
     client: AsyncClient,
     harbor_master: User,

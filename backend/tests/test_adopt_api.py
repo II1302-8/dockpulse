@@ -196,6 +196,70 @@ async def test_adopt_rejects_invalid_qr_encoding(
     assert r.status_code == 400
 
 
+async def test_adopt_rejects_qr_without_oob(
+    client: AsyncClient,
+    session: AsyncSession,
+    harbor_master: User,
+    harbor_with_gateway,
+    factory_pubkey,
+):
+    now = int(time.time())
+    claim = {
+        "iss": "factory",
+        "sub": "DP-N-000123",
+        "uuid": "0123456789abcdef0123456789abcdef",
+        "jti": "claim-jti-no-oob",
+        "iat": now,
+        "exp": now + 3600,
+    }
+    token = jwt.encode(claim, factory_pubkey, algorithm=ALGORITHM)
+    qr_dict = {"v": 1, "uuid": claim["uuid"], "sn": claim["sub"], "jwt": token}
+    qr = base64.urlsafe_b64encode(json.dumps(qr_dict).encode()).rstrip(b"=").decode()
+
+    r = await client.post(
+        "/api/nodes/adopt",
+        json=_adopt_body(qr),
+        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+    )
+    assert r.status_code == 400
+
+    rows = (await session.execute(select(AdoptionRequest))).scalars().all()
+    assert rows == []
+
+
+async def test_adopt_rejects_qr_with_empty_oob(
+    client: AsyncClient,
+    harbor_master: User,
+    harbor_with_gateway,
+    factory_pubkey,
+):
+    now = int(time.time())
+    claim = {
+        "iss": "factory",
+        "sub": "DP-N-000123",
+        "uuid": "0123456789abcdef0123456789abcdef",
+        "jti": "claim-jti-empty-oob",
+        "iat": now,
+        "exp": now + 3600,
+    }
+    token = jwt.encode(claim, factory_pubkey, algorithm=ALGORITHM)
+    qr_dict = {
+        "v": 1,
+        "uuid": claim["uuid"],
+        "oob": "",
+        "sn": claim["sub"],
+        "jwt": token,
+    }
+    qr = base64.urlsafe_b64encode(json.dumps(qr_dict).encode()).rstrip(b"=").decode()
+
+    r = await client.post(
+        "/api/nodes/adopt",
+        json=_adopt_body(qr),
+        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+    )
+    assert r.status_code == 400
+
+
 async def test_adopt_rejects_qr_without_jwt(
     client: AsyncClient, harbor_master: User, harbor_with_gateway, factory_pubkey
 ):

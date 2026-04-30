@@ -1,15 +1,14 @@
-"""Adoption-request completion logic.
+"""Adoption-request completion logic
 
 Called by the MQTT response handler when a gateway reports the result of
-a provisioning attempt. Idempotent: completing an already-completed
-request is a no-op so duplicate gateway publishes don't create double
-node rows.
+a provisioning attempt
 """
 
 import logging
 import uuid
 from datetime import UTC, datetime
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import broadcaster
@@ -30,7 +29,12 @@ def _publish_adoption_update(request: AdoptionRequest) -> None:
 async def _load_pending(
     session: AsyncSession, request_id: str
 ) -> AdoptionRequest | None:
-    request = await session.get(AdoptionRequest, request_id)
+    stmt = (
+        select(AdoptionRequest)
+        .where(AdoptionRequest.request_id == request_id)
+        .with_for_update()
+    )
+    request = (await session.execute(stmt)).scalar_one_or_none()
     if request is None:
         logger.info("provision response for unknown request_id=%s", request_id)
         return None

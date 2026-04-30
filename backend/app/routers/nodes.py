@@ -64,6 +64,10 @@ async def adopt_node(
     qr = _decode_qr_payload(body.qr_payload)
     claim = _verify_claim(qr)
 
+    oob = qr.get("oob")
+    if not isinstance(oob, str) or not oob:
+        raise HTTPException(status_code=400, detail="QR missing 'oob' field")
+
     gateway = await session.get(Gateway, body.gateway_id)
     if gateway is None:
         raise HTTPException(status_code=404, detail="Gateway not found")
@@ -111,13 +115,11 @@ async def adopt_node(
 
     await session.refresh(request)
 
-    oob = qr.get("oob")
-    if isinstance(oob, str):
-        await publish_provision_req(
-            gateway_id=body.gateway_id,
-            request_id=request.request_id,
-            mesh_uuid=claim.mesh_uuid,
-            oob=oob,
-            ttl_s=int(ADOPTION_TTL.total_seconds()),
-        )
+    await publish_provision_req(
+        gateway_id=body.gateway_id,
+        request_id=request.request_id,
+        mesh_uuid=claim.mesh_uuid,
+        oob=oob,
+        ttl_s=int(ADOPTION_TTL.total_seconds()),
+    )
     return request

@@ -1,9 +1,4 @@
-"""Verifies factory-signed claim JWTs from node QR codes.
-
-The factory signs a claim JWT per node with an Ed25519 private key. The
-backend holds the matching public key (PEM) in the FACTORY_PUBKEY env var
-and verifies signature, expiry, and that the required claims are present.
-"""
+"""Verifies factory-signed claim JWTs from node QR codes"""
 
 import os
 from dataclasses import dataclass
@@ -16,7 +11,7 @@ ISSUER = "factory"
 
 
 class ClaimError(Exception):
-    """Claim JWT was malformed, unsigned, expired, or had bad fields."""
+    """Claim JWT was malformed, unsigned, expired, or had bad fields"""
 
 
 @dataclass(frozen=True)
@@ -36,10 +31,10 @@ def _factory_pubkey() -> str:
 
 
 def verify_claim_jwt(token: str) -> FactoryClaim:
-    """Decode and verify a factory-signed claim JWT.
+    """Decode and verify a factory-signed claim JWT
 
     Raises ClaimError on any failure: bad signature, expired, missing claim,
-    wrong issuer, wrong algorithm.
+    wrong issuer, wrong algorithm
     """
     try:
         payload = jwt.decode(

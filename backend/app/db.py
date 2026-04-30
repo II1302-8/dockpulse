@@ -1,21 +1,30 @@
-import os
+from functools import lru_cache
 
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
-
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL",
-    "postgresql+asyncpg://dockpulse:dockpulse@localhost:5432/dockpulse",
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
 )
+from sqlalchemy.orm import DeclarativeBase
 
-engine = create_async_engine(DATABASE_URL)
-async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+from app.config import get_settings
 
 
 class Base(DeclarativeBase):
     pass
 
 
+@lru_cache
+def get_engine() -> AsyncEngine:
+    return create_async_engine(get_settings().database_url)
+
+
+@lru_cache
+def get_sessionmaker() -> async_sessionmaker[AsyncSession]:
+    return async_sessionmaker(get_engine(), expire_on_commit=False)
+
+
 async def get_session():
-    async with async_session() as session:
+    async with get_sessionmaker()() as session:
         yield session

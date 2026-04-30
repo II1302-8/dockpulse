@@ -10,6 +10,7 @@ dependencies = [
   "alembic>=1.18",
   "aiomqtt>=2.5",
   "pydantic[email]>=2.12",
+  "pydantic-settings>=2.5",
   "pyyaml>=6.0",
   "sse-starlette>=2.4",
   "PyJWT[crypto]>=2.8",

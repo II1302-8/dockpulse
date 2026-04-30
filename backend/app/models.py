@@ -14,9 +14,7 @@ alert_type_enum = Enum(
 )
 user_role_enum = Enum("harbormaster", "boat_owner", name="user_role")
 gateway_status_enum = Enum("online", "offline", name="gateway_status")
-node_status_enum = Enum(
-    "provisioned", "offline", "decommissioned", name="node_status"
-)
+node_status_enum = Enum("provisioned", "offline", "decommissioned", name="node_status")
 adoption_status_enum = Enum("pending", "ok", "err", name="adoption_status")
 
 
@@ -125,9 +123,7 @@ class Node(Base):
     node_id: Mapped[str] = mapped_column(String, primary_key=True)
     mesh_uuid: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     serial_number: Mapped[str] = mapped_column(String, nullable=False, unique=True)
-    berth_id: Mapped[str] = mapped_column(
-        ForeignKey("berths.berth_id"), nullable=False
-    )
+    berth_id: Mapped[str] = mapped_column(ForeignKey("berths.berth_id"), nullable=False)
     gateway_id: Mapped[str] = mapped_column(
         ForeignKey("gateways.gateway_id"), nullable=False
     )
@@ -152,9 +148,7 @@ class AdoptionRequest(Base):
     gateway_id: Mapped[str] = mapped_column(
         ForeignKey("gateways.gateway_id"), nullable=False
     )
-    berth_id: Mapped[str] = mapped_column(
-        ForeignKey("berths.berth_id"), nullable=False
-    )
+    berth_id: Mapped[str] = mapped_column(ForeignKey("berths.berth_id"), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )

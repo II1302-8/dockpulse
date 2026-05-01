@@ -140,8 +140,10 @@ class OwnerUpdate(BaseModel):
     boat_registration_number: str | None = None
 
 
-class OwnerResponse(OwnerBase):
+class OwnerOut(_Base):
     id: int
-
-    # Allows Pydantic to read the data even if it's not a dict (like a SQLAlchemy model)
-    model_config = ConfigDict(from_attributes=True)
+    name: str
+    email: EmailStr
+    phone: str | None = None
+    boat_name: str | None = None
+    boat_registration_number: str | None = None

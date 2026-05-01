@@ -656,6 +656,16 @@ paths:
       tags:
       - users
   /api/users/me:
+    delete:
+      operationId: delete_user_api_users_me_delete
+      responses:
+        '204':
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: Delete User
+      tags:
+      - users
     get:
       operationId: getMe
       responses:

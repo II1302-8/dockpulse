@@ -110,3 +110,13 @@ async def update_me(
     await session.commit()
     await session.refresh(current_user)
     return current_user
+
+
+@router.delete("/me", status_code=204)
+async def delete_user(current_user: currentuser_dep, session: sessiondep):
+    result = await session.execute(select(User).where(User.id == current_user.user_id))
+    user = result.scalars().first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    await session.delete(user)
+    await session.commit()

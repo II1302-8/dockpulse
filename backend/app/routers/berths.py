@@ -1,19 +1,16 @@
 import asyncio
 import json
-from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sse_starlette.sse import EventSourceResponse
 
 from app import broadcaster
-from app.db import get_session
+from app.dependencies import SessionDep
 from app.models import Berth
 from app.schemas import BerthOut, BerthUpdateEvent
 
 router = APIRouter(prefix="/api/berths", tags=["berths"])
-sessiondep = Annotated[AsyncSession, Depends(get_session)]
 
 SSE_PING_SECONDS = 15
 
@@ -58,7 +55,7 @@ async def stream_berths(request: Request):
     operation_id="getBerth",
     summary="Get a single berth",
 )
-async def get_berth(berth_id: str, session: sessiondep):
+async def get_berth(berth_id: str, session: SessionDep):
     berth = await session.get(Berth, berth_id)
     if not berth:
         raise HTTPException(status_code=404, detail="Berth not found")
@@ -72,7 +69,7 @@ async def get_berth(berth_id: str, session: sessiondep):
     summary="List all berths",
 )
 async def list_berths(
-    session: sessiondep,
+    session: SessionDep,
     dock_id: str | None = Query(None, description="filter by dock"),
     status: str | None = Query(
         None, pattern="^(free|occupied)$", description="filter by status"

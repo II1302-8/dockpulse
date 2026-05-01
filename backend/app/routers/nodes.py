@@ -3,23 +3,18 @@ import binascii
 import json
 import uuid
 from datetime import UTC, datetime, timedelta
-from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adoption.claims import ClaimError, FactoryClaim, verify_claim_jwt
-from app.auth import get_current_user
-from app.db import get_session
-from app.models import AdoptionRequest, Berth, Gateway, Node, User
+from app.dependencies import HarbormasterDep, SessionDep
+from app.models import AdoptionRequest, Berth, Gateway, Node
 from app.mqtt import publish_provision_req
 from app.schemas import AdoptIn, AdoptionRequestOut
 
 router = APIRouter(prefix="/api/nodes", tags=["nodes"])
-sessiondep = Annotated[AsyncSession, Depends(get_session)]
-currentuser_dep = Annotated[User, Depends(get_current_user)]
 
 ADOPTION_TTL = timedelta(seconds=60)
 
@@ -55,12 +50,9 @@ def _verify_claim(qr: dict) -> FactoryClaim:
 )
 async def adopt_node(
     body: AdoptIn,
-    current_user: currentuser_dep,
-    session: sessiondep,
+    current_user: HarbormasterDep,
+    session: SessionDep,
 ):
-    if current_user.role != "harbormaster":
-        raise HTTPException(status_code=403, detail="Harbormaster role required")
-
     qr = _decode_qr_payload(body.qr_payload)
     claim = _verify_claim(qr)
 

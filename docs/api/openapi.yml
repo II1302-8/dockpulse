@@ -1,5 +1,87 @@
 components:
   schemas:
+    AdoptIn:
+      properties:
+        berth_id:
+          title: Berth Id
+          type: string
+        gateway_id:
+          title: Gateway Id
+          type: string
+        qr_payload:
+          description: Base64url-encoded JSON from QR fragment (uuid, oob, sn, jwt)
+          title: Qr Payload
+          type: string
+      required:
+      - qr_payload
+      - berth_id
+      - gateway_id
+      title: AdoptIn
+      type: object
+    AdoptionRequestOut:
+      properties:
+        berth_id:
+          title: Berth Id
+          type: string
+        completed_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Completed At
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        error_code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Error Code
+        error_msg:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Error Msg
+        expires_at:
+          format: date-time
+          title: Expires At
+          type: string
+        gateway_id:
+          title: Gateway Id
+          type: string
+        mesh_unicast_addr:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Mesh Unicast Addr
+        mesh_uuid:
+          title: Mesh Uuid
+          type: string
+        request_id:
+          title: Request Id
+          type: string
+        serial_number:
+          title: Serial Number
+          type: string
+        status:
+          enum:
+          - pending
+          - ok
+          - err
+          title: Status
+          type: string
+      required:
+      - request_id
+      - mesh_uuid
+      - serial_number
+      - gateway_id
+      - berth_id
+      - status
+      - expires_at
+      - created_at
+      title: AdoptionRequestOut
+      type: object
     BerthOut:
       properties:
         battery_pct:
@@ -328,6 +410,34 @@ info:
   version: 0.1.0
 openapi: 3.1.0
 paths:
+  /api/adoptions/{request_id}:
+    get:
+      operationId: getAdoption
+      parameters:
+      - in: path
+        name: request_id
+        required: true
+        schema:
+          title: Request Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdoptionRequestOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get Adoption
+      tags:
+      - adoptions
   /api/berths:
     get:
       operationId: listBerths
@@ -493,6 +603,33 @@ paths:
       summary: Health check
       tags:
       - system
+  /api/nodes/adopt:
+    post:
+      operationId: adoptNode
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdoptIn'
+        required: true
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdoptionRequestOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Adopt Node
+      tags:
+      - nodes
   /api/users:
     post:
       operationId: registerUser
@@ -598,3 +735,7 @@ tags:
   name: docks
 - description: User registration, login, profile
   name: users
+- description: Node adoption and lifecycle
+  name: nodes
+- description: Adoption request status
+  name: adoptions

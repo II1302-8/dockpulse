@@ -4,638 +4,784 @@
  */
 
 export interface paths {
-  "/api/berths": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/adoptions/{request_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Adoption */
+        get: operations["getAdoption"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** List all berths */
-    get: operations["listBerths"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/berths/stream": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/berths": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all berths */
+        get: operations["listBerths"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Subscribe to live berth updates via Server-Sent Events
-     * @description Opens a long-lived `text/event-stream` connection. Each message is a JSON-encoded `BerthUpdateEvent`. Clients should first fetch a snapshot via `GET /api/berths` and then merge streamed updates by `berth_id`. Reconnects re-subscribe but do not replay missed events — re-fetch the snapshot after an `open` that follows a disconnection.
-     */
-    get: operations["streamBerths"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/berths/{berth_id}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/berths/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Subscribe to live berth updates via Server-Sent Events
+         * @description Opens a long-lived `text/event-stream` connection. Each message is a JSON-encoded `BerthUpdateEvent`. Clients should first fetch a snapshot via `GET /api/berths` and then merge streamed updates by `berth_id`. Reconnects re-subscribe but do not replay missed events — re-fetch the snapshot after an `open` that follows a disconnection.
+         */
+        get: operations["streamBerths"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Get a single berth */
-    get: operations["getBerth"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/docks": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/berths/{berth_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a single berth */
+        get: operations["getBerth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** List all docks */
-    get: operations["listDocks"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/docks/{dock_id}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/docks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all docks */
+        get: operations["listDocks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Get a single dock with its berths */
-    get: operations["getDock"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/health": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/docks/{dock_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a single dock with its berths */
+        get: operations["getDock"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Health check */
-    get: operations["getHealth"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/users": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Health check */
+        get: operations["getHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /** Register a new user */
-    post: operations["registerUser"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/api/users/me": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/nodes/adopt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Adopt Node */
+        post: operations["adoptNode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /** Get current user profile */
-    get: operations["getMe"];
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    /** Update current user profile */
-    patch: operations["updateMe"];
-    trace?: never;
-  };
-  "/api/users/token": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/api/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register a new user */
+        post: operations["registerUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /** Log in and obtain an access token */
-    post: operations["login"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
+    "/api/users/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get current user profile */
+        get: operations["getMe"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update current user profile */
+        patch: operations["updateMe"];
+        trace?: never;
+    };
+    "/api/users/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Log in and obtain an access token */
+        post: operations["login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-  schemas: {
-    /** BerthOut */
-    BerthOut: {
-      /** Battery Pct */
-      battery_pct?: number | null;
-      /** Berth Id */
-      berth_id: string;
-      /** Depth M */
-      depth_m?: number | null;
-      /** Dock Id */
-      dock_id: string;
-      /** Label */
-      label?: string | null;
-      /** Last Updated */
-      last_updated?: string | null;
-      /** Length M */
-      length_m?: number | null;
-      /** Sensor Raw */
-      sensor_raw?: number | null;
-      /** Status */
-      status: string;
-      /** Width M */
-      width_m?: number | null;
+    schemas: {
+        /** AdoptIn */
+        AdoptIn: {
+            /** Berth Id */
+            berth_id: string;
+            /** Gateway Id */
+            gateway_id: string;
+            /**
+             * Qr Payload
+             * @description Base64url-encoded JSON from QR fragment (uuid, oob, sn, jwt)
+             */
+            qr_payload: string;
+        };
+        /** AdoptionRequestOut */
+        AdoptionRequestOut: {
+            /** Berth Id */
+            berth_id: string;
+            /** Completed At */
+            completed_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error Code */
+            error_code?: string | null;
+            /** Error Msg */
+            error_msg?: string | null;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Gateway Id */
+            gateway_id: string;
+            /** Mesh Unicast Addr */
+            mesh_unicast_addr?: string | null;
+            /** Mesh Uuid */
+            mesh_uuid: string;
+            /** Request Id */
+            request_id: string;
+            /** Serial Number */
+            serial_number: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "ok" | "err";
+        };
+        /** BerthOut */
+        BerthOut: {
+            /** Battery Pct */
+            battery_pct?: number | null;
+            /** Berth Id */
+            berth_id: string;
+            /** Depth M */
+            depth_m?: number | null;
+            /** Dock Id */
+            dock_id: string;
+            /** Label */
+            label?: string | null;
+            /** Last Updated */
+            last_updated?: string | null;
+            /** Length M */
+            length_m?: number | null;
+            /** Sensor Raw */
+            sensor_raw?: number | null;
+            /** Status */
+            status: string;
+            /** Width M */
+            width_m?: number | null;
+        };
+        /** BerthUpdateEvent */
+        BerthUpdateEvent: {
+            berth: components["schemas"]["BerthOut"];
+            /**
+             * Type
+             * @default berth.update
+             * @constant
+             */
+            type: "berth.update";
+        };
+        /** DockOut */
+        DockOut: {
+            /** Dock Id */
+            dock_id: string;
+            /** Harbor Id */
+            harbor_id: string;
+            /** Name */
+            name: string;
+        };
+        /** DockWithBerthsOut */
+        DockWithBerthsOut: {
+            /**
+             * Berths
+             * @default []
+             */
+            berths: components["schemas"]["BerthOut"][];
+            /** Dock Id */
+            dock_id: string;
+            /** Harbor Id */
+            harbor_id: string;
+            /** Name */
+            name: string;
+        };
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HealthStatus */
+        HealthStatus: {
+            /**
+             * Database
+             * @enum {string}
+             */
+            database: "ok" | "error";
+            /**
+             * Mqtt
+             * @enum {string}
+             */
+            mqtt: "ok" | "error";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "degraded";
+            /** Uptime */
+            uptime: number;
+        };
+        /** LoginIn */
+        LoginIn: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Password */
+            password: string;
+        };
+        /** TokenOut */
+        TokenOut: {
+            /** Access Token */
+            access_token: string;
+            /**
+             * Token Type
+             * @default bearer
+             * @constant
+             */
+            token_type: "bearer";
+        };
+        /** UserCreate */
+        UserCreate: {
+            /** Boat Club */
+            boat_club?: string | null;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Firstname */
+            firstname: string;
+            /** Lastname */
+            lastname: string;
+            /** Password */
+            password: string;
+            /** Phone */
+            phone?: string | null;
+        };
+        /** UserOut */
+        UserOut: {
+            /** Boat Club */
+            boat_club?: string | null;
+            /** Email */
+            email: string;
+            /** Firstname */
+            firstname: string;
+            /** Lastname */
+            lastname: string;
+            /** Phone */
+            phone?: string | null;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "harbormaster" | "boat_owner";
+            /** User Id */
+            user_id: string;
+        };
+        /** UserPatch */
+        UserPatch: {
+            /** Boat Club */
+            boat_club?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Firstname */
+            firstname?: string | null;
+            /** Lastname */
+            lastname?: string | null;
+            /** Password */
+            password?: string | null;
+            /** Phone */
+            phone?: string | null;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Context */
+            ctx?: Record<string, never>;
+            /** Input */
+            input?: unknown;
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+        };
     };
-    /** BerthUpdateEvent */
-    BerthUpdateEvent: {
-      berth: components["schemas"]["BerthOut"];
-      /**
-       * Type
-       * @default berth.update
-       * @constant
-       */
-      type: "berth.update";
-    };
-    /** DockOut */
-    DockOut: {
-      /** Dock Id */
-      dock_id: string;
-      /** Harbor Id */
-      harbor_id: string;
-      /** Name */
-      name: string;
-    };
-    /** DockWithBerthsOut */
-    DockWithBerthsOut: {
-      /**
-       * Berths
-       * @default []
-       */
-      berths: components["schemas"]["BerthOut"][];
-      /** Dock Id */
-      dock_id: string;
-      /** Harbor Id */
-      harbor_id: string;
-      /** Name */
-      name: string;
-    };
-    /** HTTPValidationError */
-    HTTPValidationError: {
-      /** Detail */
-      detail?: components["schemas"]["ValidationError"][];
-    };
-    /** HealthStatus */
-    HealthStatus: {
-      /**
-       * Database
-       * @enum {string}
-       */
-      database: "ok" | "error";
-      /**
-       * Mqtt
-       * @enum {string}
-       */
-      mqtt: "ok" | "error";
-      /**
-       * Status
-       * @enum {string}
-       */
-      status: "ok" | "degraded";
-      /** Uptime */
-      uptime: number;
-    };
-    /** LoginIn */
-    LoginIn: {
-      /**
-       * Email
-       * Format: email
-       */
-      email: string;
-      /** Password */
-      password: string;
-    };
-    /** TokenOut */
-    TokenOut: {
-      /** Access Token */
-      access_token: string;
-      /**
-       * Token Type
-       * @default bearer
-       * @constant
-       */
-      token_type: "bearer";
-    };
-    /** UserCreate */
-    UserCreate: {
-      /** Boat Club */
-      boat_club?: string | null;
-      /**
-       * Email
-       * Format: email
-       */
-      email: string;
-      /** Firstname */
-      firstname: string;
-      /** Lastname */
-      lastname: string;
-      /** Password */
-      password: string;
-      /** Phone */
-      phone?: string | null;
-    };
-    /** UserOut */
-    UserOut: {
-      /** Boat Club */
-      boat_club?: string | null;
-      /** Email */
-      email: string;
-      /** Firstname */
-      firstname: string;
-      /** Lastname */
-      lastname: string;
-      /** Phone */
-      phone?: string | null;
-      /**
-       * Role
-       * @enum {string}
-       */
-      role: "harbormaster" | "boat_owner";
-      /** User Id */
-      user_id: string;
-    };
-    /** UserPatch */
-    UserPatch: {
-      /** Boat Club */
-      boat_club?: string | null;
-      /** Email */
-      email?: string | null;
-      /** Firstname */
-      firstname?: string | null;
-      /** Lastname */
-      lastname?: string | null;
-      /** Password */
-      password?: string | null;
-      /** Phone */
-      phone?: string | null;
-    };
-    /** ValidationError */
-    ValidationError: {
-      /** Context */
-      ctx?: Record<string, never>;
-      /** Input */
-      input?: unknown;
-      /** Location */
-      loc: (string | number)[];
-      /** Message */
-      msg: string;
-      /** Error Type */
-      type: string;
-    };
-  };
-  responses: never;
-  parameters: never;
-  requestBodies: never;
-  headers: never;
-  pathItems: never;
+    responses: never;
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-  listBerths: {
-    parameters: {
-      query?: {
-        /** @description filter by dock */
-        dock_id?: string | null;
-        /** @description filter by status */
-        status?: string | null;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
+    getAdoption: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdoptionRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    listBerths: {
+        parameters: {
+            query?: {
+                /** @description filter by dock */
+                dock_id?: string | null;
+                /** @description filter by status */
+                status?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content: {
-          "application/json": components["schemas"]["BerthOut"][];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BerthOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
     };
-  };
-  streamBerths: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    streamBerths: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Each frame is a JSON-encoded BerthUpdateEvent. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BerthUpdateEvent"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Each frame is a JSON-encoded BerthUpdateEvent. */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    getBerth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                berth_id: string;
+            };
+            cookie?: never;
         };
-        content: {
-          "application/json": components["schemas"]["BerthUpdateEvent"];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BerthOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
     };
-  };
-  getBerth: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        berth_id: string;
-      };
-      cookie?: never;
+    listDocks: {
+        parameters: {
+            query?: {
+                /** @description Filter by harbor */
+                harbor_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DockOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    getDock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dock_id: string;
+            };
+            cookie?: never;
         };
-        content: {
-          "application/json": components["schemas"]["BerthOut"];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DockWithBerthsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
     };
-  };
-  listDocks: {
-    parameters: {
-      query?: {
-        /** @description Filter by harbor */
-        harbor_id?: string | null;
-      };
-      header?: never;
-      path?: never;
-      cookie?: never;
+    getHealth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HealthStatus"];
+                };
+            };
+            /** @description Service is degraded — at least one dependency is unreachable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HealthStatus"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    adoptNode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content: {
-          "application/json": components["schemas"]["DockOut"][];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdoptIn"];
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdoptionRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
     };
-  };
-  getDock: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        dock_id: string;
-      };
-      cookie?: never;
+    registerUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    getMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content: {
-          "application/json": components["schemas"]["DockWithBerthsOut"];
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
         };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
     };
-  };
-  getHealth: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    updateMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
     };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
+    login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        content: {
-          "application/json": components["schemas"]["HealthStatus"];
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginIn"];
+            };
         };
-      };
-      /** @description Service is degraded — at least one dependency is unreachable */
-      503: {
-        headers: {
-          [name: string]: unknown;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
-        content: {
-          "application/json": components["schemas"]["HealthStatus"];
-        };
-      };
     };
-  };
-  registerUser: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UserCreate"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      201: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["UserOut"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  getMe: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody?: never;
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["UserOut"];
-        };
-      };
-    };
-  };
-  updateMe: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UserPatch"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["UserOut"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  login: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["LoginIn"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["TokenOut"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
 }

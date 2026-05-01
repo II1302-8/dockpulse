@@ -2,7 +2,17 @@ import { Link, useParams } from "react-router-dom";
 import { getMarinaNameCB } from "../../lib/marinas";
 import { cn } from "../../lib/utils";
 
-function Header() {
+interface HeaderProps {
+  isLoggedIn: boolean;
+  onLoginClickCB: () => void;
+  userInitials?: string;
+}
+
+function Header({
+  isLoggedIn,
+  onLoginClickCB,
+  userInitials = "JD",
+}: HeaderProps) {
   const { marinaSlug } = useParams<{ marinaSlug: string }>();
   const marinaName = getMarinaNameCB(marinaSlug);
 
@@ -43,9 +53,19 @@ function Header() {
       </nav>
 
       <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-brand-navy/40">
-          JD
-        </div>
+        {isLoggedIn ? (
+          <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-brand-navy/40">
+            {userInitials}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={onLoginClickCB}
+            className="bg-white px-6 py-2 rounded-full border border-brand-blue/20 shadow-lg text-brand-blue text-xs font-black transition-transform hover:scale-105"
+          >
+            Log in
+          </button>
+        )}
       </div>
     </header>
   );

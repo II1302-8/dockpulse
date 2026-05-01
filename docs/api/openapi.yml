@@ -148,6 +148,15 @@ components:
       - berth
       title: BerthUpdateEvent
       type: object
+    Body_assignBerth:
+      properties:
+        user_id:
+          title: User Id
+          type: string
+      required:
+      - user_id
+      title: Body_assignBerth
+      type: object
     DockOut:
       properties:
         dock_id:
@@ -523,6 +532,88 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       summary: Get a single berth
+      tags:
+      - berths
+  /api/berths/{berth_id}/assignment:
+    delete:
+      operationId: removeBerthAssignment
+      parameters:
+      - in: path
+        name: berth_id
+        required: true
+        schema:
+          title: Berth Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BerthOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Remove a berth assignment
+      tags:
+      - berths
+    get:
+      operationId: getBerthAssignment
+      parameters:
+      - in: path
+        name: berth_id
+        required: true
+        schema:
+          title: Berth Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BerthOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Get a berth assignment
+      tags:
+      - berths
+    post:
+      operationId: assignBerth
+      parameters:
+      - in: path
+        name: berth_id
+        required: true
+        schema:
+          title: Berth Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Body_assignBerth'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BerthOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Assign a berth to a user
       tags:
       - berths
   /api/docks:

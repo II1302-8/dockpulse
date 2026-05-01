@@ -1,13 +1,16 @@
 import asyncio
 import json
+from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi.params import Body
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sse_starlette.sse import EventSourceResponse
 
 from app import broadcaster
 from app.dependencies import SessionDep
-from app.models import Berth
+from app.models import Assignment, Berth, User
 from app.schemas import BerthOut, BerthUpdateEvent
 
 router = APIRouter(prefix="/api/berths", tags=["berths"])
@@ -28,11 +31,14 @@ async def list_berths(
         None, pattern="^(free|occupied)$", description="filter by status"
     ),
 ):
-    stmt = select(Berth)
+    # Added selectinload here too so the dashboard list shows assignments
+    stmt = select(Berth).options(selectinload(Berth.assignment))
+
     if dock_id:
         stmt = stmt.where(Berth.dock_id == dock_id)
     if status:
         stmt = stmt.where(Berth.status == status)
+
     result = await session.execute(stmt)
     return result.scalars().all()
 
@@ -78,7 +84,117 @@ async def stream_berths(request: Request):
     summary="Get a single berth",
 )
 async def get_berth(berth_id: str, session: SessionDep):
+    # Added selectinload to ensure the assignment is visible in the response
+    stmt = (
+        select(Berth)
+        .options(selectinload(Berth.assignment))
+        .where(Berth.berth_id == berth_id)
+    )
+    result = await session.execute(stmt)
+    berth = result.scalar_one_or_none()
+
+    if not berth:
+        raise HTTPException(status_code=404, detail="Berth not found")
+    return berth
+
+
+@router.get(
+    "",
+    response_model=list[BerthOut],
+    operation_id="listBerths",
+    summary="List all berths",
+)
+async def list_berths(
+    session: SessionDep,
+    dock_id: str | None = Query(None, description="filter by dock"),
+    status: str | None = Query(
+        None, pattern="^(free|occupied)$", description="filter by status"
+    ),
+):
+    # Added selectinload here too so the dashboard list shows assignments
+    stmt = select(Berth).options(selectinload(Berth.assignment))
+
+    if dock_id:
+        stmt = stmt.where(Berth.dock_id == dock_id)
+    if status:
+        stmt = stmt.where(Berth.status == status)
+
+    result = await session.execute(stmt)
+    return result.scalars().all()
+
+
+@router.post(
+    "/{berth_id}/assignment",
+    response_model=BerthOut,
+    operation_id="assignBerth",
+    summary="Assign a berth to a user",
+)
+async def assign_berth(
+    berth_id: str, user_id: Annotated[str, Body(embed=True)], session: SessionDep
+):
     berth = await session.get(Berth, berth_id)
     if not berth:
         raise HTTPException(status_code=404, detail="Berth not found")
+
+    user = await session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    new_assignment = Assignment(berth_id=berth_id, user_id=user_id)
+    await session.merge(new_assignment)
+
+    berth.status = "occupied"
+    session.add(berth)
+    await session.commit()
+
+    stmt = (
+        select(Berth)
+        .options(selectinload(Berth.assignment))
+        .where(Berth.berth_id == berth_id)
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one()
+
+
+@router.get(
+    "/{berth_id}/assignment",
+    response_model=BerthOut,
+    operation_id="getBerthAssignment",
+    summary="Get a berth assignment",
+)
+async def get_berth_assignment(berth_id: str, session: SessionDep):
+    # Updated to use selectinload; otherwise, assignment will be empty
+    stmt = (
+        select(Berth)
+        .options(selectinload(Berth.assignment))
+        .where(Berth.berth_id == berth_id)
+    )
+    result = await session.execute(stmt)
+    berth = result.scalar_one_or_none()
+
+    if not berth:
+        raise HTTPException(status_code=404, detail="Berth not found")
+    return berth
+
+
+@router.delete(
+    "/{berth_id}/assignment",
+    response_model=BerthOut,
+    operation_id="removeBerthAssignment",
+    summary="Remove a berth assignment",
+)
+async def remove_berth_assignment(berth_id: str, session: SessionDep):
+    from sqlalchemy import delete
+
+    berth = await session.get(Berth, berth_id)
+    if not berth:
+        raise HTTPException(status_code=404, detail="Berth not found")
+
+    await session.execute(delete(Assignment).where(Assignment.berth_id == berth_id))
+    berth.status = "free"
+
+    session.add(berth)
+    await session.commit()
+
+    await session.refresh(berth)
     return berth

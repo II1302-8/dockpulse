@@ -32,6 +32,7 @@ class User(Base):
     role: Mapped[str] = mapped_column(
         user_role_enum, nullable=False, default="boat_owner"
     )
+    assignments: Mapped[list["Assignment"]] = relationship(back_populates="user")
 
 
 class Harbor(Base):
@@ -71,10 +72,10 @@ class Berth(Base):
     sensor_raw: Mapped[int | None] = mapped_column(Integer)
     battery_pct: Mapped[int | None] = mapped_column(Integer)
     last_updated: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-
     dock: Mapped["Dock"] = relationship(back_populates="berths")
     events: Mapped[list["Event"]] = relationship(back_populates="berth")
     alerts: Mapped[list["Alert"]] = relationship(back_populates="berth")
+    assignment: Mapped["Assignment"] = relationship(back_populates="berth")
 
 
 class Event(Base):
@@ -178,3 +179,17 @@ class FactoryKey(Base):
         DateTime(timezone=True), nullable=False
     )
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class Assignment(Base):
+    __tablename__ = "assignments"
+
+    # berth_id as PK ensures one-row-per-berth (the "Single Active" rule)
+    berth_id: Mapped[str] = mapped_column(
+        ForeignKey("berths.berth_id"), primary_key=True
+    )
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.user_id"), nullable=False)
+    assigned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+    berth: Mapped["Berth"] = relationship(back_populates="assignment")
+    user: Mapped["User"] = relationship(back_populates="assignments")

@@ -18,7 +18,7 @@ from app.schemas import AdoptionRequestOut
 logger = logging.getLogger(__name__)
 
 
-def _publish_adoption_update(request: AdoptionRequest) -> None:
+def publish_adoption_update(request: AdoptionRequest) -> None:
     payload = {
         "type": "adoption.update",
         "request": AdoptionRequestOut.model_validate(request).model_dump(mode="json"),
@@ -80,7 +80,7 @@ async def complete_adoption_ok(
     session.add(node)
     await session.commit()
     await session.refresh(request)
-    _publish_adoption_update(request)
+    publish_adoption_update(request)
     logger.info(
         "adoption ok: request=%s node=%s berth=%s",
         request_id,
@@ -106,7 +106,7 @@ async def complete_adoption_err(
     request.completed_at = datetime.now(UTC)
     await session.commit()
     await session.refresh(request)
-    _publish_adoption_update(request)
+    publish_adoption_update(request)
     logger.info(
         "adoption err: request=%s code=%s msg=%s", request_id, error_code, error_msg
     )

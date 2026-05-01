@@ -3,12 +3,15 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 import jwt
+from dotenv import load_dotenv
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
 from app.models import User
+
+load_dotenv()
 
 ALGORITHM = "HS256"
 SECRET_KEY = os.environ["SECRET_KEY"]

@@ -9,9 +9,10 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
+from app.adoption.sweeper import sweeper_loop
 from app.db import get_engine
 from app.mqtt import is_mqtt_connected, mqtt_listener
-from app.routers import berths, docks, users
+from app.routers import adoptions, berths, docks, nodes, users
 from app.schemas import HealthStatus
 
 _start_time = time.monotonic()
@@ -31,6 +32,8 @@ TAGS_METADATA = [
     {"name": "berths", "description": "Berth monitoring and live updates"},
     {"name": "docks", "description": "Dock listing and detail"},
     {"name": "users", "description": "User registration, login, profile"},
+    {"name": "nodes", "description": "Node adoption and lifecycle"},
+    {"name": "adoptions", "description": "Adoption request status"},
 ]
 
 SERVERS = [
@@ -44,18 +47,24 @@ def _log_task_exception(task: asyncio.Task) -> None:
         return
     exc = task.exception()
     if exc is not None:
-        logger.error("mqtt_listener task exited with exception", exc_info=exc)
+        logger.error("background task %s crashed", task.get_name(), exc_info=exc)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logging.getLogger("app").setLevel(logging.INFO)
-    task = asyncio.create_task(mqtt_listener())
-    task.add_done_callback(_log_task_exception)
+    tasks = [
+        asyncio.create_task(mqtt_listener(), name="mqtt_listener"),
+        asyncio.create_task(sweeper_loop(), name="adoption_sweeper"),
+    ]
+    for task in tasks:
+        task.add_done_callback(_log_task_exception)
     yield
-    task.cancel()
-    with contextlib.suppress(asyncio.CancelledError):
-        await task
+    for task in tasks:
+        task.cancel()
+    for task in tasks:
+        with contextlib.suppress(asyncio.CancelledError):
+            await task
 
 
 app = FastAPI(
@@ -69,8 +78,10 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.include_router(adoptions.router)
 app.include_router(berths.router)
 app.include_router(docks.router)
+app.include_router(nodes.router)
 app.include_router(users.router)
 
 

@@ -1,32 +1,14 @@
-"""Dump the FastAPI-generated OpenAPI spec to docs/api/openapi.yml.
-
-The committed YAML is the source of truth for frontend codegen and Prism
-mocking, but it is generated from the running app — this script keeps
-it in sync.
-
-Run from the repo root or the backend dir; the output path is resolved
-relative to this file.
-
-    uv run python -m scripts.dump_openapi             # write
-    uv run python -m scripts.dump_openapi --check     # CI: fail on drift
-"""
+"""Dump the FastAPI-generated OpenAPI spec to docs/api/openapi.yml."""
 
 from __future__ import annotations
 
 import argparse
-import os
 import sys
 from pathlib import Path
 
 import yaml
 
-# The app must be importable; pretend env vars are set so nothing tries
-# to connect during import. Engine creation does not require a live DB,
-# but the URL must use a dialect whose driver is installed (asyncpg).
-os.environ.setdefault("SECRET_KEY", "dump-only-not-a-real-secret")
-os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://dump:dump@127.0.0.1:1/dump")
-
-from app.main import app  # noqa: E402
+from app.main import app
 
 OUTPUT_PATH = Path(__file__).resolve().parents[2] / "docs" / "api" / "openapi.yml"
 

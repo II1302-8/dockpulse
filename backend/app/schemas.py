@@ -118,3 +118,30 @@ class AdoptIn(BaseModel):
     )
     berth_id: str
     gateway_id: str
+
+
+class OwnerBase(BaseModel):
+    name: str
+    email: EmailStr
+    phone: str | None = None
+    boat_name: str | None = None
+    boat_registration_number: str | None = None
+
+
+class OwnerCreate(OwnerBase):
+    pass
+
+
+class OwnerUpdate(BaseModel):
+    name: str | None = None
+    email: EmailStr | None = None
+    phone: str | None = None
+    boat_name: str | None = None
+    boat_registration_number: str | None = None
+
+
+class OwnerResponse(OwnerBase):
+    id: int
+
+    # Allows Pydantic to read the data even if it's not a dict (like a SQLAlchemy model)
+    model_config = ConfigDict(from_attributes=True)

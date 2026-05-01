@@ -50,6 +50,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mosquitto-acl.conf:/mosquitto/config/acl.conf:ro
       - mqtt-pki:/mosquitto/certs:ro
     depends_on:
       cert-tools:

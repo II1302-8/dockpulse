@@ -7,6 +7,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -114,6 +115,7 @@ app = FastAPI(
 )
 
 app.add_middleware(RequestContextMiddleware)
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 
 app.include_router(adoptions.router)
 app.include_router(berths.router)

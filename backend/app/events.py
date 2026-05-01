@@ -27,6 +27,9 @@ async def process_sensor_reading(
     if berth is None:
         raise ValueError(f"Unknown berth: {berth_id}")
 
+    prev_status = berth.status
+    prev_battery = berth.battery_pct
+
     now = datetime.now(UTC)
     new_status = "occupied" if occupied else "free"
 
@@ -35,9 +38,10 @@ async def process_sensor_reading(
     if battery_pct is not None:
         berth.battery_pct = battery_pct
 
-    if new_status == berth.status:
+    if new_status == prev_status:
         await session.commit()
-        _publish_berth_update(berth)
+        if berth.battery_pct != prev_battery:
+            _publish_berth_update(berth)
         return None
 
     event = Event(

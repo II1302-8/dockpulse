@@ -16,6 +16,28 @@ SSE_PING_SECONDS = 15
 
 
 @router.get(
+    "",
+    response_model=list[BerthOut],
+    operation_id="listBerths",
+    summary="List all berths",
+)
+async def list_berths(
+    session: SessionDep,
+    dock_id: str | None = Query(None, description="filter by dock"),
+    status: str | None = Query(
+        None, pattern="^(free|occupied)$", description="filter by status"
+    ),
+):
+    stmt = select(Berth)
+    if dock_id:
+        stmt = stmt.where(Berth.dock_id == dock_id)
+    if status:
+        stmt = stmt.where(Berth.status == status)
+    result = await session.execute(stmt)
+    return result.scalars().all()
+
+
+@router.get(
     "/stream",
     operation_id="streamBerths",
     summary="Subscribe to live berth updates via Server-Sent Events",
@@ -60,25 +82,3 @@ async def get_berth(berth_id: str, session: SessionDep):
     if not berth:
         raise HTTPException(status_code=404, detail="Berth not found")
     return berth
-
-
-@router.get(
-    "",
-    response_model=list[BerthOut],
-    operation_id="listBerths",
-    summary="List all berths",
-)
-async def list_berths(
-    session: SessionDep,
-    dock_id: str | None = Query(None, description="filter by dock"),
-    status: str | None = Query(
-        None, pattern="^(free|occupied)$", description="filter by status"
-    ),
-):
-    stmt = select(Berth)
-    if dock_id:
-        stmt = stmt.where(Berth.dock_id == dock_id)
-    if status:
-        stmt = stmt.where(Berth.status == status)
-    result = await session.execute(stmt)
-    return result.scalars().all()

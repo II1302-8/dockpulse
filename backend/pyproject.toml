@@ -3,7 +3,7 @@ name = "dockpulse-backend"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-  "fastapi>=0.135",
+  "fastapi[standard]>=0.135",
   "uvicorn[standard]>=0.44",
   "sqlalchemy[asyncio]>=2.0",
   "asyncpg>=0.31",

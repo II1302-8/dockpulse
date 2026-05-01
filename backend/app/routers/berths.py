@@ -104,20 +104,17 @@ async def get_berth(berth_id: str, session: SessionDep):
     summary="Assign a berth to a user",
 )
 async def assign_berth(
-    berth_id: str, user_id: Annotated[str, Body(embed=True)], session: SessionDep
+    berth_id: str, user_id: str, session: SessionDep
 ):
     berth = await session.get(Berth, berth_id)
     if not berth:
         raise HTTPException(status_code=404, detail="Berth not found")
 
-    user = await session.get(User, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
     new_assignment = Assignment(berth_id=berth_id, user_id=user_id)
     await session.merge(new_assignment)
 
     berth.status = "occupied"
+    berth.is_reserved = True
     session.add(berth)
     await session.commit()
 
@@ -166,7 +163,7 @@ async def remove_berth_assignment(berth_id: str, session: SessionDep):
 
     await session.execute(delete(Assignment).where(Assignment.berth_id == berth_id))
     berth.status = "free"
-
+    berth.is_reserved = False
     session.add(berth)
     await session.commit()
 

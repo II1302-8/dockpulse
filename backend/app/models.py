@@ -16,6 +16,7 @@ user_role_enum = Enum("harbormaster", "boat_owner", name="user_role")
 gateway_status_enum = Enum("online", "offline", name="gateway_status")
 node_status_enum = Enum("provisioned", "offline", "decommissioned", name="node_status")
 adoption_status_enum = Enum("pending", "ok", "err", name="adoption_status")
+berth_assignment_enum = Enum("occupied", "free", name="berth_assignment_status")
 
 
 class User(Base):
@@ -184,12 +185,16 @@ class FactoryKey(Base):
 class Assignment(Base):
     __tablename__ = "assignments"
 
-    # berth_id as PK ensures one-row-per-berth (the "Single Active" rule)
     berth_id: Mapped[str] = mapped_column(
-        ForeignKey("berths.berth_id"), primary_key=True
+        ForeignKey("berths.berth_id", ondelete="CASCADE"), primary_key=True
     )
-    user_id: Mapped[str] = mapped_column(ForeignKey("users.user_id"), nullable=False)
-    assigned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True
+    )
+    is_reserved: Mapped[bool] = mapped_column(Boolean, default=False)
+    berth_assignment_status: Mapped[str] = mapped_column(
+        berth_assignment_enum, nullable=False, default="occupied"
+    )
 
     berth: Mapped["Berth"] = relationship(back_populates="assignment")
     user: Mapped["User"] = relationship(back_populates="assignments")

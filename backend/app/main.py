@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
-from app.db import engine
+from app.db import get_engine
 from app.mqtt import is_mqtt_connected, mqtt_listener
 from app.routers import berths, docks, users
 
@@ -68,7 +68,7 @@ app.openapi = custom_openapi
 async def health():
     db_ok = True
     try:
-        async with engine.connect() as conn:
+        async with get_engine().connect() as conn:
             await conn.execute(text("SELECT 1"))
     except Exception:
         db_ok = False

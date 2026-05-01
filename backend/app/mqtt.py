@@ -7,7 +7,7 @@ import ssl
 import aiomqtt
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db import async_session
+from app.db import get_sessionmaker
 from app.events import process_heartbeat, process_sensor_reading
 
 logger = logging.getLogger(__name__)
@@ -101,7 +101,7 @@ async def _handle_message(message: aiomqtt.Message) -> None:
         logger.warning("Invalid JSON payload on %s", message.topic.value)
         return
 
-    async with async_session() as session:
+    async with get_sessionmaker()() as session:
         if kind == "status":
             await _handle_status(session, payload, berth_id)
         elif kind == "heartbeat":

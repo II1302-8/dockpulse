@@ -76,6 +76,7 @@ async def stream_berths(request: Request):
 
     return EventSourceResponse(event_gen(), ping=SSE_PING_SECONDS)
 
+
 @router.get(
     "/{berth_id}",
     response_model=BerthOut,

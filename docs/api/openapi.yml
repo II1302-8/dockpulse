@@ -1,672 +1,600 @@
-openapi: 3.0.3
-info:
-  title: DockPulse API
-  description: |
-    REST API for the DockPulse harbor berth availability system.
-
-    This spec is the between backend and frontend during
-    Sprint 1. Both teams implement against it.
-  version: 0.1.0
-
-servers:
-  - url: http://localhost:8000
-    description: Local development
-  - url: https://staging.example.com
-    description: Staging
-
-# All routes are public for now. Auth will be added in a later sprint.
-security: []
-
-# ════════════════════════════════════════════════════════════
-#  MVP — Sensor monitoring and live harbor map
-# ════════════════════════════════════════════════════════════
-
-tags:
-  - name: system
-    description: System health and status
-  - name: harbors
-    description: Harbor management
-  - name: docks
-    description: Dock management
-  - name: berths
-    description: Berth monitoring and status
-  - name: events
-    description: Berth occupancy events
-  - name: alerts
-    description: Alert management
-  - name: users
-    description: User profile
-
-paths:
-  /api/users:
-    post:
-      summary: Register a new user
-      operationId: registerUser
-      tags: [users]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UserCreate"
-      responses:
-        "201":
-          description: User created
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UserOut"
-        "409":
-          description: Email already in use
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "422":
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-  /api/users/token:
-    post:
-      summary: Log in and obtain an access token
-      operationId: login
-      tags: [users]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/LoginIn"
-      responses:
-        "200":
-          description: Bearer token
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/TokenOut"
-        "401":
-          description: Invalid credentials
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-  /api/users/me:
-    get:
-      summary: Get current user profile
-      operationId: getMe
-      tags: [users]
-      security:
-        - bearerAuth: []
-      responses:
-        "200":
-          description: Current user's profile
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UserOut"
-        "401":
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-    patch:
-      summary: Update current user profile
-      operationId: updateMe
-      tags: [users]
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                firstname:
-                  type: string
-                lastname:
-                  type: string
-                email:
-                  type: string
-                  format: email
-                phone:
-                  type: string
-                  nullable: true
-                boat_club:
-                  type: string
-                  nullable: true
-                password:
-                  type: string
-                  minLength: 8
-      responses:
-        "200":
-          description: Updated user profile
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UserOut"
-        "401":
-          description: Not authenticated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-        "409":
-          description: Email already in use
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Error"
-
-  /api/health:
-    get:
-      summary: Health check
-      operationId: getHealth
-      tags: [system]
-      responses:
-        "200":
-          description: Service is healthy
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HealthStatus"
-        "503":
-          description: Service is degraded — at least one dependency is unreachable
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/HealthStatus"
-
-  /api/harbors:
-    get:
-      summary: List all harbors
-      operationId: listHarbors
-      tags: [harbors]
-      responses:
-        "200":
-          description: List of harbors
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Harbor"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-
-  /api/harbors/{harbor_id}:
-    get:
-      summary: Get a single harbor with its docks
-      operationId: getHarbor
-      tags: [harbors]
-      parameters:
-        - name: harbor_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Harbor with docks
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/Harbor"
-                  - type: object
-                    properties:
-                      docks:
-                        type: array
-                        items:
-                          $ref: "#/components/schemas/Dock"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /api/docks:
-    get:
-      summary: List all docks
-      operationId: listDocks
-      tags: [docks]
-      parameters:
-        - name: harbor_id
-          in: query
-          schema:
-            type: string
-          description: Filter by harbor
-      responses:
-        "200":
-          description: List of docks
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Dock"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-
-  /api/docks/{dock_id}:
-    get:
-      summary: Get a single dock with its berths
-      operationId: getDock
-      tags: [docks]
-      parameters:
-        - name: dock_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Dock with berths
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/Dock"
-                  - type: object
-                    properties:
-                      berths:
-                        type: array
-                        items:
-                          $ref: "#/components/schemas/Berth"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /api/berths:
-    get:
-      summary: List all berths
-      operationId: listBerths
-      tags: [berths]
-      parameters:
-        - name: dock_id
-          in: query
-          schema:
-            type: string
-          description: Filter by dock
-        - name: status
-          in: query
-          schema:
-            $ref: "#/components/schemas/BerthStatus"
-          description: Filter by occupancy status
-      responses:
-        "200":
-          description: List of berths
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Berth"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-
-  /api/berths/stream:
-    get:
-      summary: Subscribe to live berth updates via Server-Sent Events
-      description: |
-        Opens a long-lived `text/event-stream` connection. Each message is a
-        JSON-encoded `BerthEvent`. Clients should first fetch a snapshot via
-        `GET /api/berths` and then merge streamed updates by `berth_id`.
-        Reconnects re-subscribe but do not replay missed events — re-fetch the
-        snapshot after an `open` that follows a disconnection.
-      operationId: streamBerths
-      tags: [berths]
-      responses:
-        "200":
-          description: An SSE stream of berth update events.
-          content:
-            text/event-stream:
-              schema:
-                $ref: "#/components/schemas/BerthEvent"
-
-  /api/berths/{berth_id}:
-    get:
-      summary: Get a single berth
-      operationId: getBerth
-      tags: [berths]
-      parameters:
-        - name: berth_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Berth details
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Berth"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /api/berths/{berth_id}/events:
-    get:
-      summary: Get occupancy event history for a berth
-      operationId: getBerthEvents
-      tags: [berths, events]
-      parameters:
-        - name: berth_id
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: since
-          in: query
-          schema:
-            type: string
-            format: date-time
-          description: Return events after this timestamp
-        - name: limit
-          in: query
-          schema:
-            type: integer
-            default: 50
-            maximum: 500
-      responses:
-        "200":
-          description: List of events
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Event"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-  /api/alerts:
-    get:
-      summary: List active alerts
-      operationId: listAlerts
-      tags: [alerts]
-      parameters:
-        - name: acknowledged
-          in: query
-          schema:
-            type: boolean
-          description: Filter by acknowledgement status
-      responses:
-        "200":
-          description: List of alerts
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Alert"
-        "400":
-          $ref: "#/components/responses/BadRequest"
-
-  /api/alerts/{alert_id}/acknowledge:
-    post:
-      summary: Acknowledge an alert
-      operationId: acknowledgeAlert
-      tags: [alerts]
-      parameters:
-        - name: alert_id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        "200":
-          description: Alert acknowledged
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Alert"
-        "404":
-          $ref: "#/components/responses/NotFound"
-
-# ════════════════════════════════════════════════════════════
-#  FUTURE — Owners, assignments, bookings
-# ════════════════════════════════════════════════════════════
-
 components:
   schemas:
-    BerthStatus:
-      type: string
-      enum: [free, occupied]
-
-    Berth:
-      type: object
-      required: [berth_id, dock_id, status]
+    BerthOut:
       properties:
-        berth_id:
-          type: string
-          example: berth-001
-        dock_id:
-          type: string
-          example: dock-a
-        label:
-          type: string
-          example: A-01
-        length_m:
-          type: number
-          format: double
-          description: Berth length in meters
-          example: 12.0
-        width_m:
-          type: number
-          format: double
-          description: Berth width in meters
-          example: 4.0
-        depth_m:
-          type: number
-          format: double
-          description: Water depth in meters
-          example: 2.5
-        status:
-          $ref: "#/components/schemas/BerthStatus"
-        sensor_raw:
-          type: integer
-          description: Latest raw sensor reading
         battery_pct:
-          type: integer
-          minimum: 0
-          maximum: 100
-          description: Node battery level (0-100)
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Battery Pct
+        berth_id:
+          title: Berth Id
+          type: string
+        depth_m:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Depth M
+        dock_id:
+          title: Dock Id
+          type: string
+        label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Label
         last_updated:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Last Updated
+        length_m:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Length M
+        sensor_raw:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Sensor Raw
+        status:
+          title: Status
           type: string
-          format: date-time
-
-    Harbor:
+        width_m:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Width M
+      required:
+      - berth_id
+      - dock_id
+      - status
+      title: BerthOut
       type: object
-      required: [harbor_id, name]
+    BerthUpdateEvent:
       properties:
-        harbor_id:
+        berth:
+          $ref: '#/components/schemas/BerthOut'
+        type:
+          const: berth.update
+          default: berth.update
+          title: Type
           type: string
-          example: harbor-stockholm
-        name:
-          type: string
-          example: Stockholm Harbor
-        lat:
-          type: number
-          format: double
-          example: 59.3293
-        lng:
-          type: number
-          format: double
-          example: 18.0686
-
-    Dock:
+      required:
+      - berth
+      title: BerthUpdateEvent
       type: object
-      required: [dock_id, harbor_id, name]
+    DockOut:
       properties:
         dock_id:
+          title: Dock Id
           type: string
-          example: dock-a
         harbor_id:
+          title: Harbor Id
           type: string
-          example: harbor-stockholm
         name:
+          title: Name
           type: string
-          example: North Dock
-
-    Event:
+      required:
+      - dock_id
+      - harbor_id
+      - name
+      title: DockOut
       type: object
-      required: [event_id, berth_id, node_id, event_type, sensor_raw, timestamp]
+    DockWithBerthsOut:
       properties:
-        event_id:
+        berths:
+          default: []
+          items:
+            $ref: '#/components/schemas/BerthOut'
+          title: Berths
+          type: array
+        dock_id:
+          title: Dock Id
           type: string
-        berth_id:
+        harbor_id:
+          title: Harbor Id
           type: string
-        node_id:
+        name:
+          title: Name
           type: string
-          description: ID of the sensor node that triggered the event
-        event_type:
-          type: string
-          enum: [occupied, freed, alert_unauthorized, heartbeat]
-        sensor_raw:
-          type: integer
-          description: Raw sensor value at time of event
-        timestamp:
-          type: string
-          format: date-time
-
-    Alert:
+      required:
+      - dock_id
+      - harbor_id
+      - name
+      title: DockWithBerthsOut
       type: object
-      required: [alert_id, berth_id, type, message, acknowledged, timestamp]
+    HTTPValidationError:
       properties:
-        alert_id:
-          type: string
-        berth_id:
-          type: string
-        type:
-          type: string
-          enum: [unauthorized_mooring, sensor_offline, low_battery]
-        message:
-          type: string
-        acknowledged:
-          type: boolean
-        timestamp:
-          type: string
-          format: date-time
-
-    BerthEvent:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          title: Detail
+          type: array
+      title: HTTPValidationError
       type: object
-      required: [type, berth]
-      description: Event sent over `/api/berths/stream`.
+    HealthStatus:
       properties:
-        type:
+        database:
+          enum:
+          - ok
+          - error
+          title: Database
           type: string
-          enum: [berth.update]
-        berth:
-          $ref: "#/components/schemas/Berth"
-
-    UserOut:
+        mqtt:
+          enum:
+          - ok
+          - error
+          title: Mqtt
+          type: string
+        status:
+          enum:
+          - ok
+          - degraded
+          title: Status
+          type: string
+        uptime:
+          title: Uptime
+          type: number
+      required:
+      - status
+      - uptime
+      - database
+      - mqtt
+      title: HealthStatus
       type: object
-      required: [user_id, firstname, lastname, email]
-      properties:
-        user_id:
-          type: string
-        firstname:
-          type: string
-        lastname:
-          type: string
-        email:
-          type: string
-          format: email
-        phone:
-          type: string
-          nullable: true
-        boat_club:
-          type: string
-          nullable: true
-
-    UserCreate:
-      type: object
-      required: [firstname, lastname, email, password]
-      properties:
-        firstname:
-          type: string
-          minLength: 1
-        lastname:
-          type: string
-          minLength: 1
-        email:
-          type: string
-          format: email
-        phone:
-          type: string
-          nullable: true
-        boat_club:
-          type: string
-          nullable: true
-        password:
-          type: string
-          minLength: 8
-
     LoginIn:
-      type: object
-      required: [email, password]
       properties:
         email:
-          type: string
           format: email
-        password:
+          title: Email
           type: string
-
-    TokenOut:
+        password:
+          title: Password
+          type: string
+      required:
+      - email
+      - password
+      title: LoginIn
       type: object
-      required: [access_token, token_type]
+    TokenOut:
       properties:
         access_token:
+          title: Access Token
           type: string
         token_type:
+          const: bearer
+          default: bearer
+          title: Token Type
           type: string
-          enum: [bearer]
-
-    HealthStatus:
+      required:
+      - access_token
+      title: TokenOut
       type: object
-      required: [status, uptime, database, mqtt]
+    UserCreate:
       properties:
-        status:
+        boat_club:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Boat Club
+        email:
+          format: email
+          title: Email
           type: string
-          enum: [ok, degraded]
-        uptime:
-          type: number
-          description: Process uptime in seconds
-        database:
+        firstname:
+          minLength: 1
+          title: Firstname
           type: string
-          enum: [ok, error]
-        mqtt:
+        lastname:
+          minLength: 1
+          title: Lastname
           type: string
-          enum: [ok, error]
-
-    Error:
+        password:
+          minLength: 8
+          title: Password
+          type: string
+        phone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone
+      required:
+      - firstname
+      - lastname
+      - email
+      - password
+      title: UserCreate
       type: object
-      required: [error, message]
+    UserOut:
       properties:
-        error:
+        boat_club:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Boat Club
+        email:
+          title: Email
           type: string
-          example: not_found
-        message:
+        firstname:
+          title: Firstname
           type: string
-
+        lastname:
+          title: Lastname
+          type: string
+        phone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone
+        role:
+          enum:
+          - harbormaster
+          - boat_owner
+          title: Role
+          type: string
+        user_id:
+          title: User Id
+          type: string
+      required:
+      - user_id
+      - firstname
+      - lastname
+      - email
+      - role
+      title: UserOut
+      type: object
+    UserPatch:
+      properties:
+        boat_club:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Boat Club
+        email:
+          anyOf:
+          - format: email
+            type: string
+          - type: 'null'
+          title: Email
+        firstname:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Firstname
+        lastname:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Lastname
+        password:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Password
+        phone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone
+      title: UserPatch
+      type: object
+    ValidationError:
+      properties:
+        ctx:
+          title: Context
+          type: object
+        input:
+          title: Input
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          title: Location
+          type: array
+        msg:
+          title: Message
+          type: string
+        type:
+          title: Error Type
+          type: string
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+      type: object
   securitySchemes:
-    bearerAuth:
-      type: http
+    HTTPBearer:
       scheme: bearer
-      bearerFormat: JWT
+      type: http
+info:
+  description: 'REST API for the DockPulse harbor berth availability system.
 
-  responses:
-    BadRequest:
-      description: Invalid request parameters
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
-    NotFound:
-      description: Resource not found
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/Error"
+
+    The OpenAPI document at `/openapi.json` (and the YAML mirror in
+
+    `docs/api/openapi.yml`) is generated directly from these route
+
+    definitions and Pydantic models. The committed YAML is regenerated by
+
+    `scripts/dump_openapi.py` and CI fails on drift.
+
+    '
+  title: DockPulse API
+  version: 0.1.0
+openapi: 3.1.0
+paths:
+  /api/berths:
+    get:
+      operationId: listBerths
+      parameters:
+      - description: filter by dock
+        in: query
+        name: dock_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: filter by dock
+          title: Dock Id
+      - description: filter by status
+        in: query
+        name: status
+        required: false
+        schema:
+          anyOf:
+          - pattern: ^(free|occupied)$
+            type: string
+          - type: 'null'
+          description: filter by status
+          title: Status
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/BerthOut'
+                title: Response Listberths
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: List all berths
+      tags:
+      - berths
+  /api/berths/stream:
+    get:
+      description: Opens a long-lived `text/event-stream` connection. Each message is a JSON-encoded `BerthUpdateEvent`.
+        Clients should first fetch a snapshot via `GET /api/berths` and then merge streamed updates by
+        `berth_id`. Reconnects re-subscribe but do not replay missed events — re-fetch the snapshot after
+        an `open` that follows a disconnection.
+      operationId: streamBerths
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BerthUpdateEvent'
+          description: Each frame is a JSON-encoded BerthUpdateEvent.
+      summary: Subscribe to live berth updates via Server-Sent Events
+      tags:
+      - berths
+  /api/berths/{berth_id}:
+    get:
+      operationId: getBerth
+      parameters:
+      - in: path
+        name: berth_id
+        required: true
+        schema:
+          title: Berth Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BerthOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Get a single berth
+      tags:
+      - berths
+  /api/docks:
+    get:
+      operationId: listDocks
+      parameters:
+      - description: Filter by harbor
+        in: query
+        name: harbor_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Filter by harbor
+          title: Harbor Id
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DockOut'
+                title: Response Listdocks
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: List all docks
+      tags:
+      - docks
+  /api/docks/{dock_id}:
+    get:
+      operationId: getDock
+      parameters:
+      - in: path
+        name: dock_id
+        required: true
+        schema:
+          title: Dock Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DockWithBerthsOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Get a single dock with its berths
+      tags:
+      - docks
+  /api/health:
+    get:
+      operationId: getHealth
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+          description: Successful Response
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+          description: Service is degraded — at least one dependency is unreachable
+      summary: Health check
+      tags:
+      - system
+  /api/users:
+    post:
+      operationId: registerUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Register a new user
+      tags:
+      - users
+  /api/users/me:
+    get:
+      operationId: getMe
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: Get current user profile
+      tags:
+      - users
+    patch:
+      operationId: updateMe
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserPatch'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Update current user profile
+      tags:
+      - users
+  /api/users/token:
+    post:
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginIn'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Log in and obtain an access token
+      tags:
+      - users
+servers:
+- description: Local development
+  url: http://localhost:8000
+- description: Staging
+  url: https://staging.example.com
+tags:
+- description: System health and status
+  name: system
+- description: Berth monitoring and live updates
+  name: berths
+- description: Dock listing and detail
+  name: docks
+- description: User registration, login, profile
+  name: users

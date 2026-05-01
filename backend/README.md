@@ -22,17 +22,31 @@ uv run uvicorn app.main:app --reload
 
 The API is available at `http://localhost:8000`. Swagger UI at `http://localhost:8000/docs`.
 
+## OpenAPI spec
+
+`docs/api/openapi.yml` is generated from the FastAPI app and committed for the
+frontend's Prism mock and `openapi-typescript` codegen. Whenever you change a
+route signature or a Pydantic schema, regenerate it:
+
+```bash
+uv run python -m scripts.dump_openapi
+```
+
+Pre-commit and CI both run `--check` and will fail on drift.
+
 ## Commands
 
-| Command                                           | What it does                |
-| ------------------------------------------------- | --------------------------- |
-| `uv sync`                                         | Install/update dependencies |
-| `uv run uvicorn app.main:app --reload`            | Start dev server            |
-| `uv run pytest`                                   | Run tests                   |
-| `uv run alembic upgrade head`                     | Apply DB migrations         |
-| `uv run alembic revision --autogenerate -m "msg"` | Create migration            |
-| `uv run ruff check .`                             | Lint                        |
-| `uv run ruff format .`                            | Format                      |
+| Command                                           | What it does                          |
+| ------------------------------------------------- | ------------------------------------- |
+| `uv sync`                                         | Install/update dependencies           |
+| `uv run uvicorn app.main:app --reload`            | Start dev server                      |
+| `uv run pytest`                                   | Run tests                             |
+| `uv run alembic upgrade head`                     | Apply DB migrations                   |
+| `uv run alembic revision --autogenerate -m "msg"` | Create migration                      |
+| `uv run ruff check .`                             | Lint                                  |
+| `uv run ruff format .`                            | Format                                |
+| `uv run python -m scripts.dump_openapi`           | Regenerate `docs/api/openapi.yml`     |
+| `uv run python -m scripts.dump_openapi --check`   | Fail if the committed spec is stale   |
 
 ## Testing
 

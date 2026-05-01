@@ -25,7 +25,7 @@ const symbolScale = 0.2;
 type BerthState = "green" | "red" | "grey";
 
 interface SvgMapProps {
-  berths: components["schemas"]["Berth"][];
+  berths: components["schemas"]["BerthOut"][];
   selectedBerthId: string | null;
   onBerthClickCB?: (berthId: string) => void;
 }

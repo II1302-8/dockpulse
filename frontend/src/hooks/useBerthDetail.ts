@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { components } from "../api-types";
 
-type Berth = components["schemas"]["Berth"];
+type Berth = components["schemas"]["BerthOut"];
 
 const POLL_INTERVAL_MS = 15 * 60 * 1000;
 

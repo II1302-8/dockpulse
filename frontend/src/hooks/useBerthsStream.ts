@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { components } from "../api-types";
 
-type Berth = components["schemas"]["Berth"];
-type BerthEvent = components["schemas"]["BerthEvent"];
+type Berth = components["schemas"]["BerthOut"];
+type BerthEvent = components["schemas"]["BerthUpdateEvent"];
 
 export function useBerthsStream() {
   const [berthsById, setBerthsById] = useState<Map<string, Berth>>(new Map());

@@ -76,7 +76,6 @@ async def stream_berths(request: Request):
 
     return EventSourceResponse(event_gen(), ping=SSE_PING_SECONDS)
 
-
 @router.get(
     "/{berth_id}",
     response_model=BerthOut,
@@ -96,32 +95,6 @@ async def get_berth(berth_id: str, session: SessionDep):
     if not berth:
         raise HTTPException(status_code=404, detail="Berth not found")
     return berth
-
-
-@router.get(
-    "",
-    response_model=list[BerthOut],
-    operation_id="listBerths",
-    summary="List all berths",
-)
-async def list_berths(
-    session: SessionDep,
-    dock_id: str | None = Query(None, description="filter by dock"),
-    status: str | None = Query(
-        None, pattern="^(free|occupied)$", description="filter by status"
-    ),
-):
-    # Added selectinload here too so the dashboard list shows assignments
-    stmt = select(Berth).options(selectinload(Berth.assignment))
-
-    if dock_id:
-        stmt = stmt.where(Berth.dock_id == dock_id)
-    if status:
-        stmt = stmt.where(Berth.status == status)
-
-    result = await session.execute(stmt)
-    return result.scalars().all()
-
 
 @router.post(
     "/{berth_id}/assignment",

@@ -38,7 +38,7 @@ async def process_sensor_reading(
     if battery_pct is not None:
         berth.battery_pct = battery_pct
 
-    if new_status == prev_status:
+    if new_status == prev_status or berth.is_reserved:
         await session.commit()
         if berth.battery_pct != prev_battery:
             _publish_berth_update(berth)

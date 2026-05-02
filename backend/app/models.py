@@ -70,6 +70,7 @@ class Berth(Base):
     width_m: Mapped[float | None] = mapped_column(Double)
     depth_m: Mapped[float | None] = mapped_column(Double)
     status: Mapped[str] = mapped_column(berth_status_enum, default="free")
+    is_reserved: Mapped[bool] = mapped_column(Boolean, default=False)
     sensor_raw: Mapped[int | None] = mapped_column(Integer)
     battery_pct: Mapped[int | None] = mapped_column(Integer)
     last_updated: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -191,7 +192,6 @@ class Assignment(Base):
     user_id: Mapped[str] = mapped_column(
         ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True
     )
-    is_reserved: Mapped[bool] = mapped_column(Boolean, default=False)
     berth_assignment_status: Mapped[str] = mapped_column(
         berth_assignment_enum, nullable=False, default="occupied"
     )

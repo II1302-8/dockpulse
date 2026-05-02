@@ -219,6 +219,41 @@ components:
       - name
       title: DockWithBerthsOut
       type: object
+    EventOut:
+      properties:
+        berth_id:
+          title: Berth Id
+          type: string
+        event_id:
+          title: Event Id
+          type: string
+        event_type:
+          enum:
+          - occupied
+          - freed
+          - alert_unauthorized
+          - heartbeat
+          title: Event Type
+          type: string
+        node_id:
+          title: Node Id
+          type: string
+        sensor_raw:
+          title: Sensor Raw
+          type: integer
+        timestamp:
+          format: date-time
+          title: Timestamp
+          type: string
+      required:
+      - event_id
+      - berth_id
+      - node_id
+      - event_type
+      - sensor_raw
+      - timestamp
+      title: EventOut
+      type: object
     HTTPValidationError:
       properties:
         detail:
@@ -273,6 +308,33 @@ components:
       - email
       - password
       title: LoginIn
+      type: object
+    NotificationPrefsOut:
+      properties:
+        notify_arrival:
+          title: Notify Arrival
+          type: boolean
+        notify_departure:
+          title: Notify Departure
+          type: boolean
+      required:
+      - notify_arrival
+      - notify_departure
+      title: NotificationPrefsOut
+      type: object
+    NotificationPrefsPatch:
+      properties:
+        notify_arrival:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Notify Arrival
+        notify_departure:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Notify Departure
+      title: NotificationPrefsPatch
       type: object
     TokenOut:
       properties:
@@ -642,6 +704,46 @@ paths:
       summary: Assign a berth to a user
       tags:
       - berths
+  /api/berths/{berth_id}/events:
+    get:
+      operationId: listBerthEvents
+      parameters:
+      - in: path
+        name: berth_id
+        required: true
+        schema:
+          title: Berth Id
+          type: string
+      - in: query
+        name: limit
+        required: false
+        schema:
+          default: 100
+          maximum: 1000
+          minimum: 1
+          title: Limit
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/EventOut'
+                title: Response Listberthevents
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List events for a berth
+      tags:
+      - berths
   /api/docks:
     get:
       operationId: listDocks
@@ -822,6 +924,47 @@ paths:
       security:
       - HTTPBearer: []
       summary: Invalidate all tokens for the current user
+      tags:
+      - users
+  /api/users/me/notifications:
+    get:
+      operationId: getNotificationPrefs
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPrefsOut'
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: Get notification preferences for the current user
+      tags:
+      - users
+    patch:
+      operationId: updateNotificationPrefs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationPrefsPatch'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPrefsOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Update notification preferences for the current user
       tags:
       - users
   /api/users/token:

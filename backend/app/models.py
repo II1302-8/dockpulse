@@ -33,6 +33,9 @@ class User(Base):
         user_role_enum, nullable=False, default="boat_owner"
     )
     assignments: Mapped[list["Assignment"]] = relationship(back_populates="user")
+    notification_prefs: Mapped["UserNotificationPrefs | None"] = relationship(
+        back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )
 
 
 class Harbor(Base):
@@ -183,6 +186,20 @@ class FactoryKey(Base):
         DateTime(timezone=True), nullable=False
     )
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class UserNotificationPrefs(Base):
+    __tablename__ = "user_notification_prefs"
+
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True
+    )
+    notify_arrival: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    notify_departure: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True
+    )
+
+    user: Mapped["User"] = relationship(back_populates="notification_prefs")
 
 
 class Assignment(Base):

@@ -153,3 +153,22 @@ class AdoptIn(BaseModel):
 class AdoptionUpdateEvent(BaseModel):
     type: Literal["adoption.update"] = "adoption.update"
     request: AdoptionRequestOut
+
+
+class EventOut(_BaseSchema):
+    event_id: str
+    berth_id: str
+    node_id: str
+    event_type: Literal["occupied", "freed", "alert_unauthorized", "heartbeat"]
+    sensor_raw: int
+    timestamp: datetime
+
+
+class NotificationPrefsOut(_BaseSchema):
+    notify_arrival: bool
+    notify_departure: bool
+
+
+class NotificationPrefsPatch(BaseModel):
+    notify_arrival: bool | None = None
+    notify_departure: bool | None = None

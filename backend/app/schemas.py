@@ -4,11 +4,11 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
-class BaseSchema(BaseModel):
+class _BaseSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class BerthOut(BaseSchema):
+class BerthOut(_BaseSchema):
     berth_id: str
     dock_id: str
     label: str | None = None
@@ -21,20 +21,20 @@ class BerthOut(BaseSchema):
     last_updated: datetime | None = None
 
 
-class DockOut(BaseSchema):
+class DockOut(_BaseSchema):
     dock_id: str
     harbor_id: str
     name: str
 
 
-class DockWithBerthsOut(BaseSchema):
+class DockWithBerthsOut(_BaseSchema):
     dock_id: str
     harbor_id: str
     name: str
     berths: list[BerthOut] = []
 
 
-class UserOut(BaseSchema):
+class UserOut(_BaseSchema):
     user_id: str
     firstname: str
     lastname: str
@@ -84,7 +84,7 @@ class BerthUpdateEvent(BaseModel):
     berth: BerthOut
 
 
-class GatewayOut(BaseSchema):
+class GatewayOut(_BaseSchema):
     gateway_id: str
     dock_id: str
     name: str
@@ -92,7 +92,7 @@ class GatewayOut(BaseSchema):
     last_seen: datetime | None = None
 
 
-class NodeOut(BaseSchema):
+class NodeOut(_BaseSchema):
     node_id: str
     mesh_uuid: str
     serial_number: str
@@ -103,7 +103,7 @@ class NodeOut(BaseSchema):
     adopted_at: datetime
 
 
-class AdoptionRequestOut(BaseSchema):
+class AdoptionRequestOut(_BaseSchema):
     request_id: str
     mesh_uuid: str
     serial_number: str

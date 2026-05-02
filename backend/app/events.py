@@ -69,10 +69,8 @@ async def process_heartbeat(
     berth = await session.get(Berth, berth_id)
     if berth is None:
         raise ValueError(f"Unknown berth: {berth_id}")
-    prev_battery = berth.battery_pct
     berth.last_updated = datetime.now(UTC)
     if battery_pct is not None:
         berth.battery_pct = battery_pct
     await session.commit()
-    if berth.battery_pct != prev_battery:
-        _publish_berth_update(berth)
+    _publish_berth_update(berth)

@@ -11,6 +11,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.adoption.sweeper import sweeper_loop
 from app.db import get_engine
@@ -20,6 +21,23 @@ from app.routers import adoptions, berths, docks, nodes, users
 from app.schemas import HealthStatus
 
 setup_logging()
+
+SSE_PATHS = frozenset({"/api/berths/stream"})
+
+
+class GZipExceptStream:
+    """GZip wrapper that bypasses SSE endpoints — gzip buffers chunks, which
+    delays event delivery on long-lived text/event-stream responses."""
+
+    def __init__(self, app: ASGIApp, *, minimum_size: int = 1024) -> None:
+        self._app = app
+        self._gzip = GZipMiddleware(app, minimum_size=minimum_size)
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http" and scope.get("path") in SSE_PATHS:
+            await self._app(scope, receive, send)
+            return
+        await self._gzip(scope, receive, send)
 
 _start_time = time.monotonic()
 logger = logging.getLogger(__name__)
@@ -115,7 +133,7 @@ app = FastAPI(
 )
 
 app.add_middleware(RequestContextMiddleware)
-app.add_middleware(GZipMiddleware, minimum_size=1024)
+app.add_middleware(GZipExceptStream, minimum_size=1024)
 
 app.include_router(adoptions.router)
 app.include_router(berths.router)

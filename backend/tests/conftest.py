@@ -1,15 +1,17 @@
 import os
 from collections.abc import AsyncIterator
 
-import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+os.environ.setdefault("SECRET_KEY", "test-secret-key-not-for-prod-32bytesx")
 
-from app.db import Base, get_session
-from app.main import app
-from app.models import Berth, Dock, Harbor
+import pytest_asyncio  # noqa: E402
+from httpx import ASGITransport, AsyncClient  # noqa: E402
+from sqlalchemy import text  # noqa: E402
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine  # noqa: E402
+from sqlalchemy.orm import sessionmaker  # noqa: E402
+
+from app.db import Base, get_session  # noqa: E402
+from app.main import app  # noqa: E402
+from app.models import Berth, Dock, Harbor  # noqa: E402
 
 TEST_DATABASE_URL = os.environ.get(
     "TEST_DATABASE_URL",

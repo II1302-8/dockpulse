@@ -55,9 +55,7 @@ class Dock(Base):
     name: Mapped[str] = mapped_column(String, nullable=False)
 
     harbor: Mapped["Harbor"] = relationship(back_populates="docks")
-    berths: Mapped[list["Berth"]] = relationship(
-        back_populates="dock", lazy="selectin"
-    )
+    berths: Mapped[list["Berth"]] = relationship(back_populates="dock")
 
 
 class Berth(Base):

@@ -39,6 +39,7 @@ class GZipExceptStream:
             return
         await self._gzip(scope, receive, send)
 
+
 _start_time = time.monotonic()
 logger = logging.getLogger(__name__)
 access_logger = logging.getLogger("app.access")

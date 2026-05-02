@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     mqtt_tls_cert: str | None = None
     mqtt_tls_key: str | None = None
     mqtt_port: int | None = None
+    factory_pubkey: str | None = None
 
 
 @lru_cache

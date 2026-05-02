@@ -34,9 +34,7 @@ async def list_docks(
 )
 async def get_dock(dock_id: str, session: SessionDep) -> DockWithBerthsOut:
     stmt = (
-        select(Dock)
-        .where(Dock.dock_id == dock_id)
-        .options(selectinload(Dock.berths))
+        select(Dock).where(Dock.dock_id == dock_id).options(selectinload(Dock.berths))
     )
     result = await session.execute(stmt)
     dock = result.scalar_one_or_none()

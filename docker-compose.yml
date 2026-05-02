@@ -56,7 +56,7 @@ services:
         condition: service_healthy
     networks: [internal]
     healthcheck:
-      test: ["CMD-SHELL", "pgrep -x mosquitto >/dev/null || exit 1"]
+      test: ["CMD-SHELL", "grep -q '^mosquitto$$' /proc/1/comm"]
       interval: 15s
       timeout: 3s
       retries: 5

@@ -11,10 +11,10 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 CurrentUserDep = Annotated[User, Depends(get_current_user)]
 
 
-async def _require_harbormaster(user: CurrentUserDep) -> User:
+async def require_harbormaster(user: CurrentUserDep) -> User:
     if user.role != "harbormaster":
         raise HTTPException(status_code=403, detail="Harbormaster role required")
     return user
 
 
-HarbormasterDep = Annotated[User, Depends(_require_harbormaster)]
+HarbormasterDep = Annotated[User, Depends(require_harbormaster)]

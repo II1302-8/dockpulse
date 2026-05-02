@@ -788,6 +788,17 @@ paths:
       summary: Update current user profile
       tags:
       - users
+  /api/users/me/logout:
+    post:
+      operationId: logout
+      responses:
+        '204':
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: Invalidate all tokens for the current user
+      tags:
+      - users
   /api/users/token:
     post:
       operationId: login

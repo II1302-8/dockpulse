@@ -104,3 +104,15 @@ async def update_me(body: UserPatch, current_user: CurrentUserDep, session: Sess
     await session.commit()
     await session.refresh(current_user)
     return current_user
+
+
+@router.post(
+    "/me/logout",
+    status_code=204,
+    operation_id="logout",
+    summary="Invalidate all tokens for the current user",
+)
+async def logout(current_user: CurrentUserDep, session: SessionDep):
+    current_user.token_version += 1
+    session.add(current_user)
+    await session.commit()

@@ -179,3 +179,25 @@ async def test_login_unknown_email_returns_401(client: AsyncClient):
         json={"email": "nobody@example.com", "password": "secret"},
     )
     assert r.status_code == 401
+
+
+async def test_logout_returns_204(client: AsyncClient, test_user: User):
+    token = make_token(test_user.user_id)
+    r = await client.post(
+        "/api/users/me/logout", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert r.status_code == 204
+
+
+async def test_logout_invalidates_token(client: AsyncClient, test_user: User):
+    token = make_token(test_user.user_id)
+    await client.post(
+        "/api/users/me/logout", headers={"Authorization": f"Bearer {token}"}
+    )
+    r = await client.get("/api/users/me", headers={"Authorization": f"Bearer {token}"})
+    assert r.status_code == 401
+
+
+async def test_logout_requires_auth(client: AsyncClient):
+    r = await client.post("/api/users/me/logout")
+    assert r.status_code == 401

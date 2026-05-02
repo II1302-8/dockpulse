@@ -1,24 +1,14 @@
-"""Tests for the gateway-side MQTT handlers (provision/resp + status).
-
-Calls the handlers directly without a real broker, mirroring the
-existing `test_mqtt_dispatch.py` style.
-"""
+"""gateway-side MQTT handlers (provision/resp + status) — direct dispatch, no broker"""
 
 from datetime import UTC, datetime
 
+import pytest
 import pytest_asyncio
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import (
-    AdoptionRequest,
-    Berth,
-    Dock,
-    Gateway,
-    Harbor,
-    Node,
-    User,
-)
+from app.models import AdoptionRequest, Gateway, Node, User
 from app.mqtt import (
     _handle_gateway_status,
     _handle_provision_resp,
@@ -27,29 +17,10 @@ from app.mqtt import (
 
 
 @pytest_asyncio.fixture
-async def adoption_setup(session: AsyncSession) -> AdoptionRequest:
-    """Pre-existing harbor/dock/berth/gateway/user + a pending request."""
-    session.add_all(
-        [
-            Harbor(harbor_id="h1", name="H"),
-            Dock(dock_id="d1", harbor_id="h1", name="D"),
-        ]
-    )
-    await session.commit()
-    session.add(Berth(berth_id="b1", dock_id="d1", status="free"))
-    session.add(Gateway(gateway_id="gw1", dock_id="d1", name="GW", status="online"))
-    session.add(
-        User(
-            user_id="hm1",
-            firstname="Hilda",
-            lastname="M",
-            email="h@example.com",
-            password_hash="x",
-            role="harbormaster",
-        )
-    )
-    await session.commit()
-
+async def adoption_setup(
+    session: AsyncSession, harbor_world, harbor_master: User
+) -> AdoptionRequest:
+    # harbor_world + harbormaster + pending request
     now = datetime.now(UTC)
     request = AdoptionRequest(
         request_id="req-1",
@@ -60,7 +31,7 @@ async def adoption_setup(session: AsyncSession) -> AdoptionRequest:
         berth_id="b1",
         expires_at=now,
         status="pending",
-        created_by_user_id="hm1",
+        created_by_user_id=harbor_master.user_id,
         created_at=now,
     )
     session.add(request)
@@ -184,3 +155,68 @@ async def test_gateway_status_skips_invalid_payload(
     gateway = await session.get(Gateway, "gw1")
     # last_seen untouched because we bailed early.
     assert gateway.last_seen is None
+
+
+async def test_partial_unique_index_blocks_two_active_nodes_per_berth(
+    session: AsyncSession, harbor_world, harbor_master: User
+):
+    # ix_nodes_berth_active: at most one non-decommissioned node per berth
+    now = datetime.now(UTC)
+    common = {
+        "berth_id": "b1",
+        "gateway_id": "gw1",
+        "mesh_unicast_addr": "0x0007",
+        "dev_key_fp": "fp",
+        "status": "provisioned",
+        "adopted_at": now,
+        "adopted_by_user_id": harbor_master.user_id,
+    }
+    session.add(
+        Node(node_id="n1", mesh_uuid="aaaa" * 8, serial_number="DP-N-1", **common)
+    )
+    await session.commit()
+
+    session.add(
+        Node(node_id="n2", mesh_uuid="bbbb" * 8, serial_number="DP-N-2", **common)
+    )
+    with pytest.raises(IntegrityError):
+        await session.commit()
+    await session.rollback()
+
+
+async def test_partial_unique_index_allows_replacement_after_decommission(
+    session: AsyncSession, harbor_world, harbor_master: User
+):
+    # decommissioned rows kept for history but must not block re-adoption
+    now = datetime.now(UTC)
+    common = {
+        "berth_id": "b1",
+        "gateway_id": "gw1",
+        "mesh_unicast_addr": "0x0007",
+        "dev_key_fp": "fp",
+        "adopted_at": now,
+        "adopted_by_user_id": harbor_master.user_id,
+    }
+    session.add(
+        Node(
+            node_id="n1",
+            mesh_uuid="aaaa" * 8,
+            serial_number="DP-N-1",
+            status="decommissioned",
+            **common,
+        )
+    )
+    await session.commit()
+
+    session.add(
+        Node(
+            node_id="n2",
+            mesh_uuid="bbbb" * 8,
+            serial_number="DP-N-2",
+            status="provisioned",
+            **common,
+        )
+    )
+    await session.commit()
+    nodes = (await session.execute(select(Node))).scalars().all()
+    assert {n.node_id for n in nodes} == {"n1", "n2"}

@@ -4,9 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(
-        case_sensitive=False, extra="ignore", env_file="../.env"
-    )
+    model_config = SettingsConfigDict(case_sensitive=False, extra="ignore")
 
     secret_key: str
     database_url: str = (

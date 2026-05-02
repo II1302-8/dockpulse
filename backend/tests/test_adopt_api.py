@@ -1,132 +1,24 @@
 import base64
 import json
-import os
 import time
 
 import jwt
 import pytest
-import pytest_asyncio
-from argon2 import PasswordHasher
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from cryptography.hazmat.primitives.serialization import (
-    Encoding,
-    NoEncryption,
-    PrivateFormat,
-    PublicFormat,
-)
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adoption.claims import ALGORITHM
-from app.models import AdoptionRequest, Dock, Gateway, Harbor, Node, User
-
-JWT_ALGORITHM = "HS256"
-_ph = PasswordHasher()
-
-
-def _auth_token(user_id: str, token_version: int = 0) -> str:
-    return jwt.encode(
-        {"sub": user_id, "ver": token_version},
-        os.environ["SECRET_KEY"],
-        algorithm=JWT_ALGORITHM,
-    )
-
-
-def _hash(password: str) -> str:
-    return _ph.hash(password)
-
-
-def _make_factory_keys() -> tuple[str, str]:
-    priv = Ed25519PrivateKey.generate()
-    priv_pem = priv.private_bytes(
-        Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()
-    ).decode()
-    pub_pem = (
-        priv.public_key()
-        .public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
-        .decode()
-    )
-    return priv_pem, pub_pem
-
-
-def _make_qr_payload(priv_pem: str, **claim_overrides) -> str:
-    now = int(time.time())
-    claim = {
-        "iss": "factory",
-        "sub": "DP-N-000123",
-        "uuid": "0123456789abcdef0123456789abcdef",
-        "jti": "claim-jti-1",
-        "iat": now,
-        "exp": now + 3600,
-    }
-    claim.update(claim_overrides)
-    token = jwt.encode(claim, priv_pem, algorithm=ALGORITHM)
-    qr = {
-        "v": 1,
-        "uuid": claim["uuid"],
-        "oob": "00112233445566778899aabbccddeeff",
-        "sn": claim["sub"],
-        "jwt": token,
-    }
-    raw = json.dumps(qr).encode()
-    return base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
-
-
-@pytest.fixture
-def factory_pubkey(monkeypatch):
-    priv_pem, pub_pem = _make_factory_keys()
-    monkeypatch.setenv("FACTORY_PUBKEY", pub_pem)
-    return priv_pem
-
-
-@pytest_asyncio.fixture
-async def harbor_master(session: AsyncSession) -> User:
-    user = User(
-        user_id="hm1",
-        firstname="Hilda",
-        lastname="Master",
-        email="hilda@example.com",
-        password_hash=_hash("secret"),
-        role="harbormaster",
-    )
-    session.add(user)
-    await session.commit()
-    return user
-
-
-@pytest_asyncio.fixture
-async def boat_owner(session: AsyncSession) -> User:
-    user = User(
-        user_id="o1",
-        firstname="Olle",
-        lastname="Owner",
-        email="olle@example.com",
-        password_hash=_hash("secret"),
-        role="boat_owner",
-    )
-    session.add(user)
-    await session.commit()
-    return user
-
-
-@pytest_asyncio.fixture
-async def harbor_with_gateway(session: AsyncSession):
-    """Harbor h1 / dock d1 / berth b1 / gateway gw1"""
-    session.add_all(
-        [
-            Harbor(harbor_id="h1", name="Test Harbor"),
-            Dock(dock_id="d1", harbor_id="h1", name="Test Dock"),
-        ]
-    )
-    await session.commit()
-    from app.models import Berth
-
-    session.add(Berth(berth_id="b1", dock_id="d1", status="free"))
-    session.add(
-        Gateway(gateway_id="gw1", dock_id="d1", name="Test Gateway", status="online")
-    )
-    await session.commit()
+from app.models import AdoptionRequest, Dock, Gateway, Node, User
+from tests._helpers import (
+    make_auth_token as _auth_token,
+)
+from tests._helpers import (
+    make_factory_keys,
+)
+from tests._helpers import (
+    make_qr_payload as _make_qr_payload,
+)
 
 
 def _adopt_body(qr: str, **overrides) -> dict:
@@ -139,7 +31,7 @@ async def test_adopt_happy_path_creates_pending_request(
     client: AsyncClient,
     session: AsyncSession,
     harbor_master: User,
-    harbor_with_gateway,
+    harbor_world,
     factory_pubkey,
 ):
     qr = _make_qr_payload(factory_pubkey)
@@ -163,9 +55,7 @@ async def test_adopt_happy_path_creates_pending_request(
     assert stored.claim_jti == "claim-jti-1"
 
 
-async def test_adopt_requires_auth(
-    client: AsyncClient, harbor_with_gateway, factory_pubkey
-):
+async def test_adopt_requires_auth(client: AsyncClient, harbor_world, factory_pubkey):
     qr = _make_qr_payload(factory_pubkey)
     r = await client.post("/api/nodes/adopt", json=_adopt_body(qr))
     assert r.status_code == 401
@@ -174,7 +64,7 @@ async def test_adopt_requires_auth(
 async def test_adopt_rejects_boat_owner(
     client: AsyncClient,
     boat_owner: User,
-    harbor_with_gateway,
+    harbor_world,
     factory_pubkey,
 ):
     qr = _make_qr_payload(factory_pubkey)
@@ -186,109 +76,79 @@ async def test_adopt_rejects_boat_owner(
     assert r.status_code == 403
 
 
-async def test_adopt_rejects_invalid_qr_encoding(
-    client: AsyncClient, harbor_master: User, harbor_with_gateway, factory_pubkey
-):
-    r = await client.post(
-        "/api/nodes/adopt",
-        json=_adopt_body("!!! not base64 !!!"),
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
-    )
-    assert r.status_code == 400
-
-
-async def test_adopt_rejects_qr_without_oob(
-    client: AsyncClient,
-    session: AsyncSession,
-    harbor_master: User,
-    harbor_with_gateway,
-    factory_pubkey,
-):
+def _signed_claim(priv: str, **overrides) -> tuple[dict, str]:
     now = int(time.time())
     claim = {
         "iss": "factory",
         "sub": "DP-N-000123",
         "uuid": "0123456789abcdef0123456789abcdef",
-        "jti": "claim-jti-no-oob",
+        "jti": "claim-jti-malformed",
         "iat": now,
         "exp": now + 3600,
     }
-    token = jwt.encode(claim, factory_pubkey, algorithm=ALGORITHM)
-    qr_dict = {"v": 1, "uuid": claim["uuid"], "sn": claim["sub"], "jwt": token}
-    qr = base64.urlsafe_b64encode(json.dumps(qr_dict).encode()).rstrip(b"=").decode()
+    claim.update(overrides)
+    return claim, jwt.encode(claim, priv, algorithm=ALGORITHM)
 
+
+def _b64(qr_dict: dict) -> str:
+    return base64.urlsafe_b64encode(json.dumps(qr_dict).encode()).rstrip(b"=").decode()
+
+
+def _qr_invalid_encoding(_priv: str) -> str:
+    return "!!! not base64 !!!"
+
+
+def _qr_without_oob(priv: str) -> str:
+    claim, token = _signed_claim(priv)
+    return _b64({"v": 1, "uuid": claim["uuid"], "sn": claim["sub"], "jwt": token})
+
+
+def _qr_empty_oob(priv: str) -> str:
+    claim, token = _signed_claim(priv)
+    return _b64(
+        {"v": 1, "uuid": claim["uuid"], "oob": "", "sn": claim["sub"], "jwt": token}
+    )
+
+
+def _qr_without_jwt(_priv: str) -> str:
+    return _b64({"v": 1, "sn": "X"})
+
+
+def _qr_bad_signature(_priv: str) -> str:
+    other_priv, _ = make_factory_keys()
+    return _make_qr_payload(other_priv)
+
+
+@pytest.mark.parametrize(
+    "qr_factory",
+    [
+        pytest.param(_qr_invalid_encoding, id="invalid_encoding"),
+        pytest.param(_qr_without_oob, id="without_oob"),
+        pytest.param(_qr_empty_oob, id="empty_oob"),
+        pytest.param(_qr_without_jwt, id="without_jwt"),
+        pytest.param(_qr_bad_signature, id="bad_signature"),
+    ],
+)
+async def test_adopt_rejects_malformed_qr(
+    qr_factory,
+    client: AsyncClient,
+    session: AsyncSession,
+    harbor_master: User,
+    harbor_world,
+    factory_pubkey,
+):
     r = await client.post(
         "/api/nodes/adopt",
-        json=_adopt_body(qr),
+        json=_adopt_body(qr_factory(factory_pubkey)),
         headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
     )
     assert r.status_code == 400
-
     rows = (await session.execute(select(AdoptionRequest))).scalars().all()
     assert rows == []
 
 
-async def test_adopt_rejects_qr_with_empty_oob(
-    client: AsyncClient,
-    harbor_master: User,
-    harbor_with_gateway,
-    factory_pubkey,
-):
-    now = int(time.time())
-    claim = {
-        "iss": "factory",
-        "sub": "DP-N-000123",
-        "uuid": "0123456789abcdef0123456789abcdef",
-        "jti": "claim-jti-empty-oob",
-        "iat": now,
-        "exp": now + 3600,
-    }
-    token = jwt.encode(claim, factory_pubkey, algorithm=ALGORITHM)
-    qr_dict = {
-        "v": 1,
-        "uuid": claim["uuid"],
-        "oob": "",
-        "sn": claim["sub"],
-        "jwt": token,
-    }
-    qr = base64.urlsafe_b64encode(json.dumps(qr_dict).encode()).rstrip(b"=").decode()
-
-    r = await client.post(
-        "/api/nodes/adopt",
-        json=_adopt_body(qr),
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
-    )
-    assert r.status_code == 400
-
-
-async def test_adopt_rejects_qr_without_jwt(
-    client: AsyncClient, harbor_master: User, harbor_with_gateway, factory_pubkey
-):
-    raw = json.dumps({"v": 1, "sn": "X"}).encode()
-    qr = base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
-    r = await client.post(
-        "/api/nodes/adopt",
-        json=_adopt_body(qr),
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
-    )
-    assert r.status_code == 400
-
-
-async def test_adopt_rejects_bad_signature(
-    client: AsyncClient, harbor_master: User, harbor_with_gateway, factory_pubkey
-):
-    other_priv, _ = _make_factory_keys()
-    qr = _make_qr_payload(other_priv)
-    r = await client.post(
-        "/api/nodes/adopt",
-        json=_adopt_body(qr),
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
-    )
-    assert r.status_code == 400
-
-
 async def test_adopt_returns_404_for_unknown_gateway(
-    client: AsyncClient, harbor_master: User, harbor_with_gateway, factory_pubkey
+    client: AsyncClient, harbor_master: User, harbor_world, factory_pubkey
 ):
     qr = _make_qr_payload(factory_pubkey)
     r = await client.post(
@@ -300,7 +160,7 @@ async def test_adopt_returns_404_for_unknown_gateway(
 
 
 async def test_adopt_returns_404_for_unknown_berth(
-    client: AsyncClient, harbor_master: User, harbor_with_gateway, factory_pubkey
+    client: AsyncClient, harbor_master: User, harbor_world, factory_pubkey
 ):
     qr = _make_qr_payload(factory_pubkey)
     r = await client.post(
@@ -315,7 +175,7 @@ async def test_adopt_rejects_gateway_dock_mismatch(
     client: AsyncClient,
     session: AsyncSession,
     harbor_master: User,
-    harbor_with_gateway,
+    harbor_world,
     factory_pubkey,
 ):
     from app.models import Berth
@@ -338,7 +198,7 @@ async def test_adopt_rejects_berth_with_active_node(
     client: AsyncClient,
     session: AsyncSession,
     harbor_master: User,
-    harbor_with_gateway,
+    harbor_world,
     factory_pubkey,
 ):
     from datetime import UTC, datetime
@@ -369,7 +229,7 @@ async def test_adopt_rejects_berth_with_active_node(
 
 
 async def test_adopt_rejects_reused_jti(
-    client: AsyncClient, harbor_master: User, harbor_with_gateway, factory_pubkey
+    client: AsyncClient, harbor_master: User, harbor_world, factory_pubkey
 ):
     qr = _make_qr_payload(factory_pubkey, jti="reused-jti")
     headers = {"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"}
@@ -387,7 +247,7 @@ async def test_adopt_persists_creator(
     client: AsyncClient,
     session: AsyncSession,
     harbor_master: User,
-    harbor_with_gateway,
+    harbor_world,
     factory_pubkey,
 ):
     qr = _make_qr_payload(factory_pubkey)
@@ -409,7 +269,7 @@ async def test_adopt_rejects_offline_gateway(
     client: AsyncClient,
     session: AsyncSession,
     harbor_master: User,
-    harbor_with_gateway,
+    harbor_world,
     factory_pubkey,
 ):
     gateway = await session.get(Gateway, "gw1")
@@ -428,7 +288,7 @@ async def test_adopt_rejects_offline_gateway(
 async def test_get_adoption_returns_request(
     client: AsyncClient,
     harbor_master: User,
-    harbor_with_gateway,
+    harbor_world,
     factory_pubkey,
 ):
     qr = _make_qr_payload(factory_pubkey)
@@ -450,7 +310,7 @@ async def test_get_adoption_returns_request(
 
 
 async def test_get_adoption_404_unknown(
-    client: AsyncClient, harbor_master: User, harbor_with_gateway
+    client: AsyncClient, harbor_master: User, harbor_world
 ):
     r = await client.get(
         "/api/adoptions/missing",
@@ -460,7 +320,7 @@ async def test_get_adoption_404_unknown(
 
 
 async def test_get_adoption_requires_harbormaster(
-    client: AsyncClient, boat_owner: User, harbor_with_gateway
+    client: AsyncClient, boat_owner: User, harbor_world
 ):
     r = await client.get(
         "/api/adoptions/anything",
@@ -477,17 +337,10 @@ async def test_get_adoption_requires_auth(client: AsyncClient):
 async def test_adopt_publishes_provision_req(
     client: AsyncClient,
     harbor_master: User,
-    harbor_with_gateway,
+    harbor_world,
     factory_pubkey,
-    monkeypatch,
+    published_provision_reqs: list[dict],
 ):
-    captured: list[dict] = []
-
-    async def fake_publish(**kwargs):
-        captured.append(kwargs)
-
-    monkeypatch.setattr("app.routers.nodes.publish_provision_req", fake_publish)
-
     qr = _make_qr_payload(factory_pubkey)
     r = await client.post(
         "/api/nodes/adopt",
@@ -495,8 +348,8 @@ async def test_adopt_publishes_provision_req(
         headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
     )
     assert r.status_code == 202
-    assert len(captured) == 1
-    call = captured[0]
+    assert len(published_provision_reqs) == 1
+    call = published_provision_reqs[0]
     assert call["gateway_id"] == "gw1"
     assert call["mesh_uuid"] == "0123456789abcdef0123456789abcdef"
     assert call["oob"] == "00112233445566778899aabbccddeeff"

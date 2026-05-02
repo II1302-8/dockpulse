@@ -1,29 +1,17 @@
-import os
-
-import jwt
 import pytest_asyncio
-from argon2 import PasswordHasher
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import User
-
-ALGORITHM = "HS256"
-
-
-def make_token(user_id: str, token_version: int = 0) -> str:
-    return jwt.encode(
-        {"sub": user_id, "ver": token_version},
-        os.environ["SECRET_KEY"],
-        algorithm=ALGORITHM,
-    )
-
-
-_ph = PasswordHasher()
-
-
-def _hash(password: str) -> str:
-    return _ph.hash(password)
+from tests._helpers import (
+    hash_password as _hash,
+)
+from tests._helpers import (
+    make_auth_token as make_token,
+)
+from tests._helpers import (
+    verify_password,
+)
 
 
 @pytest_asyncio.fixture
@@ -87,7 +75,7 @@ async def test_patch_me_updates_password(
     )
     assert r.status_code == 200
     await session.refresh(test_user)
-    assert _ph.verify(test_user.password_hash, "newpassword")
+    assert verify_password(test_user.password_hash, "newpassword")
 
 
 async def test_patch_me_email_conflict(
@@ -141,7 +129,7 @@ async def test_register_creates_user(client: AsyncClient, session: AsyncSession)
 
     stored = await session.get(User, data["user_id"])
     assert stored is not None
-    assert _ph.verify(stored.password_hash, "hunter2hunter2")
+    assert verify_password(stored.password_hash, "hunter2hunter2")
 
 
 async def test_register_duplicate_email_conflict(client: AsyncClient, test_user: User):

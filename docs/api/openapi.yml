@@ -82,8 +82,35 @@ components:
       - created_at
       title: AdoptionRequestOut
       type: object
+    AssignBerthIn:
+      properties:
+        user_id:
+          minLength: 1
+          title: User Id
+          type: string
+      required:
+      - user_id
+      title: AssignBerthIn
+      type: object
+    AssignmentOut:
+      properties:
+        berth_id:
+          title: Berth Id
+          type: string
+        user_id:
+          title: User Id
+          type: string
+      required:
+      - berth_id
+      - user_id
+      title: AssignmentOut
+      type: object
     BerthOut:
       properties:
+        assignment:
+          anyOf:
+          - $ref: '#/components/schemas/AssignmentOut'
+          - type: 'null'
         battery_pct:
           anyOf:
           - type: integer
@@ -100,6 +127,10 @@ components:
         dock_id:
           title: Dock Id
           type: string
+        is_reserved:
+          default: false
+          title: Is Reserved
+          type: boolean
         label:
           anyOf:
           - type: string
@@ -553,31 +584,6 @@ paths:
       summary: Remove a berth assignment
       tags:
       - berths
-    get:
-      operationId: getBerthAssignment
-      parameters:
-      - in: path
-        name: berth_id
-        required: true
-        schema:
-          title: Berth Id
-          type: string
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BerthOut'
-          description: Successful Response
-        '422':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
-      summary: Get a berth assignment
-      tags:
-      - berths
     post:
       operationId: assignBerth
       parameters:
@@ -587,12 +593,12 @@ paths:
         schema:
           title: Berth Id
           type: string
-      - in: query
-        name: user_id
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignBerthIn'
         required: true
-        schema:
-          title: User Id
-          type: string
       responses:
         '200':
           content:

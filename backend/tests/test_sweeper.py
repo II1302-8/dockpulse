@@ -2,42 +2,10 @@
 
 from datetime import UTC, datetime, timedelta
 
-import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adoption.sweeper import sweep_once
-from app.models import (
-    AdoptionRequest,
-    Berth,
-    Dock,
-    Gateway,
-    Harbor,
-    User,
-)
-
-
-@pytest_asyncio.fixture
-async def adoption_world(session: AsyncSession):
-    session.add_all(
-        [
-            Harbor(harbor_id="h1", name="H"),
-            Dock(dock_id="d1", harbor_id="h1", name="D"),
-        ]
-    )
-    await session.commit()
-    session.add(Berth(berth_id="b1", dock_id="d1", status="free"))
-    session.add(Gateway(gateway_id="gw1", dock_id="d1", name="GW", status="online"))
-    session.add(
-        User(
-            user_id="hm1",
-            firstname="H",
-            lastname="M",
-            email="h@example.com",
-            password_hash="x",
-            role="harbormaster",
-        )
-    )
-    await session.commit()
+from app.models import AdoptionRequest
 
 
 def _make_request(request_id: str, *, expires_in: timedelta, status: str = "pending"):
@@ -57,7 +25,7 @@ def _make_request(request_id: str, *, expires_in: timedelta, status: str = "pend
 
 
 async def test_sweep_marks_expired_pending_as_timeout(
-    session: AsyncSession, adoption_world
+    session: AsyncSession, harbor_world, harbor_master
 ):
     session.add(_make_request("expired-1", expires_in=timedelta(seconds=-30)))
     await session.commit()
@@ -72,7 +40,7 @@ async def test_sweep_marks_expired_pending_as_timeout(
 
 
 async def test_sweep_leaves_unexpired_pending_alone(
-    session: AsyncSession, adoption_world
+    session: AsyncSession, harbor_world, harbor_master
 ):
     session.add(_make_request("fresh", expires_in=timedelta(seconds=300)))
     await session.commit()
@@ -85,7 +53,7 @@ async def test_sweep_leaves_unexpired_pending_alone(
 
 
 async def test_sweep_skips_already_completed_requests(
-    session: AsyncSession, adoption_world
+    session: AsyncSession, harbor_world, harbor_master
 ):
     session.add(_make_request("done", expires_in=timedelta(seconds=-30), status="ok"))
     await session.commit()
@@ -98,7 +66,7 @@ async def test_sweep_skips_already_completed_requests(
 
 
 async def test_sweep_handles_multiple_expired_requests(
-    session: AsyncSession, adoption_world
+    session: AsyncSession, harbor_world, harbor_master
 ):
     session.add_all(
         [

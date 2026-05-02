@@ -16,7 +16,6 @@ user_role_enum = Enum("harbormaster", "boat_owner", name="user_role")
 gateway_status_enum = Enum("online", "offline", name="gateway_status")
 node_status_enum = Enum("provisioned", "offline", "decommissioned", name="node_status")
 adoption_status_enum = Enum("pending", "ok", "err", name="adoption_status")
-berth_assignment_enum = Enum("occupied", "free", name="berth_assignment_status")
 
 
 class User(Base):
@@ -70,14 +69,17 @@ class Berth(Base):
     width_m: Mapped[float | None] = mapped_column(Double)
     depth_m: Mapped[float | None] = mapped_column(Double)
     status: Mapped[str] = mapped_column(berth_status_enum, default="free")
-    is_reserved: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_reserved: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     sensor_raw: Mapped[int | None] = mapped_column(Integer)
     battery_pct: Mapped[int | None] = mapped_column(Integer)
     last_updated: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
     dock: Mapped["Dock"] = relationship(back_populates="berths")
     events: Mapped[list["Event"]] = relationship(back_populates="berth")
     alerts: Mapped[list["Alert"]] = relationship(back_populates="berth")
-    assignment: Mapped["Assignment"] = relationship(back_populates="berth")
+    assignment: Mapped["Assignment | None"] = relationship(
+        back_populates="berth", uselist=False
+    )
 
 
 class Event(Base):
@@ -186,14 +188,14 @@ class FactoryKey(Base):
 class Assignment(Base):
     __tablename__ = "assignments"
 
+    # one assignment per berth; replacing the user updates this row in place
     berth_id: Mapped[str] = mapped_column(
         ForeignKey("berths.berth_id", ondelete="CASCADE"), primary_key=True
     )
     user_id: Mapped[str] = mapped_column(
-        ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True
-    )
-    berth_assignment_status: Mapped[str] = mapped_column(
-        berth_assignment_enum, nullable=False, default="occupied"
+        ForeignKey("users.user_id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
 
     berth: Mapped["Berth"] = relationship(back_populates="assignment")

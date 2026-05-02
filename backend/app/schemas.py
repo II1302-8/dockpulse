@@ -8,6 +8,11 @@ class _BaseSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class AssignmentOut(_BaseSchema):
+    berth_id: str
+    user_id: str
+
+
 class BerthOut(_BaseSchema):
     berth_id: str
     dock_id: str
@@ -16,9 +21,15 @@ class BerthOut(_BaseSchema):
     width_m: float | None = None
     depth_m: float | None = None
     status: str
+    is_reserved: bool = False
     sensor_raw: int | None = None
     battery_pct: int | None = None
     last_updated: datetime | None = None
+    assignment: AssignmentOut | None = None
+
+
+class AssignBerthIn(BaseModel):
+    user_id: str = Field(min_length=1)
 
 
 class DockOut(_BaseSchema):

@@ -2,14 +2,14 @@ import asyncio
 import json
 
 from fastapi import APIRouter, HTTPException, Query, Request
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import selectinload
 from sse_starlette.sse import EventSourceResponse
 
 from app import broadcaster
 from app.dependencies import HarbormasterDep, SessionDep
-from app.models import Assignment, Berth
-from app.schemas import BerthOut, BerthUpdateEvent
+from app.models import Assignment, Berth, User
+from app.schemas import AssignBerthIn, BerthOut, BerthUpdateEvent
 
 router = APIRouter(prefix="/api/berths", tags=["berths"])
 
@@ -29,14 +29,11 @@ async def list_berths(
         None, pattern="^(free|occupied)$", description="filter by status"
     ),
 ):
-    # Added selectinload here too so the dashboard list shows assignments
     stmt = select(Berth).options(selectinload(Berth.assignment))
-
     if dock_id:
         stmt = stmt.where(Berth.dock_id == dock_id)
     if status:
         stmt = stmt.where(Berth.status == status)
-
     result = await session.execute(stmt)
     return result.scalars().all()
 
@@ -75,6 +72,16 @@ async def stream_berths(request: Request):
     return EventSourceResponse(event_gen(), ping=SSE_PING_SECONDS)
 
 
+async def _load_berth_with_assignment(session, berth_id: str) -> Berth | None:
+    stmt = (
+        select(Berth)
+        .options(selectinload(Berth.assignment))
+        .where(Berth.berth_id == berth_id)
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
 @router.get(
     "/{berth_id}",
     response_model=BerthOut,
@@ -82,15 +89,7 @@ async def stream_berths(request: Request):
     summary="Get a single berth",
 )
 async def get_berth(berth_id: str, session: SessionDep):
-    # Added selectinload to ensure the assignment is visible in the response
-    stmt = (
-        select(Berth)
-        .options(selectinload(Berth.assignment))
-        .where(Berth.berth_id == berth_id)
-    )
-    result = await session.execute(stmt)
-    berth = result.scalar_one_or_none()
-
+    berth = await _load_berth_with_assignment(session, berth_id)
     if not berth:
         raise HTTPException(status_code=404, detail="Berth not found")
     return berth
@@ -103,48 +102,24 @@ async def get_berth(berth_id: str, session: SessionDep):
     summary="Assign a berth to a user",
 )
 async def assign_berth(
-    berth_id: str, user_id: str, session: SessionDep, _: HarbormasterDep
+    berth_id: str,
+    body: AssignBerthIn,
+    session: SessionDep,
+    _: HarbormasterDep,
 ):
     berth = await session.get(Berth, berth_id)
     if not berth:
         raise HTTPException(status_code=404, detail="Berth not found")
+    if not await session.get(User, body.user_id):
+        raise HTTPException(status_code=404, detail="User not found")
 
-    new_assignment = Assignment(berth_id=berth_id, user_id=user_id)
-    await session.merge(new_assignment)
-
+    # merge by single-PK berth_id reuses the row, replacing user on re-assign
+    await session.merge(Assignment(berth_id=berth_id, user_id=body.user_id))
     berth.status = "occupied"
     berth.is_reserved = True
-    session.add(berth)
     await session.commit()
 
-    stmt = (
-        select(Berth)
-        .options(selectinload(Berth.assignment))
-        .where(Berth.berth_id == berth_id)
-    )
-    result = await session.execute(stmt)
-    return result.scalar_one()
-
-
-@router.get(
-    "/{berth_id}/assignment",
-    response_model=BerthOut,
-    operation_id="getBerthAssignment",
-    summary="Get a berth assignment",
-)
-async def get_berth_assignment(berth_id: str, session: SessionDep):
-    # Updated to use selectinload; otherwise, assignment will be empty
-    stmt = (
-        select(Berth)
-        .options(selectinload(Berth.assignment))
-        .where(Berth.berth_id == berth_id)
-    )
-    result = await session.execute(stmt)
-    berth = result.scalar_one_or_none()
-
-    if not berth:
-        raise HTTPException(status_code=404, detail="Berth not found")
-    return berth
+    return await _load_berth_with_assignment(session, berth_id)
 
 
 @router.delete(
@@ -156,8 +131,6 @@ async def get_berth_assignment(berth_id: str, session: SessionDep):
 async def remove_berth_assignment(
     berth_id: str, session: SessionDep, _: HarbormasterDep
 ):
-    from sqlalchemy import delete
-
     berth = await session.get(Berth, berth_id)
     if not berth:
         raise HTTPException(status_code=404, detail="Berth not found")
@@ -165,8 +138,6 @@ async def remove_berth_assignment(
     await session.execute(delete(Assignment).where(Assignment.berth_id == berth_id))
     berth.status = "free"
     berth.is_reserved = False
-    session.add(berth)
     await session.commit()
 
-    await session.refresh(berth)
-    return berth
+    return await _load_berth_with_assignment(session, berth_id)

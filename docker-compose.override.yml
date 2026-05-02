@@ -6,6 +6,13 @@ services:
   mosquitto:
     ports:
       - "8883:8883"
+      # dev plaintext listener. all interfaces so ESP32 on LAN can reach.
+      # staging/prod don't merge this file so 1883 stays absent there
+      - "1883:1883"
+    volumes: !override
+      - ./mosquitto.dev.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mosquitto-acl.conf:/mosquitto/config/acl.conf:ro
+      - mqtt-pki:/mosquitto/certs:ro
 
   backend:
     command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"

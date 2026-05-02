@@ -1,7 +1,7 @@
 from sqlalchemy import select
 
 from app.models import Berth, Event
-from app.mqtt import _handle_heartbeat, _handle_status
+from app.mqtt import _handle_heartbeat, _handle_status, publish_provision_req
 
 
 async def test_status_handler_persists_reading(session, seeded_berth):
@@ -53,3 +53,14 @@ async def test_heartbeat_handler_persists_battery(session, seeded_berth):
 async def test_heartbeat_handler_skips_unknown_berth(session):
     # Should not raise.
     await _handle_heartbeat(session, {"battery_pct": 50}, "b1")
+
+
+async def test_publish_provision_req_noop_when_disconnected():
+    # _client is None at import so should warn and return
+    await publish_provision_req(
+        gateway_id="gw1",
+        request_id="req-1",
+        mesh_uuid="abcd" * 8,
+        oob="ff" * 16,
+        ttl_s=60,
+    )

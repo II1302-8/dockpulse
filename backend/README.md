@@ -52,26 +52,19 @@ Pre-commit and CI both run `--check` and will fail on drift.
 
 Tests run against a real PostgreSQL database (no mocks).
 
-**Prerequisites:** Postgres running with a `dockpulse_test` database. Start it via Docker Compose from the repo root:
+**Prerequisites:** Postgres running. Start it via Docker Compose from the repo root:
 
 ```bash
 docker compose up db -d
-docker compose exec db psql -U dockpulse -c "CREATE DATABASE dockpulse_test;"
 ```
 
 **Run tests:**
 
 ```bash
-SECRET_KEY=any-local-secret uv run pytest -v
+uv run pytest
 ```
 
-The test database URL defaults to `postgresql+asyncpg://dockpulse:dockpulse@localhost:5432/dockpulse_test`. Override with:
-
-```bash
-TEST_DATABASE_URL=postgresql+asyncpg://user:pass@host/dbname uv run pytest
-```
-
-The test suite drops and recreates all tables on each run, so it is safe to run repeatedly.
+The conftest auto-creates `dockpulse_test` if it doesn't exist, runs `alembic upgrade head`, and truncates tables between tests. `SECRET_KEY` and `TEST_DATABASE_URL` have test-safe defaults; override either by exporting it.
 
 ## Project structure
 

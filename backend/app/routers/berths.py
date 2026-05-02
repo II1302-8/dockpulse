@@ -1,16 +1,14 @@
 import asyncio
 import json
-from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, Request
-from fastapi.params import Body
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sse_starlette.sse import EventSourceResponse
 
 from app import broadcaster
 from app.dependencies import SessionDep
-from app.models import Assignment, Berth, User
+from app.models import Assignment, Berth
 from app.schemas import BerthOut, BerthUpdateEvent
 
 router = APIRouter(prefix="/api/berths", tags=["berths"])
@@ -97,15 +95,14 @@ async def get_berth(berth_id: str, session: SessionDep):
         raise HTTPException(status_code=404, detail="Berth not found")
     return berth
 
+
 @router.post(
     "/{berth_id}/assignment",
     response_model=BerthOut,
     operation_id="assignBerth",
     summary="Assign a berth to a user",
 )
-async def assign_berth(
-    berth_id: str, user_id: str, session: SessionDep
-):
+async def assign_berth(berth_id: str, user_id: str, session: SessionDep):
     berth = await session.get(Berth, berth_id)
     if not berth:
         raise HTTPException(status_code=404, detail="Berth not found")

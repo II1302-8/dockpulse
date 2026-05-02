@@ -548,13 +548,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
-      security:
-      - HTTPBearer: []
       summary: Remove a berth assignment
       tags:
       - berths
-    post:
-      operationId: assignBerth
+    get:
+      operationId: getBerthAssignment
       parameters:
       - in: path
         name: berth_id
@@ -575,8 +573,37 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
-      security:
-      - HTTPBearer: []
+      summary: Get a berth assignment
+      tags:
+      - berths
+    post:
+      operationId: assignBerth
+      parameters:
+      - in: path
+        name: berth_id
+        required: true
+        schema:
+          title: Berth Id
+          type: string
+      - in: query
+        name: user_id
+        required: true
+        schema:
+          title: User Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BerthOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
       summary: Assign a berth to a user
       tags:
       - berths

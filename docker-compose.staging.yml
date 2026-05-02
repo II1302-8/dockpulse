@@ -1,22 +1,40 @@
+x-loki-logging: &loki-logging
+  driver: loki
+  options:
+    loki-url: "http://localhost:3100/loki/api/v1/push"
+    loki-batch-size: "400"
+    loki-retries: "3"
+    loki-external-labels: "service={{.Compose.Service}},stack={{.Compose.Project}},container={{.Name}}"
+    keep-file: "true"
+    mode: "non-blocking"
+    max-buffer-size: "4m"
+
 services:
   cert-tools:
     container_name: dockpulse-staging-cert-tools
+    logging: *loki-logging
 
   db:
     container_name: dockpulse-staging-db
     volumes: !reset []
     tmpfs:
       - /var/lib/postgresql/data
+    logging: *loki-logging
 
   mosquitto:
     container_name: dockpulse-staging-mosquitto
+    logging: *loki-logging
 
   backend:
     container_name: dockpulse-staging-backend
+    environment:
+      LOG_FORMAT: json
+    logging: *loki-logging
 
   frontend:
     container_name: dockpulse-staging-frontend
     profiles: !reset []
+    logging: *loki-logging
 
   cloudflared:
     container_name: dockpulse-staging-cloudflared
@@ -31,6 +49,7 @@ services:
       backend:
         condition: service_started
     networks: [internal]
+    logging: *loki-logging
 
   fake-publisher:
     container_name: dockpulse-staging-fake-publisher
@@ -55,3 +74,4 @@ services:
       cert-tools:
         condition: service_healthy
     networks: [internal]
+    logging: *loki-logging

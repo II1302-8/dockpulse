@@ -4,12 +4,11 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
-class _Base(BaseModel):
+class _BaseSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    # Something about this being better for pydantic
 
 
-class BerthOut(_Base):  # Grundläggande begränsningar
+class BerthOut(_BaseSchema):
     berth_id: str
     dock_id: str
     label: str | None = None
@@ -22,20 +21,20 @@ class BerthOut(_Base):  # Grundläggande begränsningar
     last_updated: datetime | None = None
 
 
-class DockOut(_Base):
+class DockOut(_BaseSchema):
     dock_id: str
     harbor_id: str
     name: str
 
 
-class DockWithBerthsOut(_Base):
+class DockWithBerthsOut(_BaseSchema):
     dock_id: str
     harbor_id: str
     name: str
     berths: list[BerthOut] = []
 
 
-class UserOut(_Base):
+class UserOut(_BaseSchema):
     user_id: str
     firstname: str
     lastname: str
@@ -85,7 +84,7 @@ class BerthUpdateEvent(BaseModel):
     berth: BerthOut
 
 
-class GatewayOut(_Base):
+class GatewayOut(_BaseSchema):
     gateway_id: str
     dock_id: str
     name: str
@@ -93,7 +92,7 @@ class GatewayOut(_Base):
     last_seen: datetime | None = None
 
 
-class NodeOut(_Base):
+class NodeOut(_BaseSchema):
     node_id: str
     mesh_uuid: str
     serial_number: str
@@ -104,7 +103,7 @@ class NodeOut(_Base):
     adopted_at: datetime
 
 
-class AdoptionRequestOut(_Base):
+class AdoptionRequestOut(_BaseSchema):
     request_id: str
     mesh_uuid: str
     serial_number: str

@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-import os
 import ssl
 from datetime import UTC, datetime
 
@@ -9,17 +8,12 @@ import aiomqtt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adoption.finalize import complete_adoption_err, complete_adoption_ok
+from app.config import get_settings
 from app.db import get_sessionmaker
 from app.events import process_heartbeat, process_sensor_reading
 from app.models import Gateway
 
 logger = logging.getLogger(__name__)
-
-MQTT_BROKER = os.environ.get("MQTT_BROKER", "localhost")
-MQTT_TLS_CA = os.environ.get("MQTT_TLS_CA")
-MQTT_TLS_CERT = os.environ.get("MQTT_TLS_CERT")
-MQTT_TLS_KEY = os.environ.get("MQTT_TLS_KEY")
-MQTT_PORT = int(os.environ.get("MQTT_PORT", "8883" if MQTT_TLS_CA else "1883"))
 
 # Legacy berth-status topics.
 STATUS_TOPIC = "harbor/+/+/+/status"
@@ -43,12 +37,13 @@ def is_mqtt_connected() -> bool:
 
 
 def _build_tls_context() -> ssl.SSLContext | None:
-    if not (MQTT_TLS_CA and MQTT_TLS_CERT and MQTT_TLS_KEY):
+    s = get_settings()
+    if not (s.mqtt_tls_ca and s.mqtt_tls_cert and s.mqtt_tls_key):
         return None
     ctx = ssl.create_default_context(
-        purpose=ssl.Purpose.SERVER_AUTH, cafile=MQTT_TLS_CA
+        purpose=ssl.Purpose.SERVER_AUTH, cafile=s.mqtt_tls_ca
     )
-    ctx.load_cert_chain(certfile=MQTT_TLS_CERT, keyfile=MQTT_TLS_KEY)
+    ctx.load_cert_chain(certfile=s.mqtt_tls_cert, keyfile=s.mqtt_tls_key)
     ctx.minimum_version = ssl.TLSVersion.TLSv1_2
     return ctx
 
@@ -213,18 +208,20 @@ async def publish_provision_req(
 
 async def mqtt_listener() -> None:
     global _connected, _client
+    s = get_settings()
+    port = s.mqtt_port if s.mqtt_port is not None else (8883 if s.mqtt_tls_ca else 1883)
     tls_context = _build_tls_context()
     while True:
         try:
             async with aiomqtt.Client(
-                MQTT_BROKER, MQTT_PORT, tls_context=tls_context
+                s.mqtt_broker, port, tls_context=tls_context
             ) as client:
                 _client = client
                 _connected = True
                 logger.info(
                     "Connected to MQTT broker %s:%s (tls=%s)",
-                    MQTT_BROKER,
-                    MQTT_PORT,
+                    s.mqtt_broker,
+                    port,
                     tls_context is not None,
                 )
                 await client.subscribe(STATUS_TOPIC)

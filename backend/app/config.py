@@ -10,6 +10,11 @@ class Settings(BaseSettings):
     database_url: str = (
         "postgresql+asyncpg://dockpulse:dockpulse@localhost:5432/dockpulse"
     )
+    mqtt_broker: str = "localhost"
+    mqtt_tls_ca: str | None = None
+    mqtt_tls_cert: str | None = None
+    mqtt_tls_key: str | None = None
+    mqtt_port: int | None = None
 
 
 @lru_cache

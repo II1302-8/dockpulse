@@ -8,13 +8,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import User
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "test-secret")
 ALGORITHM = "HS256"
 
 
 def make_token(user_id: str, token_version: int = 0) -> str:
     return jwt.encode(
-        {"sub": user_id, "ver": token_version}, SECRET_KEY, algorithm=ALGORITHM
+        {"sub": user_id, "ver": token_version},
+        os.environ["SECRET_KEY"],
+        algorithm=ALGORITHM,
     )
 
 

@@ -4,10 +4,10 @@ import asyncio
 import logging
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.adoption.finalize import complete_adoption_err
+from app.adoption.finalize import publish_adoption_update
 from app.db import get_sessionmaker
 from app.models import AdoptionRequest
 
@@ -19,18 +19,22 @@ SWEEP_INTERVAL_S = 5
 async def sweep_once(session: AsyncSession) -> int:
     """Mark all expired pending requests as err:timeout. Returns count"""
     now = datetime.now(UTC)
-    result = await session.execute(
-        select(AdoptionRequest.request_id).where(
+    stmt = (
+        update(AdoptionRequest)
+        .where(
             AdoptionRequest.status == "pending",
             AdoptionRequest.expires_at < now,
         )
+        .values(status="err", error_code="timeout", completed_at=now)
+        .returning(AdoptionRequest)
+        .execution_options(synchronize_session="fetch")
     )
-    request_ids = [row[0] for row in result.all()]
-    for rid in request_ids:
-        await complete_adoption_err(
-            session, request_id=rid, error_code="timeout", error_msg=None
-        )
-    return len(request_ids)
+    result = await session.execute(stmt)
+    expired = list(result.scalars())
+    await session.commit()
+    for request in expired:
+        publish_adoption_update(request)
+    return len(expired)
 
 
 async def sweeper_loop() -> None:

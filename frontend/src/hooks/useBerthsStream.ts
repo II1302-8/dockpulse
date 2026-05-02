@@ -4,11 +4,15 @@ import type { components } from "../api-types";
 type Berth = components["schemas"]["BerthOut"];
 type BerthEvent = components["schemas"]["BerthUpdateEvent"];
 
+// Suppress snapshot storms on flaky reconnects.
+const SNAPSHOT_THROTTLE_MS = 3000;
+
 export function useBerthsStream() {
   const [berthsById, setBerthsById] = useState<Map<string, Berth>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const snapshotAbortRef = useRef<AbortController | null>(null);
+  const lastSnapshotAtRef = useRef<number>(0);
 
   const loadSnapshotACB = useCallback(async () => {
     snapshotAbortRef.current?.abort();
@@ -23,6 +27,7 @@ export function useBerthsStream() {
       if (ac.signal.aborted) return;
       setBerthsById(new Map(list.map((b) => [b.berth_id, b])));
       setError(null);
+      lastSnapshotAtRef.current = Date.now();
     } catch (err) {
       if ((err as { name?: string })?.name === "AbortError") return;
       setError(
@@ -54,8 +59,8 @@ export function useBerthsStream() {
 
     source.onopen = () => {
       if (hasOpenedOnce) {
-        // Reconnect: stream gap may have dropped events. Re-sync via snapshot.
-        loadSnapshotACB();
+        const sinceLast = Date.now() - lastSnapshotAtRef.current;
+        if (sinceLast >= SNAPSHOT_THROTTLE_MS) loadSnapshotACB();
       }
       hasOpenedOnce = true;
     };

@@ -17,7 +17,13 @@ class Base(DeclarativeBase):
 
 @lru_cache
 def get_engine() -> AsyncEngine:
-    return create_async_engine(get_settings().database_url)
+    return create_async_engine(
+        get_settings().database_url,
+        pool_size=10,
+        max_overflow=10,
+        pool_pre_ping=True,
+        pool_recycle=1800,
+    )
 
 
 @lru_cache

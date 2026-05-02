@@ -22,6 +22,7 @@ services:
     container_name: dockpulse-prod-mosquitto
     volumes: !override
       - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mosquitto-acl.conf:/mosquitto/config/acl.conf:ro
       - mqtt-pki:/mosquitto/certs:ro
       - mqtt-certs:/mosquitto/certs/server:ro
     ports:

@@ -1,12 +1,14 @@
 import os
 from collections.abc import AsyncIterator
 
+import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
+from app.config import get_settings
 from app.db import Base, get_session
 from app.main import app
 from app.models import Berth, Dock, Harbor
@@ -15,6 +17,21 @@ TEST_DATABASE_URL = os.environ.get(
     "TEST_DATABASE_URL",
     "postgresql+asyncpg://dockpulse:dockpulse@localhost:5432/dockpulse_test",
 )
+
+
+@pytest.fixture(autouse=True)
+def _secret_key_env(monkeypatch):
+    monkeypatch.setenv("SECRET_KEY", "test-secret-key-not-for-prod-32bytesx")
+
+
+@pytest.fixture(autouse=True)
+def _reset_settings_cache():
+    """Settings() reads env at __init__ and is lru_cached. Drop the cache so
+    tests that monkeypatch env vars (FACTORY_PUBKEY, MQTT_*, ...) get fresh
+    values instead of whatever was first cached."""
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
 
 
 @pytest_asyncio.fixture(scope="session")

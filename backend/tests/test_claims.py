@@ -3,33 +3,14 @@ from datetime import UTC, datetime
 
 import jwt
 import pytest
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from cryptography.hazmat.primitives.serialization import (
-    Encoding,
-    NoEncryption,
-    PrivateFormat,
-    PublicFormat,
-)
 
 from app.adoption.claims import ALGORITHM, ClaimError, verify_claim_jwt
-
-
-def _make_keypair() -> tuple[str, str]:
-    priv = Ed25519PrivateKey.generate()
-    priv_pem = priv.private_bytes(
-        Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()
-    ).decode()
-    pub_pem = (
-        priv.public_key()
-        .public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
-        .decode()
-    )
-    return priv_pem, pub_pem
+from tests._helpers import make_factory_keys
 
 
 @pytest.fixture
 def factory_keys(monkeypatch):
-    priv_pem, pub_pem = _make_keypair()
+    priv_pem, pub_pem = make_factory_keys()
     monkeypatch.setenv("FACTORY_PUBKEY", pub_pem)
     return priv_pem, pub_pem
 
@@ -61,7 +42,7 @@ def test_verify_returns_claim_on_valid_token(factory_keys):
 
 
 def test_verify_rejects_bad_signature(factory_keys):
-    other_priv, _ = _make_keypair()
+    other_priv, _ = make_factory_keys()
     token = jwt.encode(_claim_payload(), other_priv, algorithm=ALGORITHM)
 
     with pytest.raises(ClaimError):
@@ -118,7 +99,7 @@ def test_verify_rejects_hs256_signed_token(factory_keys):
 
 def test_verify_raises_when_pubkey_not_configured(monkeypatch):
     monkeypatch.delenv("FACTORY_PUBKEY", raising=False)
-    priv, _ = _make_keypair()
+    priv, _ = make_factory_keys()
     token = jwt.encode(_claim_payload(), priv, algorithm=ALGORITHM)
 
     with pytest.raises(ClaimError, match="FACTORY_PUBKEY"):

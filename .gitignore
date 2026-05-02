@@ -38,6 +38,9 @@ coverage/
 .nyc_output/
 .pytest_cache/
 .hypothesis/
+.coverage
+.coverage.*
+htmlcov/
 
 # OS files
 .DS_Store

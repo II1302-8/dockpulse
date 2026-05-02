@@ -1,11 +1,4 @@
-import pytest
-
 from app.config import Settings
-
-
-@pytest.fixture(autouse=True)
-def _secret_key_env(monkeypatch):
-    monkeypatch.setenv("SECRET_KEY", "x")
 
 
 def test_mqtt_settings_default_broker():

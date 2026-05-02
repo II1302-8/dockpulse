@@ -21,14 +21,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.adoption.claims import ALGORITHM
 from app.models import AdoptionRequest, Dock, Gateway, Harbor, Node, User
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "test-secret")
 JWT_ALGORITHM = "HS256"
 _ph = PasswordHasher()
 
 
 def _auth_token(user_id: str, token_version: int = 0) -> str:
     return jwt.encode(
-        {"sub": user_id, "ver": token_version}, SECRET_KEY, algorithm=JWT_ALGORITHM
+        {"sub": user_id, "ver": token_version},
+        os.environ["SECRET_KEY"],
+        algorithm=JWT_ALGORITHM,
     )
 
 

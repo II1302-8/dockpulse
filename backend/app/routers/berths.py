@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 from sse_starlette.sse import EventSourceResponse
 
 from app import broadcaster
-from app.dependencies import SessionDep
+from app.dependencies import HarbormasterDep, SessionDep
 from app.models import Assignment, Berth
 from app.schemas import BerthOut, BerthUpdateEvent
 
@@ -102,7 +102,9 @@ async def get_berth(berth_id: str, session: SessionDep):
     operation_id="assignBerth",
     summary="Assign a berth to a user",
 )
-async def assign_berth(berth_id: str, user_id: str, session: SessionDep):
+async def assign_berth(
+    berth_id: str, user_id: str, session: SessionDep, _: HarbormasterDep
+):
     berth = await session.get(Berth, berth_id)
     if not berth:
         raise HTTPException(status_code=404, detail="Berth not found")
@@ -151,7 +153,9 @@ async def get_berth_assignment(berth_id: str, session: SessionDep):
     operation_id="removeBerthAssignment",
     summary="Remove a berth assignment",
 )
-async def remove_berth_assignment(berth_id: str, session: SessionDep):
+async def remove_berth_assignment(
+    berth_id: str, session: SessionDep, _: HarbormasterDep
+):
     from sqlalchemy import delete
 
     berth = await session.get(Berth, berth_id)

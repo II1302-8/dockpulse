@@ -4,7 +4,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(case_sensitive=False, extra="ignore")
+    model_config = SettingsConfigDict(
+        case_sensitive=False, extra="ignore", env_file="../.env", env_ignore_empty=True
+    )
 
     secret_key: str
     database_url: str = (
@@ -16,6 +18,7 @@ class Settings(BaseSettings):
     mqtt_tls_key: str | None = None
     mqtt_port: int | None = None
     factory_pubkey: str | None = None
+    resend_api_key: str | None = None
 
 
 @lru_cache

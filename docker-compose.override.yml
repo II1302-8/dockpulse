@@ -8,7 +8,11 @@ services:
       - "8883:8883"
 
   backend:
-    command: sh -c "uv run alembic upgrade head && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-DEBUG}
+      LOG_FORMAT: ${LOG_FORMAT:-text}
+      LOG_DEDUP_ENABLED: ${LOG_DEDUP_ENABLED:-false}
     volumes:
       - ./docs:/docs
       - ./backend/app:/app/app

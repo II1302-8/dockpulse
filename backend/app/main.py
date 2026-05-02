@@ -2,21 +2,27 @@ import asyncio
 import contextlib
 import logging
 import time
+import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.adoption.sweeper import sweeper_loop
 from app.db import get_engine
+from app.logging_config import request_id_var, setup_logging
 from app.mqtt import is_mqtt_connected, mqtt_listener
 from app.routers import adoptions, berths, docks, nodes, users
 from app.schemas import HealthStatus
 
+setup_logging()
+
 _start_time = time.monotonic()
 logger = logging.getLogger(__name__)
+access_logger = logging.getLogger("app.access")
 
 API_DESCRIPTION = """\
 REST API for the DockPulse harbor berth availability system.
@@ -52,7 +58,6 @@ def _log_task_exception(task: asyncio.Task) -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    logging.getLogger("app").setLevel(logging.INFO)
     tasks = [
         asyncio.create_task(mqtt_listener(), name="mqtt_listener"),
         asyncio.create_task(sweeper_loop(), name="adoption_sweeper"),
@@ -67,6 +72,36 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             await task
 
 
+class RequestContextMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        rid = request.headers.get("x-request-id") or uuid.uuid4().hex
+        token = request_id_var.set(rid)
+        start = time.perf_counter()
+        try:
+            response = await call_next(request)
+        except Exception:
+            duration_ms = (time.perf_counter() - start) * 1000
+            access_logger.exception(
+                "%s %s -> 500 (%.1fms)",
+                request.method,
+                request.url.path,
+                duration_ms,
+            )
+            request_id_var.reset(token)
+            raise
+        duration_ms = (time.perf_counter() - start) * 1000
+        response.headers["x-request-id"] = rid
+        access_logger.info(
+            "%s %s -> %d (%.1fms)",
+            request.method,
+            request.url.path,
+            response.status_code,
+            duration_ms,
+        )
+        request_id_var.reset(token)
+        return response
+
+
 app = FastAPI(
     title="DockPulse API",
     description=API_DESCRIPTION,
@@ -77,6 +112,8 @@ app = FastAPI(
     servers=SERVERS,
     lifespan=lifespan,
 )
+
+app.add_middleware(RequestContextMiddleware)
 
 app.include_router(adoptions.router)
 app.include_router(berths.router)

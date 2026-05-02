@@ -1,2 +1,9 @@
 node_modules
 dist
+.git
+.env
+.env.*
+coverage
+*.log
+.DS_Store
+.vite

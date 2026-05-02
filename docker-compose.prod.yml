@@ -4,7 +4,7 @@ x-loki-logging: &loki-logging
     loki-url: "http://localhost:3100/loki/api/v1/push"
     loki-batch-size: "400"
     loki-retries: "3"
-    loki-external-labels: "service={{.Compose.Service}},stack={{.Compose.Project}},container={{.Name}}"
+    loki-external-labels: "stack=dockpulse-prod,container={{.Name}},image={{.ImageName}}"
     keep-file: "true"
     mode: "non-blocking"
     max-buffer-size: "4m"

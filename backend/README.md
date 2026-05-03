@@ -48,6 +48,20 @@ Pre-commit and CI both run `--check` and will fail on drift.
 | `uv run python -m scripts.dump_openapi`           | Regenerate `docs/api/openapi.yml`     |
 | `uv run python -m scripts.dump_openapi --check`   | Fail if the committed spec is stale   |
 
+## Developer CLI (dpcli)
+
+`dpcli` is an admin CLI for managing the database directly.
+Create users, seeding data, inspecting events, and managing berths from the command line.
+
+```bash
+dpcli create-user --email admin@harbor.se --role harbormaster
+dpcli seed-db
+dpcli list-users
+dpcli berth assign user@example.com B3
+```
+
+See [`scripts/dpcli/README.md`](scripts/dpcli/README.md) for the full command reference.
+
 ## Testing
 
 Tests run against a real PostgreSQL database (no mocks).

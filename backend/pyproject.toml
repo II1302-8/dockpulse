@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "dockpulse-backend"
 version = "0.1.0"
@@ -17,6 +21,15 @@ dependencies = [
   "argon2-cffi>=21.0",
 ]
 
+[project.scripts]
+dpcli = "scripts.dpcli.cli:app"
+
+[tool.uv]
+package = true
+
+[tool.setuptools.packages.find]
+include = ["app*", "scripts*"]
+
 [dependency-groups]
 dev = [
   "pytest>=9.0",
@@ -25,6 +38,7 @@ dev = [
   "ruff>=0.11",
   "pre-commit>=4.5",
   "pytest-cov>=7.1.0",
+  "typer>=0.25",
 ]
 
 [tool.pytest.ini_options]

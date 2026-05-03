@@ -17,7 +17,9 @@ FROM base AS runtime
 RUN groupadd --system app && useradd --system --gid app --home-dir /app app
 WORKDIR /app
 COPY --from=builder /app/.venv /app/.venv
-COPY --chown=app:app backend/ /app/
+COPY --chown=app:app backend/app /app/app/
+COPY --chown=app:app backend/alembic /app/alembic/
+COPY --chown=app:app backend/alembic.ini backend/pyproject.toml backend/uv.lock /app/
 COPY --chown=app:app docs/api/openapi.yml /docs/api/openapi.yml
 USER app
 EXPOSE 8000

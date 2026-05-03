@@ -111,6 +111,20 @@ uv run alembic upgrade head
 | `uv run ruff check .`                  | Lint                        |
 | `uv run ruff format .`                 | Format                      |
 
+### Developer CLI (dpcli)
+
+`dpcli` is installed automatically by `uv sync` and provides admin commands for
+managing the database directly. Useful for bootstrapping a fresh environment or
+inspecting state during development.
+
+```bash
+dpcli seed-db
+dpcli create-user --email admin@harbor.se --role harbormaster
+```
+
+- Full command reference: [`backend/dpcli/README.md`](backend/dpcli/README.md)
+- How to add commands: [`backend/dpcli/CONTRIBUTING.md`](backend/dpcli/CONTRIBUTING.md)
+
 ## Frontend
 
 ### Commands

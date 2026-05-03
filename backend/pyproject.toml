@@ -17,6 +17,15 @@ dependencies = [
   "argon2-cffi>=21.0",
 ]
 
+[project.scripts]
+dpcli = "dpcli.cli:app"
+
+[tool.uv]
+package = true
+
+[tool.setuptools.packages.find]
+include = ["dpcli*", "app*"]
+
 [dependency-groups]
 dev = [
   "pytest>=9.0",
@@ -25,6 +34,7 @@ dev = [
   "ruff>=0.11",
   "pre-commit>=4.5",
   "pytest-cov>=7.1.0",
+  "typer>=0.25",
 ]
 
 [tool.pytest.ini_options]

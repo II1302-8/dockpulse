@@ -55,8 +55,10 @@ class UserOut(_BaseSchema):
     role: Literal["harbormaster", "boat_owner"]
 
 
-_NAME_FIELD = dict(min_length=1, max_length=100, pattern=r"^[A-Za-zÀ-ÖØ-öø-ÿ' \-]+$")
-_PHONE_FIELD = dict(pattern=r"^\+?[\d\s\-().]{7,20}$")
+# \p{L} unicode letter \p{M} combining marks
+_NAME_FIELD = dict(min_length=1, max_length=100, pattern=r"^[\p{L}\p{M}'’ .\-]+$")
+# 7 to 15 digits E.164 separators not counted
+_PHONE_FIELD = dict(max_length=20, pattern=r"^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$")
 _PASSWORD_FIELD = dict(min_length=8, max_length=128)
 
 

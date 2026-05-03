@@ -303,13 +303,13 @@ components:
         firstname:
           maxLength: 100
           minLength: 1
-          pattern: ^[A-Za-zÀ-ÖØ-öø-ÿ' \-]+$
+          pattern: ^[\p{L}\p{M}'’ .\-]+$
           title: Firstname
           type: string
         lastname:
           maxLength: 100
           minLength: 1
-          pattern: ^[A-Za-zÀ-ÖØ-öø-ÿ' \-]+$
+          pattern: ^[\p{L}\p{M}'’ .\-]+$
           title: Lastname
           type: string
         password:
@@ -321,7 +321,8 @@ components:
           writeOnly: true
         phone:
           anyOf:
-          - pattern: ^\+?[\d\s\-().]{7,20}$
+          - maxLength: 20
+            pattern: ^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$
             type: string
           - type: 'null'
           title: Phone
@@ -388,7 +389,7 @@ components:
           anyOf:
           - maxLength: 100
             minLength: 1
-            pattern: ^[A-Za-zÀ-ÖØ-öø-ÿ' \-]+$
+            pattern: ^[\p{L}\p{M}'’ .\-]+$
             type: string
           - type: 'null'
           title: Firstname
@@ -396,7 +397,7 @@ components:
           anyOf:
           - maxLength: 100
             minLength: 1
-            pattern: ^[A-Za-zÀ-ÖØ-öø-ÿ' \-]+$
+            pattern: ^[\p{L}\p{M}'’ .\-]+$
             type: string
           - type: 'null'
           title: Lastname
@@ -411,7 +412,8 @@ components:
           title: Password
         phone:
           anyOf:
-          - pattern: ^\+?[\d\s\-().]{7,20}$
+          - maxLength: 20
+            pattern: ^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$
             type: string
           - type: 'null'
           title: Phone

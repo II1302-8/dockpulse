@@ -150,6 +150,41 @@ async def test_register_rejects_invalid_email(client: AsyncClient):
     assert r.status_code == 422
 
 
+async def test_register_accepts_unicode_names(client: AsyncClient):
+    payload = {
+        **_REGISTER_PAYLOAD,
+        "email": "lukasz@example.com",
+        "firstname": "Łukasz",
+        "lastname": "O’Brien",
+    }
+    r = await client.post("/api/users", json=payload)
+    assert r.status_code == 201
+
+
+async def test_register_rejects_digits_in_name(client: AsyncClient):
+    payload = {**_REGISTER_PAYLOAD, "firstname": "Anna1"}
+    r = await client.post("/api/users", json=payload)
+    assert r.status_code == 422
+
+
+async def test_register_rejects_phone_without_digits(client: AsyncClient):
+    payload = {**_REGISTER_PAYLOAD, "phone": "()()()()()()()"}
+    r = await client.post("/api/users", json=payload)
+    assert r.status_code == 422
+
+
+async def test_register_rejects_overlong_name(client: AsyncClient):
+    payload = {**_REGISTER_PAYLOAD, "firstname": "A" * 101}
+    r = await client.post("/api/users", json=payload)
+    assert r.status_code == 422
+
+
+async def test_register_rejects_overlong_password(client: AsyncClient):
+    payload = {**_REGISTER_PAYLOAD, "password": "a" * 129}
+    r = await client.post("/api/users", json=payload)
+    assert r.status_code == 422
+
+
 async def test_login_returns_usable_token(client: AsyncClient, test_user: User):
     r = await client.post(
         "/api/users/token",

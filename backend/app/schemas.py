@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr
 
 
 class _BaseSchema(BaseModel):
@@ -61,7 +61,7 @@ class UserPatch(BaseModel):
     email: EmailStr | None = None
     phone: str | None = None
     boat_club: str | None = None
-    password: str | None = None
+    password: SecretStr | None = None
 
 
 class UserCreate(BaseModel):
@@ -70,12 +70,12 @@ class UserCreate(BaseModel):
     email: EmailStr
     phone: str | None = None
     boat_club: str | None = None
-    password: str = Field(min_length=8)
+    password: SecretStr = Field(min_length=8)
 
 
 class LoginIn(BaseModel):
     email: EmailStr
-    password: str
+    password: SecretStr
 
 
 class TokenOut(BaseModel):

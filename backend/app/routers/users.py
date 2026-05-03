@@ -41,7 +41,7 @@ async def register_user(body: UserCreate, session: SessionDep):
         email=body.email,
         phone=body.phone,
         boat_club=body.boat_club,
-        password_hash=_hash_password(body.password),
+        password_hash=_hash_password(body.password.get_secret_value()),
     )
     session.add(user)
     await session.commit()
@@ -61,7 +61,7 @@ async def login(body: LoginIn, session: SessionDep):
 
     target_hash = user.password_hash if user is not None else _DUMMY_HASH
     try:
-        _ph.verify(target_hash, body.password)
+        _ph.verify(target_hash, body.password.get_secret_value())
     except VerifyMismatchError:
         raise HTTPException(status_code=401, detail="Invalid credentials") from None
     if user is None:
@@ -98,7 +98,7 @@ async def update_me(body: UserPatch, current_user: CurrentUserDep, session: Sess
             setattr(current_user, field, value)
 
     if body.password is not None:
-        current_user.password_hash = _hash_password(body.password)
+        current_user.password_hash = _hash_password(body.password.get_secret_value())
 
     session.add(current_user)
     await session.commit()

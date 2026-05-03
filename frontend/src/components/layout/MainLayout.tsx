@@ -22,6 +22,7 @@ type LoginForm = {
 };
 
 type SignupForm = LoginForm & {
+  confirmPassword: string;
   firstname: string;
   lastname: string;
   phone: string;
@@ -38,6 +39,7 @@ const emptyLoginForm: LoginForm = {
 const emptySignupForm: SignupForm = {
   email: "",
   password: "",
+  confirmPassword: "",
   firstname: "",
   lastname: "",
   phone: "",
@@ -94,15 +96,20 @@ function MainLayout() {
       },
     })
       .then((res) => {
-        if (!res.ok) throw new Error("Session expired");
+        // only 401 clears session, transient errors leave token alone
+        if (res.status === 401) {
+          setUser(null);
+          setToken(null);
+          localStorage.removeItem("token");
+          return null;
+        }
+        if (!res.ok) throw new Error(`/me ${res.status}`);
         return res.json();
       })
-      .then(setUser)
-      .catch(() => {
-        setUser(null);
-        setToken(null);
-        localStorage.removeItem("token");
-      });
+      .then((data) => {
+        if (data) setUser(data);
+      })
+      .catch((err) => console.error("failed to load user", err));
   }, [token]);
 
   function clearMessages() {
@@ -120,7 +127,8 @@ function MainLayout() {
     clearMessages();
   }
 
-  async function handleLogin() {
+  async function handleLogin(e?: React.FormEvent) {
+    e?.preventDefault();
     clearMessages();
 
     try {
@@ -150,16 +158,23 @@ function MainLayout() {
     }
   }
 
-  async function handleSignup() {
+  async function handleSignup(e?: React.FormEvent) {
+    e?.preventDefault();
     clearMessages();
 
+    if (signupForm.password !== signupForm.confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    const { confirmPassword: _confirmPassword, ...rest } = signupForm;
     const signupPayload = {
-      ...signupForm,
-      email: signupForm.email.trim(),
-      firstname: signupForm.firstname.trim(),
-      lastname: signupForm.lastname.trim(),
-      phone: signupForm.phone.trim() || null,
-      boat_club: signupForm.boat_club.trim() || null,
+      ...rest,
+      email: rest.email.trim(),
+      firstname: rest.firstname.trim(),
+      lastname: rest.lastname.trim(),
+      phone: rest.phone.trim() || null,
+      boat_club: rest.boat_club.trim() || null,
     };
 
     try {
@@ -197,25 +212,28 @@ function MainLayout() {
   return (
     <div className="bg-transparent duration-1000 font-body h-screen overflow-hidden relative transition-colors w-screen">
       <Header
-        isLoggedIn={Boolean(user)}
+        isLoggedIn={Boolean(token)}
         userInitials={userInitials}
         onLoginClickCB={() => setIsLoginOpen(true)}
       />
 
       <main className="absolute inset-0 z-0">
-        <Outlet
-          context={{
-            user,
-            setUser,
-            token,
-            setToken,
-            isLoginOpen,
-            setIsLoginOpen,
-          }}
-        />
+        <Outlet />
       </main>
 
-      <Dialog open={isLoginOpen} onOpenChange={setIsLoginOpen}>
+      <Dialog
+        open={isLoginOpen}
+        onOpenChange={(open) => {
+          setIsLoginOpen(open);
+          // reset form state on close so reopen starts fresh
+          if (!open) {
+            setLoginForm(emptyLoginForm);
+            setSignupForm(emptySignupForm);
+            setActiveTab("login");
+            clearMessages();
+          }
+        }}
+      >
         <DialogContent className="max-w-md">
           <VisuallyHidden.Root>
             <DialogTitle>Log in or sign up</DialogTitle>
@@ -227,95 +245,125 @@ function MainLayout() {
               setActiveTab(value as AuthTab);
               clearMessages();
             }}
+            className="mt-4"
           >
             <TabsList className="grid grid-cols-2">
               <TabsTrigger value="login">Log in</TabsTrigger>
               <TabsTrigger value="signup">Sign up</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="login" className="space-y-4 mt-4">
-              <input
-                className={inputClass}
-                placeholder="Email"
-                value={loginForm.email}
-                onChange={(e) => updateLoginForm("email", e.target.value)}
-              />
+            <TabsContent value="login" className="mt-4">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <input
+                  className={inputClass}
+                  type="email"
+                  autoComplete="email"
+                  placeholder="Email"
+                  value={loginForm.email}
+                  onChange={(e) => updateLoginForm("email", e.target.value)}
+                />
 
-              <input
-                className={inputClass}
-                type="password"
-                placeholder="Password"
-                value={loginForm.password}
-                onChange={(e) => updateLoginForm("password", e.target.value)}
-              />
+                <input
+                  className={inputClass}
+                  type="password"
+                  autoComplete="current-password"
+                  placeholder="Password"
+                  value={loginForm.password}
+                  onChange={(e) => updateLoginForm("password", e.target.value)}
+                />
 
-              {error && <p className="text-red-500 text-sm">{error}</p>}
-              {successMessage && (
-                <p className="text-green-600 text-sm">{successMessage}</p>
-              )}
+                {error && <p className="text-red-500 text-sm">{error}</p>}
+                {successMessage && (
+                  <p className="text-green-600 text-sm">{successMessage}</p>
+                )}
 
-              <button
-                type="button"
-                onClick={handleLogin}
-                className="w-full bg-brand-blue text-white p-2 rounded"
-              >
-                Log in
-              </button>
+                <button
+                  type="submit"
+                  className="w-full bg-brand-blue text-white p-2 rounded"
+                >
+                  Log in
+                </button>
+              </form>
             </TabsContent>
 
-            <TabsContent value="signup" className="space-y-4 mt-4">
-              <input
-                className={inputClass}
-                placeholder="Email"
-                value={signupForm.email}
-                onChange={(e) => updateSignupForm("email", e.target.value)}
-              />
+            <TabsContent value="signup" className="mt-4">
+              <form onSubmit={handleSignup} className="space-y-4">
+                <input
+                  className={inputClass}
+                  type="email"
+                  autoComplete="email"
+                  placeholder="Email"
+                  value={signupForm.email}
+                  onChange={(e) => updateSignupForm("email", e.target.value)}
+                />
 
-              <input
-                className={inputClass}
-                type="password"
-                placeholder="Password"
-                value={signupForm.password}
-                onChange={(e) => updateSignupForm("password", e.target.value)}
-              />
+                <input
+                  className={inputClass}
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="Password"
+                  value={signupForm.password}
+                  onChange={(e) => updateSignupForm("password", e.target.value)}
+                />
 
-              <input
-                className={inputClass}
-                placeholder="First name"
-                value={signupForm.firstname}
-                onChange={(e) => updateSignupForm("firstname", e.target.value)}
-              />
+                <input
+                  className={inputClass}
+                  type="password"
+                  autoComplete="new-password"
+                  placeholder="Confirm password"
+                  value={signupForm.confirmPassword}
+                  onChange={(e) =>
+                    updateSignupForm("confirmPassword", e.target.value)
+                  }
+                />
 
-              <input
-                className={inputClass}
-                placeholder="Last name"
-                value={signupForm.lastname}
-                onChange={(e) => updateSignupForm("lastname", e.target.value)}
-              />
+                <input
+                  className={inputClass}
+                  autoComplete="given-name"
+                  placeholder="First name"
+                  value={signupForm.firstname}
+                  onChange={(e) =>
+                    updateSignupForm("firstname", e.target.value)
+                  }
+                />
 
-              <input
-                className={inputClass}
-                placeholder="Phone (optional)"
-                value={signupForm.phone}
-                onChange={(e) => updateSignupForm("phone", e.target.value)}
-              />
+                <input
+                  className={inputClass}
+                  autoComplete="family-name"
+                  placeholder="Last name"
+                  value={signupForm.lastname}
+                  onChange={(e) =>
+                    updateSignupForm("lastname", e.target.value)
+                  }
+                />
 
-              <input
-                className={inputClass}
-                placeholder="Boat club"
-                value={signupForm.boat_club}
-                onChange={(e) => updateSignupForm("boat_club", e.target.value)}
-              />
+                <input
+                  className={inputClass}
+                  type="tel"
+                  autoComplete="tel"
+                  placeholder="Phone (optional)"
+                  value={signupForm.phone}
+                  onChange={(e) => updateSignupForm("phone", e.target.value)}
+                />
 
-              {error && <p className="text-red-500 text-sm">{error}</p>}
+                <input
+                  className={inputClass}
+                  placeholder="Boat club (optional)"
+                  value={signupForm.boat_club}
+                  onChange={(e) =>
+                    updateSignupForm("boat_club", e.target.value)
+                  }
+                />
 
-              <button
-                type="button"
-                onClick={handleSignup}
-                className="w-full bg-brand-navy text-white p-2 rounded"
-              >
-                Sign up
-              </button>
+                {error && <p className="text-red-500 text-sm">{error}</p>}
+
+                <button
+                  type="submit"
+                  className="w-full bg-brand-navy text-white p-2 rounded"
+                >
+                  Sign up
+                </button>
+              </form>
             </TabsContent>
           </Tabs>
         </DialogContent>

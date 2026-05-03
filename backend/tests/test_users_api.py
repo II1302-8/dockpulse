@@ -226,9 +226,7 @@ async def test_logout_returns_204(client: AsyncClient, test_user: User):
 
 async def test_logout_invalidates_token(client: AsyncClient, test_user: User):
     token = make_token(test_user.user_id)
-    await client.post(
-        "/api/auth/logout", headers={"Authorization": f"Bearer {token}"}
-    )
+    await client.post("/api/auth/logout", headers={"Authorization": f"Bearer {token}"})
     r = await client.get("/api/users/me", headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 401
 

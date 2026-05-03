@@ -237,9 +237,7 @@ async def test_adopt_rejects_reused_jti(
     first = await client.post("/api/adoptions", json=_adopt_body(qr), headers=headers)
     assert first.status_code == 202
 
-    second = await client.post(
-        "/api/adoptions", json=_adopt_body(qr), headers=headers
-    )
+    second = await client.post("/api/adoptions", json=_adopt_body(qr), headers=headers)
     assert second.status_code == 409
 
 

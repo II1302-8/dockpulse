@@ -254,6 +254,36 @@ components:
       - timestamp
       title: EventOut
       type: object
+    GatewayOut:
+      properties:
+        dock_id:
+          title: Dock Id
+          type: string
+        gateway_id:
+          title: Gateway Id
+          type: string
+        last_seen:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Last Seen
+        name:
+          title: Name
+          type: string
+        status:
+          enum:
+          - online
+          - offline
+          title: Status
+          type: string
+      required:
+      - gateway_id
+      - dock_id
+      - name
+      - status
+      title: GatewayOut
+      type: object
     HTTPValidationError:
       properties:
         detail:
@@ -891,6 +921,62 @@ paths:
       summary: Get a single dock with its berths
       tags:
       - docks
+  /api/gateways:
+    get:
+      operationId: listGateways
+      parameters:
+      - description: Filter by harbor
+        in: query
+        name: harbor_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Filter by harbor
+          title: Harbor Id
+      - description: Filter by dock
+        in: query
+        name: dock_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Filter by dock
+          title: Dock Id
+      - description: Filter by gateway status
+        in: query
+        name: status
+        required: false
+        schema:
+          anyOf:
+          - pattern: ^(online|offline)$
+            type: string
+          - type: 'null'
+          description: Filter by gateway status
+          title: Status
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/GatewayOut'
+                title: Response Listgateways
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List gateways visible to the harbormaster
+      tags:
+      - gateways
   /api/health:
     get:
       operationId: getHealth
@@ -1010,3 +1096,5 @@ tags:
   name: users
 - description: Node adoption requests
   name: adoptions
+- description: Gateway listing and status
+  name: gateways

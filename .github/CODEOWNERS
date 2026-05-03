@@ -8,9 +8,13 @@
 # Backend (FastAPI app, OpenAPI source of truth)
 /backend/**                 @Johnybooi @pntzf @XiShell
 /docs/api/**                @Johnybooi @pntzf @XiShell
+# auto-generated from FastAPI app, no review needed
+/docs/api/openapi.yml
 
 # Frontend
 /frontend/**                @LellesBodega @Roblethe1 @XiShell
+# auto-generated from openapi.yml, no review needed
+/frontend/src/api-types.ts
 
 # IoT / MQTT broker config
 /mosquitto.conf             @Doodlejnoodle @XiShell

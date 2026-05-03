@@ -8,8 +8,8 @@ from sse_starlette.sse import EventSourceResponse
 
 from app import broadcaster
 from app.dependencies import HarbormasterDep, SessionDep
-from app.models import Assignment, Berth, User
-from app.schemas import AssignBerthIn, BerthOut, BerthUpdateEvent
+from app.models import Assignment, Berth, Event, User
+from app.schemas import AssignBerthIn, BerthOut, BerthUpdateEvent, EventOut
 
 router = APIRouter(prefix="/api/berths", tags=["berths"])
 
@@ -120,6 +120,30 @@ async def assign_berth(
     await session.commit()
 
     return await _load_berth_with_assignment(session, berth_id)
+
+
+@router.get(
+    "/{berth_id}/events",
+    response_model=list[EventOut],
+    operation_id="listBerthEvents",
+    summary="List events for a berth",
+)
+async def list_berth_events(
+    berth_id: str,
+    session: SessionDep,
+    _: HarbormasterDep,
+    limit: int = Query(100, ge=1, le=1000),
+):
+    berth = await session.get(Berth, berth_id)
+    if not berth:
+        raise HTTPException(status_code=404, detail="Berth not found")
+    result = await session.execute(
+        select(Event)
+        .where(Event.berth_id == berth_id)
+        .order_by(Event.timestamp.desc())
+        .limit(limit)
+    )
+    return result.scalars().all()
 
 
 @router.delete(

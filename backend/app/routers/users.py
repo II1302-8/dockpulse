@@ -7,8 +7,16 @@ from sqlalchemy import select
 
 from app.auth import create_access_token
 from app.dependencies import CurrentUserDep, SessionDep
-from app.models import User
-from app.schemas import LoginIn, TokenOut, UserCreate, UserOut, UserPatch
+from app.models import User, UserNotificationPrefs
+from app.schemas import (
+    LoginIn,
+    NotificationPrefsOut,
+    NotificationPrefsPatch,
+    TokenOut,
+    UserCreate,
+    UserOut,
+    UserPatch,
+)
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -116,3 +124,43 @@ async def logout(current_user: CurrentUserDep, session: SessionDep):
     current_user.token_version += 1
     session.add(current_user)
     await session.commit()
+
+
+@router.get(
+    "/me/notifications",
+    response_model=NotificationPrefsOut,
+    operation_id="getNotificationPrefs",
+    summary="Get notification preferences for the current user",
+)
+async def get_notification_prefs(current_user: CurrentUserDep, session: SessionDep):
+    prefs = await session.get(UserNotificationPrefs, current_user.user_id)
+    if prefs is None:
+        return NotificationPrefsOut(
+            notify_arrival=True,
+            notify_departure=True,
+        )
+    return prefs
+
+
+@router.patch(
+    "/me/notifications",
+    response_model=NotificationPrefsOut,
+    operation_id="updateNotificationPrefs",
+    summary="Update notification preferences for the current user",
+)
+async def update_notification_prefs(
+    body: NotificationPrefsPatch,
+    current_user: CurrentUserDep,
+    session: SessionDep,
+):
+    prefs = await session.get(UserNotificationPrefs, current_user.user_id)
+    if prefs is None:
+        prefs = UserNotificationPrefs(user_id=current_user.user_id)
+        session.add(prefs)
+
+    for field, value in body.model_dump(exclude_none=True).items():
+        setattr(prefs, field, value)
+
+    await session.commit()
+    await session.refresh(prefs)
+    return prefs

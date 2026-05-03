@@ -236,3 +236,36 @@ async def test_logout_invalidates_token(client: AsyncClient, test_user: User):
 async def test_logout_requires_auth(client: AsyncClient):
     r = await client.post("/api/users/me/logout")
     assert r.status_code == 401
+
+
+async def test_get_notification_prefs_returns_defaults(
+    client: AsyncClient, test_user: User
+):
+    token = make_token(test_user.user_id)
+    r = await client.get(
+        "/api/users/me/notifications", headers={"Authorization": f"Bearer {token}"}
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["notify_arrival"] is True
+    assert data["notify_departure"] is True
+
+
+async def test_patch_notification_prefs_updates_fields(
+    client: AsyncClient, test_user: User
+):
+    token = make_token(test_user.user_id)
+    r = await client.patch(
+        "/api/users/me/notifications",
+        json={"notify_arrival": False},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert data["notify_arrival"] is False
+    assert data["notify_departure"] is True
+
+
+async def test_notification_prefs_requires_auth(client: AsyncClient):
+    r = await client.get("/api/users/me/notifications")
+    assert r.status_code == 401

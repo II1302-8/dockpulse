@@ -84,6 +84,7 @@ services:
       LOG_FORMAT: ${LOG_FORMAT:-text}
       LOG_DEDUP_ENABLED: ${LOG_DEDUP_ENABLED:-true}
       LOG_DEDUP_WINDOW: ${LOG_DEDUP_WINDOW:-60}
+      APP_ENV: ${APP_ENV:-dev}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-DockPulse <noreply@dockpulse.xyz>}
     volumes:

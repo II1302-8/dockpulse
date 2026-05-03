@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -16,6 +17,8 @@ class Settings(BaseSettings):
     mqtt_tls_key: str | None = None
     mqtt_port: int | None = None
     factory_pubkey: str | None = None
+    # gates side effects that must not run outside prod (real email, etc)
+    app_env: Literal["dev", "staging", "prod"] = "dev"
     resend_api_key: str | None = None
     email_from: str = "DockPulse <noreply@dockpulse.xyz>"
 

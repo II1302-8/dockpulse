@@ -15,6 +15,15 @@ async def send_email(
     idempotency_key: str | None = None,
 ) -> None:
     settings = get_settings()
+    if settings.app_env != "prod":
+        # only prod sends, avoids spamming real users from staging/dev data
+        logger.info(
+            "email suppressed (app_env=%s) | to=%s | subject=%s",
+            settings.app_env,
+            to,
+            subject,
+        )
+        return
     if not settings.resend_api_key:
         logger.warning(
             "RESEND_API_KEY unset, email suppressed | to=%s | subject=%s", to, subject

@@ -4,6 +4,7 @@ from app import notifications
 
 
 async def test_send_email_suppressed_when_no_api_key(monkeypatch):
+    monkeypatch.setenv("APP_ENV", "prod")
     monkeypatch.delenv("RESEND_API_KEY", raising=False)
     called = False
 
@@ -23,7 +24,22 @@ async def test_send_email_suppressed_when_no_api_key(monkeypatch):
     assert any("suppressed" in w for w in warnings)
 
 
+async def test_send_email_suppressed_in_staging_even_with_api_key(monkeypatch):
+    monkeypatch.setenv("APP_ENV", "staging")
+    monkeypatch.setenv("RESEND_API_KEY", "re_test")
+    called = False
+
+    def _fail(*a, **kw):
+        nonlocal called
+        called = True
+
+    monkeypatch.setattr(notifications.resend.Emails, "send", _fail)
+    await notifications.send_email("a@b.com", "subj", "<p>hi</p>")
+    assert called is False
+
+
 async def test_send_email_sends_with_normalized_recipients(monkeypatch):
+    monkeypatch.setenv("APP_ENV", "prod")
     monkeypatch.setenv("RESEND_API_KEY", "re_test")
     monkeypatch.setenv("EMAIL_FROM", "Test <noreply@test.local>")
     payloads: list[dict] = []
@@ -40,6 +56,7 @@ async def test_send_email_sends_with_normalized_recipients(monkeypatch):
 
 
 async def test_send_email_swallows_sdk_errors(monkeypatch):
+    monkeypatch.setenv("APP_ENV", "prod")
     monkeypatch.setenv("RESEND_API_KEY", "re_test")
 
     def _boom(payload):
@@ -75,6 +92,7 @@ async def test_send_push_is_stub(monkeypatch):
     ],
 )
 async def test_recipient_normalization(monkeypatch, to, expected):
+    monkeypatch.setenv("APP_ENV", "prod")
     monkeypatch.setenv("RESEND_API_KEY", "re_test")
     captured: dict = {}
     monkeypatch.setattr(

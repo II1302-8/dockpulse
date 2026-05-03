@@ -266,8 +266,6 @@ components:
           type: string
         password:
           format: password
-          maxLength: 128
-          minLength: 8
           title: Password
           type: string
           writeOnly: true
@@ -305,13 +303,13 @@ components:
         firstname:
           maxLength: 100
           minLength: 1
-          pattern: ^[\D]+$
+          pattern: ^[A-Za-zÀ-ÖØ-öø-ÿ' \-]+$
           title: Firstname
           type: string
         lastname:
           maxLength: 100
           minLength: 1
-          pattern: ^[\D]+$
+          pattern: ^[A-Za-zÀ-ÖØ-öø-ÿ' \-]+$
           title: Lastname
           type: string
         password:
@@ -390,7 +388,7 @@ components:
           anyOf:
           - maxLength: 100
             minLength: 1
-            pattern: ^[\D]+$
+            pattern: ^[A-Za-zÀ-ÖØ-öø-ÿ' \-]+$
             type: string
           - type: 'null'
           title: Firstname
@@ -398,7 +396,7 @@ components:
           anyOf:
           - maxLength: 100
             minLength: 1
-            pattern: ^[\D]+$
+            pattern: ^[A-Za-zÀ-ÖØ-öø-ÿ' \-]+$
             type: string
           - type: 'null'
           title: Lastname

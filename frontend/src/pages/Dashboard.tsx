@@ -7,12 +7,9 @@ function Dashboard() {
   const { marinaSlug } = useParams();
   const marinaName = getMarinaNameCB(marinaSlug);
 
-  useEffect(
-    function setTitleEffectCB() {
-      document.title = `${marinaName} - Dashboard | DockPulse`;
-    },
-    [marinaName],
-  );
+  useEffect(() => {
+    document.title = `${marinaName} - Dashboard | DockPulse`;
+  }, [marinaName]);
 
   return (
     <div className="animate-in duration-1000 fade-in h-full w-full">

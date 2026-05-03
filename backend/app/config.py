@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     mqtt_tls_key: str | None = None
     mqtt_port: int | None = None
     factory_pubkey: str | None = None
+    resend_api_key: str | None = None
+    email_from: str = "DockPulse <noreply@dockpulse.xyz>"
 
 
 @lru_cache

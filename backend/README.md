@@ -93,7 +93,9 @@ app/
 ├── mqtt.py           <- MQTT listener
 ├── broadcaster.py    <- SSE broadcast bus
 └── routers/
-    ├── berths.py     <- GET /api/berths/*
-    ├── docks.py      <- GET /api/docks/*
-    └── users.py      <- POST /api/users/register, login, logout, refresh
+    ├── adoptions.py  <- /api/adoptions/*
+    ├── auth.py       <- /api/auth/{register,login,logout}
+    ├── berths.py     <- /api/berths/*
+    ├── docks.py      <- /api/docks/*
+    └── users.py      <- /api/users/me, /api/users/me/notification-prefs
 ```

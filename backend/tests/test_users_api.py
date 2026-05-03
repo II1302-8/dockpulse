@@ -118,7 +118,7 @@ _REGISTER_PAYLOAD = {
 
 
 async def test_register_creates_user(client: AsyncClient, session: AsyncSession):
-    r = await client.post("/api/users", json=_REGISTER_PAYLOAD)
+    r = await client.post("/api/auth/register", json=_REGISTER_PAYLOAD)
     assert r.status_code == 201
     data = r.json()
     assert data["email"] == "cecilia@example.com"
@@ -134,19 +134,19 @@ async def test_register_creates_user(client: AsyncClient, session: AsyncSession)
 
 async def test_register_duplicate_email_conflict(client: AsyncClient, test_user: User):
     payload = {**_REGISTER_PAYLOAD, "email": test_user.email}
-    r = await client.post("/api/users", json=payload)
+    r = await client.post("/api/auth/register", json=payload)
     assert r.status_code == 409
 
 
 async def test_register_rejects_short_password(client: AsyncClient):
     payload = {**_REGISTER_PAYLOAD, "password": "short"}
-    r = await client.post("/api/users", json=payload)
+    r = await client.post("/api/auth/register", json=payload)
     assert r.status_code == 422
 
 
 async def test_register_rejects_invalid_email(client: AsyncClient):
     payload = {**_REGISTER_PAYLOAD, "email": "not-an-email"}
-    r = await client.post("/api/users", json=payload)
+    r = await client.post("/api/auth/register", json=payload)
     assert r.status_code == 422
 
 
@@ -157,37 +157,37 @@ async def test_register_accepts_unicode_names(client: AsyncClient):
         "firstname": "Łukasz",
         "lastname": "O’Brien",
     }
-    r = await client.post("/api/users", json=payload)
+    r = await client.post("/api/auth/register", json=payload)
     assert r.status_code == 201
 
 
 async def test_register_rejects_digits_in_name(client: AsyncClient):
     payload = {**_REGISTER_PAYLOAD, "firstname": "Anna1"}
-    r = await client.post("/api/users", json=payload)
+    r = await client.post("/api/auth/register", json=payload)
     assert r.status_code == 422
 
 
 async def test_register_rejects_phone_without_digits(client: AsyncClient):
     payload = {**_REGISTER_PAYLOAD, "phone": "()()()()()()()"}
-    r = await client.post("/api/users", json=payload)
+    r = await client.post("/api/auth/register", json=payload)
     assert r.status_code == 422
 
 
 async def test_register_rejects_overlong_name(client: AsyncClient):
     payload = {**_REGISTER_PAYLOAD, "firstname": "A" * 101}
-    r = await client.post("/api/users", json=payload)
+    r = await client.post("/api/auth/register", json=payload)
     assert r.status_code == 422
 
 
 async def test_register_rejects_overlong_password(client: AsyncClient):
     payload = {**_REGISTER_PAYLOAD, "password": "a" * 129}
-    r = await client.post("/api/users", json=payload)
+    r = await client.post("/api/auth/register", json=payload)
     assert r.status_code == 422
 
 
 async def test_login_returns_usable_token(client: AsyncClient, test_user: User):
     r = await client.post(
-        "/api/users/token",
+        "/api/auth/login",
         json={"email": test_user.email, "password": "secretpassword"},
     )
     assert r.status_code == 200
@@ -202,7 +202,7 @@ async def test_login_returns_usable_token(client: AsyncClient, test_user: User):
 
 async def test_login_wrong_password_returns_401(client: AsyncClient, test_user: User):
     r = await client.post(
-        "/api/users/token",
+        "/api/auth/login",
         json={"email": test_user.email, "password": "wrongpassword"},
     )
     assert r.status_code == 401
@@ -210,7 +210,7 @@ async def test_login_wrong_password_returns_401(client: AsyncClient, test_user: 
 
 async def test_login_unknown_email_returns_401(client: AsyncClient):
     r = await client.post(
-        "/api/users/token",
+        "/api/auth/login",
         json={"email": "nobody@example.com", "password": "secretpassword"},
     )
     assert r.status_code == 401
@@ -219,7 +219,7 @@ async def test_login_unknown_email_returns_401(client: AsyncClient):
 async def test_logout_returns_204(client: AsyncClient, test_user: User):
     token = make_token(test_user.user_id)
     r = await client.post(
-        "/api/users/me/logout", headers={"Authorization": f"Bearer {token}"}
+        "/api/auth/logout", headers={"Authorization": f"Bearer {token}"}
     )
     assert r.status_code == 204
 
@@ -227,14 +227,14 @@ async def test_logout_returns_204(client: AsyncClient, test_user: User):
 async def test_logout_invalidates_token(client: AsyncClient, test_user: User):
     token = make_token(test_user.user_id)
     await client.post(
-        "/api/users/me/logout", headers={"Authorization": f"Bearer {token}"}
+        "/api/auth/logout", headers={"Authorization": f"Bearer {token}"}
     )
     r = await client.get("/api/users/me", headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 401
 
 
 async def test_logout_requires_auth(client: AsyncClient):
-    r = await client.post("/api/users/me/logout")
+    r = await client.post("/api/auth/logout")
     assert r.status_code == 401
 
 
@@ -243,7 +243,7 @@ async def test_get_notification_prefs_returns_defaults(
 ):
     token = make_token(test_user.user_id)
     r = await client.get(
-        "/api/users/me/notifications", headers={"Authorization": f"Bearer {token}"}
+        "/api/users/me/notification-prefs", headers={"Authorization": f"Bearer {token}"}
     )
     assert r.status_code == 200
     data = r.json()
@@ -256,7 +256,7 @@ async def test_patch_notification_prefs_updates_fields(
 ):
     token = make_token(test_user.user_id)
     r = await client.patch(
-        "/api/users/me/notifications",
+        "/api/users/me/notification-prefs",
         json={"notify_arrival": False},
         headers={"Authorization": f"Bearer {token}"},
     )
@@ -267,5 +267,5 @@ async def test_patch_notification_prefs_updates_fields(
 
 
 async def test_notification_prefs_requires_auth(client: AsyncClient):
-    r = await client.get("/api/users/me/notifications")
+    r = await client.get("/api/users/me/notification-prefs")
     assert r.status_code == 401

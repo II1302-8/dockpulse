@@ -22,7 +22,7 @@ async def test_user(session: AsyncSession) -> User:
         lastname="Svensson",
         email="anna@example.com",
         phone="0701234567",
-        password_hash=_hash("secret"),
+        password_hash=_hash("secretpassword"),
         boat_club="Göteborgs Segelsällskap",
         token_version=0,
     )
@@ -153,7 +153,7 @@ async def test_register_rejects_invalid_email(client: AsyncClient):
 async def test_login_returns_usable_token(client: AsyncClient, test_user: User):
     r = await client.post(
         "/api/users/token",
-        json={"email": test_user.email, "password": "secret"},
+        json={"email": test_user.email, "password": "secretpassword"},
     )
     assert r.status_code == 200
     body = r.json()
@@ -168,7 +168,7 @@ async def test_login_returns_usable_token(client: AsyncClient, test_user: User):
 async def test_login_wrong_password_returns_401(client: AsyncClient, test_user: User):
     r = await client.post(
         "/api/users/token",
-        json={"email": test_user.email, "password": "wrong"},
+        json={"email": test_user.email, "password": "wrongpassword"},
     )
     assert r.status_code == 401
 
@@ -176,7 +176,7 @@ async def test_login_wrong_password_returns_401(client: AsyncClient, test_user: 
 async def test_login_unknown_email_returns_401(client: AsyncClient):
     r = await client.post(
         "/api/users/token",
-        json={"email": "nobody@example.com", "password": "secret"},
+        json={"email": "nobody@example.com", "password": "secretpassword"},
     )
     assert r.status_code == 401
 

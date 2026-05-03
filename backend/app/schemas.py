@@ -87,7 +87,7 @@ class LoginIn(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     email: EmailStr
-    password: SecretStr = Field(strip_whitespace=False)
+    password: SecretStr = Field(min_length=8, max_length=128, strip_whitespace=False)
 
 
 class TokenOut(BaseModel):

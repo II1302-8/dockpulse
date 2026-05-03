@@ -55,7 +55,7 @@ class UserOut(_BaseSchema):
     role: Literal["harbormaster", "boat_owner"]
 
 
-_NAME_FIELD = dict(min_length=1, max_length=100, pattern=r"^[\D]+$")
+_NAME_FIELD = dict(min_length=1, max_length=100, pattern=r"^[A-Za-zÀ-ÖØ-öø-ÿ' \-]+$")
 _PHONE_FIELD = dict(pattern=r"^\+?[\d\s\-().]{7,20}$")
 _PASSWORD_FIELD = dict(min_length=8, max_length=128)
 

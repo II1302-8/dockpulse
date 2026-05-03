@@ -1,7 +1,10 @@
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { useEffect, useState } from "react";
 import { Outlet } from "react-router-dom";
+import { Button } from "../shared/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "../shared/ui/dialog";
+import { Input } from "../shared/ui/input";
+import { Label } from "../shared/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../shared/ui/tabs";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
@@ -28,8 +31,6 @@ type SignupForm = LoginForm & {
   phone: string;
   boat_club: string;
 };
-
-const inputClass = "w-full border p-2 rounded";
 
 const emptyLoginForm: LoginForm = {
   email: "",
@@ -215,14 +216,15 @@ function MainLayout() {
     if (!logoutToken) return;
 
     try {
-      await fetch("/api/users/me/logout", {
+      await fetch("/api/auth/logout", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${logoutToken}`,
         },
       });
-    } catch {
-      // Local logout already happened. Network failure should not block logout.
+    } catch (err) {
+      // local state already cleared. server token left to expire naturally
+      console.warn("logout request failed", err);
     }
   }
 
@@ -277,113 +279,133 @@ function MainLayout() {
 
             <TabsContent value="login" className="mt-4">
               <form onSubmit={handleLogin} className="space-y-4">
-                <input
-                  className={inputClass}
-                  type="email"
-                  autoComplete="email"
-                  placeholder="Email"
-                  value={loginForm.email}
-                  onChange={(e) => updateLoginForm("email", e.target.value)}
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="login-email">Email</Label>
+                  <Input
+                    id="login-email"
+                    type="email"
+                    autoComplete="email"
+                    value={loginForm.email}
+                    onChange={(e) => updateLoginForm("email", e.target.value)}
+                  />
+                </div>
 
-                <input
-                  className={inputClass}
-                  type="password"
-                  autoComplete="current-password"
-                  placeholder="Password"
-                  value={loginForm.password}
-                  onChange={(e) => updateLoginForm("password", e.target.value)}
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="login-password">Password</Label>
+                  <Input
+                    id="login-password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={loginForm.password}
+                    onChange={(e) =>
+                      updateLoginForm("password", e.target.value)
+                    }
+                  />
+                </div>
 
                 {error && <p className="text-red-500 text-sm">{error}</p>}
                 {successMessage && (
                   <p className="text-green-600 text-sm">{successMessage}</p>
                 )}
 
-                <button
-                  type="submit"
-                  className="w-full bg-brand-blue text-white p-2 rounded"
-                >
+                <Button type="submit" className="w-full bg-brand-blue">
                   Log in
-                </button>
+                </Button>
               </form>
             </TabsContent>
 
             <TabsContent value="signup" className="mt-4">
               <form onSubmit={handleSignup} className="space-y-4">
-                <input
-                  className={inputClass}
-                  type="email"
-                  autoComplete="email"
-                  placeholder="Email"
-                  value={signupForm.email}
-                  onChange={(e) => updateSignupForm("email", e.target.value)}
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">Email</Label>
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    autoComplete="email"
+                    value={signupForm.email}
+                    onChange={(e) => updateSignupForm("email", e.target.value)}
+                  />
+                </div>
 
-                <input
-                  className={inputClass}
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder="Password"
-                  value={signupForm.password}
-                  onChange={(e) => updateSignupForm("password", e.target.value)}
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password">Password</Label>
+                  <Input
+                    id="signup-password"
+                    type="password"
+                    autoComplete="new-password"
+                    value={signupForm.password}
+                    onChange={(e) =>
+                      updateSignupForm("password", e.target.value)
+                    }
+                  />
+                </div>
 
-                <input
-                  className={inputClass}
-                  type="password"
-                  autoComplete="new-password"
-                  placeholder="Confirm password"
-                  value={signupForm.confirmPassword}
-                  onChange={(e) =>
-                    updateSignupForm("confirmPassword", e.target.value)
-                  }
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="signup-confirm-password">
+                    Confirm password
+                  </Label>
+                  <Input
+                    id="signup-confirm-password"
+                    type="password"
+                    autoComplete="new-password"
+                    value={signupForm.confirmPassword}
+                    onChange={(e) =>
+                      updateSignupForm("confirmPassword", e.target.value)
+                    }
+                  />
+                </div>
 
-                <input
-                  className={inputClass}
-                  autoComplete="given-name"
-                  placeholder="First name"
-                  value={signupForm.firstname}
-                  onChange={(e) =>
-                    updateSignupForm("firstname", e.target.value)
-                  }
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="signup-firstname">First name</Label>
+                  <Input
+                    id="signup-firstname"
+                    autoComplete="given-name"
+                    value={signupForm.firstname}
+                    onChange={(e) =>
+                      updateSignupForm("firstname", e.target.value)
+                    }
+                  />
+                </div>
 
-                <input
-                  className={inputClass}
-                  autoComplete="family-name"
-                  placeholder="Last name"
-                  value={signupForm.lastname}
-                  onChange={(e) => updateSignupForm("lastname", e.target.value)}
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="signup-lastname">Last name</Label>
+                  <Input
+                    id="signup-lastname"
+                    autoComplete="family-name"
+                    value={signupForm.lastname}
+                    onChange={(e) =>
+                      updateSignupForm("lastname", e.target.value)
+                    }
+                  />
+                </div>
 
-                <input
-                  className={inputClass}
-                  type="tel"
-                  autoComplete="tel"
-                  placeholder="Phone (optional)"
-                  value={signupForm.phone}
-                  onChange={(e) => updateSignupForm("phone", e.target.value)}
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="signup-phone">Phone (optional)</Label>
+                  <Input
+                    id="signup-phone"
+                    type="tel"
+                    autoComplete="tel"
+                    value={signupForm.phone}
+                    onChange={(e) => updateSignupForm("phone", e.target.value)}
+                  />
+                </div>
 
-                <input
-                  className={inputClass}
-                  placeholder="Boat club (optional)"
-                  value={signupForm.boat_club}
-                  onChange={(e) =>
-                    updateSignupForm("boat_club", e.target.value)
-                  }
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="signup-boat-club">Boat club (optional)</Label>
+                  <Input
+                    id="signup-boat-club"
+                    value={signupForm.boat_club}
+                    onChange={(e) =>
+                      updateSignupForm("boat_club", e.target.value)
+                    }
+                  />
+                </div>
 
                 {error && <p className="text-red-500 text-sm">{error}</p>}
 
-                <button
-                  type="submit"
-                  className="w-full bg-brand-navy text-white p-2 rounded"
-                >
+                <Button type="submit" className="w-full bg-brand-navy">
                   Sign up
-                </button>
+                </Button>
               </form>
             </TabsContent>
           </Tabs>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getMarinaNameCB } from "../../lib/marinas";
 import { cn } from "../../lib/utils";
@@ -19,6 +19,28 @@ function Header({
   const { marinaSlug } = useParams<{ marinaSlug: string }>();
   const marinaName = getMarinaNameCB(marinaSlug);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isUserMenuOpen) return;
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!userMenuRef.current?.contains(event.target as Node)) {
+        setIsUserMenuOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setIsUserMenuOpen(false);
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isUserMenuOpen]);
 
   function handleLogoutClick() {
     setIsUserMenuOpen(false);
@@ -61,7 +83,7 @@ function Header({
         </button>
       </nav>
 
-      <div className="relative flex items-center gap-4">
+      <div className="relative flex items-center gap-4" ref={userMenuRef}>
         {isLoggedIn ? (
           <>
             <button
@@ -69,15 +91,20 @@ function Header({
               onClick={() => setIsUserMenuOpen((prev) => !prev)}
               className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-brand-navy/40 transition-transform hover:scale-105"
               aria-label="Open user menu"
+              aria-haspopup="menu"
               aria-expanded={isUserMenuOpen}
             >
               {userInitials}
             </button>
 
             {isUserMenuOpen && (
-              <div className="absolute top-12 left-1/2 -translate-x-1/2 w-40 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+              <div
+                role="menu"
+                className="absolute top-12 right-0 w-40 rounded-xl border border-slate-200 bg-white p-2 shadow-lg"
+              >
                 <button
                   type="button"
+                  role="menuitem"
                   onClick={handleLogoutClick}
                   className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-brand-navy transition-colors hover:bg-slate-100"
                 >

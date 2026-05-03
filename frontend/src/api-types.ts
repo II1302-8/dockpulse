@@ -38,6 +38,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/adoptions/{request_id}/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Subscribe to adoption progress via Server-Sent Events
+         * @description Opens a long-lived `text/event-stream` for a single adoption request. The first frame is a snapshot of the current state. Subsequent frames are `AdoptionUpdateEvent`s emitted when the gateway reports back. The stream closes once the request reaches a terminal state (`ok` or `err`).
+         */
+        get: operations["streamAdoption"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/login": {
         parameters: {
             query?: never;
@@ -333,6 +353,16 @@ export interface components {
              * @enum {string}
              */
             status: "pending" | "ok" | "err";
+        };
+        /** AdoptionUpdateEvent */
+        AdoptionUpdateEvent: {
+            request: components["schemas"]["AdoptionRequestOut"];
+            /**
+             * Type
+             * @default adoption.update
+             * @constant
+             */
+            type: "adoption.update";
         };
         /** AssignBerthIn */
         AssignBerthIn: {
@@ -638,6 +668,44 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AdoptionRequestOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    streamAdoption: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Each frame is a JSON-encoded AdoptionUpdateEvent. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdoptionUpdateEvent"];
+                };
+            };
+            /** @description Adoption request not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

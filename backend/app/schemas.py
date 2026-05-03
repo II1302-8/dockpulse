@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr
 
 
 class _BaseSchema(BaseModel):
@@ -55,27 +55,40 @@ class UserOut(_BaseSchema):
     role: Literal["harbormaster", "boat_owner"]
 
 
+# \p{L} unicode letter \p{M} combining marks
+_NAME_FIELD = dict(min_length=1, max_length=100, pattern=r"^[\p{L}\p{M}'’ .\-]+$")
+# 7 to 15 digits E.164 separators not counted
+_PHONE_FIELD = dict(max_length=20, pattern=r"^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$")
+_PASSWORD_FIELD = dict(min_length=8, max_length=128)
+
+
 class UserPatch(BaseModel):
-    firstname: str | None = None
-    lastname: str | None = None
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    firstname: str | None = Field(default=None, **_NAME_FIELD)
+    lastname: str | None = Field(default=None, **_NAME_FIELD)
     email: EmailStr | None = None
-    phone: str | None = None
-    boat_club: str | None = None
-    password: str | None = None
+    phone: str | None = Field(default=None, **_PHONE_FIELD)
+    boat_club: str | None = Field(default=None, max_length=100)
+    password: SecretStr | None = Field(default=None, **_PASSWORD_FIELD)
 
 
 class UserCreate(BaseModel):
-    firstname: str = Field(min_length=1)
-    lastname: str = Field(min_length=1)
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    firstname: str = Field(**_NAME_FIELD)
+    lastname: str = Field(**_NAME_FIELD)
     email: EmailStr
-    phone: str | None = None
-    boat_club: str | None = None
-    password: str = Field(min_length=8)
+    phone: str | None = Field(default=None, **_PHONE_FIELD)
+    boat_club: str | None = Field(default=None, max_length=100)
+    password: SecretStr = Field(**_PASSWORD_FIELD)
 
 
 class LoginIn(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     email: EmailStr
-    password: str
+    password: SecretStr
 
 
 class TokenOut(BaseModel):

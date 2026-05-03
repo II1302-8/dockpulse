@@ -268,7 +268,6 @@ components:
           format: password
           maxLength: 128
           minLength: 8
-          strip_whitespace: false
           title: Password
           type: string
           writeOnly: true
@@ -319,7 +318,6 @@ components:
           format: password
           maxLength: 128
           minLength: 8
-          strip_whitespace: false
           title: Password
           type: string
           writeOnly: true
@@ -412,7 +410,6 @@ components:
             type: string
             writeOnly: true
           - type: 'null'
-          strip_whitespace: false
           title: Password
         phone:
           anyOf:

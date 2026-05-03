@@ -57,6 +57,12 @@ class UserOut(_BaseSchema):
 
 _NAME_FIELD = dict(min_length=1, max_length=100, pattern=r"^[\D]+$")
 _PHONE_FIELD = dict(pattern=r"^\+?[\d\s\-().]{7,20}$")
+_PASSWORD_FIELD = dict(
+    min_length=8,
+    max_length=128,
+    strip_whitespace=False,
+    json_schema_extra=lambda s: s.pop("strip_whitespace", None),
+)
 
 
 class UserPatch(BaseModel):
@@ -67,9 +73,7 @@ class UserPatch(BaseModel):
     email: EmailStr | None = None
     phone: str | None = Field(default=None, **_PHONE_FIELD)
     boat_club: str | None = Field(default=None, max_length=100)
-    password: SecretStr | None = Field(
-        default=None, min_length=8, max_length=128, strip_whitespace=False
-    )
+    password: SecretStr | None = Field(default=None, **_PASSWORD_FIELD)
 
 
 class UserCreate(BaseModel):
@@ -80,14 +84,14 @@ class UserCreate(BaseModel):
     email: EmailStr
     phone: str | None = Field(default=None, **_PHONE_FIELD)
     boat_club: str | None = Field(default=None, max_length=100)
-    password: SecretStr = Field(min_length=8, max_length=128, strip_whitespace=False)
+    password: SecretStr = Field(**_PASSWORD_FIELD)
 
 
 class LoginIn(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     email: EmailStr
-    password: SecretStr = Field(min_length=8, max_length=128, strip_whitespace=False)
+    password: SecretStr = Field(**_PASSWORD_FIELD)
 
 
 class TokenOut(BaseModel):

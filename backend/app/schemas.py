@@ -164,6 +164,24 @@ class EventOut(_BaseSchema):
     timestamp: datetime
 
 
+class NodeHealthOut(_BaseSchema):
+    node_id: str = Field(examples=["node-012"])
+    serial_number: str = Field(examples=["DP-N-000123"])
+    berth_id: str = Field(examples=["berth-001"])
+    gateway_id: str = Field(examples=["gw-dock-a"])
+    mesh_unicast_addr: str = Field(examples=["0x0042"])
+    adopted_at: datetime = Field(examples=["2026-05-03T14:00:00Z"])
+    health: Literal["online", "stale", "offline", "decommissioned"] = Field(
+        examples=["online"]
+    )
+    battery_pct: int | None = Field(default=None, examples=[87])
+    last_seen: datetime | None = Field(default=None, examples=["2026-05-03T14:30:00Z"])
+
+
+class NodeDetailOut(NodeHealthOut):
+    recent_events: list[EventOut] = []
+
+
 class NotificationPrefsOut(_BaseSchema):
     notify_arrival: bool
     notify_departure: bool

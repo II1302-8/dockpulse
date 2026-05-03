@@ -266,6 +266,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/nodes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List nodes with derived health */
+        get: operations["listNodes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/nodes/{node_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get node detail with recent telemetry */
+        get: operations["getNode"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/nodes/{node_id}/decommission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark node as decommissioned */
+        post: operations["decommissionNode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/users/me": {
         parameters: {
             query?: never;
@@ -512,6 +563,111 @@ export interface components {
              * Format: password
              */
             password: string;
+        };
+        /** NodeDetailOut */
+        NodeDetailOut: {
+            /**
+             * Adopted At
+             * Format: date-time
+             * @example 2026-05-03T14:00:00Z
+             */
+            adopted_at: string;
+            /**
+             * Battery Pct
+             * @example 87
+             */
+            battery_pct?: number | null;
+            /**
+             * Berth Id
+             * @example berth-001
+             */
+            berth_id: string;
+            /**
+             * Gateway Id
+             * @example gw-dock-a
+             */
+            gateway_id: string;
+            /**
+             * Health
+             * @example online
+             * @enum {string}
+             */
+            health: "online" | "stale" | "offline" | "decommissioned";
+            /**
+             * Last Seen
+             * @example 2026-05-03T14:30:00Z
+             */
+            last_seen?: string | null;
+            /**
+             * Mesh Unicast Addr
+             * @example 0x0042
+             */
+            mesh_unicast_addr: string;
+            /**
+             * Node Id
+             * @example node-012
+             */
+            node_id: string;
+            /**
+             * Recent Events
+             * @default []
+             */
+            recent_events: components["schemas"]["EventOut"][];
+            /**
+             * Serial Number
+             * @example DP-N-000123
+             */
+            serial_number: string;
+        };
+        /** NodeHealthOut */
+        NodeHealthOut: {
+            /**
+             * Adopted At
+             * Format: date-time
+             * @example 2026-05-03T14:00:00Z
+             */
+            adopted_at: string;
+            /**
+             * Battery Pct
+             * @example 87
+             */
+            battery_pct?: number | null;
+            /**
+             * Berth Id
+             * @example berth-001
+             */
+            berth_id: string;
+            /**
+             * Gateway Id
+             * @example gw-dock-a
+             */
+            gateway_id: string;
+            /**
+             * Health
+             * @example online
+             * @enum {string}
+             */
+            health: "online" | "stale" | "offline" | "decommissioned";
+            /**
+             * Last Seen
+             * @example 2026-05-03T14:30:00Z
+             */
+            last_seen?: string | null;
+            /**
+             * Mesh Unicast Addr
+             * @example 0x0042
+             */
+            mesh_unicast_addr: string;
+            /**
+             * Node Id
+             * @example node-012
+             */
+            node_id: string;
+            /**
+             * Serial Number
+             * @example DP-N-000123
+             */
+            serial_number: string;
         };
         /** NotificationPrefsOut */
         NotificationPrefsOut: {
@@ -1110,6 +1266,106 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthStatus"];
+                };
+            };
+        };
+    };
+    listNodes: {
+        parameters: {
+            query?: {
+                /** @description Filter by gateway */
+                gateway_id?: string | null;
+                /** @description Filter by berth */
+                berth_id?: string | null;
+                /** @description Filter by health */
+                health?: ("online" | "stale" | "offline" | "decommissioned") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NodeHealthOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getNode: {
+        parameters: {
+            query?: {
+                events_limit?: number;
+            };
+            header?: never;
+            path: {
+                node_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NodeDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decommissionNode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                node_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NodeHealthOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

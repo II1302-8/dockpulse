@@ -293,7 +293,8 @@ components:
       properties:
         boat_club:
           anyOf:
-          - type: string
+          - maxLength: 100
+            type: string
           - type: 'null'
           title: Boat Club
         email:
@@ -301,15 +302,20 @@ components:
           title: Email
           type: string
         firstname:
+          maxLength: 100
           minLength: 1
+          pattern: ^[\D]+$
           title: Firstname
           type: string
         lastname:
+          maxLength: 100
           minLength: 1
+          pattern: ^[\D]+$
           title: Lastname
           type: string
         password:
           format: password
+          maxLength: 128
           minLength: 8
           strip_whitespace: false
           title: Password
@@ -317,7 +323,8 @@ components:
           writeOnly: true
         phone:
           anyOf:
-          - type: string
+          - pattern: ^\+?[\d\s\-().]{7,20}$
+            type: string
           - type: 'null'
           title: Phone
       required:
@@ -369,7 +376,8 @@ components:
       properties:
         boat_club:
           anyOf:
-          - type: string
+          - maxLength: 100
+            type: string
           - type: 'null'
           title: Boat Club
         email:
@@ -380,17 +388,25 @@ components:
           title: Email
         firstname:
           anyOf:
-          - type: string
+          - maxLength: 100
+            minLength: 1
+            pattern: ^[\D]+$
+            type: string
           - type: 'null'
           title: Firstname
         lastname:
           anyOf:
-          - type: string
+          - maxLength: 100
+            minLength: 1
+            pattern: ^[\D]+$
+            type: string
           - type: 'null'
           title: Lastname
         password:
           anyOf:
           - format: password
+            maxLength: 128
+            minLength: 8
             type: string
             writeOnly: true
           - type: 'null'
@@ -398,7 +414,8 @@ components:
           title: Password
         phone:
           anyOf:
-          - type: string
+          - pattern: ^\+?[\d\s\-().]{7,20}$
+            type: string
           - type: 'null'
           title: Phone
       title: UserPatch

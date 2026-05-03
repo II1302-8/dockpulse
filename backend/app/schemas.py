@@ -55,26 +55,32 @@ class UserOut(_BaseSchema):
     role: Literal["harbormaster", "boat_owner"]
 
 
+_NAME_FIELD = dict(min_length=1, max_length=100, pattern=r"^[\D]+$")
+_PHONE_FIELD = dict(pattern=r"^\+?[\d\s\-().]{7,20}$")
+
+
 class UserPatch(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    firstname: str | None = None
-    lastname: str | None = None
+    firstname: str | None = Field(default=None, **_NAME_FIELD)
+    lastname: str | None = Field(default=None, **_NAME_FIELD)
     email: EmailStr | None = None
-    phone: str | None = None
-    boat_club: str | None = None
-    password: SecretStr | None = Field(default=None, strip_whitespace=False)
+    phone: str | None = Field(default=None, **_PHONE_FIELD)
+    boat_club: str | None = Field(default=None, max_length=100)
+    password: SecretStr | None = Field(
+        default=None, min_length=8, max_length=128, strip_whitespace=False
+    )
 
 
 class UserCreate(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    firstname: str = Field(min_length=1)
-    lastname: str = Field(min_length=1)
+    firstname: str = Field(**_NAME_FIELD)
+    lastname: str = Field(**_NAME_FIELD)
     email: EmailStr
-    phone: str | None = None
-    boat_club: str | None = None
-    password: SecretStr = Field(min_length=8, strip_whitespace=False)
+    phone: str | None = Field(default=None, **_PHONE_FIELD)
+    boat_club: str | None = Field(default=None, max_length=100)
+    password: SecretStr = Field(min_length=8, max_length=128, strip_whitespace=False)
 
 
 class LoginIn(BaseModel):

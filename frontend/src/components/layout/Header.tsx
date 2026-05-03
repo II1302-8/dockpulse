@@ -8,11 +8,7 @@ interface HeaderProps {
   userInitials?: string;
 }
 
-function Header({
-  isLoggedIn,
-  onLoginClickCB,
-  userInitials = "JD",
-}: HeaderProps) {
+function Header({ isLoggedIn, onLoginClickCB, userInitials }: HeaderProps) {
   const { marinaSlug } = useParams<{ marinaSlug: string }>();
   const marinaName = getMarinaNameCB(marinaSlug);
 

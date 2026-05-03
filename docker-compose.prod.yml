@@ -1,17 +1,30 @@
+x-loki-logging: &loki-logging
+  driver: loki
+  options:
+    loki-url: "http://localhost:3100/loki/api/v1/push"
+    loki-batch-size: "400"
+    loki-retries: "3"
+    loki-external-labels: "stack=dockpulse-prod,container={{.Name}},image={{.ImageName}}"
+    keep-file: "true"
+    mode: "non-blocking"
+    max-buffer-size: "4m"
+
 services:
   cert-tools:
     container_name: dockpulse-prod-cert-tools
+    logging: *loki-logging
 
   db:
     container_name: dockpulse-prod-db
+    logging: *loki-logging
 
   mosquitto:
     container_name: dockpulse-prod-mosquitto
     volumes: !override
       - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mosquitto-acl.conf:/mosquitto/config/acl.conf:ro
       - mqtt-pki:/mosquitto/certs:ro
       - mqtt-certs:/mosquitto/certs/server:ro
-      - /var/log/mosquitto:/mosquitto/log
     ports:
       - "8883:8883"
     depends_on:
@@ -19,6 +32,7 @@ services:
         condition: service_healthy
       mqtt-cert-renew:
         condition: service_healthy
+    logging: *loki-logging
 
   mqtt-cert-renew:
     container_name: dockpulse-prod-mqtt-cert-renew
@@ -41,6 +55,7 @@ services:
       retries: 60
       start_period: 5s
     networks: [internal]
+    logging: *loki-logging
 
   backend:
     container_name: dockpulse-prod-backend
@@ -53,6 +68,7 @@ services:
       MQTT_BROKER: ${MQTT_PUBLIC_HOSTNAME:-mqtt.dockpulse.xyz}
       MQTT_PORT: 8883
       MQTT_TLS_CA: /etc/ssl/certs/ca-certificates.crt
+      LOG_FORMAT: json
     networks:
       - internal
       - dockpulse
@@ -65,6 +81,7 @@ services:
       - traefik.http.routers.dockpulse-api.tls=true
       - traefik.http.routers.dockpulse-api.tls.certresolver=cloudflare
       - traefik.http.services.dockpulse-api.loadbalancer.server.port=8000
+    logging: *loki-logging
 
   frontend:
     container_name: dockpulse-prod-frontend
@@ -82,6 +99,7 @@ services:
       - traefik.http.routers.dockpulse-web.tls.domains[0].main=dockpulse.xyz
       - traefik.http.routers.dockpulse-web.tls.domains[0].sans=www.dockpulse.xyz
       - traefik.http.services.dockpulse-web.loadbalancer.server.port=5173
+    logging: *loki-logging
 
 networks:
   dockpulse:

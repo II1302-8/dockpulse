@@ -1,15 +1,19 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr
 
 
-class _Base(BaseModel):
+class _BaseSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    # Something about this being better for pydantic
 
 
-class BerthOut(_Base):  # Grundläggande begränsningar
+class AssignmentOut(_BaseSchema):
+    berth_id: str
+    user_id: str
+
+
+class BerthOut(_BaseSchema):
     berth_id: str
     dock_id: str
     label: str | None = None
@@ -17,25 +21,31 @@ class BerthOut(_Base):  # Grundläggande begränsningar
     width_m: float | None = None
     depth_m: float | None = None
     status: str
+    is_reserved: bool = False
     sensor_raw: int | None = None
     battery_pct: int | None = None
     last_updated: datetime | None = None
+    assignment: AssignmentOut | None = None
 
 
-class DockOut(_Base):
+class AssignBerthIn(BaseModel):
+    user_id: str = Field(min_length=1)
+
+
+class DockOut(_BaseSchema):
     dock_id: str
     harbor_id: str
     name: str
 
 
-class DockWithBerthsOut(_Base):
+class DockWithBerthsOut(_BaseSchema):
     dock_id: str
     harbor_id: str
     name: str
     berths: list[BerthOut] = []
 
 
-class UserOut(_Base):
+class UserOut(_BaseSchema):
     user_id: str
     firstname: str
     lastname: str
@@ -45,27 +55,40 @@ class UserOut(_Base):
     role: Literal["harbormaster", "boat_owner"]
 
 
+# \p{L} unicode letter \p{M} combining marks
+_NAME_FIELD = dict(min_length=1, max_length=100, pattern=r"^[\p{L}\p{M}'’ .\-]+$")
+# 7 to 15 digits E.164 separators not counted
+_PHONE_FIELD = dict(max_length=20, pattern=r"^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$")
+_PASSWORD_FIELD = dict(min_length=8, max_length=128)
+
+
 class UserPatch(BaseModel):
-    firstname: str | None = None
-    lastname: str | None = None
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    firstname: str | None = Field(default=None, **_NAME_FIELD)
+    lastname: str | None = Field(default=None, **_NAME_FIELD)
     email: EmailStr | None = None
-    phone: str | None = None
-    boat_club: str | None = None
-    password: str | None = None
+    phone: str | None = Field(default=None, **_PHONE_FIELD)
+    boat_club: str | None = Field(default=None, max_length=100)
+    password: SecretStr | None = Field(default=None, **_PASSWORD_FIELD)
 
 
 class UserCreate(BaseModel):
-    firstname: str = Field(min_length=1)
-    lastname: str = Field(min_length=1)
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    firstname: str = Field(**_NAME_FIELD)
+    lastname: str = Field(**_NAME_FIELD)
     email: EmailStr
-    phone: str | None = None
-    boat_club: str | None = None
-    password: str = Field(min_length=8)
+    phone: str | None = Field(default=None, **_PHONE_FIELD)
+    boat_club: str | None = Field(default=None, max_length=100)
+    password: SecretStr = Field(**_PASSWORD_FIELD)
 
 
 class LoginIn(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     email: EmailStr
-    password: str
+    password: SecretStr
 
 
 class TokenOut(BaseModel):
@@ -85,7 +108,7 @@ class BerthUpdateEvent(BaseModel):
     berth: BerthOut
 
 
-class GatewayOut(_Base):
+class GatewayOut(_BaseSchema):
     gateway_id: str
     dock_id: str
     name: str
@@ -93,7 +116,7 @@ class GatewayOut(_Base):
     last_seen: datetime | None = None
 
 
-class NodeOut(_Base):
+class NodeOut(_BaseSchema):
     node_id: str
     mesh_uuid: str
     serial_number: str
@@ -104,7 +127,7 @@ class NodeOut(_Base):
     adopted_at: datetime
 
 
-class AdoptionRequestOut(_Base):
+class AdoptionRequestOut(_BaseSchema):
     request_id: str
     mesh_uuid: str
     serial_number: str
@@ -130,3 +153,22 @@ class AdoptIn(BaseModel):
 class AdoptionUpdateEvent(BaseModel):
     type: Literal["adoption.update"] = "adoption.update"
     request: AdoptionRequestOut
+
+
+class EventOut(_BaseSchema):
+    event_id: str
+    berth_id: str
+    node_id: str
+    event_type: Literal["occupied", "freed", "alert_unauthorized", "heartbeat"]
+    sensor_raw: int
+    timestamp: datetime
+
+
+class NotificationPrefsOut(_BaseSchema):
+    notify_arrival: bool
+    notify_departure: bool
+
+
+class NotificationPrefsPatch(BaseModel):
+    notify_arrival: bool | None = None
+    notify_departure: bool | None = None

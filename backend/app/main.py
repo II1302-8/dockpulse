@@ -2,21 +2,47 @@ import asyncio
 import contextlib
 import logging
 import time
+import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.adoption.sweeper import sweeper_loop
 from app.db import get_engine
+from app.logging_config import request_id_var, setup_logging
 from app.mqtt import is_mqtt_connected, mqtt_listener
-from app.routers import adoptions, berths, docks, nodes, users
+from app.routers import adoptions, auth, berths, docks, users
 from app.schemas import HealthStatus
+
+setup_logging()
+
+SSE_PATHS = frozenset({"/api/berths/stream"})
+
+
+class GZipExceptStream:
+    """GZip wrapper that bypasses SSE endpoints — gzip buffers chunks, which
+    delays event delivery on long-lived text/event-stream responses."""
+
+    def __init__(self, app: ASGIApp, *, minimum_size: int = 1024) -> None:
+        self._app = app
+        self._gzip = GZipMiddleware(app, minimum_size=minimum_size)
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http" and scope.get("path") in SSE_PATHS:
+            await self._app(scope, receive, send)
+            return
+        await self._gzip(scope, receive, send)
+
 
 _start_time = time.monotonic()
 logger = logging.getLogger(__name__)
+access_logger = logging.getLogger("app.access")
 
 API_DESCRIPTION = """\
 REST API for the DockPulse harbor berth availability system.
@@ -31,9 +57,9 @@ TAGS_METADATA = [
     {"name": "system", "description": "System health and status"},
     {"name": "berths", "description": "Berth monitoring and live updates"},
     {"name": "docks", "description": "Dock listing and detail"},
-    {"name": "users", "description": "User registration, login, profile"},
-    {"name": "nodes", "description": "Node adoption and lifecycle"},
-    {"name": "adoptions", "description": "Adoption request status"},
+    {"name": "auth", "description": "Registration, login, logout"},
+    {"name": "users", "description": "User profile and preferences"},
+    {"name": "adoptions", "description": "Node adoption requests"},
 ]
 
 SERVERS = [
@@ -52,7 +78,6 @@ def _log_task_exception(task: asyncio.Task) -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    logging.getLogger("app").setLevel(logging.INFO)
     tasks = [
         asyncio.create_task(mqtt_listener(), name="mqtt_listener"),
         asyncio.create_task(sweeper_loop(), name="adoption_sweeper"),
@@ -67,6 +92,36 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             await task
 
 
+class RequestContextMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        rid = request.headers.get("x-request-id") or uuid.uuid4().hex
+        token = request_id_var.set(rid)
+        start = time.perf_counter()
+        try:
+            response = await call_next(request)
+        except Exception:
+            duration_ms = (time.perf_counter() - start) * 1000
+            access_logger.exception(
+                "%s %s -> 500 (%.1fms)",
+                request.method,
+                request.url.path,
+                duration_ms,
+            )
+            request_id_var.reset(token)
+            raise
+        duration_ms = (time.perf_counter() - start) * 1000
+        response.headers["x-request-id"] = rid
+        access_logger.info(
+            "%s %s -> %d (%.1fms)",
+            request.method,
+            request.url.path,
+            response.status_code,
+            duration_ms,
+        )
+        request_id_var.reset(token)
+        return response
+
+
 app = FastAPI(
     title="DockPulse API",
     description=API_DESCRIPTION,
@@ -78,10 +133,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(RequestContextMiddleware)
+app.add_middleware(GZipExceptStream, minimum_size=1024)
+
 app.include_router(adoptions.router)
+app.include_router(auth.router)
 app.include_router(berths.router)
 app.include_router(docks.router)
-app.include_router(nodes.router)
 app.include_router(users.router)
 
 

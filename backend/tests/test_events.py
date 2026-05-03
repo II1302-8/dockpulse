@@ -93,3 +93,66 @@ async def test_heartbeat_touches_berth_without_event(session, seeded_berth):
 async def test_heartbeat_unknown_berth_raises(session):
     with pytest.raises(ValueError, match="Unknown berth"):
         await process_heartbeat(session, berth_id="does-not-exist")
+
+
+async def test_notify_harbormasters_called_on_state_change(
+    session, seeded_berth, harbor_master, monkeypatch
+):
+    sent: list[dict] = []
+
+    async def _fake_send(to, subject, html, idempotency_key=None):
+        sent.append({"to": to, "subject": subject, "idem": idempotency_key})
+
+    monkeypatch.setattr("app.events.send_email", _fake_send)
+
+    event = await process_sensor_reading(
+        session, berth_id="b1", node_id="n1", occupied=True, sensor_raw=500
+    )
+    assert event is not None
+    assert len(sent) == 1
+    assert sent[0]["to"] == harbor_master.email
+    assert "occupied" in sent[0]["subject"].lower()
+    assert event.event_id in sent[0]["idem"]
+
+
+async def test_notify_harbormasters_respects_arrival_pref(
+    session, seeded_berth, harbor_master, monkeypatch
+):
+    from app.models import UserNotificationPrefs
+
+    prefs = UserNotificationPrefs(
+        user_id=harbor_master.user_id,
+        notify_arrival=False,
+        notify_departure=True,
+    )
+    session.add(prefs)
+    await session.commit()
+
+    sent: list = []
+
+    async def _fake_send(*a, **kw):
+        sent.append(a)
+
+    monkeypatch.setattr("app.events.send_email", _fake_send)
+
+    await process_sensor_reading(
+        session, berth_id="b1", node_id="n1", occupied=True, sensor_raw=500
+    )
+    assert sent == []
+
+
+async def test_no_notification_on_same_status(
+    session, seeded_berth, harbor_master, monkeypatch
+):
+    # b1 already free so occupied=False is noop early-returns before notify
+    sent: list = []
+
+    async def _fake_send(*a, **kw):
+        sent.append(a)
+
+    monkeypatch.setattr("app.events.send_email", _fake_send)
+
+    await process_sensor_reading(
+        session, berth_id="b1", node_id="n1", occupied=False, sensor_raw=100
+    )
+    assert sent == []

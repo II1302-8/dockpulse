@@ -32,6 +32,10 @@ class User(Base):
     role: Mapped[str] = mapped_column(
         user_role_enum, nullable=False, default="boat_owner"
     )
+    assignments: Mapped[list["Assignment"]] = relationship(back_populates="user")
+    notification_prefs: Mapped["UserNotificationPrefs | None"] = relationship(
+        back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )
 
 
 class Harbor(Base):
@@ -68,6 +72,7 @@ class Berth(Base):
     width_m: Mapped[float | None] = mapped_column(Double)
     depth_m: Mapped[float | None] = mapped_column(Double)
     status: Mapped[str] = mapped_column(berth_status_enum, default="free")
+    is_reserved: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     sensor_raw: Mapped[int | None] = mapped_column(Integer)
     battery_pct: Mapped[int | None] = mapped_column(Integer)
     last_updated: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -75,6 +80,9 @@ class Berth(Base):
     dock: Mapped["Dock"] = relationship(back_populates="berths")
     events: Mapped[list["Event"]] = relationship(back_populates="berth")
     alerts: Mapped[list["Alert"]] = relationship(back_populates="berth")
+    assignment: Mapped["Assignment | None"] = relationship(
+        back_populates="berth", uselist=False
+    )
 
 
 class Event(Base):
@@ -178,3 +186,34 @@ class FactoryKey(Base):
         DateTime(timezone=True), nullable=False
     )
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class UserNotificationPrefs(Base):
+    __tablename__ = "user_notification_prefs"
+
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.user_id", ondelete="CASCADE"), primary_key=True
+    )
+    notify_arrival: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    notify_departure: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True
+    )
+
+    user: Mapped["User"] = relationship(back_populates="notification_prefs")
+
+
+class Assignment(Base):
+    __tablename__ = "assignments"
+
+    # one assignment per berth; replacing the user updates this row in place
+    berth_id: Mapped[str] = mapped_column(
+        ForeignKey("berths.berth_id", ondelete="CASCADE"), primary_key=True
+    )
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.user_id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    berth: Mapped["Berth"] = relationship(back_populates="assignment")
+    user: Mapped["User"] = relationship(back_populates="assignments")

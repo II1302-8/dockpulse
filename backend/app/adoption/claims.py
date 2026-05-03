@@ -1,10 +1,11 @@
 """Verifies factory-signed claim JWTs from node QR codes"""
 
-import os
 from dataclasses import dataclass
 from datetime import datetime
 
 import jwt
+
+from app.config import get_settings
 
 ALGORITHM = "EdDSA"
 ISSUER = "factory"
@@ -24,7 +25,7 @@ class FactoryClaim:
 
 
 def _factory_pubkey() -> str:
-    pubkey = os.environ.get("FACTORY_PUBKEY")
+    pubkey = get_settings().factory_pubkey
     if not pubkey:
         raise ClaimError("FACTORY_PUBKEY not configured")
     return pubkey

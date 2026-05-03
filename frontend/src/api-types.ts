@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/adoptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create an adoption request for a scanned node */
+        post: operations["createAdoption"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/adoptions/{request_id}": {
         parameters: {
             query?: never;
@@ -11,10 +28,61 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Adoption */
+        /** Get an adoption request by id */
         get: operations["getAdoption"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Log in and obtain an access token */
+        post: operations["login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Invalidate all tokens for the current user */
+        post: operations["logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register a new user */
+        post: operations["registerUser"];
         delete?: never;
         options?: never;
         head?: never;
@@ -75,6 +143,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/berths/{berth_id}/assignment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Assign a berth to a user */
+        put: operations["assignBerth"];
+        post?: never;
+        /** Remove a berth assignment */
+        delete: operations["removeBerthAssignment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/berths/{berth_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List events for a berth */
+        get: operations["listBerthEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/docks": {
         parameters: {
             query?: never;
@@ -126,40 +229,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/nodes/adopt": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Adopt Node */
-        post: operations["adoptNode"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/users": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Register a new user */
-        post: operations["registerUser"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/users/me": {
         parameters: {
             query?: never;
@@ -178,21 +247,22 @@ export interface paths {
         patch: operations["updateMe"];
         trace?: never;
     };
-    "/api/users/token": {
+    "/api/users/me/notification-prefs": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Get notification preferences for the current user */
+        get: operations["getNotificationPrefs"];
         put?: never;
-        /** Log in and obtain an access token */
-        post: operations["login"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update notification preferences for the current user */
+        patch: operations["updateNotificationPrefs"];
         trace?: never;
     };
 }
@@ -247,8 +317,21 @@ export interface components {
              */
             status: "pending" | "ok" | "err";
         };
+        /** AssignBerthIn */
+        AssignBerthIn: {
+            /** User Id */
+            user_id: string;
+        };
+        /** AssignmentOut */
+        AssignmentOut: {
+            /** Berth Id */
+            berth_id: string;
+            /** User Id */
+            user_id: string;
+        };
         /** BerthOut */
         BerthOut: {
+            assignment?: components["schemas"]["AssignmentOut"] | null;
             /** Battery Pct */
             battery_pct?: number | null;
             /** Berth Id */
@@ -257,6 +340,11 @@ export interface components {
             depth_m?: number | null;
             /** Dock Id */
             dock_id: string;
+            /**
+             * Is Reserved
+             * @default false
+             */
+            is_reserved: boolean;
             /** Label */
             label?: string | null;
             /** Last Updated */
@@ -303,6 +391,27 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** EventOut */
+        EventOut: {
+            /** Berth Id */
+            berth_id: string;
+            /** Event Id */
+            event_id: string;
+            /**
+             * Event Type
+             * @enum {string}
+             */
+            event_type: "occupied" | "freed" | "alert_unauthorized" | "heartbeat";
+            /** Node Id */
+            node_id: string;
+            /** Sensor Raw */
+            sensor_raw: number;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -335,8 +444,25 @@ export interface components {
              * Format: email
              */
             email: string;
-            /** Password */
+            /**
+             * Password
+             * Format: password
+             */
             password: string;
+        };
+        /** NotificationPrefsOut */
+        NotificationPrefsOut: {
+            /** Notify Arrival */
+            notify_arrival: boolean;
+            /** Notify Departure */
+            notify_departure: boolean;
+        };
+        /** NotificationPrefsPatch */
+        NotificationPrefsPatch: {
+            /** Notify Arrival */
+            notify_arrival?: boolean | null;
+            /** Notify Departure */
+            notify_departure?: boolean | null;
         };
         /** TokenOut */
         TokenOut: {
@@ -362,7 +488,10 @@ export interface components {
             firstname: string;
             /** Lastname */
             lastname: string;
-            /** Password */
+            /**
+             * Password
+             * Format: password
+             */
             password: string;
             /** Phone */
             phone?: string | null;
@@ -424,6 +553,39 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    createAdoption: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdoptIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdoptionRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     getAdoption: {
         parameters: {
             query?: never;
@@ -442,6 +604,90 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdoptionRequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    registerUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
                 };
             };
             /** @description Validation Error */
@@ -527,6 +773,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BerthOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assignBerth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                berth_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignBerthIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BerthOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    removeBerthAssignment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                berth_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BerthOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listBerthEvents: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                berth_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"][];
                 };
             };
             /** @description Validation Error */
@@ -632,72 +977,6 @@ export interface operations {
             };
         };
     };
-    adoptNode: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AdoptIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            202: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdoptionRequestOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    registerUser: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     getMe: {
         parameters: {
             query?: never;
@@ -751,7 +1030,27 @@ export interface operations {
             };
         };
     };
-    login: {
+    getNotificationPrefs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPrefsOut"];
+                };
+            };
+        };
+    };
+    updateNotificationPrefs: {
         parameters: {
             query?: never;
             header?: never;
@@ -760,7 +1059,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["LoginIn"];
+                "application/json": components["schemas"]["NotificationPrefsPatch"];
             };
         };
         responses: {
@@ -770,7 +1069,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TokenOut"];
+                    "application/json": components["schemas"]["NotificationPrefsOut"];
                 };
             };
             /** @description Validation Error */

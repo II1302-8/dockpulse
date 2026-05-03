@@ -1,16 +1,12 @@
-from typing import Annotated
-
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
-from app.db import get_session
+from app.dependencies import SessionDep
 from app.models import Dock
 from app.schemas import DockOut, DockWithBerthsOut
 
 router = APIRouter(prefix="/api/docks", tags=["docks"])
-
-sessiondep = Annotated[AsyncSession, Depends(get_session)]
 
 
 @router.get(
@@ -20,7 +16,7 @@ sessiondep = Annotated[AsyncSession, Depends(get_session)]
     summary="List all docks",
 )
 async def list_docks(
-    session: sessiondep,
+    session: SessionDep,
     harbor_id: str | None = Query(None, description="Filter by harbor"),
 ) -> list[DockOut]:
     stmt = select(Dock)
@@ -36,8 +32,12 @@ async def list_docks(
     operation_id="getDock",
     summary="Get a single dock with its berths",
 )
-async def get_dock(dock_id: str, session: sessiondep) -> DockWithBerthsOut:
-    dock = await session.get(Dock, dock_id)
+async def get_dock(dock_id: str, session: SessionDep) -> DockWithBerthsOut:
+    stmt = (
+        select(Dock).where(Dock.dock_id == dock_id).options(selectinload(Dock.berths))
+    )
+    result = await session.execute(stmt)
+    dock = result.scalar_one_or_none()
     if not dock:
         raise HTTPException(
             status_code=404,

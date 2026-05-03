@@ -122,8 +122,8 @@ dpcli seed-db
 dpcli create-user --email admin@harbor.se --role harbormaster
 ```
 
-- Full command reference: [`backend/dpcli/README.md`](backend/dpcli/README.md)
-- How to add commands: [`backend/dpcli/CONTRIBUTING.md`](backend/dpcli/CONTRIBUTING.md)
+- Full command reference: [`backend/scripts/dpcli/README.md`](backend/scripts/dpcli/README.md)
+- How to add commands: [`backend/scripts/dpcli/CONTRIBUTING.md`](backend/scripts/dpcli/CONTRIBUTING.md)
 
 ## Frontend
 

@@ -5,7 +5,7 @@ installed automatically via `uv sync`.
 
 ## Adding a new command
 
-1. Open `backend/dpcli/cli.py`
+1. Open `backend/scripts/dpcli/cli.py`
 2. Add a synchronous command function decorated with `@app.command()`:
 
 ```python

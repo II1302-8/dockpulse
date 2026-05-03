@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "dockpulse-backend"
 version = "0.1.0"
@@ -18,13 +22,13 @@ dependencies = [
 ]
 
 [project.scripts]
-dpcli = "dpcli.cli:app"
+dpcli = "scripts.dpcli.cli:app"
 
 [tool.uv]
 package = true
 
 [tool.setuptools.packages.find]
-include = ["dpcli*", "app*"]
+include = ["app*", "scripts*"]
 
 [dependency-groups]
 dev = [

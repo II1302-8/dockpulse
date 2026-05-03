@@ -60,7 +60,7 @@ dpcli list-users
 dpcli berth assign user@example.com B3
 ```
 
-See [`dpcli/README.md`](dpcli/README.md) for the full command reference.
+See [`scripts/dpcli/README.md`](scripts/dpcli/README.md) for the full command reference.
 
 ## Testing
 

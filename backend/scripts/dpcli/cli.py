@@ -1,6 +1,7 @@
 import asyncio
 import os
 import uuid
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Annotated
 
@@ -29,6 +30,20 @@ class Role(StrEnum):
     harbormaster = "harbormaster"
 
 
+# mirror DB enums in app/models.py so bad input fails before hitting Postgres
+class EventType(StrEnum):
+    occupied = "occupied"
+    freed = "freed"
+    alert_unauthorized = "alert_unauthorized"
+    heartbeat = "heartbeat"
+
+
+class AlertType(StrEnum):
+    unauthorized_mooring = "unauthorized_mooring"
+    sensor_offline = "sensor_offline"
+    low_battery = "low_battery"
+
+
 @app.command()
 def create_user(
     firstname: Annotated[str, typer.Option(prompt=True)],
@@ -52,7 +67,7 @@ def promote_user(
     email: Annotated[str, typer.Argument(help="Email of the user to promote")],
 ):
     """Set a user's role to harbormaster."""
-    asyncio.run(_set_role(email, "harbormaster"))
+    asyncio.run(_set_role(email, Role.harbormaster))
 
 
 @app.command()
@@ -60,7 +75,7 @@ def demote_user(
     email: Annotated[str, typer.Argument(help="Email of the user to demote")],
 ):
     """Set a user's role to boat_owner."""
-    asyncio.run(_set_role(email, "boat_owner"))
+    asyncio.run(_set_role(email, Role.boat_owner))
 
 
 @app.command()
@@ -130,10 +145,13 @@ def ack_alert(
 
 @app.command()
 def reset_berth(
-    berth_id: Annotated[str, typer.Argument(help="Berth ID to reset to free")],
+    berth_ref: Annotated[str, typer.Argument(help="Berth ID or label")],
+    dock: Annotated[
+        str | None, typer.Option(help="Dock ID to disambiguate label")
+    ] = None,
 ):
     """Force a berth status back to free."""
-    asyncio.run(_reset_berth(berth_id))
+    asyncio.run(_reset_berth(berth_ref, dock))
 
 
 @app.command()
@@ -151,9 +169,7 @@ def create_berth(
 @app.command()
 def create_event(
     berth_id: Annotated[str, typer.Argument(help="Berth ID")],
-    event_type: Annotated[
-        str, typer.Argument(help="occupied | freed | heartbeat | alert_unauthorized")
-    ],
+    event_type: Annotated[EventType, typer.Argument(help="Event type")],
     sensor_raw: Annotated[int, typer.Option(help="Raw sensor value")] = 0,
     node_id: Annotated[str, typer.Option(help="Node ID")] = "dev",
 ):
@@ -164,9 +180,7 @@ def create_event(
 @app.command()
 def create_alert(
     berth_id: Annotated[str, typer.Argument(help="Berth ID")],
-    alert_type: Annotated[
-        str, typer.Argument(help="unauthorized_mooring | sensor_offline | low_battery")
-    ],
+    alert_type: Annotated[AlertType, typer.Argument(help="Alert type")],
     message: Annotated[str, typer.Option(prompt=True)],
 ):
     """Insert a test alert row directly."""
@@ -210,20 +224,19 @@ async def _create_user(
     typer.echo(f"Created {role.value} {email}  (id: {user.user_id})")
 
 
-async def _set_role(email: str, role: str) -> None:
+async def _set_role(email: str, role: Role) -> None:
     async with get_sessionmaker()() as session:
         result = await session.execute(select(User).where(User.email == email))
         user = result.scalar_one_or_none()
         if user is None:
             typer.echo(f"Error: no user with email {email}", err=True)
             raise typer.Exit(1)
-        if user.role == role:
-            typer.echo(f"{email} is already {role}")
+        if user.role == role.value:
+            typer.echo(f"{email} is already {role.value}")
             return
-        user.role = role
-        session.add(user)
+        user.role = role.value
         await session.commit()
-    typer.echo(f"Set {email} to {role}")
+    typer.echo(f"Set {email} to {role.value}")
 
 
 async def _list_users() -> None:
@@ -343,7 +356,6 @@ async def _berth_set_reserved(
             typer.echo(f"Berth {berth.berth_id} is already {state}")
             return
         berth.is_reserved = reserved
-        session.add(berth)
         await session.commit()
     state = "reserved" if reserved else "unreserved"
     typer.echo(f"Berth {berth.berth_id} ({berth.label}) marked {state}")
@@ -481,21 +493,16 @@ async def _ack_alert(alert_id: str) -> None:
             typer.echo(f"Alert {alert_id} is already acknowledged")
             return
         alert.acknowledged = True
-        session.add(alert)
         await session.commit()
     typer.echo(f"Acknowledged alert {alert_id}")
 
 
-async def _reset_berth(berth_id: str) -> None:
+async def _reset_berth(berth_ref: str, dock: str | None) -> None:
     async with get_sessionmaker()() as session:
-        berth = await session.get(Berth, berth_id)
-        if berth is None:
-            typer.echo(f"Error: no berth with id {berth_id}", err=True)
-            raise typer.Exit(1)
+        berth = await _resolve_berth(session, berth_ref, dock)
         berth.status = "free"
-        session.add(berth)
         await session.commit()
-    typer.echo(f"Reset berth {berth_id} to free")
+    typer.echo(f"Reset berth {berth.berth_id} ({berth.label}) to free")
 
 
 async def _create_berth(
@@ -527,10 +534,8 @@ async def _create_berth(
 
 
 async def _create_event(
-    berth_id: str, event_type: str, sensor_raw: int, node_id: str
+    berth_id: str, event_type: EventType, sensor_raw: int, node_id: str
 ) -> None:
-    from datetime import UTC, datetime
-
     async with get_sessionmaker()() as session:
         berth = await session.get(Berth, berth_id)
         if berth is None:
@@ -541,19 +546,21 @@ async def _create_event(
             event_id=str(uuid.uuid4()),
             berth_id=berth_id,
             node_id=node_id,
-            event_type=event_type,
+            event_type=event_type.value,
             sensor_raw=sensor_raw,
             timestamp=datetime.now(UTC),
         )
         session.add(event)
         await session.commit()
 
-    typer.echo(f"Created event {event.event_id} ({event_type}) on berth {berth_id}")
+    typer.echo(
+        f"Created event {event.event_id} ({event_type.value}) on berth {berth_id}"
+    )
 
 
-async def _create_alert(berth_id: str, alert_type: str, message: str) -> None:
-    from datetime import UTC, datetime
-
+async def _create_alert(
+    berth_id: str, alert_type: AlertType, message: str
+) -> None:
     async with get_sessionmaker()() as session:
         berth = await session.get(Berth, berth_id)
         if berth is None:
@@ -563,14 +570,16 @@ async def _create_alert(berth_id: str, alert_type: str, message: str) -> None:
         alert = Alert(
             alert_id=str(uuid.uuid4()),
             berth_id=berth_id,
-            type=alert_type,
+            type=alert_type.value,
             message=message,
             timestamp=datetime.now(UTC),
         )
         session.add(alert)
         await session.commit()
 
-    typer.echo(f"Created alert {alert.alert_id} ({alert_type}) on berth {berth_id}")
+    typer.echo(
+        f"Created alert {alert.alert_id} ({alert_type.value}) on berth {berth_id}"
+    )
 
 
 async def _seed_db() -> None:

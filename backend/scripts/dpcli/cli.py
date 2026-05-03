@@ -558,9 +558,7 @@ async def _create_event(
     )
 
 
-async def _create_alert(
-    berth_id: str, alert_type: AlertType, message: str
-) -> None:
+async def _create_alert(berth_id: str, alert_type: AlertType, message: str) -> None:
     async with get_sessionmaker()() as session:
         berth = await session.get(Berth, berth_id)
         if berth is None:

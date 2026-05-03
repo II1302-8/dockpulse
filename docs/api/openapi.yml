@@ -82,6 +82,19 @@ components:
       - created_at
       title: AdoptionRequestOut
       type: object
+    AdoptionUpdateEvent:
+      properties:
+        request:
+          $ref: '#/components/schemas/AdoptionRequestOut'
+        type:
+          const: adoption.update
+          default: adoption.update
+          title: Type
+          type: string
+      required:
+      - request
+      title: AdoptionUpdateEvent
+      type: object
     AssignBerthIn:
       properties:
         user_id:
@@ -611,6 +624,38 @@ paths:
       security:
       - HTTPBearer: []
       summary: Get an adoption request by id
+      tags:
+      - adoptions
+  /api/adoptions/{request_id}/stream:
+    get:
+      description: Opens a long-lived `text/event-stream` for a single adoption request. The first frame
+        is a snapshot of the current state. Subsequent frames are `AdoptionUpdateEvent`s emitted when
+        the gateway reports back. The stream closes once the request reaches a terminal state (`ok` or
+        `err`).
+      operationId: streamAdoption
+      parameters:
+      - in: path
+        name: request_id
+        required: true
+        schema:
+          title: Request Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdoptionUpdateEvent'
+          description: Each frame is a JSON-encoded AdoptionUpdateEvent.
+        '404':
+          description: Adoption request not found
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Subscribe to adoption progress via Server-Sent Events
       tags:
       - adoptions
   /api/auth/login:

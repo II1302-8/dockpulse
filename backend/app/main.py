@@ -22,7 +22,10 @@ from app.schemas import HealthStatus
 
 setup_logging()
 
-SSE_PATHS = frozenset({"/api/berths/stream"})
+
+# /api/.../stream paths are SSE so skip gzip buffering
+def _is_sse_path(path: str) -> bool:
+    return path.startswith("/api/") and path.endswith("/stream")
 
 
 class GZipExceptStream:
@@ -34,7 +37,7 @@ class GZipExceptStream:
         self._gzip = GZipMiddleware(app, minimum_size=minimum_size)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] == "http" and scope.get("path") in SSE_PATHS:
+        if scope["type"] == "http" and _is_sse_path(scope.get("path", "")):
             await self._app(scope, receive, send)
             return
         await self._gzip(scope, receive, send)

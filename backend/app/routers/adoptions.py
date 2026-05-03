@@ -1,22 +1,26 @@
+import asyncio
 import base64
 import binascii
 import json
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+from sse_starlette.sse import EventSourceResponse
 
+from app import broadcaster
 from app.adoption.claims import ClaimError, FactoryClaim, verify_claim_jwt
 from app.dependencies import HarbormasterDep, SessionDep, require_harbormaster
 from app.models import AdoptionRequest, Berth, Gateway, Node
 from app.mqtt import publish_provision_req
-from app.schemas import AdoptIn, AdoptionRequestOut
+from app.schemas import AdoptIn, AdoptionRequestOut, AdoptionUpdateEvent
 
 router = APIRouter(prefix="/api/adoptions", tags=["adoptions"])
 
 ADOPTION_TTL = timedelta(seconds=60)
+SSE_PING_SECONDS = 15
 
 
 def _decode_qr_payload(payload: str) -> dict:
@@ -130,3 +134,53 @@ async def get_adoption(request_id: str, session: SessionDep):
     if request is None:
         raise HTTPException(status_code=404, detail="Adoption request not found")
     return request
+
+
+@router.get(
+    "/{request_id}/stream",
+    operation_id="streamAdoption",
+    summary="Subscribe to adoption progress via Server-Sent Events",
+    description=(
+        "Opens a long-lived `text/event-stream` for a single adoption "
+        "request. The first frame is a snapshot of the current state. "
+        "Subsequent frames are `AdoptionUpdateEvent`s emitted when the "
+        "gateway reports back. The stream closes once the request reaches "
+        "a terminal state (`ok` or `err`)."
+    ),
+    response_class=EventSourceResponse,
+    responses={
+        200: {
+            "model": AdoptionUpdateEvent,
+            "description": "Each frame is a JSON-encoded AdoptionUpdateEvent.",
+        },
+        404: {"description": "Adoption request not found"},
+    },
+)
+async def stream_adoption(request_id: str, request: Request, session: SessionDep):
+    initial = await session.get(AdoptionRequest, request_id)
+    if initial is None:
+        raise HTTPException(status_code=404, detail="Adoption request not found")
+
+    async def event_gen():
+        # subscribe before snapshot so finalize between them not lost
+        async with broadcaster.subscribe() as queue:
+            snapshot = AdoptionUpdateEvent(request=initial).model_dump(mode="json")
+            yield {"event": snapshot["type"], "data": json.dumps(snapshot)}
+            if initial.status != "pending":
+                return
+            while True:
+                if await request.is_disconnected():
+                    return
+                try:
+                    event = await asyncio.wait_for(queue.get(), timeout=1.0)
+                except TimeoutError:
+                    continue
+                if event.get("type") != "adoption.update":
+                    continue
+                if event["request"]["request_id"] != request_id:
+                    continue
+                yield {"event": event["type"], "data": json.dumps(event)}
+                if event["request"]["status"] != "pending":
+                    return
+
+    return EventSourceResponse(event_gen(), ping=SSE_PING_SECONDS)

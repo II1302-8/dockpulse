@@ -2,8 +2,21 @@ name: Test
 
 on:
   pull_request:
+    paths:
+      - 'backend/app/**'
+      - 'backend/tests/**'
+      - 'backend/scripts/**'
+      - 'backend/alembic/**'
+      - 'backend/alembic.ini'
+      - 'backend/pyproject.toml'
+      - 'backend/uv.lock'
+      - '.github/workflows/test.yml'
   push:
     branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
   backend-pytest:
@@ -37,6 +50,24 @@ jobs:
         env:
           DATABASE_URL: postgresql+asyncpg://dockpulse:dockpulse@localhost:5432/dockpulse_test
         run: uv run alembic upgrade head
-      - run: uv run pytest -v
+      - name: Run pytest
+        # tee captures coverage output for MishaKav while pipefail preserves pytest's exit code
+        run: |
+          set -o pipefail
+          uv run pytest -v --junitxml=pytest.xml | tee pytest-coverage.txt
+      - name: Coverage report
+        id: coverage_comment
+        if: always()
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-coverage-path: backend/pytest-coverage.txt
+          junitxml-path: backend/pytest.xml
+          title: Backend coverage
+          hide-emoji: true
+      - name: Coverage step summary
+        if: always() && steps.coverage_comment.outputs.summaryReport
+        run: |
+          echo "## Backend coverage" >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ steps.coverage_comment.outputs.summaryReport }}" >> "$GITHUB_STEP_SUMMARY"
       - name: OpenAPI spec is in sync with FastAPI app
         run: uv run python -m scripts.dump_openapi --check

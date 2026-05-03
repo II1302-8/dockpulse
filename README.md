@@ -1,13 +1,24 @@
 # DockPulse
 
-Harbor berth availability monitoring system.
+[![Test](https://github.com/II1302-8/dockpulse/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/II1302-8/dockpulse/actions/workflows/test.yml)
+[![Lint](https://github.com/II1302-8/dockpulse/actions/workflows/lint.yml/badge.svg?branch=main)](https://github.com/II1302-8/dockpulse/actions/workflows/lint.yml)
+[![Build Images](https://github.com/II1302-8/dockpulse/actions/workflows/build-images.yml/badge.svg?branch=main)](https://github.com/II1302-8/dockpulse/actions/workflows/build-images.yml)
 
-## Structure
+Harbor berth availability monitoring system. ESP32 nodes deployed at each berth report occupancy over MQTT, harbor masters and boat owners see live spot status in a web dashboard.
+
+## What it does
+
+- **Harbor masters** manage their harbor: adopt nodes, lay out spots on a map, oversee bookings.
+- **Boat owners** see which spots are free in real time and reserve one.
+- **Multi-tenant**: every harbor is isolated, one deployment serves many.
+
+## Stack
 
 ```
-backend/     FastAPI + SQLAlchemy + aiomqtt
-frontend/    React + TypeScript + Vite
+backend/     FastAPI, SQLAlchemy, aiomqtt, Postgres
+frontend/    React, TypeScript, Vite, Bun
 docs/api/    OpenAPI spec
+tools/       PKI helpers for the local mTLS broker
 ```
 
 ## Quick start
@@ -17,7 +28,7 @@ cp .env.example .env
 docker compose up
 ```
 
-This starts the backend stack (PostgreSQL, Mosquitto with mTLS, backend with hot reload). On first start, the `cert-tools` init container generates the local CAs and service certs into the `mqtt-pki` named volume; subsequent starts are no-ops.
+Boots Postgres, Mosquitto (mTLS), the FastAPI backend with hot reload, and a `cert-tools` init that generates local CAs into the `mqtt-pki` volume on first run.
 
 Frontend runs natively:
 
@@ -27,68 +38,17 @@ bun install
 bun run dev
 ```
 
-| Service    | URL                          |
-| ---------- | ---------------------------- |
-| Frontend   | http://localhost:5173        |
-| Backend    | http://localhost:8000        |
-| Swagger UI | http://localhost:8000/docs   |
-| Postgres   | localhost:5432               |
-| Mosquitto  | localhost:8883 (mTLS only)   |
+| Service    | URL                        |
+| ---------- | -------------------------- |
+| Frontend   | http://localhost:5173      |
+| Backend    | http://localhost:8000      |
+| Swagger UI | http://localhost:8000/docs |
+| Postgres   | localhost:5432             |
+| Mosquitto  | localhost:8883 (mTLS only) |
 
-### MQTT TLS
+## Documentation
 
-The broker requires client certificates. The `cert-tools` init service runs
-`tools/gen_certs.sh` against the `mqtt-pki` named volume on stack startup,
-producing:
-
-- `service-ca/` — signs internal services (`backend`, `fake-publisher`).
-- `device-ca/` — signs ESP32 nodes. Short-lived (90 days), no CRL.
-- `ca-bundle.crt` — both CAs concatenated; what mosquitto trusts.
-
-Issue a per-device client cert (cert-tools is already running):
-
-```bash
-docker compose exec cert-tools bash /scripts/gen_certs.sh device <node-id>
-```
-
-The new files land inside the `mqtt-pki` volume. Extract them onto the host:
-
-```bash
-docker run --rm \
-  -v dockpulse_mqtt-pki:/pki:ro \
-  -v "$(pwd)/out":/out \
-  alpine sh -c \
-  'cp /pki/devices/<node-id>/<node-id>.crt /pki/devices/<node-id>/<node-id>.key /pki/device-ca/ca.crt /out/'
-```
-
-To talk to the broker from the host with `mosquitto_sub`, extract a service
-cert the same way (`/pki/clients/backend/...`).
-
-### Production: public MQTT endpoint
-
-In production the broker listens on `mqtt.dockpulse.xyz:8883`. Set the DNS
-record to **DNS-only** (Cloudflare proxy off) so the host receives raw MQTT;
-the proxied modes don't pass TCP. The `mqtt-cert-renew` sidecar obtains and
-renews a Let's Encrypt cert for the hostname via DNS-01 against the Cloudflare
-zone, writes it into the `mqtt-certs` named volume, and SIGHUPs mosquitto on
-rotation. Devices verify the server with the standard public CA bundle and
-present a client cert issued by the device CA.
-
-Required prod env: `MQTT_PUBLIC_HOSTNAME`, `LEGO_EMAIL`,
-`CLOUDFLARE_DNS_API_TOKEN` (Zone:DNS:Edit on the dockpulse.xyz zone).
-
-#### Komodo deploy notes
-
-- `cert-tools` runs as a one-shot on every `docker compose up`. It only
-  generates material that doesn't already exist in `mqtt-pki`, so redeploys
-  are safe.
-- Two named volumes hold cert state: `mqtt-pki` (private CAs + leaves;
-  irreplaceable — back this up) and `mqtt-certs` (public LE cert; can be
-  reissued any time). Add both to Komodo's volume backup list.
-- Open TCP 8883 on the host firewall and point `mqtt.dockpulse.xyz` (DNS-only)
-  at the host. The lego sidecar handles ACME via DNS-01, no inbound 80/443
-  needed for the broker.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, workflow, and team guides.
+- [CONTRIBUTING.md](CONTRIBUTING.md) — dev setup, workflow, team guides
+- [docs/api/openapi.yml](docs/api/openapi.yml) — HTTP API contract
+- [docs/db-diagram.md](docs/db-diagram.md) — database schema
+- [docs/mqtt-tls.md](docs/mqtt-tls.md) — MQTT mTLS, device cert issuance, prod deploy

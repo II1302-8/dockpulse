@@ -92,10 +92,10 @@ async def update_me(body: UserPatch, current_user: CurrentUserDep, session: Sess
         if existing.scalar_one_or_none() is not None:
             raise HTTPException(status_code=409, detail="Email already in use")
 
-    for field, value in body.model_dump(
-        exclude_none=True, exclude={"password"}
-    ).items():
-        setattr(current_user, field, value)
+    for field in ("firstname", "lastname", "email", "phone", "boat_club"):
+        value = getattr(body, field)
+        if value is not None:
+            setattr(current_user, field, value)
 
     if body.password is not None:
         current_user.password_hash = _hash_password(body.password.get_secret_value())

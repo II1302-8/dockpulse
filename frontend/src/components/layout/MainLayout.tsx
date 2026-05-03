@@ -332,9 +332,7 @@ function MainLayout() {
                   autoComplete="family-name"
                   placeholder="Last name"
                   value={signupForm.lastname}
-                  onChange={(e) =>
-                    updateSignupForm("lastname", e.target.value)
-                  }
+                  onChange={(e) => updateSignupForm("lastname", e.target.value)}
                 />
 
                 <input

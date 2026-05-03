@@ -528,6 +528,33 @@ info:
   version: 0.1.0
 openapi: 3.1.0
 paths:
+  /api/adoptions:
+    post:
+      operationId: createAdoption
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdoptIn'
+        required: true
+      responses:
+        '202':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdoptionRequestOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create an adoption request for a scanned node
+      tags:
+      - adoptions
   /api/adoptions/{request_id}:
     get:
       operationId: getAdoption
@@ -553,9 +580,70 @@ paths:
           description: Validation Error
       security:
       - HTTPBearer: []
-      summary: Get Adoption
+      summary: Get an adoption request by id
       tags:
       - adoptions
+  /api/auth/login:
+    post:
+      operationId: login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginIn'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Log in and obtain an access token
+      tags:
+      - auth
+  /api/auth/logout:
+    post:
+      operationId: logout
+      responses:
+        '204':
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: Invalidate all tokens for the current user
+      tags:
+      - auth
+  /api/auth/register:
+    post:
+      operationId: registerUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Register a new user
+      tags:
+      - auth
   /api/berths:
     get:
       operationId: listBerths
@@ -671,7 +759,7 @@ paths:
       summary: Remove a berth assignment
       tags:
       - berths
-    post:
+    put:
       operationId: assignBerth
       parameters:
       - in: path
@@ -822,58 +910,6 @@ paths:
       summary: Health check
       tags:
       - system
-  /api/nodes/adopt:
-    post:
-      operationId: adoptNode
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AdoptIn'
-        required: true
-      responses:
-        '202':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AdoptionRequestOut'
-          description: Successful Response
-        '422':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
-      security:
-      - HTTPBearer: []
-      summary: Adopt Node
-      tags:
-      - nodes
-  /api/users:
-    post:
-      operationId: registerUser
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserCreate'
-        required: true
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserOut'
-          description: Successful Response
-        '422':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
-      summary: Register a new user
-      tags:
-      - users
   /api/users/me:
     get:
       operationId: getMe
@@ -915,18 +951,7 @@ paths:
       summary: Update current user profile
       tags:
       - users
-  /api/users/me/logout:
-    post:
-      operationId: logout
-      responses:
-        '204':
-          description: Successful Response
-      security:
-      - HTTPBearer: []
-      summary: Invalidate all tokens for the current user
-      tags:
-      - users
-  /api/users/me/notifications:
+  /api/users/me/notification-prefs:
     get:
       operationId: getNotificationPrefs
       responses:
@@ -967,31 +992,6 @@ paths:
       summary: Update notification preferences for the current user
       tags:
       - users
-  /api/users/token:
-    post:
-      operationId: login
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LoginIn'
-        required: true
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TokenOut'
-          description: Successful Response
-        '422':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HTTPValidationError'
-          description: Validation Error
-      summary: Log in and obtain an access token
-      tags:
-      - users
 servers:
 - description: Local development
   url: http://localhost:8000
@@ -1004,9 +1004,9 @@ tags:
   name: berths
 - description: Dock listing and detail
   name: docks
-- description: User registration, login, profile
+- description: Registration, login, logout
+  name: auth
+- description: User profile and preferences
   name: users
-- description: Node adoption and lifecycle
-  name: nodes
-- description: Adoption request status
+- description: Node adoption requests
   name: adoptions

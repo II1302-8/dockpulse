@@ -95,7 +95,7 @@ async def get_berth(berth_id: str, session: SessionDep):
     return berth
 
 
-@router.post(
+@router.put(
     "/{berth_id}/assignment",
     response_model=BerthOut,
     operation_id="assignBerth",

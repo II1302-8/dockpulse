@@ -28,7 +28,7 @@ async def second_owner(session: AsyncSession) -> User:
 async def test_assign_then_get_returns_assignment(
     client, seeded_berth, harbor_master, boat_owner
 ):
-    r = await client.post(
+    r = await client.put(
         "/api/berths/b1/assignment",
         json={"user_id": boat_owner.user_id},
         headers=_bearer(harbor_master.user_id),
@@ -48,12 +48,12 @@ async def test_assign_replaces_previous_user(
 ):
     headers = _bearer(harbor_master.user_id)
 
-    await client.post(
+    await client.put(
         "/api/berths/b1/assignment",
         json={"user_id": boat_owner.user_id},
         headers=headers,
     )
-    r = await client.post(
+    r = await client.put(
         "/api/berths/b1/assignment",
         json={"user_id": second_owner.user_id},
         headers=headers,
@@ -70,7 +70,7 @@ async def test_remove_assignment_clears_state(
     client, session, seeded_berth, harbor_master, boat_owner
 ):
     headers = _bearer(harbor_master.user_id)
-    await client.post(
+    await client.put(
         "/api/berths/b1/assignment",
         json={"user_id": boat_owner.user_id},
         headers=headers,
@@ -87,7 +87,7 @@ async def test_remove_assignment_clears_state(
 
 
 async def test_assign_requires_harbormaster(client, seeded_berth, boat_owner):
-    r = await client.post(
+    r = await client.put(
         "/api/berths/b1/assignment",
         json={"user_id": boat_owner.user_id},
         headers=_bearer(boat_owner.user_id),
@@ -96,7 +96,7 @@ async def test_assign_requires_harbormaster(client, seeded_berth, boat_owner):
 
 
 async def test_assign_unknown_user_404(client, seeded_berth, harbor_master):
-    r = await client.post(
+    r = await client.put(
         "/api/berths/b1/assignment",
         json={"user_id": "nope"},
         headers=_bearer(harbor_master.user_id),
@@ -105,7 +105,7 @@ async def test_assign_unknown_user_404(client, seeded_berth, harbor_master):
 
 
 async def test_assign_unknown_berth_404(client, harbor_master, boat_owner):
-    r = await client.post(
+    r = await client.put(
         "/api/berths/nope/assignment",
         json={"user_id": boat_owner.user_id},
         headers=_bearer(harbor_master.user_id),

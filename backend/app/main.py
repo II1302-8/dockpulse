@@ -17,7 +17,7 @@ from app.adoption.sweeper import sweeper_loop
 from app.db import get_engine
 from app.logging_config import request_id_var, setup_logging
 from app.mqtt import is_mqtt_connected, mqtt_listener
-from app.routers import adoptions, berths, docks, nodes, users
+from app.routers import adoptions, auth, berths, docks, users
 from app.schemas import HealthStatus
 
 setup_logging()
@@ -57,9 +57,9 @@ TAGS_METADATA = [
     {"name": "system", "description": "System health and status"},
     {"name": "berths", "description": "Berth monitoring and live updates"},
     {"name": "docks", "description": "Dock listing and detail"},
-    {"name": "users", "description": "User registration, login, profile"},
-    {"name": "nodes", "description": "Node adoption and lifecycle"},
-    {"name": "adoptions", "description": "Adoption request status"},
+    {"name": "auth", "description": "Registration, login, logout"},
+    {"name": "users", "description": "User profile and preferences"},
+    {"name": "adoptions", "description": "Node adoption requests"},
 ]
 
 SERVERS = [
@@ -137,9 +137,9 @@ app.add_middleware(RequestContextMiddleware)
 app.add_middleware(GZipExceptStream, minimum_size=1024)
 
 app.include_router(adoptions.router)
+app.include_router(auth.router)
 app.include_router(berths.router)
 app.include_router(docks.router)
-app.include_router(nodes.router)
 app.include_router(users.router)
 
 

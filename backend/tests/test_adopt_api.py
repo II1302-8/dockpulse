@@ -36,7 +36,7 @@ async def test_adopt_happy_path_creates_pending_request(
 ):
     qr = _make_qr_payload(factory_pubkey)
     r = await client.post(
-        "/api/nodes/adopt",
+        "/api/adoptions",
         json=_adopt_body(qr),
         headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
     )
@@ -57,7 +57,7 @@ async def test_adopt_happy_path_creates_pending_request(
 
 async def test_adopt_requires_auth(client: AsyncClient, harbor_world, factory_pubkey):
     qr = _make_qr_payload(factory_pubkey)
-    r = await client.post("/api/nodes/adopt", json=_adopt_body(qr))
+    r = await client.post("/api/adoptions", json=_adopt_body(qr))
     assert r.status_code == 401
 
 
@@ -69,7 +69,7 @@ async def test_adopt_rejects_boat_owner(
 ):
     qr = _make_qr_payload(factory_pubkey)
     r = await client.post(
-        "/api/nodes/adopt",
+        "/api/adoptions",
         json=_adopt_body(qr),
         headers={"Authorization": f"Bearer {_auth_token(boat_owner.user_id)}"},
     )
@@ -138,7 +138,7 @@ async def test_adopt_rejects_malformed_qr(
     factory_pubkey,
 ):
     r = await client.post(
-        "/api/nodes/adopt",
+        "/api/adoptions",
         json=_adopt_body(qr_factory(factory_pubkey)),
         headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
     )
@@ -152,7 +152,7 @@ async def test_adopt_returns_404_for_unknown_gateway(
 ):
     qr = _make_qr_payload(factory_pubkey)
     r = await client.post(
-        "/api/nodes/adopt",
+        "/api/adoptions",
         json=_adopt_body(qr, gateway_id="nope"),
         headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
     )
@@ -164,7 +164,7 @@ async def test_adopt_returns_404_for_unknown_berth(
 ):
     qr = _make_qr_payload(factory_pubkey)
     r = await client.post(
-        "/api/nodes/adopt",
+        "/api/adoptions",
         json=_adopt_body(qr, berth_id="nope"),
         headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
     )
@@ -187,7 +187,7 @@ async def test_adopt_rejects_gateway_dock_mismatch(
 
     qr = _make_qr_payload(factory_pubkey)
     r = await client.post(
-        "/api/nodes/adopt",
+        "/api/adoptions",
         json=_adopt_body(qr, berth_id="b2"),
         headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
     )
@@ -221,7 +221,7 @@ async def test_adopt_rejects_berth_with_active_node(
 
     qr = _make_qr_payload(factory_pubkey)
     r = await client.post(
-        "/api/nodes/adopt",
+        "/api/adoptions",
         json=_adopt_body(qr),
         headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
     )
@@ -234,12 +234,10 @@ async def test_adopt_rejects_reused_jti(
     qr = _make_qr_payload(factory_pubkey, jti="reused-jti")
     headers = {"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"}
 
-    first = await client.post("/api/nodes/adopt", json=_adopt_body(qr), headers=headers)
+    first = await client.post("/api/adoptions", json=_adopt_body(qr), headers=headers)
     assert first.status_code == 202
 
-    second = await client.post(
-        "/api/nodes/adopt", json=_adopt_body(qr), headers=headers
-    )
+    second = await client.post("/api/adoptions", json=_adopt_body(qr), headers=headers)
     assert second.status_code == 409
 
 
@@ -252,7 +250,7 @@ async def test_adopt_persists_creator(
 ):
     qr = _make_qr_payload(factory_pubkey)
     r = await client.post(
-        "/api/nodes/adopt",
+        "/api/adoptions",
         json=_adopt_body(qr),
         headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
     )
@@ -278,7 +276,7 @@ async def test_adopt_rejects_offline_gateway(
 
     qr = _make_qr_payload(factory_pubkey)
     r = await client.post(
-        "/api/nodes/adopt",
+        "/api/adoptions",
         json=_adopt_body(qr),
         headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
     )
@@ -293,7 +291,7 @@ async def test_get_adoption_returns_request(
 ):
     qr = _make_qr_payload(factory_pubkey)
     create = await client.post(
-        "/api/nodes/adopt",
+        "/api/adoptions",
         json=_adopt_body(qr),
         headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
     )
@@ -343,7 +341,7 @@ async def test_adopt_publishes_provision_req(
 ):
     qr = _make_qr_payload(factory_pubkey)
     r = await client.post(
-        "/api/nodes/adopt",
+        "/api/adoptions",
         json=_adopt_body(qr),
         headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
     )

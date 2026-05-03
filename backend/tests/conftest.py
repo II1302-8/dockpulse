@@ -68,7 +68,7 @@ def published_provision_reqs(monkeypatch) -> list[dict]:
     async def _fake_publish(**kwargs):
         captured.append(kwargs)
 
-    monkeypatch.setattr("app.routers.nodes.publish_provision_req", _fake_publish)
+    monkeypatch.setattr("app.routers.adoptions.publish_provision_req", _fake_publish)
     return captured
 
 

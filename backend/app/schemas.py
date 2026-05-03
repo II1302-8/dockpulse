@@ -86,7 +86,7 @@ class LoginIn(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     email: EmailStr
-    password: SecretStr = Field(**_PASSWORD_FIELD)
+    password: SecretStr
 
 
 class TokenOut(BaseModel):

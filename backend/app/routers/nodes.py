@@ -1,3 +1,4 @@
+import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, Literal
 
@@ -6,6 +7,7 @@ from sqlalchemy import select
 
 from app.dependencies import HarbormasterDep, SessionDep
 from app.models import Berth, Event, Node
+from app.mqtt import publish_decommission_req
 from app.schemas import NodeDetailOut, NodeHealthOut
 
 router = APIRouter(prefix="/api/nodes", tags=["nodes"])
@@ -134,11 +136,19 @@ async def decommission_node(
     if node is None:
         raise HTTPException(status_code=404, detail="Node not found")
 
-    # idempotent, return current state if already decommissioned
+    # idempotent, skip commit + republish if already decommissioned
     if node.status != "decommissioned":
         node.status = "decommissioned"
         await session.commit()
         await session.refresh(node)
+        # fire-and-forget, gateway acks by dropping the unicast mapping
+        await publish_decommission_req(
+            gateway_id=node.gateway_id,
+            request_id=str(uuid.uuid4()),
+            node_id=node.node_id,
+            unicast_addr=node.mesh_unicast_addr,
+            berth_id=node.berth_id,
+        )
 
     berth = await session.get(Berth, node.berth_id)
     return _to_health_out(node, berth, datetime.now(UTC))

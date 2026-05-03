@@ -206,6 +206,31 @@ async def publish_provision_req(
     await _client.publish(topic, payload=json.dumps(body), qos=PUBLISH_QOS)
 
 
+async def publish_decommission_req(
+    *,
+    gateway_id: str,
+    request_id: str,
+    node_id: str,
+    unicast_addr: str,
+    berth_id: str,
+) -> None:
+    """Tell a gateway to forget a node, fire-and-forget"""
+    if _client is None:
+        logger.warning(
+            "MQTT not connected; decommission/req for %s dropped", request_id
+        )
+        return
+
+    topic = f"{GATEWAY_TOPIC_PREFIX}/{gateway_id}/decommission/req"
+    body = {
+        "req_id": request_id,
+        "node_id": node_id,
+        "unicast_addr": unicast_addr,
+        "berth_id": berth_id,
+    }
+    await _client.publish(topic, payload=json.dumps(body), qos=PUBLISH_QOS)
+
+
 async def mqtt_listener() -> None:
     global _connected, _client
     s = get_settings()

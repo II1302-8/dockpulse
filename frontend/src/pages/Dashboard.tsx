@@ -20,6 +20,63 @@ type DashboardOutletContext = {
   setToken: React.Dispatch<React.SetStateAction<string | null>>;
 };
 
+type AuthTab = "login" | "signup";
+
+type LoginForm = {
+  email: string;
+  password: string;
+};
+
+type SignupForm = LoginForm & {
+  firstname: string;
+  lastname: string;
+  phone: string;
+  boat_club: string;
+};
+
+const inputClass = "w-full border p-2 rounded";
+
+const emptyLoginForm: LoginForm = {
+  email: "",
+  password: "",
+};
+
+const emptySignupForm: SignupForm = {
+  email: "",
+  password: "",
+  firstname: "",
+  lastname: "",
+  phone: "",
+  boat_club: "",
+};
+
+async function getErrorMessage(
+  res: Response,
+  fallback: string,
+): Promise<string> {
+  try {
+    const data = await res.json();
+
+    if (typeof data.detail === "string") return data.detail;
+    if (typeof data.message === "string") return data.message;
+    if (typeof data.error === "string") return data.error;
+
+    if (Array.isArray(data.detail)) {
+      return data.detail
+        .map((err) => {
+          const field = Array.isArray(err.loc) ? err.loc.at(-1) : null;
+
+          return field ? `${field}: ${err.msg}` : err.msg;
+        })
+        .join(", ");
+    }
+
+    return `${fallback} Status: ${res.status}`;
+  } catch {
+    return `${fallback} Status: ${res.status}`;
+  }
+}
+
 function Dashboard() {
   const { marinaSlug } = useParams();
   const marinaName = getMarinaNameCB(marinaSlug);
@@ -27,44 +84,44 @@ function Dashboard() {
   const { isLoginOpen, setIsLoginOpen, setUser, setToken } =
     useOutletContext<DashboardOutletContext>();
 
-  const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
-
-  const [loginForm, setLoginForm] = useState({
-    email: "",
-    password: "",
-  });
-
-  const [signupForm, setSignupForm] = useState({
-    email: "",
-    password: "",
-    firstname: "",
-    lastname: "",
-    phone: "",
-    boat_club: "",
-  });
-
+  const [activeTab, setActiveTab] = useState<AuthTab>("login");
+  const [loginForm, setLoginForm] = useState<LoginForm>(emptyLoginForm);
+  const [signupForm, setSignupForm] = useState<SignupForm>(emptySignupForm);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     document.title = `${marinaName} - Dashboard | DockPulse`;
   }, [marinaName]);
 
+  function updateLoginForm(field: keyof LoginForm, value: string) {
+    setLoginForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function updateSignupForm(field: keyof SignupForm, value: string) {
+    setSignupForm((prev) => ({ ...prev, [field]: value }));
+  }
+
   async function handleLogin() {
     setError(null);
 
     try {
-      const tokenRes = await fetch("/api/users/token", {
+      const tokenRes = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(loginForm),
       });
 
       if (!tokenRes.ok) {
-        throw new Error("Wrong email or password.");
+        throw new Error(
+          await getErrorMessage(tokenRes, "Wrong email or password."),
+        );
       }
 
-      const tokenData = await tokenRes.json();
-      const accessToken = tokenData.access_token;
+      const { access_token: accessToken } = await tokenRes.json();
+
+      if (!accessToken) {
+        throw new Error("Login succeeded, but no access token was returned.");
+      }
 
       const userRes = await fetch("/api/users/me", {
         headers: {
@@ -73,7 +130,9 @@ function Dashboard() {
       });
 
       if (!userRes.ok) {
-        throw new Error("Could not load user profile.");
+        throw new Error(
+          await getErrorMessage(userRes, "Could not load user profile."),
+        );
       }
 
       const userData = await userRes.json();
@@ -82,37 +141,34 @@ function Dashboard() {
       setToken(accessToken);
       setUser(userData);
       setIsLoginOpen(false);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not log in.");
     }
   }
 
   async function handleSignup() {
     setError(null);
 
+    const signupPayload = {
+      ...signupForm,
+      email: signupForm.email.trim(),
+      firstname: signupForm.firstname.trim(),
+      lastname: signupForm.lastname.trim(),
+      phone: signupForm.phone.trim() || null,
+      boat_club: signupForm.boat_club.trim() || null,
+    };
+
     try {
-      const res = await fetch("/api/users", {
+      const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(signupForm),
+        body: JSON.stringify(signupPayload),
       });
 
       if (!res.ok) {
-        let message = "Could not create account.";
-
-        try {
-          const errorData = await res.json();
-
-          if (typeof errorData.detail === "string") {
-            message = errorData.detail;
-          } else if (Array.isArray(errorData.detail)) {
-            message = errorData.detail.map((err: any) => err.msg).join(", ");
-          }
-        } catch {
-          // Keep default message
-        }
-
-        throw new Error(message);
+        throw new Error(
+          await getErrorMessage(res, "Could not create account."),
+        );
       }
 
       setLoginForm({
@@ -121,9 +177,11 @@ function Dashboard() {
       });
 
       setActiveTab("login");
-      setError(null);
-    } catch (err: any) {
-      setError(err.message);
+      setError("Account created. You can now log in.");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Could not create account.",
+      );
     }
   }
 
@@ -136,7 +194,7 @@ function Dashboard() {
           <Tabs
             value={activeTab}
             onValueChange={(value) => {
-              setActiveTab(value as "login" | "signup");
+              setActiveTab(value as AuthTab);
               setError(null);
             }}
           >
@@ -147,22 +205,18 @@ function Dashboard() {
 
             <TabsContent value="login" className="space-y-4 mt-4">
               <input
+                className={inputClass}
                 placeholder="Email"
-                className="w-full border p-2 rounded"
                 value={loginForm.email}
-                onChange={(e) =>
-                  setLoginForm({ ...loginForm, email: e.target.value })
-                }
+                onChange={(e) => updateLoginForm("email", e.target.value)}
               />
 
               <input
+                className={inputClass}
                 type="password"
                 placeholder="Password"
-                className="w-full border p-2 rounded"
                 value={loginForm.password}
-                onChange={(e) =>
-                  setLoginForm({ ...loginForm, password: e.target.value })
-                }
+                onChange={(e) => updateLoginForm("password", e.target.value)}
               />
 
               {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -178,67 +232,46 @@ function Dashboard() {
 
             <TabsContent value="signup" className="space-y-4 mt-4">
               <input
+                className={inputClass}
                 placeholder="Email"
-                className="w-full border p-2 rounded"
                 value={signupForm.email}
-                onChange={(e) =>
-                  setSignupForm({ ...signupForm, email: e.target.value })
-                }
+                onChange={(e) => updateSignupForm("email", e.target.value)}
               />
 
               <input
+                className={inputClass}
                 type="password"
                 placeholder="Password"
-                className="w-full border p-2 rounded"
                 value={signupForm.password}
-                onChange={(e) =>
-                  setSignupForm({ ...signupForm, password: e.target.value })
-                }
+                onChange={(e) => updateSignupForm("password", e.target.value)}
               />
 
               <input
+                className={inputClass}
                 placeholder="First name"
-                className="w-full border p-2 rounded"
                 value={signupForm.firstname}
-                onChange={(e) =>
-                  setSignupForm({
-                    ...signupForm,
-                    firstname: e.target.value,
-                  })
-                }
+                onChange={(e) => updateSignupForm("firstname", e.target.value)}
               />
 
               <input
+                className={inputClass}
                 placeholder="Last name"
-                className="w-full border p-2 rounded"
                 value={signupForm.lastname}
-                onChange={(e) =>
-                  setSignupForm({
-                    ...signupForm,
-                    lastname: e.target.value,
-                  })
-                }
+                onChange={(e) => updateSignupForm("lastname", e.target.value)}
               />
 
               <input
+                className={inputClass}
                 placeholder="Phone (optional)"
-                className="w-full border p-2 rounded"
                 value={signupForm.phone}
-                onChange={(e) =>
-                  setSignupForm({ ...signupForm, phone: e.target.value })
-                }
+                onChange={(e) => updateSignupForm("phone", e.target.value)}
               />
 
               <input
+                className={inputClass}
                 placeholder="Boat club"
-                className="w-full border p-2 rounded"
                 value={signupForm.boat_club}
-                onChange={(e) =>
-                  setSignupForm({
-                    ...signupForm,
-                    boat_club: e.target.value,
-                  })
-                }
+                onChange={(e) => updateSignupForm("boat_club", e.target.value)}
               />
 
               {error && <p className="text-red-500 text-sm">{error}</p>}

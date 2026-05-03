@@ -352,6 +352,148 @@ components:
       - password
       title: LoginIn
       type: object
+    NodeDetailOut:
+      properties:
+        adopted_at:
+          examples:
+          - '2026-05-03T14:00:00Z'
+          format: date-time
+          title: Adopted At
+          type: string
+        battery_pct:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          examples:
+          - 87
+          title: Battery Pct
+        berth_id:
+          examples:
+          - berth-001
+          title: Berth Id
+          type: string
+        gateway_id:
+          examples:
+          - gw-dock-a
+          title: Gateway Id
+          type: string
+        health:
+          enum:
+          - online
+          - stale
+          - offline
+          - decommissioned
+          examples:
+          - online
+          title: Health
+          type: string
+        last_seen:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          examples:
+          - '2026-05-03T14:30:00Z'
+          title: Last Seen
+        mesh_unicast_addr:
+          examples:
+          - '0x0042'
+          title: Mesh Unicast Addr
+          type: string
+        node_id:
+          examples:
+          - node-012
+          title: Node Id
+          type: string
+        recent_events:
+          default: []
+          items:
+            $ref: '#/components/schemas/EventOut'
+          title: Recent Events
+          type: array
+        serial_number:
+          examples:
+          - DP-N-000123
+          title: Serial Number
+          type: string
+      required:
+      - node_id
+      - serial_number
+      - berth_id
+      - gateway_id
+      - mesh_unicast_addr
+      - adopted_at
+      - health
+      title: NodeDetailOut
+      type: object
+    NodeHealthOut:
+      properties:
+        adopted_at:
+          examples:
+          - '2026-05-03T14:00:00Z'
+          format: date-time
+          title: Adopted At
+          type: string
+        battery_pct:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          examples:
+          - 87
+          title: Battery Pct
+        berth_id:
+          examples:
+          - berth-001
+          title: Berth Id
+          type: string
+        gateway_id:
+          examples:
+          - gw-dock-a
+          title: Gateway Id
+          type: string
+        health:
+          enum:
+          - online
+          - stale
+          - offline
+          - decommissioned
+          examples:
+          - online
+          title: Health
+          type: string
+        last_seen:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          examples:
+          - '2026-05-03T14:30:00Z'
+          title: Last Seen
+        mesh_unicast_addr:
+          examples:
+          - '0x0042'
+          title: Mesh Unicast Addr
+          type: string
+        node_id:
+          examples:
+          - node-012
+          title: Node Id
+          type: string
+        serial_number:
+          examples:
+          - DP-N-000123
+          title: Serial Number
+          type: string
+      required:
+      - node_id
+      - serial_number
+      - berth_id
+      - gateway_id
+      - mesh_unicast_addr
+      - adopted_at
+      - health
+      title: NodeHealthOut
+      type: object
     NotificationPrefsOut:
       properties:
         notify_arrival:
@@ -1041,6 +1183,131 @@ paths:
       summary: Health check
       tags:
       - system
+  /api/nodes:
+    get:
+      operationId: listNodes
+      parameters:
+      - description: Filter by gateway
+        in: query
+        name: gateway_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Filter by gateway
+          title: Gateway Id
+      - description: Filter by berth
+        in: query
+        name: berth_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Filter by berth
+          title: Berth Id
+      - description: Filter by health
+        in: query
+        name: health
+        required: false
+        schema:
+          anyOf:
+          - enum:
+            - online
+            - stale
+            - offline
+            - decommissioned
+            type: string
+          - type: 'null'
+          description: Filter by health
+          title: Health
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/NodeHealthOut'
+                title: Response Listnodes
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: List nodes with derived health
+      tags:
+      - nodes
+  /api/nodes/{node_id}:
+    get:
+      operationId: getNode
+      parameters:
+      - in: path
+        name: node_id
+        required: true
+        schema:
+          title: Node Id
+          type: string
+      - in: query
+        name: events_limit
+        required: false
+        schema:
+          default: 50
+          maximum: 500
+          minimum: 1
+          title: Events Limit
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeDetailOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Get node detail with recent telemetry
+      tags:
+      - nodes
+  /api/nodes/{node_id}/decommission:
+    post:
+      operationId: decommissionNode
+      parameters:
+      - in: path
+        name: node_id
+        required: true
+        schema:
+          title: Node Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NodeHealthOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Mark node as decommissioned
+      tags:
+      - nodes
   /api/users/me:
     get:
       operationId: getMe
@@ -1143,3 +1410,5 @@ tags:
   name: adoptions
 - description: Gateway listing and status
   name: gateways
+- description: Adopted node inventory and lifecycle
+  name: nodes

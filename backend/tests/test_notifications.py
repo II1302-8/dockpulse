@@ -3,7 +3,7 @@ import pytest
 from app import notifications
 
 
-async def test_send_email_suppressed_when_no_api_key(monkeypatch, caplog):
+async def test_send_email_suppressed_when_no_api_key(monkeypatch):
     monkeypatch.delenv("RESEND_API_KEY", raising=False)
     called = False
 
@@ -11,11 +11,16 @@ async def test_send_email_suppressed_when_no_api_key(monkeypatch, caplog):
         nonlocal called
         called = True
 
+    warnings: list[str] = []
     monkeypatch.setattr(notifications.resend.Emails, "send", _fail)
-    with caplog.at_level("WARNING", logger="app.notifications"):
-        await notifications.send_email("a@b.com", "subj", "<p>hi</p>")
+    monkeypatch.setattr(
+        notifications.logger,
+        "warning",
+        lambda msg, *a, **kw: warnings.append(msg % a if a else msg),
+    )
+    await notifications.send_email("a@b.com", "subj", "<p>hi</p>")
     assert called is False
-    assert any("suppressed" in r.message for r in caplog.records)
+    assert any("suppressed" in w for w in warnings)
 
 
 async def test_send_email_sends_with_normalized_recipients(monkeypatch):
@@ -34,22 +39,32 @@ async def test_send_email_sends_with_normalized_recipients(monkeypatch):
     assert payloads[1]["to"] == ["a@x.com", "b@x.com"]
 
 
-async def test_send_email_swallows_sdk_errors(monkeypatch, caplog):
+async def test_send_email_swallows_sdk_errors(monkeypatch):
     monkeypatch.setenv("RESEND_API_KEY", "re_test")
 
     def _boom(payload):
         raise RuntimeError("resend down")
 
+    excs: list[str] = []
     monkeypatch.setattr(notifications.resend.Emails, "send", _boom)
-    with caplog.at_level("ERROR", logger="app.notifications"):
-        await notifications.send_email("a@b.com", "s", "<p>h</p>")
-    assert any("Failed to send email" in r.message for r in caplog.records)
+    monkeypatch.setattr(
+        notifications.logger,
+        "exception",
+        lambda msg, *a, **kw: excs.append(msg % a if a else msg),
+    )
+    await notifications.send_email("a@b.com", "s", "<p>h</p>")
+    assert any("Failed to send email" in e for e in excs)
 
 
-async def test_send_push_is_stub(caplog):
-    with caplog.at_level("WARNING", logger="app.notifications"):
-        await notifications.send_push("u1", "t", "b")
-    assert any("not implemented" in r.message for r in caplog.records)
+async def test_send_push_is_stub(monkeypatch):
+    warnings: list[str] = []
+    monkeypatch.setattr(
+        notifications.logger,
+        "warning",
+        lambda msg, *a, **kw: warnings.append(msg % a if a else msg),
+    )
+    await notifications.send_push("u1", "t", "b")
+    assert any("not implemented" in w for w in warnings)
 
 
 @pytest.mark.parametrize(

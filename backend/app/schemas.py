@@ -56,26 +56,32 @@ class UserOut(_BaseSchema):
 
 
 class UserPatch(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     firstname: str | None = None
     lastname: str | None = None
     email: EmailStr | None = None
     phone: str | None = None
     boat_club: str | None = None
-    password: SecretStr | None = None
+    password: SecretStr | None = Field(default=None, strip_whitespace=False)
 
 
 class UserCreate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     firstname: str = Field(min_length=1)
     lastname: str = Field(min_length=1)
     email: EmailStr
     phone: str | None = None
     boat_club: str | None = None
-    password: SecretStr = Field(min_length=8)
+    password: SecretStr = Field(min_length=8, strip_whitespace=False)
 
 
 class LoginIn(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     email: EmailStr
-    password: SecretStr
+    password: SecretStr = Field(strip_whitespace=False)
 
 
 class TokenOut(BaseModel):

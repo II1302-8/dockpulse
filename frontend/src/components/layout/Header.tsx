@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getMarinaNameCB } from "../../lib/marinas";
 import { cn } from "../../lib/utils";
@@ -5,12 +6,24 @@ import { cn } from "../../lib/utils";
 interface HeaderProps {
   isLoggedIn: boolean;
   onLoginClickCB: () => void;
+  onLogoutClickCB: () => void;
   userInitials?: string;
 }
 
-function Header({ isLoggedIn, onLoginClickCB, userInitials }: HeaderProps) {
+function Header({
+  isLoggedIn,
+  onLoginClickCB,
+  onLogoutClickCB,
+  userInitials,
+}: HeaderProps) {
   const { marinaSlug } = useParams<{ marinaSlug: string }>();
   const marinaName = getMarinaNameCB(marinaSlug);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+
+  function handleLogoutClick() {
+    setIsUserMenuOpen(false);
+    onLogoutClickCB();
+  }
 
   return (
     <header
@@ -48,11 +61,31 @@ function Header({ isLoggedIn, onLoginClickCB, userInitials }: HeaderProps) {
         </button>
       </nav>
 
-      <div className="flex items-center gap-4">
+      <div className="relative flex items-center gap-4">
         {isLoggedIn ? (
-          <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-brand-navy/40">
-            {userInitials}
-          </div>
+          <>
+            <button
+              type="button"
+              onClick={() => setIsUserMenuOpen((prev) => !prev)}
+              className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-bold text-brand-navy/40 transition-transform hover:scale-105"
+              aria-label="Open user menu"
+              aria-expanded={isUserMenuOpen}
+            >
+              {userInitials}
+            </button>
+
+            {isUserMenuOpen && (
+              <div className="absolute top-12 left-1/2 -translate-x-1/2 w-40 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
+                <button
+                  type="button"
+                  onClick={handleLogoutClick}
+                  className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-brand-navy transition-colors hover:bg-slate-100"
+                >
+                  Log out
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <button
             type="button"

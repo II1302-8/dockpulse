@@ -204,6 +204,28 @@ function MainLayout() {
     }
   }
 
+  async function handleLogout() {
+    const logoutToken = token;
+
+    localStorage.removeItem("token");
+    setToken(null);
+    setUser(null);
+    setIsLoginOpen(false);
+
+    if (!logoutToken) return;
+
+    try {
+      await fetch("/api/users/me/logout", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${logoutToken}`,
+        },
+      });
+    } catch {
+      // Local logout already happened. Network failure should not block logout.
+    }
+  }
+
   const userInitials =
     user?.firstname && user?.lastname
       ? `${user.firstname[0]}${user.lastname[0]}`
@@ -215,6 +237,7 @@ function MainLayout() {
         isLoggedIn={Boolean(token)}
         userInitials={userInitials}
         onLoginClickCB={() => setIsLoginOpen(true)}
+        onLogoutClickCB={handleLogout}
       />
 
       <main className="absolute inset-0 z-0">

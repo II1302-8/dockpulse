@@ -51,7 +51,7 @@ jobs:
           DATABASE_URL: postgresql+asyncpg://dockpulse:dockpulse@localhost:5432/dockpulse_test
         run: uv run alembic upgrade head
       - name: Run pytest
-        # tee captures coverage output for MishaKav while pipefail preserves pytest's exit code
+        # tee feeds mishakav, pipefail keeps pytest exit code
         run: |
           set -o pipefail
           uv run pytest -v --junitxml=pytest.xml | tee pytest-coverage.txt
@@ -64,10 +64,17 @@ jobs:
           junitxml-path: backend/pytest.xml
           title: Backend coverage
           hide-emoji: true
+          # push commit comments need contents:write, skip
+          hide-comment: ${{ github.event_name != 'pull_request' }}
       - name: Coverage step summary
         if: always() && steps.coverage_comment.outputs.summaryReport
+        # env indirection so bash doesn't parse `<` in html report as redirect
+        env:
+          REPORT: ${{ steps.coverage_comment.outputs.summaryReport }}
         run: |
-          echo "## Backend coverage" >> "$GITHUB_STEP_SUMMARY"
-          echo "${{ steps.coverage_comment.outputs.summaryReport }}" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## Backend coverage"
+            echo "$REPORT"
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: OpenAPI spec is in sync with FastAPI app
         run: uv run python -m scripts.dump_openapi --check

@@ -57,12 +57,7 @@ class UserOut(_BaseSchema):
 
 _NAME_FIELD = dict(min_length=1, max_length=100, pattern=r"^[\D]+$")
 _PHONE_FIELD = dict(pattern=r"^\+?[\d\s\-().]{7,20}$")
-_PASSWORD_FIELD = dict(
-    min_length=8,
-    max_length=128,
-    strip_whitespace=False,
-    json_schema_extra=lambda s: s.pop("strip_whitespace", None),
-)
+_PASSWORD_FIELD = dict(min_length=8, max_length=128)
 
 
 class UserPatch(BaseModel):

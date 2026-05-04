@@ -8,6 +8,7 @@ import type {
 import { Button } from "../components/shared/ui/button";
 import { Input } from "../components/shared/ui/input";
 import { Label } from "../components/shared/ui/label";
+import { NotificationSettings } from "../components/NotificationSettings";
 import { PasswordInput } from "../components/shared/ui/password-input";
 
 type SettingsForm = {
@@ -370,6 +371,8 @@ function Settings() {
           {isSaving ? "Saving..." : "Save changes"}
         </Button>
       </form>
+
+      {token && <NotificationSettings token={token} />}
     </main>
   );
 }

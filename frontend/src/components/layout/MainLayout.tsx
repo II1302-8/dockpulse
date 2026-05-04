@@ -3,21 +3,29 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { Toaster, toast } from "sonner";
+import { cn } from "../../lib/utils";
 import { Button } from "../shared/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "../shared/ui/dialog";
 import { Input } from "../shared/ui/input";
 import { Label } from "../shared/ui/label";
 import { PasswordInput } from "../shared/ui/password-input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../shared/ui/tabs";
+import {
+  DashboardLayoutProvider,
+  useDashboardLayout,
+} from "./DashboardLayoutContext";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
+import { SideMenu } from "./SideMenu";
 
 export type AuthUser = {
+  user_id?: string;
   email: string;
   firstname?: string;
   lastname?: string;
   phone?: string;
   boat_club?: string;
+  role?: string;
 };
 
 export type AuthOutletContext = {
@@ -105,16 +113,24 @@ async function getErrorMessage(
   }
 }
 
-function MainLayout() {
+interface MainLayoutContentProps {
+  user: AuthUser | null;
+  setUser: React.Dispatch<React.SetStateAction<AuthUser | null>>;
+  token: string | null;
+  setToken: React.Dispatch<React.SetStateAction<string | null>>;
+  isLoginOpen: boolean;
+  setIsLoginOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+function MainLayoutContent({
+  user,
+  setUser,
+  token,
+  setToken,
+  isLoginOpen,
+  setIsLoginOpen,
+}: MainLayoutContentProps) {
   const navigate = useNavigate();
-
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [user, setUser] = useState<AuthUser | null>(null);
-
-  // localStorage simpler than httpOnly cookies but XSS-readable; revisit
-  const [token, setToken] = useState<string | null>(
-    localStorage.getItem("token"),
-  );
 
   const [activeTab, setActiveTab] = useState<AuthTab>("login");
   const [loginForm, setLoginForm] = useState<LoginForm>(emptyLoginForm);
@@ -122,6 +138,18 @@ function MainLayout() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const {
+    isMenuExpanded,
+    setIsMenuExpanded,
+    isOverviewOpen,
+    isActivityLogOpen,
+    toggleOverview,
+    toggleActivityLog,
+    isDesktop,
+  } = useDashboardLayout();
+
+  const isHarborMaster = user?.role === "harbormaster";
 
   const passwordLength = signupForm.password.length;
   const passwordTooShort = passwordLength > 0 && passwordLength < PASSWORD_MIN;
@@ -143,44 +171,6 @@ function MainLayout() {
     passwordValid &&
     signupForm.confirmPassword.length > 0 &&
     !passwordMismatch;
-
-  useEffect(() => {
-    if (!token) {
-      setUser(null);
-      return;
-    }
-
-    // abort stale /me requests if token changes again before this resolves
-    const ac = new AbortController();
-
-    fetch("/api/users/me", {
-      headers: { Authorization: `Bearer ${token}` },
-      signal: ac.signal,
-    })
-      .then((res) => {
-        // only 401 clears session, transient errors leave token alone
-        if (res.status === 401) {
-          localStorage.removeItem("token");
-          setToken(null);
-          setUser(null);
-          setActiveTab("login");
-          setIsLoginOpen(true);
-          navigate("/", { replace: true });
-          return null;
-        }
-        if (!res.ok) throw new Error(`/me ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        if (data) setUser(data);
-      })
-      .catch((err) => {
-        if (err.name === "AbortError") return;
-        console.error("failed to load user", err);
-      });
-
-    return () => ac.abort();
-  }, [token, navigate]);
 
   function updateLoginForm(field: keyof LoginForm, value: string) {
     setLoginForm((prev) => ({ ...prev, [field]: value }));
@@ -340,7 +330,23 @@ function MainLayout() {
         onLogoutClickCB={handleLogout}
       />
 
-      <main className="absolute inset-0 z-0">
+      {isHarborMaster && (
+        <SideMenu
+          isExpanded={isMenuExpanded}
+          onToggle={() => setIsMenuExpanded(!isMenuExpanded)}
+          isOverviewActive={isOverviewOpen}
+          isActivityLogActive={isActivityLogOpen}
+          onOverviewToggle={toggleOverview}
+          onActivityLogToggle={toggleActivityLog}
+        />
+      )}
+
+      <main
+        className={cn(
+          "absolute inset-0 z-[var(--z-map)] transition-all duration-500 pointer-events-auto",
+          isHarborMaster && "lg:pl-20",
+        )}
+      >
         <Outlet
           context={
             {
@@ -623,10 +629,73 @@ function MainLayout() {
         </DialogContent>
       </Dialog>
 
-      <Footer />
+      {/* mobile harbormaster has bottom dock, footer would clash */}
+      {!isDesktop && isHarborMaster ? null : <Footer />}
 
       <Toaster position="top-center" richColors />
     </div>
+  );
+}
+
+function MainLayout() {
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [user, setUser] = useState<AuthUser | null>(null);
+
+  // localStorage simpler than httpOnly cookies but XSS-readable; revisit
+  const [token, setToken] = useState<string | null>(
+    localStorage.getItem("token"),
+  );
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!token) {
+      setUser(null);
+      return;
+    }
+
+    // abort stale /me requests if token changes again before this resolves
+    const ac = new AbortController();
+
+    fetch("/api/users/me", {
+      headers: { Authorization: `Bearer ${token}` },
+      signal: ac.signal,
+    })
+      .then((res) => {
+        // only 401 clears session, transient errors leave token alone
+        if (res.status === 401) {
+          localStorage.removeItem("token");
+          setToken(null);
+          setUser(null);
+          setIsLoginOpen(true);
+          navigate("/", { replace: true });
+          return null;
+        }
+        if (!res.ok) throw new Error(`/me ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        if (data) setUser(data);
+      })
+      .catch((err) => {
+        if (err.name === "AbortError") return;
+        console.error("failed to load user", err);
+      });
+
+    return () => ac.abort();
+  }, [token, navigate]);
+
+  return (
+    <DashboardLayoutProvider userRole={user?.role}>
+      <MainLayoutContent
+        user={user}
+        setUser={setUser}
+        token={token}
+        setToken={setToken}
+        isLoginOpen={isLoginOpen}
+        setIsLoginOpen={setIsLoginOpen}
+      />
+    </DashboardLayoutProvider>
   );
 }
 

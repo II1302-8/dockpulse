@@ -1,6 +1,6 @@
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { useEffect, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { Button } from "../shared/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "../shared/ui/dialog";
 import { Input } from "../shared/ui/input";
@@ -83,10 +83,14 @@ async function getErrorMessage(
 }
 
 function MainLayout() {
+  const navigate = useNavigate();
+
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
 
-  // TODO: Move token storage to httpOnly cookies (XSS-safe)
+  // Auth token storage choice: localStorage.
+  // Simple for this frontend task, but XSS-readable.
+  // Future improvement: move to httpOnly cookies with CSRF handling.
   const [token, setToken] = useState<string | null>(
     localStorage.getItem("token"),
   );
@@ -98,7 +102,10 @@ function MainLayout() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setUser(null);
+      return;
+    }
 
     fetch("/api/users/me", {
       headers: {
@@ -106,21 +113,20 @@ function MainLayout() {
       },
     })
       .then((res) => {
-        // only 401 clears session, transient errors leave token alone
-        if (res.status === 401) {
-          setUser(null);
-          setToken(null);
-          localStorage.removeItem("token");
-          return null;
-        }
-        if (!res.ok) throw new Error(`/me ${res.status}`);
+        if (res.status === 401) throw new Error("Session expired");
+        if (!res.ok) throw new Error("Could not load user profile.");
         return res.json();
       })
-      .then((data) => {
-        if (data) setUser(data);
-      })
-      .catch((err) => console.error("failed to load user", err));
-  }, [token]);
+      .then(setUser)
+      .catch(() => {
+        localStorage.removeItem("token");
+        setToken(null);
+        setUser(null);
+        setActiveTab("login");
+        setIsLoginOpen(true);
+        navigate("/", { replace: true });
+      });
+  }, [token, navigate]);
 
   function clearMessages() {
     setError(null);
@@ -178,6 +184,7 @@ function MainLayout() {
     }
 
     const { confirmPassword: _confirmPassword, ...rest } = signupForm;
+
     const signupPayload = {
       ...rest,
       email: rest.email.trim(),
@@ -205,6 +212,7 @@ function MainLayout() {
         password: signupForm.password,
       });
 
+      setSignupForm(emptySignupForm);
       setActiveTab("login");
       setSuccessMessage("Account created. You can now log in.");
     } catch (err) {
@@ -221,6 +229,7 @@ function MainLayout() {
     setToken(null);
     setUser(null);
     setIsLoginOpen(false);
+    navigate("/", { replace: true });
 
     if (!logoutToken) return;
 
@@ -231,9 +240,8 @@ function MainLayout() {
           Authorization: `Bearer ${logoutToken}`,
         },
       });
-    } catch (err) {
-      // local state already cleared. server token left to expire naturally
-      console.warn("logout request failed", err);
+    } catch {
+      // Local logout already happened. Network failure should not block logout.
     }
   }
 
@@ -245,7 +253,7 @@ function MainLayout() {
   return (
     <div className="bg-transparent duration-1000 font-body min-h-screen overflow-x-hidden relative transition-colors w-screen">
       <Header
-        isLoggedIn={Boolean(token)}
+        isLoggedIn={Boolean(user)}
         userInitials={userInitials}
         onLoginClickCB={() => setIsLoginOpen(true)}
         onLogoutClickCB={handleLogout}
@@ -270,7 +278,7 @@ function MainLayout() {
         open={isLoginOpen}
         onOpenChange={(open) => {
           setIsLoginOpen(open);
-          // reset form state on close so reopen starts fresh
+
           if (!open) {
             setLoginForm(emptyLoginForm);
             setSignupForm(emptySignupForm);
@@ -400,7 +408,7 @@ function MainLayout() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-phone">Phone (optional)</Label>
+                  <Label htmlFor="signup-phone">Phone optional</Label>
                   <Input
                     id="signup-phone"
                     type="tel"
@@ -411,7 +419,7 @@ function MainLayout() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-boat-club">Boat club (optional)</Label>
+                  <Label htmlFor="signup-boat-club">Boat club optional</Label>
                   <Input
                     id="signup-boat-club"
                     value={signupForm.boat_club}

@@ -1,15 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import type { AuthUser } from "../components/layout/MainLayout";
-
-type SettingsOutletContext = {
-  user: AuthUser | null;
-  setUser: React.Dispatch<React.SetStateAction<AuthUser | null>>;
-  token: string | null;
-  setToken: React.Dispatch<React.SetStateAction<string | null>>;
-  isLoginOpen: boolean;
-  setIsLoginOpen: React.Dispatch<React.SetStateAction<boolean>>;
-};
+import type {
+  AuthOutletContext,
+  AuthUser,
+} from "../components/layout/MainLayout";
+import { Button } from "../components/shared/ui/button";
+import { Input } from "../components/shared/ui/input";
+import { Label } from "../components/shared/ui/label";
 
 type SettingsForm = {
   firstname: string;
@@ -22,10 +19,6 @@ type SettingsForm = {
 };
 
 type FieldErrors = Partial<Record<keyof SettingsForm | "general", string>>;
-
-const inputClass = "w-full rounded border p-2";
-const labelClass = "space-y-1 text-sm font-semibold text-brand-navy";
-const errorClass = "text-sm text-red-500";
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -117,9 +110,12 @@ async function getErrorsFromResponse(res: Response): Promise<FieldErrors> {
   }
 }
 
+const errorClass = "text-sm text-red-500";
+const labelGroupClass = "space-y-1.5";
+
 function Settings() {
   const { user, setUser, token, setIsLoginOpen } =
-    useOutletContext<SettingsOutletContext>();
+    useOutletContext<AuthOutletContext>();
 
   const initialForm = useMemo(() => getInitialForm(user), [user]);
   const [form, setForm] = useState<SettingsForm>(initialForm);
@@ -191,7 +187,7 @@ function Settings() {
         return;
       }
 
-      const updatedUser = await res.json();
+      const updatedUser = (await res.json()) as AuthUser;
 
       setUser(updatedUser);
       setForm({
@@ -214,13 +210,13 @@ function Settings() {
         <p className="mt-2 text-brand-navy/60">
           You need to log in before editing your profile.
         </p>
-        <button
+        <Button
           type="button"
           onClick={() => setIsLoginOpen(true)}
-          className="mt-4 rounded-full bg-brand-blue px-6 py-2 text-sm font-bold text-white"
+          className="mt-4 rounded-full bg-brand-blue"
         >
           Log in
-        </button>
+        </Button>
       </main>
     );
   }
@@ -247,63 +243,64 @@ function Settings() {
         )}
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className={labelClass}>
-            First name
-            <input
-              className={inputClass}
+          <div className={labelGroupClass}>
+            <Label htmlFor="settings-firstname">First name</Label>
+            <Input
+              id="settings-firstname"
+              autoComplete="given-name"
               value={form.firstname}
               onChange={(e) => updateForm("firstname", e.target.value)}
             />
             {errors.firstname && (
-              <span className={errorClass}>{errors.firstname}</span>
+              <p className={errorClass}>{errors.firstname}</p>
             )}
-          </label>
+          </div>
 
-          <label className={labelClass}>
-            Last name
-            <input
-              className={inputClass}
+          <div className={labelGroupClass}>
+            <Label htmlFor="settings-lastname">Last name</Label>
+            <Input
+              id="settings-lastname"
+              autoComplete="family-name"
               value={form.lastname}
               onChange={(e) => updateForm("lastname", e.target.value)}
             />
-            {errors.lastname && (
-              <span className={errorClass}>{errors.lastname}</span>
-            )}
-          </label>
+            {errors.lastname && <p className={errorClass}>{errors.lastname}</p>}
+          </div>
         </div>
 
-        <label className={labelClass}>
-          Email
-          <input
+        <div className={labelGroupClass}>
+          <Label htmlFor="settings-email">Email</Label>
+          <Input
+            id="settings-email"
             type="email"
-            className={inputClass}
+            autoComplete="email"
             value={form.email}
             onChange={(e) => updateForm("email", e.target.value)}
           />
-          {errors.email && <span className={errorClass}>{errors.email}</span>}
-        </label>
+          {errors.email && <p className={errorClass}>{errors.email}</p>}
+        </div>
 
-        <label className={labelClass}>
-          Phone optional
-          <input
-            className={inputClass}
+        <div className={labelGroupClass}>
+          <Label htmlFor="settings-phone">Phone (optional)</Label>
+          <Input
+            id="settings-phone"
+            type="tel"
+            autoComplete="tel"
             value={form.phone}
             onChange={(e) => updateForm("phone", e.target.value)}
           />
-          {errors.phone && <span className={errorClass}>{errors.phone}</span>}
-        </label>
+          {errors.phone && <p className={errorClass}>{errors.phone}</p>}
+        </div>
 
-        <label className={labelClass}>
-          Home boat club
-          <input
-            className={inputClass}
+        <div className={labelGroupClass}>
+          <Label htmlFor="settings-boat-club">Home boat club (optional)</Label>
+          <Input
+            id="settings-boat-club"
             value={form.boat_club}
             onChange={(e) => updateForm("boat_club", e.target.value)}
           />
-          {errors.boat_club && (
-            <span className={errorClass}>{errors.boat_club}</span>
-          )}
-        </label>
+          {errors.boat_club && <p className={errorClass}>{errors.boat_club}</p>}
+        </div>
 
         <div className="border-t border-slate-200 pt-5">
           <h2 className="text-lg font-semibold text-brand-navy">
@@ -314,39 +311,39 @@ function Settings() {
           </p>
         </div>
 
-        <label className={labelClass}>
-          Current password
-          <input
+        <div className={labelGroupClass}>
+          <Label htmlFor="settings-current-password">Current password</Label>
+          <Input
+            id="settings-current-password"
             type="password"
-            className={inputClass}
+            autoComplete="current-password"
             value={form.current_password}
             onChange={(e) => updateForm("current_password", e.target.value)}
           />
           {errors.current_password && (
-            <span className={errorClass}>{errors.current_password}</span>
+            <p className={errorClass}>{errors.current_password}</p>
           )}
-        </label>
+        </div>
 
-        <label className={labelClass}>
-          New password
-          <input
+        <div className={labelGroupClass}>
+          <Label htmlFor="settings-new-password">New password</Label>
+          <Input
+            id="settings-new-password"
             type="password"
-            className={inputClass}
+            autoComplete="new-password"
             value={form.password}
             onChange={(e) => updateForm("password", e.target.value)}
           />
-          {errors.password && (
-            <span className={errorClass}>{errors.password}</span>
-          )}
-        </label>
+          {errors.password && <p className={errorClass}>{errors.password}</p>}
+        </div>
 
-        <button
+        <Button
           type="submit"
           disabled={isSaving}
-          className="w-full rounded-full bg-brand-navy p-3 text-sm font-bold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+          className="w-full rounded-full bg-brand-navy"
         >
           {isSaving ? "Saving..." : "Save changes"}
-        </button>
+        </Button>
       </form>
     </main>
   );

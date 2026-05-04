@@ -17,6 +17,15 @@ export type AuthUser = {
   boat_club?: string;
 };
 
+export type AuthOutletContext = {
+  user: AuthUser | null;
+  setUser: React.Dispatch<React.SetStateAction<AuthUser | null>>;
+  token: string | null;
+  setToken: React.Dispatch<React.SetStateAction<string | null>>;
+  isLoginOpen: boolean;
+  setIsLoginOpen: React.Dispatch<React.SetStateAction<boolean>>;
+};
+
 type AuthTab = "login" | "signup";
 
 type LoginForm = {
@@ -60,7 +69,7 @@ async function getErrorMessage(
 
     if (Array.isArray(data.detail)) {
       return data.detail
-        .map((err) => {
+        .map((err: { loc?: unknown[]; msg?: string }) => {
           const field = Array.isArray(err.loc) ? err.loc.at(-1) : null;
           return field ? `${field}: ${err.msg}` : err.msg;
         })
@@ -243,7 +252,18 @@ function MainLayout() {
       />
 
       <main className="absolute inset-0 z-0">
-        <Outlet />
+        <Outlet
+          context={
+            {
+              user,
+              setUser,
+              token,
+              setToken,
+              isLoginOpen,
+              setIsLoginOpen,
+            } satisfies AuthOutletContext
+          }
+        />
       </main>
 
       <Dialog

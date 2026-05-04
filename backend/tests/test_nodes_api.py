@@ -241,6 +241,40 @@ async def test_decommission_idempotent(client: AsyncClient, harbor_master: User,
     assert second.json()["health"] == "decommissioned"
 
 
+async def test_decommission_publishes_mqtt_once(
+    client: AsyncClient,
+    harbor_master: User,
+    fleet,
+    published_decommission_reqs: list[dict],
+):
+    headers = {"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"}
+    await client.post("/api/nodes/n-online/decommission", headers=headers)
+    # second call is a no-op, must not republish
+    await client.post("/api/nodes/n-online/decommission", headers=headers)
+
+    assert len(published_decommission_reqs) == 1
+    call = published_decommission_reqs[0]
+    assert call["gateway_id"] == "gw1"
+    assert call["node_id"] == "n-online"
+    assert call["berth_id"] == "b-online"
+    assert call["unicast_addr"] == "0x0001"
+    assert call["request_id"]
+
+
+async def test_decommission_already_decommissioned_does_not_publish(
+    client: AsyncClient,
+    harbor_master: User,
+    fleet,
+    published_decommission_reqs: list[dict],
+):
+    r = await client.post(
+        "/api/nodes/n-decom/decommission",
+        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+    )
+    assert r.status_code == 200
+    assert published_decommission_reqs == []
+
+
 async def test_decommission_404_unknown(
     client: AsyncClient, harbor_master: User, fleet
 ):

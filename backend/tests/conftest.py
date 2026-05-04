@@ -73,6 +73,17 @@ def published_provision_reqs(monkeypatch) -> list[dict]:
 
 
 @pytest.fixture(autouse=True)
+def published_decommission_reqs(monkeypatch) -> list[dict]:
+    captured: list[dict] = []
+
+    async def _fake_publish(**kwargs):
+        captured.append(kwargs)
+
+    monkeypatch.setattr("app.routers.nodes.publish_decommission_req", _fake_publish)
+    return captured
+
+
+@pytest.fixture(autouse=True)
 def _reset_settings_cache():
     # get_settings is lru_cached so drop after env monkeypatching
     get_settings.cache_clear()

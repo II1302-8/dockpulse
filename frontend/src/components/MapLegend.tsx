@@ -1,4 +1,4 @@
-import { Info, X as CloseIcon } from "lucide-react";
+import { X as CloseIcon, Info } from "lucide-react";
 import { useState } from "react";
 
 export function MapLegend() {
@@ -9,7 +9,9 @@ export function MapLegend() {
       {/* Desktop / Expanded Legend */}
       <div
         className={`p-2 transition-all duration-500 ease-in-out pointer-events-auto ${
-          isOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4 lg:opacity-100 lg:translate-y-0"
+          isOpen
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 -translate-y-4 lg:opacity-100 lg:translate-y-0"
         }`}
       >
         <div className="flex items-center justify-between mb-2 lg:hidden">
@@ -25,7 +27,12 @@ export function MapLegend() {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 flex items-center justify-center">
-              <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+              >
                 <circle
                   cx="8"
                   cy="8"
@@ -43,7 +50,12 @@ export function MapLegend() {
 
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 flex items-center justify-center">
-              <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+              >
                 <g stroke="#EF4444" strokeWidth="3">
                   <line x1="4" y1="4" x2="12" y2="12" />
                   <line x1="4" y1="12" x2="12" y2="4" />
@@ -57,7 +69,12 @@ export function MapLegend() {
 
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 flex items-center justify-center">
-              <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 16 16"
+                aria-hidden="true"
+              >
                 <circle cx="8" cy="8" r="3" fill="rgba(10, 37, 64, 0.2)" />
               </svg>
             </div>

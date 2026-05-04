@@ -88,9 +88,7 @@ function MainLayout() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [user, setUser] = useState<AuthUser | null>(null);
 
-  // Auth token storage choice: localStorage.
-  // Simple for this frontend task, but XSS-readable.
-  // Future improvement: move to httpOnly cookies with CSRF handling.
+  // localStorage simpler than httpOnly cookies but XSS-readable; revisit
   const [token, setToken] = useState<string | null>(
     localStorage.getItem("token"),
   );
@@ -113,19 +111,23 @@ function MainLayout() {
       },
     })
       .then((res) => {
-        if (res.status === 401) throw new Error("Session expired");
-        if (!res.ok) throw new Error("Could not load user profile.");
+        // only 401 clears session, transient errors leave token alone
+        if (res.status === 401) {
+          localStorage.removeItem("token");
+          setToken(null);
+          setUser(null);
+          setActiveTab("login");
+          setIsLoginOpen(true);
+          navigate("/", { replace: true });
+          return null;
+        }
+        if (!res.ok) throw new Error(`/me ${res.status}`);
         return res.json();
       })
-      .then(setUser)
-      .catch(() => {
-        localStorage.removeItem("token");
-        setToken(null);
-        setUser(null);
-        setActiveTab("login");
-        setIsLoginOpen(true);
-        navigate("/", { replace: true });
-      });
+      .then((data) => {
+        if (data) setUser(data);
+      })
+      .catch((err) => console.error("failed to load user", err));
   }, [token, navigate]);
 
   function clearMessages() {
@@ -241,7 +243,7 @@ function MainLayout() {
         },
       });
     } catch {
-      // Local logout already happened. Network failure should not block logout.
+      // local state already cleared. server token left to expire naturally
     }
   }
 
@@ -408,7 +410,7 @@ function MainLayout() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-phone">Phone optional</Label>
+                  <Label htmlFor="signup-phone">Phone (optional)</Label>
                   <Input
                     id="signup-phone"
                     type="tel"
@@ -419,7 +421,7 @@ function MainLayout() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-boat-club">Boat club optional</Label>
+                  <Label htmlFor="signup-boat-club">Boat club (optional)</Label>
                   <Input
                     id="signup-boat-club"
                     value={signupForm.boat_club}

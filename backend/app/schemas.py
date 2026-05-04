@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr
 
@@ -56,32 +56,38 @@ class UserOut(_BaseSchema):
 
 
 # \p{L} unicode letter \p{M} combining marks
-_NAME_FIELD = dict(min_length=1, max_length=100, pattern=r"^[\p{L}\p{M}'’ .\-]+$")
+_NAME = Field(min_length=1, max_length=100, pattern=r"^[\p{L}\p{M}'’ .\-]+$")
 # 7 to 15 digits E.164 separators not counted
-_PHONE_FIELD = dict(max_length=20, pattern=r"^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$")
-_PASSWORD_FIELD = dict(min_length=8, max_length=128)
+_PHONE = Field(max_length=20, pattern=r"^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$")
+_PASSWORD = Field(min_length=8, max_length=128)
+
+Name = Annotated[str, _NAME]
+NameOpt = Annotated[str | None, _NAME]
+PhoneOpt = Annotated[str | None, _PHONE]
+Password = Annotated[SecretStr, _PASSWORD]
+PasswordOpt = Annotated[SecretStr | None, _PASSWORD]
 
 
 class UserPatch(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    firstname: str | None = Field(default=None, **_NAME_FIELD)
-    lastname: str | None = Field(default=None, **_NAME_FIELD)
+    firstname: NameOpt = None
+    lastname: NameOpt = None
     email: EmailStr | None = None
-    phone: str | None = Field(default=None, **_PHONE_FIELD)
+    phone: PhoneOpt = None
     boat_club: str | None = Field(default=None, max_length=100)
-    password: SecretStr | None = Field(default=None, **_PASSWORD_FIELD)
+    password: PasswordOpt = None
 
 
 class UserCreate(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    firstname: str = Field(**_NAME_FIELD)
-    lastname: str = Field(**_NAME_FIELD)
+    firstname: Name
+    lastname: Name
     email: EmailStr
-    phone: str | None = Field(default=None, **_PHONE_FIELD)
+    phone: PhoneOpt = None
     boat_club: str | None = Field(default=None, max_length=100)
-    password: SecretStr = Field(**_PASSWORD_FIELD)
+    password: Password
 
 
 class LoginIn(BaseModel):

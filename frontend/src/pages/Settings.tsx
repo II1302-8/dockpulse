@@ -45,13 +45,8 @@ function isValidEmail(email: string) {
 function validateForm(form: SettingsForm): FieldErrors {
   const errors: FieldErrors = {};
 
-  if (!form.firstname.trim()) {
-    errors.firstname = "First name is required.";
-  }
-
-  if (!form.lastname.trim()) {
-    errors.lastname = "Last name is required.";
-  }
+  if (!form.firstname.trim()) errors.firstname = "First name is required.";
+  if (!form.lastname.trim()) errors.lastname = "Last name is required.";
 
   if (!form.email.trim()) {
     errors.email = "Email is required.";
@@ -231,9 +226,14 @@ function Settings() {
     }
 
     const trimmedConfirmation = deleteConfirmText.trim();
+    const normalizedConfirmation = trimmedConfirmation.toLowerCase();
     const email = user?.email ?? "";
+    const normalizedEmail = email.trim().toLowerCase();
 
-    if (trimmedConfirmation !== "DELETE" && trimmedConfirmation !== email) {
+    if (
+      trimmedConfirmation !== "DELETE" &&
+      normalizedConfirmation !== normalizedEmail
+    ) {
       setDeleteError(`Type DELETE or ${email} to confirm.`);
       return;
     }
@@ -287,9 +287,12 @@ function Settings() {
     );
   }
 
+  const normalizedDeleteConfirmText = deleteConfirmText.trim().toLowerCase();
+  const normalizedUserEmail = user.email.trim().toLowerCase();
+
   const canDelete =
     deleteConfirmText.trim() === "DELETE" ||
-    deleteConfirmText.trim() === user.email;
+    normalizedDeleteConfirmText === normalizedUserEmail;
 
   return (
     <main className="mx-auto max-w-2xl px-4 pt-36 pb-20">
@@ -421,6 +424,9 @@ function Settings() {
               value={form.password}
               onChange={(e) => updateForm("password", e.target.value)}
             />
+            <p className="text-xs text-brand-navy/50">
+              Password must be at least {MIN_PASSWORD_LENGTH} characters.
+            </p>
             {errors.password && <p className={errorClass}>{errors.password}</p>}
           </div>
         </fieldset>

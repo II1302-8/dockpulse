@@ -4,7 +4,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr
 
-# read APP_ENV directly instead of via Settings to dodge import-time SECRET_KEY requirement
+# read directly to dodge Settings' import-time SECRET_KEY requirement
 _APP_ENV = os.getenv("APP_ENV", "dev")
 
 
@@ -42,7 +42,7 @@ _PHONE = Field(
     pattern=r"^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$",
     examples=["+46 70 123 45 67"],
 )
-# prod gets 12 char floor per nist 800-63b rev 4 / owasp asvs 5, dev/staging relaxed for testing
+# prod floor per nist 800-63b rev 4, dev/staging relaxed for local testing
 _PASSWORD_MIN = 12 if _APP_ENV == "prod" else 4
 _PASSWORD = Field(
     min_length=_PASSWORD_MIN,
@@ -109,9 +109,7 @@ class GatewayOut(_BaseSchema):
     dock_id: str = Field(examples=["dock-a"])
     name: str = Field(examples=["Pier A gateway"])
     status: GatewayStatus
-    last_seen: datetime | None = Field(
-        default=None, examples=["2026-05-03T14:30:00Z"]
-    )
+    last_seen: datetime | None = Field(default=None, examples=["2026-05-03T14:30:00Z"])
 
 
 # --- nodes / events / adoption ---

@@ -1,3 +1,4 @@
+import { Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getMarinaNameCB } from "../../lib/marinas";
@@ -5,6 +6,7 @@ import { cn } from "../../lib/utils";
 
 interface HeaderProps {
   isLoggedIn: boolean;
+  isLoggingOut?: boolean;
   onLoginClickCB: () => void;
   onLogoutClickCB: () => void;
   userInitials?: string;
@@ -12,6 +14,7 @@ interface HeaderProps {
 
 function Header({
   isLoggedIn,
+  isLoggingOut = false,
   onLoginClickCB,
   onLogoutClickCB,
   userInitials,
@@ -49,7 +52,7 @@ function Header({
   }
 
   function handleLogoutClick() {
-    closeUserMenu();
+    if (isLoggingOut) return;
     onLogoutClickCB();
   }
 
@@ -121,9 +124,17 @@ function Header({
                   type="button"
                   role="menuitem"
                   onClick={handleLogoutClick}
-                  className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-brand-navy transition-colors hover:bg-slate-100"
+                  disabled={isLoggingOut}
+                  aria-busy={isLoggingOut}
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold text-brand-navy transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Log out
+                  {isLoggingOut && (
+                    <Loader2
+                      className="h-4 w-4 animate-spin"
+                      aria-hidden="true"
+                    />
+                  )}
+                  {isLoggingOut ? "Logging out…" : "Log out"}
                 </button>
               </div>
             )}

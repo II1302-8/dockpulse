@@ -1,4 +1,5 @@
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { Toaster, toast } from "sonner";
@@ -6,6 +7,7 @@ import { Button } from "../shared/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "../shared/ui/dialog";
 import { Input } from "../shared/ui/input";
 import { Label } from "../shared/ui/label";
+import { PasswordInput } from "../shared/ui/password-input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../shared/ui/tabs";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
@@ -42,7 +44,8 @@ type SignupForm = LoginForm & {
   boat_club: string;
 };
 
-const PASSWORD_MIN = 8;
+// mirror backend APP_ENV: prod build enforces the 12 char floor, dev/staging relaxed for testing
+const PASSWORD_MIN = import.meta.env.MODE === "production" ? 12 : 4;
 const PASSWORD_MAX = 128;
 
 const emptyLoginForm: LoginForm = {
@@ -64,6 +67,14 @@ function RequiredMark() {
   return (
     <span aria-hidden="true" className="ml-0.5 text-red-500">
       *
+    </span>
+  );
+}
+
+function OptionalMark() {
+  return (
+    <span className="ml-1 text-xs font-normal text-muted-foreground">
+      (optional)
     </span>
   );
 }
@@ -110,6 +121,7 @@ function MainLayout() {
   const [signupForm, setSignupForm] = useState<SignupForm>(emptySignupForm);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const passwordLength = signupForm.password.length;
   const passwordTooShort = passwordLength > 0 && passwordLength < PASSWORD_MIN;
@@ -275,25 +287,41 @@ function MainLayout() {
   }
 
   async function handleLogout() {
+    if (isLoggingOut) return;
+
     const logoutToken = token;
 
+    setIsLoggingOut(true);
     localStorage.removeItem("token");
     setToken(null);
     setUser(null);
     setIsLoginOpen(false);
     navigate("/", { replace: true });
 
-    if (!logoutToken) return;
+    if (!logoutToken) {
+      setIsLoggingOut(false);
+      return;
+    }
 
     try {
-      await fetch("/api/auth/logout", {
+      const res = await fetch("/api/auth/logout", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${logoutToken}`,
         },
       });
+      // local session already gone, but warn user the server still holds the token
+      if (!res.ok) {
+        toast.warning(
+          "Logged out locally, but the server didn't confirm. Token will expire on its own.",
+        );
+      }
     } catch {
-      // local state already cleared. server token left to expire naturally
+      toast.warning(
+        "Logged out locally, but couldn't reach the server. Token will expire on its own.",
+      );
+    } finally {
+      setIsLoggingOut(false);
     }
   }
 
@@ -305,7 +333,8 @@ function MainLayout() {
   return (
     <div className="bg-transparent duration-1000 font-body min-h-screen overflow-x-hidden relative transition-colors w-screen">
       <Header
-        isLoggedIn={Boolean(user)}
+        isLoggedIn={Boolean(token)}
+        isLoggingOut={isLoggingOut}
         userInitials={userInitials}
         onLoginClickCB={() => setIsLoginOpen(true)}
         onLogoutClickCB={handleLogout}
@@ -359,45 +388,62 @@ function MainLayout() {
 
             <TabsContent value="login" className="mt-4">
               <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">
-                    Email
-                    <RequiredMark />
-                  </Label>
-                  <Input
-                    id="login-email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={loginForm.email}
-                    onChange={(e) => updateLoginForm("email", e.target.value)}
-                  />
-                </div>
+                <fieldset
+                  disabled={isSubmitting}
+                  className="space-y-4 border-0 p-0 m-0 disabled:opacity-60"
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email">
+                      Email
+                      <RequiredMark />
+                    </Label>
+                    <Input
+                      id="login-email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={loginForm.email}
+                      onChange={(e) => updateLoginForm("email", e.target.value)}
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">
-                    Password
-                    <RequiredMark />
-                  </Label>
-                  <Input
-                    id="login-password"
-                    type="password"
-                    autoComplete="current-password"
-                    required
-                    value={loginForm.password}
-                    onChange={(e) =>
-                      updateLoginForm("password", e.target.value)
-                    }
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="login-password">
+                      Password
+                      <RequiredMark />
+                    </Label>
+                    <PasswordInput
+                      id="login-password"
+                      autoComplete="current-password"
+                      required
+                      value={loginForm.password}
+                      onChange={(e) =>
+                        updateLoginForm("password", e.target.value)
+                      }
+                    />
+                  </div>
+                </fieldset>
 
-                {error && <p className="text-red-500 text-sm">{error}</p>}
+                <p
+                  role="alert"
+                  aria-live="assertive"
+                  className="text-red-500 text-sm min-h-[1.25rem]"
+                >
+                  {error ?? ""}
+                </p>
 
                 <Button
                   type="submit"
                   disabled={isSubmitting || !loginReady}
+                  aria-busy={isSubmitting}
                   className="w-full bg-brand-blue hover:bg-brand-blue/90"
                 >
+                  {isSubmitting && (
+                    <Loader2
+                      className="h-4 w-4 animate-spin"
+                      aria-hidden="true"
+                    />
+                  )}
                   {isSubmitting ? "Logging in…" : "Log in"}
                 </Button>
               </form>
@@ -405,140 +451,170 @@ function MainLayout() {
 
             <TabsContent value="signup" className="mt-4">
               <form onSubmit={handleSignup} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">
-                    Email
-                    <RequiredMark />
-                  </Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={signupForm.email}
-                    onChange={(e) => updateSignupForm("email", e.target.value)}
-                  />
-                </div>
+                <fieldset
+                  disabled={isSubmitting}
+                  className="space-y-4 border-0 p-0 m-0 disabled:opacity-60"
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">
+                      Email
+                      <RequiredMark />
+                    </Label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={signupForm.email}
+                      onChange={(e) =>
+                        updateSignupForm("email", e.target.value)
+                      }
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">
-                    Password
-                    <RequiredMark />
-                  </Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    minLength={PASSWORD_MIN}
-                    maxLength={PASSWORD_MAX}
-                    aria-invalid={passwordTooShort}
-                    aria-describedby="signup-password-hint"
-                    value={signupForm.password}
-                    onChange={(e) =>
-                      updateSignupForm("password", e.target.value)
-                    }
-                  />
-                  <p
-                    id="signup-password-hint"
-                    className={`text-sm ${
-                      passwordLength === 0
-                        ? "text-muted-foreground"
-                        : passwordValid
-                          ? "text-emerald-600"
-                          : "text-red-500"
-                    }`}
-                  >
-                    {passwordValid
-                      ? `Looks good (${passwordLength} characters).`
-                      : `Must be at least ${PASSWORD_MIN} characters.`}
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-confirm-password">
-                    Confirm password
-                    <RequiredMark />
-                  </Label>
-                  <Input
-                    id="signup-confirm-password"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    aria-invalid={passwordMismatch}
-                    value={signupForm.confirmPassword}
-                    onChange={(e) =>
-                      updateSignupForm("confirmPassword", e.target.value)
-                    }
-                  />
-                  {passwordMismatch && (
-                    <p className="text-red-500 text-sm">
-                      Passwords do not match.
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">
+                      Password
+                      <RequiredMark />
+                    </Label>
+                    <PasswordInput
+                      id="signup-password"
+                      autoComplete="new-password"
+                      required
+                      minLength={PASSWORD_MIN}
+                      maxLength={PASSWORD_MAX}
+                      aria-invalid={passwordTooShort}
+                      aria-describedby="signup-password-hint"
+                      value={signupForm.password}
+                      onChange={(e) =>
+                        updateSignupForm("password", e.target.value)
+                      }
+                    />
+                    <p
+                      id="signup-password-hint"
+                      aria-live="polite"
+                      className={`text-sm ${
+                        passwordLength === 0
+                          ? "text-muted-foreground"
+                          : passwordValid
+                            ? "text-emerald-600"
+                            : "text-red-500"
+                      }`}
+                    >
+                      {passwordValid
+                        ? `Looks good (${passwordLength} characters).`
+                        : `Must be at least ${PASSWORD_MIN} characters.`}
                     </p>
-                  )}
-                </div>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-firstname">
-                    First name
-                    <RequiredMark />
-                  </Label>
-                  <Input
-                    id="signup-firstname"
-                    autoComplete="given-name"
-                    required
-                    value={signupForm.firstname}
-                    onChange={(e) =>
-                      updateSignupForm("firstname", e.target.value)
-                    }
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-confirm-password">
+                      Confirm password
+                      <RequiredMark />
+                    </Label>
+                    <PasswordInput
+                      id="signup-confirm-password"
+                      autoComplete="new-password"
+                      required
+                      aria-invalid={passwordMismatch}
+                      aria-describedby="signup-confirm-hint"
+                      value={signupForm.confirmPassword}
+                      onChange={(e) =>
+                        updateSignupForm("confirmPassword", e.target.value)
+                      }
+                    />
+                    <p
+                      id="signup-confirm-hint"
+                      aria-live="polite"
+                      className="text-red-500 text-sm min-h-[1.25rem]"
+                    >
+                      {passwordMismatch ? "Passwords do not match." : ""}
+                    </p>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-lastname">
-                    Last name
-                    <RequiredMark />
-                  </Label>
-                  <Input
-                    id="signup-lastname"
-                    autoComplete="family-name"
-                    required
-                    value={signupForm.lastname}
-                    onChange={(e) =>
-                      updateSignupForm("lastname", e.target.value)
-                    }
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-firstname">
+                      First name
+                      <RequiredMark />
+                    </Label>
+                    <Input
+                      id="signup-firstname"
+                      autoComplete="given-name"
+                      required
+                      value={signupForm.firstname}
+                      onChange={(e) =>
+                        updateSignupForm("firstname", e.target.value)
+                      }
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-phone">Phone</Label>
-                  <Input
-                    id="signup-phone"
-                    type="tel"
-                    autoComplete="tel"
-                    value={signupForm.phone}
-                    onChange={(e) => updateSignupForm("phone", e.target.value)}
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-lastname">
+                      Last name
+                      <RequiredMark />
+                    </Label>
+                    <Input
+                      id="signup-lastname"
+                      autoComplete="family-name"
+                      required
+                      value={signupForm.lastname}
+                      onChange={(e) =>
+                        updateSignupForm("lastname", e.target.value)
+                      }
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-boat-club">Boat club</Label>
-                  <Input
-                    id="signup-boat-club"
-                    value={signupForm.boat_club}
-                    onChange={(e) =>
-                      updateSignupForm("boat_club", e.target.value)
-                    }
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-phone">
+                      Phone
+                      <OptionalMark />
+                    </Label>
+                    <Input
+                      id="signup-phone"
+                      type="tel"
+                      autoComplete="tel"
+                      value={signupForm.phone}
+                      onChange={(e) =>
+                        updateSignupForm("phone", e.target.value)
+                      }
+                    />
+                  </div>
 
-                {error && <p className="text-red-500 text-sm">{error}</p>}
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-boat-club">
+                      Boat club
+                      <OptionalMark />
+                    </Label>
+                    <Input
+                      id="signup-boat-club"
+                      value={signupForm.boat_club}
+                      onChange={(e) =>
+                        updateSignupForm("boat_club", e.target.value)
+                      }
+                    />
+                  </div>
+                </fieldset>
+
+                <p
+                  role="alert"
+                  aria-live="assertive"
+                  className="text-red-500 text-sm min-h-[1.25rem]"
+                >
+                  {error ?? ""}
+                </p>
 
                 <Button
                   type="submit"
                   disabled={isSubmitting || !signupReady}
+                  aria-busy={isSubmitting}
                   className="w-full bg-brand-navy hover:bg-brand-navy/90"
                 >
+                  {isSubmitting && (
+                    <Loader2
+                      className="h-4 w-4 animate-spin"
+                      aria-hidden="true"
+                    />
+                  )}
                   {isSubmitting ? "Creating account…" : "Sign up"}
                 </Button>
               </form>

@@ -1,3 +1,4 @@
+import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import type {
@@ -7,6 +8,7 @@ import type {
 import { Button } from "../components/shared/ui/button";
 import { Input } from "../components/shared/ui/input";
 import { Label } from "../components/shared/ui/label";
+import { PasswordInput } from "../components/shared/ui/password-input";
 
 type SettingsForm = {
   firstname: string;
@@ -20,7 +22,8 @@ type SettingsForm = {
 
 type FieldErrors = Partial<Record<keyof SettingsForm | "general", string>>;
 
-const MIN_PASSWORD_LENGTH = 8;
+// mirror backend APP_ENV: prod build enforces the 12 char floor, dev/staging relaxed for testing
+const MIN_PASSWORD_LENGTH = import.meta.env.MODE === "production" ? 12 : 4;
 
 function getInitialForm(user: AuthUser | null): SettingsForm {
   return {
@@ -234,114 +237,136 @@ function Settings() {
         onSubmit={handleSubmit}
         className="space-y-5 rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-lg backdrop-blur"
       >
-        {errors.general && <p className={errorClass}>{errors.general}</p>}
+        <p
+          role="alert"
+          aria-live="assertive"
+          className={`${errorClass} min-h-[1.25rem]`}
+        >
+          {errors.general ?? ""}
+        </p>
 
-        {successMessage && (
-          <p className="rounded-xl bg-green-50 p-3 text-sm font-medium text-green-700">
-            {successMessage}
-          </p>
-        )}
+        <div role="status" aria-live="polite">
+          {successMessage && (
+            <p className="rounded-xl bg-green-50 p-3 text-sm font-medium text-green-700">
+              {successMessage}
+            </p>
+          )}
+        </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <fieldset
+          disabled={isSaving}
+          className="space-y-5 border-0 p-0 m-0 disabled:opacity-60"
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className={labelGroupClass}>
+              <Label htmlFor="settings-firstname">First name</Label>
+              <Input
+                id="settings-firstname"
+                autoComplete="given-name"
+                value={form.firstname}
+                onChange={(e) => updateForm("firstname", e.target.value)}
+              />
+              {errors.firstname && (
+                <p className={errorClass}>{errors.firstname}</p>
+              )}
+            </div>
+
+            <div className={labelGroupClass}>
+              <Label htmlFor="settings-lastname">Last name</Label>
+              <Input
+                id="settings-lastname"
+                autoComplete="family-name"
+                value={form.lastname}
+                onChange={(e) => updateForm("lastname", e.target.value)}
+              />
+              {errors.lastname && (
+                <p className={errorClass}>{errors.lastname}</p>
+              )}
+            </div>
+          </div>
+
           <div className={labelGroupClass}>
-            <Label htmlFor="settings-firstname">First name</Label>
+            <Label htmlFor="settings-email">Email</Label>
             <Input
-              id="settings-firstname"
-              autoComplete="given-name"
-              value={form.firstname}
-              onChange={(e) => updateForm("firstname", e.target.value)}
+              id="settings-email"
+              type="email"
+              autoComplete="email"
+              value={form.email}
+              onChange={(e) => updateForm("email", e.target.value)}
             />
-            {errors.firstname && (
-              <p className={errorClass}>{errors.firstname}</p>
+            {errors.email && <p className={errorClass}>{errors.email}</p>}
+          </div>
+
+          <div className={labelGroupClass}>
+            <Label htmlFor="settings-phone">Phone (optional)</Label>
+            <Input
+              id="settings-phone"
+              type="tel"
+              autoComplete="tel"
+              value={form.phone}
+              onChange={(e) => updateForm("phone", e.target.value)}
+            />
+            {errors.phone && <p className={errorClass}>{errors.phone}</p>}
+          </div>
+
+          <div className={labelGroupClass}>
+            <Label htmlFor="settings-boat-club">
+              Home boat club (optional)
+            </Label>
+            <Input
+              id="settings-boat-club"
+              value={form.boat_club}
+              onChange={(e) => updateForm("boat_club", e.target.value)}
+            />
+            {errors.boat_club && (
+              <p className={errorClass}>{errors.boat_club}</p>
+            )}
+          </div>
+
+          <div className="border-t border-slate-200 pt-5">
+            <h2 className="text-lg font-semibold text-brand-navy">
+              Change password
+            </h2>
+            <p className="mt-1 text-sm text-brand-navy/60">
+              Leave these fields empty if you do not want to change your
+              password.
+            </p>
+          </div>
+
+          <div className={labelGroupClass}>
+            <Label htmlFor="settings-current-password">Current password</Label>
+            <PasswordInput
+              id="settings-current-password"
+              autoComplete="current-password"
+              value={form.current_password}
+              onChange={(e) => updateForm("current_password", e.target.value)}
+            />
+            {errors.current_password && (
+              <p className={errorClass}>{errors.current_password}</p>
             )}
           </div>
 
           <div className={labelGroupClass}>
-            <Label htmlFor="settings-lastname">Last name</Label>
-            <Input
-              id="settings-lastname"
-              autoComplete="family-name"
-              value={form.lastname}
-              onChange={(e) => updateForm("lastname", e.target.value)}
+            <Label htmlFor="settings-new-password">New password</Label>
+            <PasswordInput
+              id="settings-new-password"
+              autoComplete="new-password"
+              value={form.password}
+              onChange={(e) => updateForm("password", e.target.value)}
             />
-            {errors.lastname && <p className={errorClass}>{errors.lastname}</p>}
+            {errors.password && <p className={errorClass}>{errors.password}</p>}
           </div>
-        </div>
-
-        <div className={labelGroupClass}>
-          <Label htmlFor="settings-email">Email</Label>
-          <Input
-            id="settings-email"
-            type="email"
-            autoComplete="email"
-            value={form.email}
-            onChange={(e) => updateForm("email", e.target.value)}
-          />
-          {errors.email && <p className={errorClass}>{errors.email}</p>}
-        </div>
-
-        <div className={labelGroupClass}>
-          <Label htmlFor="settings-phone">Phone (optional)</Label>
-          <Input
-            id="settings-phone"
-            type="tel"
-            autoComplete="tel"
-            value={form.phone}
-            onChange={(e) => updateForm("phone", e.target.value)}
-          />
-          {errors.phone && <p className={errorClass}>{errors.phone}</p>}
-        </div>
-
-        <div className={labelGroupClass}>
-          <Label htmlFor="settings-boat-club">Home boat club (optional)</Label>
-          <Input
-            id="settings-boat-club"
-            value={form.boat_club}
-            onChange={(e) => updateForm("boat_club", e.target.value)}
-          />
-          {errors.boat_club && <p className={errorClass}>{errors.boat_club}</p>}
-        </div>
-
-        <div className="border-t border-slate-200 pt-5">
-          <h2 className="text-lg font-semibold text-brand-navy">
-            Change password
-          </h2>
-          <p className="mt-1 text-sm text-brand-navy/60">
-            Leave these fields empty if you do not want to change your password.
-          </p>
-        </div>
-
-        <div className={labelGroupClass}>
-          <Label htmlFor="settings-current-password">Current password</Label>
-          <Input
-            id="settings-current-password"
-            type="password"
-            autoComplete="current-password"
-            value={form.current_password}
-            onChange={(e) => updateForm("current_password", e.target.value)}
-          />
-          {errors.current_password && (
-            <p className={errorClass}>{errors.current_password}</p>
-          )}
-        </div>
-
-        <div className={labelGroupClass}>
-          <Label htmlFor="settings-new-password">New password</Label>
-          <Input
-            id="settings-new-password"
-            type="password"
-            autoComplete="new-password"
-            value={form.password}
-            onChange={(e) => updateForm("password", e.target.value)}
-          />
-          {errors.password && <p className={errorClass}>{errors.password}</p>}
-        </div>
+        </fieldset>
 
         <Button
           type="submit"
           disabled={isSaving}
+          aria-busy={isSaving}
           className="w-full rounded-full bg-brand-navy"
         >
+          {isSaving && (
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          )}
           {isSaving ? "Saving..." : "Save changes"}
         </Button>
       </form>

@@ -1,4 +1,5 @@
 from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 
@@ -48,6 +49,20 @@ async def update_me(body: UserPatch, current_user: CurrentUserDep, session: Sess
             setattr(current_user, field, value)
 
     if body.password is not None:
+        if body.current_password is None:
+            raise HTTPException(
+                status_code=422,
+                detail="Current password is required to change password.",
+            )
+        try:
+            _ph.verify(
+                current_user.password_hash,
+                body.current_password.get_secret_value(),
+            )
+        except VerifyMismatchError:
+            raise HTTPException(
+                status_code=401, detail="Current password is incorrect."
+            ) from None
         current_user.password_hash = _hash_password(body.password.get_secret_value())
 
     session.add(current_user)

@@ -739,6 +739,8 @@ export interface components {
         UserPatch: {
             /** Boat Club */
             boat_club?: string | null;
+            /** Current Password */
+            current_password?: string | null;
             /** Email */
             email?: string | null;
             /** Firstname */

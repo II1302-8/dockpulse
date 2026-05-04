@@ -70,12 +70,39 @@ async def test_patch_me_updates_password(
     token = make_token(test_user.user_id)
     r = await client.patch(
         "/api/users/me",
-        json={"password": "newpassword"},
+        json={"password": "newpassword", "current_password": "secretpassword"},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 200
     await session.refresh(test_user)
     assert verify_password(test_user.password_hash, "newpassword")
+
+
+async def test_patch_me_password_requires_current_password(
+    client: AsyncClient, test_user: User
+):
+    token = make_token(test_user.user_id)
+    r = await client.patch(
+        "/api/users/me",
+        json={"password": "newpassword"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 422
+
+
+async def test_patch_me_password_rejects_wrong_current_password(
+    client: AsyncClient, test_user: User, session: AsyncSession
+):
+    token = make_token(test_user.user_id)
+    original_hash = test_user.password_hash
+    r = await client.patch(
+        "/api/users/me",
+        json={"password": "newpassword", "current_password": "wrongpassword"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert r.status_code == 401
+    await session.refresh(test_user)
+    assert test_user.password_hash == original_hash
 
 
 async def test_patch_me_email_conflict(

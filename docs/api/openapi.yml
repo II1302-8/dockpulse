@@ -626,6 +626,13 @@ components:
             type: string
           - type: 'null'
           title: Boat Club
+        current_password:
+          anyOf:
+          - format: password
+            type: string
+            writeOnly: true
+          - type: 'null'
+          title: Current Password
         email:
           anyOf:
           - format: email

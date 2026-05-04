@@ -77,6 +77,8 @@ class UserPatch(BaseModel):
     phone: PhoneOpt = None
     boat_club: str | None = Field(default=None, max_length=100)
     password: PasswordOpt = None
+    # required only when password is being changed, verified server-side
+    current_password: SecretStr | None = None
 
 
 class UserCreate(BaseModel):

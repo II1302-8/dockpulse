@@ -42,8 +42,14 @@ function Header({
     };
   }, [isUserMenuOpen]);
 
-  function handleLogoutClick() {
+  const marinaPath = marinaSlug ? `/${marinaSlug}` : "/saltsjobaden";
+
+  function closeUserMenu() {
     setIsUserMenuOpen(false);
+  }
+
+  function handleLogoutClick() {
+    closeUserMenu();
     onLogoutClickCB();
   }
 
@@ -58,12 +64,13 @@ function Header({
       )}
     >
       <div className="flex items-center gap-3">
-        <Link to="/" className="block">
+        <Link to={marinaPath} className="block">
           <h1 className="flex items-center gap-4 group cursor-pointer">
             <div className="flex items-center tracking-[0.3em] uppercase transition-all duration-300 group-hover:tracking-[0.35em]">
               <span className="text-lg font-light text-brand-navy">Dock</span>
               <span className="text-lg font-black text-brand-blue">Pulse</span>
             </div>
+
             <div className="flex items-center gap-2 border-l border-brand-navy/10 pl-4">
               <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse glow-emerald" />
               <span className="text-[9px] font-black text-brand-navy/30 uppercase tracking-[0.2em]">
@@ -75,12 +82,12 @@ function Header({
       </div>
 
       <nav className="flex items-center gap-2">
-        <button
-          type="button"
+        <Link
+          to={marinaPath}
           className="bg-gradient-to-r from-brand-blue to-brand-cyan px-6 py-2 rounded-full shadow-lg shadow-brand-blue/20 text-white text-xs font-black transition-transform hover:scale-105"
         >
           Dashboard
-        </button>
+        </Link>
       </nav>
 
       <div className="relative flex items-center gap-4" ref={userMenuRef}>
@@ -102,6 +109,14 @@ function Header({
                 role="menu"
                 className="absolute top-12 right-0 w-40 rounded-xl border border-slate-200 bg-white p-2 shadow-lg"
               >
+                <Link
+                  to={`${marinaPath}/settings`}
+                  role="menuitem"
+                  onClick={closeUserMenu}
+                  className="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-brand-navy transition-colors hover:bg-slate-100"
+                >
+                  Settings
+                </Link>
                 <button
                   type="button"
                   role="menuitem"

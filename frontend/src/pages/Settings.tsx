@@ -1,0 +1,352 @@
+import { useEffect, useMemo, useState } from "react";
+import { useOutletContext } from "react-router-dom";
+import type {
+  AuthOutletContext,
+  AuthUser,
+} from "../components/layout/MainLayout";
+import { Button } from "../components/shared/ui/button";
+import { Input } from "../components/shared/ui/input";
+import { Label } from "../components/shared/ui/label";
+
+type SettingsForm = {
+  firstname: string;
+  lastname: string;
+  email: string;
+  phone: string;
+  boat_club: string;
+  current_password: string;
+  password: string;
+};
+
+type FieldErrors = Partial<Record<keyof SettingsForm | "general", string>>;
+
+const MIN_PASSWORD_LENGTH = 8;
+
+function getInitialForm(user: AuthUser | null): SettingsForm {
+  return {
+    firstname: user?.firstname ?? "",
+    lastname: user?.lastname ?? "",
+    email: user?.email ?? "",
+    phone: user?.phone ?? "",
+    boat_club: user?.boat_club ?? "",
+    current_password: "",
+    password: "",
+  };
+}
+
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function validateForm(form: SettingsForm): FieldErrors {
+  const errors: FieldErrors = {};
+
+  if (!form.firstname.trim()) {
+    errors.firstname = "First name is required.";
+  }
+
+  if (!form.lastname.trim()) {
+    errors.lastname = "Last name is required.";
+  }
+
+  if (!form.email.trim()) {
+    errors.email = "Email is required.";
+  } else if (!isValidEmail(form.email.trim())) {
+    errors.email = "Enter a valid email address.";
+  }
+
+  if (form.password && form.password.length < MIN_PASSWORD_LENGTH) {
+    errors.password = `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
+  }
+
+  if (form.password && !form.current_password) {
+    errors.current_password =
+      "Current password is required to change password.";
+  }
+
+  return errors;
+}
+
+function isSettingsField(field: unknown): field is keyof SettingsForm {
+  return (
+    field === "firstname" ||
+    field === "lastname" ||
+    field === "email" ||
+    field === "phone" ||
+    field === "boat_club" ||
+    field === "current_password" ||
+    field === "password"
+  );
+}
+
+async function getErrorsFromResponse(res: Response): Promise<FieldErrors> {
+  try {
+    const data = await res.json();
+
+    if (Array.isArray(data.detail)) {
+      const errors: FieldErrors = {};
+
+      for (const err of data.detail) {
+        const field = Array.isArray(err.loc) ? err.loc.at(-1) : null;
+        const message = err.msg ?? "Invalid value.";
+
+        if (isSettingsField(field)) {
+          errors[field] = message;
+        } else {
+          errors.general = message;
+        }
+      }
+
+      return errors;
+    }
+
+    if (typeof data.detail === "string") return { general: data.detail };
+    if (typeof data.message === "string") return { general: data.message };
+    if (typeof data.error === "string") return { general: data.error };
+
+    return { general: `Could not save profile. Status: ${res.status}` };
+  } catch {
+    return { general: `Could not save profile. Status: ${res.status}` };
+  }
+}
+
+const errorClass = "text-sm text-red-500";
+const labelGroupClass = "space-y-1.5";
+
+function Settings() {
+  const { user, setUser, token, setIsLoginOpen } =
+    useOutletContext<AuthOutletContext>();
+
+  const initialForm = useMemo(() => getInitialForm(user), [user]);
+  const [form, setForm] = useState<SettingsForm>(initialForm);
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    document.title = "Settings | DockPulse";
+  }, []);
+
+  useEffect(() => {
+    setForm(initialForm);
+  }, [initialForm]);
+
+  function updateForm(field: keyof SettingsForm, value: string) {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => ({ ...prev, [field]: undefined, general: undefined }));
+    setSuccessMessage(null);
+  }
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    if (!token) {
+      setErrors({ general: "You need to log in before editing settings." });
+      setIsLoginOpen(true);
+      return;
+    }
+
+    const validationErrors = validateForm(form);
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      setSuccessMessage(null);
+      return;
+    }
+
+    const payload = {
+      firstname: form.firstname.trim(),
+      lastname: form.lastname.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim() || null,
+      boat_club: form.boat_club.trim() || null,
+      ...(form.password
+        ? {
+            password: form.password,
+            current_password: form.current_password,
+          }
+        : {}),
+    };
+
+    setIsSaving(true);
+    setErrors({});
+    setSuccessMessage(null);
+
+    try {
+      const res = await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        setErrors(await getErrorsFromResponse(res));
+        return;
+      }
+
+      const updatedUser = (await res.json()) as AuthUser;
+
+      setUser(updatedUser);
+      setForm({
+        ...getInitialForm(updatedUser),
+        current_password: "",
+        password: "",
+      });
+      setSuccessMessage("Profile updated successfully.");
+    } catch {
+      setErrors({ general: "Could not save profile. Please try again." });
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  if (!user) {
+    return (
+      <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-4 text-center">
+        <h1 className="text-3xl font-semibold text-brand-navy">Settings</h1>
+        <p className="mt-2 text-brand-navy/60">
+          You need to log in before editing your profile.
+        </p>
+        <Button
+          type="button"
+          onClick={() => setIsLoginOpen(true)}
+          className="mt-4 rounded-full bg-brand-blue"
+        >
+          Log in
+        </Button>
+      </main>
+    );
+  }
+
+  return (
+    <main className="mx-auto max-w-2xl px-4 pt-36 pb-20">
+      <div className="mb-6">
+        <h1 className="text-3xl font-semibold text-brand-navy">Settings</h1>
+        <p className="mt-1 text-brand-navy/60">
+          Edit your profile information and password.
+        </p>
+      </div>
+
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-5 rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-lg backdrop-blur"
+      >
+        {errors.general && <p className={errorClass}>{errors.general}</p>}
+
+        {successMessage && (
+          <p className="rounded-xl bg-green-50 p-3 text-sm font-medium text-green-700">
+            {successMessage}
+          </p>
+        )}
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className={labelGroupClass}>
+            <Label htmlFor="settings-firstname">First name</Label>
+            <Input
+              id="settings-firstname"
+              autoComplete="given-name"
+              value={form.firstname}
+              onChange={(e) => updateForm("firstname", e.target.value)}
+            />
+            {errors.firstname && (
+              <p className={errorClass}>{errors.firstname}</p>
+            )}
+          </div>
+
+          <div className={labelGroupClass}>
+            <Label htmlFor="settings-lastname">Last name</Label>
+            <Input
+              id="settings-lastname"
+              autoComplete="family-name"
+              value={form.lastname}
+              onChange={(e) => updateForm("lastname", e.target.value)}
+            />
+            {errors.lastname && <p className={errorClass}>{errors.lastname}</p>}
+          </div>
+        </div>
+
+        <div className={labelGroupClass}>
+          <Label htmlFor="settings-email">Email</Label>
+          <Input
+            id="settings-email"
+            type="email"
+            autoComplete="email"
+            value={form.email}
+            onChange={(e) => updateForm("email", e.target.value)}
+          />
+          {errors.email && <p className={errorClass}>{errors.email}</p>}
+        </div>
+
+        <div className={labelGroupClass}>
+          <Label htmlFor="settings-phone">Phone (optional)</Label>
+          <Input
+            id="settings-phone"
+            type="tel"
+            autoComplete="tel"
+            value={form.phone}
+            onChange={(e) => updateForm("phone", e.target.value)}
+          />
+          {errors.phone && <p className={errorClass}>{errors.phone}</p>}
+        </div>
+
+        <div className={labelGroupClass}>
+          <Label htmlFor="settings-boat-club">Home boat club (optional)</Label>
+          <Input
+            id="settings-boat-club"
+            value={form.boat_club}
+            onChange={(e) => updateForm("boat_club", e.target.value)}
+          />
+          {errors.boat_club && <p className={errorClass}>{errors.boat_club}</p>}
+        </div>
+
+        <div className="border-t border-slate-200 pt-5">
+          <h2 className="text-lg font-semibold text-brand-navy">
+            Change password
+          </h2>
+          <p className="mt-1 text-sm text-brand-navy/60">
+            Leave these fields empty if you do not want to change your password.
+          </p>
+        </div>
+
+        <div className={labelGroupClass}>
+          <Label htmlFor="settings-current-password">Current password</Label>
+          <Input
+            id="settings-current-password"
+            type="password"
+            autoComplete="current-password"
+            value={form.current_password}
+            onChange={(e) => updateForm("current_password", e.target.value)}
+          />
+          {errors.current_password && (
+            <p className={errorClass}>{errors.current_password}</p>
+          )}
+        </div>
+
+        <div className={labelGroupClass}>
+          <Label htmlFor="settings-new-password">New password</Label>
+          <Input
+            id="settings-new-password"
+            type="password"
+            autoComplete="new-password"
+            value={form.password}
+            onChange={(e) => updateForm("password", e.target.value)}
+          />
+          {errors.password && <p className={errorClass}>{errors.password}</p>}
+        </div>
+
+        <Button
+          type="submit"
+          disabled={isSaving}
+          className="w-full rounded-full bg-brand-navy"
+        >
+          {isSaving ? "Saving..." : "Save changes"}
+        </Button>
+      </form>
+    </main>
+  );
+}
+
+export { Settings };

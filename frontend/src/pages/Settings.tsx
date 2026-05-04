@@ -1,6 +1,6 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import type {
   AuthOutletContext,
   AuthUser,
@@ -108,9 +108,9 @@ async function getErrorsFromResponse(res: Response): Promise<FieldErrors> {
     if (typeof data.message === "string") return { general: data.message };
     if (typeof data.error === "string") return { general: data.error };
 
-    return { general: `Could not save profile. Status: ${res.status}` };
+    return { general: `Request failed. Status: ${res.status}` };
   } catch {
-    return { general: `Could not save profile. Status: ${res.status}` };
+    return { general: `Request failed. Status: ${res.status}` };
   }
 }
 
@@ -118,14 +118,21 @@ const errorClass = "text-sm text-red-500";
 const labelGroupClass = "space-y-1.5";
 
 function Settings() {
-  const { user, setUser, token, setIsLoginOpen } =
+  const { user, setUser, token, setToken, setIsLoginOpen } =
     useOutletContext<AuthOutletContext>();
+
+  const navigate = useNavigate();
 
   const initialForm = useMemo(() => getInitialForm(user), [user]);
   const [form, setForm] = useState<SettingsForm>(initialForm);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     document.title = "Settings | DockPulse";
@@ -139,6 +146,15 @@ function Settings() {
     setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: undefined, general: undefined }));
     setSuccessMessage(null);
+  }
+
+  function clearLocalAuthState() {
+    setUser(null);
+    setToken(null);
+
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("authToken");
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -207,6 +223,52 @@ function Settings() {
     }
   }
 
+  async function handleDeleteAccount() {
+    if (!token) {
+      setDeleteError("You need to log in before deleting your account.");
+      setIsLoginOpen(true);
+      return;
+    }
+
+    const trimmedConfirmation = deleteConfirmText.trim();
+    const email = user?.email ?? "";
+
+    if (trimmedConfirmation !== "DELETE" && trimmedConfirmation !== email) {
+      setDeleteError(`Type DELETE or ${email} to confirm.`);
+      return;
+    }
+
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      const res = await fetch("/api/users/me", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const responseErrors = await getErrorsFromResponse(res);
+        setDeleteError(
+          responseErrors.general ??
+            "Could not delete account. Please try again.",
+        );
+        return;
+      }
+
+      clearLocalAuthState();
+      setIsDeleteOpen(false);
+      navigate("/");
+      setIsLoginOpen(true);
+    } catch {
+      setDeleteError("Could not delete account. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  }
+
   if (!user) {
     return (
       <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-4 text-center">
@@ -224,6 +286,10 @@ function Settings() {
       </main>
     );
   }
+
+  const canDelete =
+    deleteConfirmText.trim() === "DELETE" ||
+    deleteConfirmText.trim() === user.email;
 
   return (
     <main className="mx-auto max-w-2xl px-4 pt-36 pb-20">
@@ -373,6 +439,87 @@ function Settings() {
       </form>
 
       {token && <NotificationSettings token={token} />}
+
+      <section className="mt-6 rounded-3xl border border-red-200 bg-red-50/80 p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-red-700">Delete account</h2>
+        <p className="mt-1 text-sm text-red-700/70">
+          Permanently delete your account and profile data. This action cannot
+          be undone.
+        </p>
+
+        <Button
+          type="button"
+          onClick={() => {
+            setDeleteConfirmText("");
+            setDeleteError(null);
+            setErrors({});
+            setSuccessMessage(null);
+            setIsDeleteOpen(true);
+          }}
+          className="mt-4 rounded-full bg-red-600 hover:bg-red-700"
+        >
+          Delete account
+        </Button>
+      </section>
+
+      {isDeleteOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
+            <h2 className="text-xl font-semibold text-brand-navy">
+              Confirm account deletion
+            </h2>
+
+            <p className="mt-2 text-sm text-brand-navy/70">
+              This will permanently delete your account. To confirm, type{" "}
+              <span className="font-semibold text-red-600">DELETE</span> or your
+              account email:
+            </p>
+
+            <p className="mt-2 rounded-xl bg-slate-100 px-3 py-2 text-sm font-medium text-brand-navy">
+              {user.email}
+            </p>
+
+            <div className="mt-4 space-y-1.5">
+              <Label htmlFor="delete-confirm">Confirmation</Label>
+              <Input
+                id="delete-confirm"
+                value={deleteConfirmText}
+                onChange={(e) => {
+                  setDeleteConfirmText(e.target.value);
+                  setDeleteError(null);
+                }}
+                placeholder="Type DELETE or your email"
+              />
+              {deleteError && <p className={errorClass}>{deleteError}</p>}
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isDeleting}
+                onClick={() => {
+                  setIsDeleteOpen(false);
+                  setDeleteConfirmText("");
+                  setDeleteError(null);
+                }}
+                className="flex-1 rounded-full"
+              >
+                Cancel
+              </Button>
+
+              <Button
+                type="button"
+                disabled={isDeleting || !canDelete}
+                onClick={handleDeleteAccount}
+                className="flex-1 rounded-full bg-red-600 hover:bg-red-700"
+              >
+                {isDeleting ? "Deleting..." : "Delete account"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

@@ -3,6 +3,8 @@ import panzoom from "panzoom";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BerthDetailPanel } from "./components/BerthDetailPanel";
 import { HarborOverview } from "./components/HarborOverview";
+import { MapLegend } from "./components/MapLegend";
+import { NorthArrow } from "./components/NorthArrow";
 import { useBerthsStream } from "./hooks/useBerthsStream";
 import { mapBerthIds } from "./svg";
 import { SvgMap } from "./svgMap";
@@ -102,6 +104,9 @@ export function HarborMap() {
         isOpen={isOverviewOpen}
         onCloseCB={() => setIsOverviewOpen(false)}
       />
+
+      <MapLegend />
+      <NorthArrow />
 
       {selectedBerthId && (
         <BerthDetailPanel

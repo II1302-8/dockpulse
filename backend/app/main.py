@@ -7,16 +7,21 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.adoption.sweeper import sweeper_loop
+from app.config import get_settings
 from app.db import get_engine
 from app.logging_config import request_id_var, setup_logging
 from app.mqtt import is_mqtt_connected, mqtt_listener
+from app.rate_limit import limiter
 from app.routers import adoptions, auth, berths, docks, gateways, harbors, nodes, users
 from app.schemas import HealthStatus
 
@@ -138,8 +143,24 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 app.add_middleware(RequestContextMiddleware)
 app.add_middleware(GZipExceptStream, minimum_size=1024)
+
+# CORS only needed in prod, dev runs same-origin via vite proxy
+_cors_origins = get_settings().cors_allowed_origins
+if _cors_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_cors_origins,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
+        expose_headers=["X-Request-ID"],
+        max_age=600,
+    )
 
 app.include_router(adoptions.router)
 app.include_router(auth.router)

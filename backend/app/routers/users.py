@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 
 from app.dependencies import CurrentUserDep, SessionDep
-from app.models import User, UserNotificationPrefs
+from app.models import Assignment, User, UserNotificationPrefs
 from app.schemas import (
     NotificationPrefsOut,
     NotificationPrefsPatch,
@@ -21,14 +21,41 @@ def _hash_password(password: str) -> str:
     return _ph.hash(password)
 
 
+async def _assigned_berth_id(session, user_id: str) -> str | None:
+    # boat owner has at most one assignment in v1; pick first deterministically
+    result = await session.execute(
+        select(Assignment.berth_id)
+        .where(Assignment.user_id == user_id)
+        .order_by(Assignment.berth_id)
+        .limit(1)
+    )
+    return result.scalar_one_or_none()
+
+
+def _to_user_out(user: User, assigned_berth_id: str | None) -> UserOut:
+    return UserOut.model_validate(
+        {
+            "user_id": user.user_id,
+            "firstname": user.firstname,
+            "lastname": user.lastname,
+            "email": user.email,
+            "phone": user.phone,
+            "boat_club": user.boat_club,
+            "role": user.role,
+            "assigned_berth_id": assigned_berth_id,
+        }
+    )
+
+
 @router.get(
     "/me",
     response_model=UserOut,
     operation_id="getMe",
     summary="Get current user profile",
 )
-async def get_me(current_user: CurrentUserDep):
-    return current_user
+async def get_me(current_user: CurrentUserDep, session: SessionDep):
+    berth_id = await _assigned_berth_id(session, current_user.user_id)
+    return _to_user_out(current_user, berth_id)
 
 
 @router.patch(
@@ -68,7 +95,8 @@ async def update_me(body: UserPatch, current_user: CurrentUserDep, session: Sess
     session.add(current_user)
     await session.commit()
     await session.refresh(current_user)
-    return current_user
+    berth_id = await _assigned_berth_id(session, current_user.user_id)
+    return _to_user_out(current_user, berth_id)
 
 
 @router.delete(

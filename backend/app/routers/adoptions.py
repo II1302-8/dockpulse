@@ -12,7 +12,13 @@ from sse_starlette.sse import EventSourceResponse
 
 from app import broadcaster
 from app.adoption.claims import ClaimError, FactoryClaim, verify_claim_jwt
-from app.dependencies import HarbormasterDep, SessionDep, require_harbormaster
+from app.dependencies import (
+    CurrentUserDep,
+    SessionDep,
+    harbor_id_from_berth,
+    require_harbor_authority,
+    require_harbormaster_for_adoption_request,
+)
 from app.models import AdoptionRequest, Berth, Gateway, Node
 from app.mqtt import publish_provision_req
 from app.schemas import AdoptIn, AdoptionRequestOut, AdoptionUpdateEvent
@@ -55,7 +61,7 @@ def _verify_claim(qr: dict) -> FactoryClaim:
 )
 async def create_adoption(
     body: AdoptIn,
-    current_user: HarbormasterDep,
+    current_user: CurrentUserDep,
     session: SessionDep,
 ):
     qr = _decode_qr_payload(body.qr_payload)
@@ -64,6 +70,10 @@ async def create_adoption(
     oob = qr.get("oob")
     if not isinstance(oob, str) or not oob:
         raise HTTPException(status_code=400, detail="QR missing 'oob' field")
+
+    # role + harbor authority before any other lookups
+    harbor_id = await harbor_id_from_berth(body.berth_id, session)
+    await require_harbor_authority(current_user, harbor_id, session)
 
     gateway = await session.get(Gateway, body.gateway_id)
     if gateway is None:
@@ -127,7 +137,7 @@ async def create_adoption(
     response_model=AdoptionRequestOut,
     operation_id="getAdoption",
     summary="Get an adoption request by id",
-    dependencies=[Depends(require_harbormaster)],
+    dependencies=[Depends(require_harbormaster_for_adoption_request)],
 )
 async def get_adoption(request_id: str, session: SessionDep):
     request = await session.get(AdoptionRequest, request_id)
@@ -155,6 +165,7 @@ async def get_adoption(request_id: str, session: SessionDep):
         },
         404: {"description": "Adoption request not found"},
     },
+    dependencies=[Depends(require_harbormaster_for_adoption_request)],
 )
 async def stream_adoption(request_id: str, request: Request, session: SessionDep):
     initial = await session.get(AdoptionRequest, request_id)

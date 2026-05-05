@@ -24,7 +24,7 @@ from alembic import command
 from app.config import get_settings
 from app.db import Base, get_session
 from app.main import app
-from app.models import Berth, Dock, Gateway, Harbor, User
+from app.models import Berth, Dock, Gateway, Harbor, User, UserHarborRole
 from tests._helpers import hash_password, make_factory_keys
 
 TEST_DATABASE_URL = os.environ.get(
@@ -125,10 +125,15 @@ async def session(engine) -> AsyncIterator[AsyncSession]:
 
 
 @pytest_asyncio.fixture
-async def seeded_berth(session: AsyncSession):
+async def harbor_h1(session: AsyncSession):
+    session.add(Harbor(harbor_id="h1", name="Harbor 1"))
+    await session.commit()
+
+
+@pytest_asyncio.fixture
+async def seeded_berth(session: AsyncSession, harbor_h1):
     session.add_all(
         [
-            Harbor(harbor_id="h1", name="Harbor 1"),
             Dock(dock_id="d1", harbor_id="h1", name="Dock 1"),
             Berth(berth_id="b1", dock_id="d1", status="free"),
         ]
@@ -146,7 +151,7 @@ async def harbor_world(session: AsyncSession, seeded_berth):
 
 
 @pytest_asyncio.fixture
-async def harbor_master(session: AsyncSession) -> User:
+async def harbor_master(session: AsyncSession, harbor_h1) -> User:
     user = User(
         user_id="hm1",
         firstname="Hilda",
@@ -156,6 +161,8 @@ async def harbor_master(session: AsyncSession) -> User:
         role="harbormaster",
     )
     session.add(user)
+    await session.flush()
+    session.add(UserHarborRole(user_id="hm1", harbor_id="h1", role="harbormaster"))
     await session.commit()
     return user
 

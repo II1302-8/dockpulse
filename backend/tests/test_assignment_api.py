@@ -2,7 +2,7 @@ import pytest_asyncio
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Assignment, User
+from app.models import Assignment, Berth, Dock, Harbor, User
 from tests._helpers import hash_password, make_auth_token
 
 
@@ -111,3 +111,47 @@ async def test_assign_unknown_berth_404(client, harbor_master, boat_owner):
         headers=_bearer(harbor_master.user_id),
     )
     assert r.status_code == 404
+
+
+@pytest_asyncio.fixture
+async def foreign_berth(session: AsyncSession):
+    session.add_all(
+        [
+            Harbor(harbor_id="h2", name="Other Harbor"),
+            Dock(dock_id="d2", harbor_id="h2", name="Other Dock"),
+            Berth(berth_id="b2", dock_id="d2", status="free"),
+        ]
+    )
+    await session.commit()
+
+
+async def test_assign_foreign_harbor_returns_403(
+    client, harbor_master, boat_owner, foreign_berth
+):
+    r = await client.put(
+        "/api/berths/b2/assignment",
+        json={"user_id": boat_owner.user_id},
+        headers=_bearer(harbor_master.user_id),
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"] == "Not authorized for this harbor"
+
+
+async def test_remove_foreign_assignment_returns_403(
+    client, harbor_master, foreign_berth
+):
+    r = await client.delete(
+        "/api/berths/b2/assignment",
+        headers=_bearer(harbor_master.user_id),
+    )
+    assert r.status_code == 403
+
+
+async def test_list_foreign_berth_events_returns_403(
+    client, harbor_master, foreign_berth
+):
+    r = await client.get(
+        "/api/berths/b2/events",
+        headers=_bearer(harbor_master.user_id),
+    )
+    assert r.status_code == 403

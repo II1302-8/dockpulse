@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app import broadcaster
 from app.adoption.finalize import complete_adoption_err, complete_adoption_ok
 from app.models import AdoptionRequest, User
+from tests._helpers import make_auth_token as _auth_token
 
 
 @pytest_asyncio.fixture
@@ -38,14 +39,25 @@ async def pending_request(
     return req
 
 
-async def test_stream_404_for_unknown_request(client: AsyncClient, harbor_world):
-    r = await client.get("/api/adoptions/nope/stream")
+async def test_stream_404_for_unknown_request(
+    client: AsyncClient, harbor_master: User, harbor_world
+):
+    r = await client.get(
+        "/api/adoptions/nope/stream",
+        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+    )
     assert r.status_code == 404
+
+
+async def test_stream_requires_auth(client: AsyncClient, harbor_world):
+    r = await client.get("/api/adoptions/anything/stream")
+    assert r.status_code == 401
 
 
 async def test_stream_emits_snapshot_when_already_terminal(
     client: AsyncClient,
     session: AsyncSession,
+    harbor_master: User,
     pending_request: AdoptionRequest,
 ):
     # terminal before connect so handler returns after snapshot, no loop hang
@@ -56,7 +68,10 @@ async def test_stream_emits_snapshot_when_already_terminal(
         dev_key_fp="9f3a8b2c4d1e7f60",
     )
 
-    async with client.stream("GET", "/api/adoptions/req-pending/stream") as stream:
+    headers = {"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"}
+    async with client.stream(
+        "GET", "/api/adoptions/req-pending/stream", headers=headers
+    ) as stream:
         assert stream.status_code == 200
         body = ""
         async for chunk in stream.aiter_text():

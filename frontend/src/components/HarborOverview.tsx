@@ -2,6 +2,7 @@ import { Activity, BatteryLow, X } from "lucide-react";
 import type { components } from "../api-types";
 import { useNow } from "../hooks/useNow";
 import { isOnline } from "../lib/freshness";
+import { cn } from "../lib/utils";
 
 type Berth = components["schemas"]["BerthOut"];
 
@@ -23,7 +24,6 @@ export function HarborOverview({
     onlineBerths.length > 0 ? (freeBerths / onlineBerths.length) * 100 : 0;
   const offlineCount = berths.length - onlineBerths.length;
 
-  // Battery alerts only meaningful for berths we're hearing from.
   const lowBatteryNodes = onlineBerths.filter(
     (b) => b.battery_pct != null && b.battery_pct < 20,
   );
@@ -31,11 +31,12 @@ export function HarborOverview({
 
   return (
     <section
-      className={`fixed top-32 left-8 w-72 max-h-[calc(100vh-160px)] bg-white/70 backdrop-blur-2xl border border-white/60 shadow-deep flex flex-col z-[55] p-6 font-body rounded-[32px] overflow-hidden transition-all duration-500 ease-in-out lg:translate-x-0 lg:opacity-100 lg:flex ${
+      className={cn(
+        "fixed top-32 left-8 w-72 max-h-[calc(100vh-160px)] bg-white/70 backdrop-blur-2xl border border-white/60 shadow-deep flex flex-col z-[var(--z-panel)] p-6 font-body rounded-[32px] overflow-hidden transition-all duration-500 ease-in-out lg:translate-x-0 lg:opacity-100 lg:pointer-events-auto",
         isOpen
           ? "translate-x-0 opacity-100 pointer-events-auto"
-          : "-translate-x-[120%] opacity-0 pointer-events-none lg:pointer-events-auto"
-      }`}
+          : "-translate-x-[150%] opacity-0 pointer-events-none",
+      )}
     >
       <header className="mb-4 flex items-center justify-between animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both">
         <h2 className="text-xs font-black text-[#0A2540]/40 uppercase tracking-[0.2em]">
@@ -51,7 +52,6 @@ export function HarborOverview({
       </header>
 
       <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar">
-        {/* Combined Status Card */}
         <article className="bg-white/80 backdrop-blur-md border border-white/50 p-5 rounded-[24px] shadow-subtle hover:shadow-md transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#0093E9]">
@@ -91,7 +91,6 @@ export function HarborOverview({
           )}
         </article>
 
-        {/* Node Health (More compact) */}
         <article className="bg-white/40 backdrop-blur-md border border-white/30 p-4 rounded-[24px] shadow-subtle animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both">
           <div className="flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-[#0A2540]/50 mb-3">
             <BatteryLow size={12} strokeWidth={3} />

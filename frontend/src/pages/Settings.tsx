@@ -5,6 +5,7 @@ import type {
   AuthOutletContext,
   AuthUser,
 } from "../components/layout/MainLayout";
+import { NotificationSettings } from "../components/NotificationSettings";
 import { Button } from "../components/shared/ui/button";
 import { Input } from "../components/shared/ui/input";
 import { Label } from "../components/shared/ui/label";
@@ -370,6 +371,8 @@ function Settings() {
           {isSaving ? "Saving..." : "Save changes"}
         </Button>
       </form>
+
+      {token && <NotificationSettings token={token} />}
     </main>
   );
 }

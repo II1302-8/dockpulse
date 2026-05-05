@@ -271,3 +271,24 @@ class UserHarborRole(Base):
         index=True,
     )
     role: Mapped[str] = mapped_column(String, primary_key=True)
+
+
+class RefreshToken(Base):
+    __tablename__ = "refresh_tokens"
+
+    jti: Mapped[str] = mapped_column(String, primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.user_id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    issued_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    replaced_by_jti: Mapped[str | None] = mapped_column(
+        ForeignKey("refresh_tokens.jti", ondelete="SET NULL")
+    )

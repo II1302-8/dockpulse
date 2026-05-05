@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.adoption.claims import ALGORITHM
-from app.models import AdoptionRequest, Dock, Gateway, Node, User
+from app.models import AdoptionRequest, Berth, Dock, Gateway, Harbor, Node, User
 from tests._helpers import (
     make_auth_token as _auth_token,
 )
@@ -318,10 +318,32 @@ async def test_get_adoption_404_unknown(
 
 
 async def test_get_adoption_requires_harbormaster(
-    client: AsyncClient, boat_owner: User, harbor_world
+    client: AsyncClient,
+    session: AsyncSession,
+    boat_owner: User,
+    harbor_world,
 ):
+    # seed a real request so resolver doesn't 404 before role check fires
+    from datetime import UTC, datetime, timedelta
+
+    now = datetime.now(UTC)
+    session.add(
+        AdoptionRequest(
+            request_id="req-x",
+            mesh_uuid="dddd" * 8,
+            serial_number="DP-N-X",
+            claim_jti="x-jti",
+            gateway_id="gw1",
+            berth_id="b1",
+            expires_at=now + timedelta(seconds=60),
+            status="pending",
+            created_by_user_id=boat_owner.user_id,
+            created_at=now,
+        )
+    )
+    await session.commit()
     r = await client.get(
-        "/api/adoptions/anything",
+        "/api/adoptions/req-x",
         headers={"Authorization": f"Bearer {_auth_token(boat_owner.user_id)}"},
     )
     assert r.status_code == 403
@@ -330,6 +352,43 @@ async def test_get_adoption_requires_harbormaster(
 async def test_get_adoption_requires_auth(client: AsyncClient):
     r = await client.get("/api/adoptions/anything")
     assert r.status_code == 401
+
+
+async def test_adopt_rejects_foreign_harbor(
+    client: AsyncClient,
+    session: AsyncSession,
+    harbor_master: User,
+    harbor_world,
+    factory_pubkey,
+):
+    session.add_all(
+        [
+            Harbor(harbor_id="h2", name="Other Harbor"),
+            Dock(dock_id="d-foreign", harbor_id="h2", name="DF"),
+        ]
+    )
+    await session.commit()
+    session.add_all(
+        [
+            Berth(berth_id="b-foreign", dock_id="d-foreign", status="free"),
+            Gateway(
+                gateway_id="gw-foreign",
+                dock_id="d-foreign",
+                name="GF",
+                status="online",
+            ),
+        ]
+    )
+    await session.commit()
+
+    qr = _make_qr_payload(factory_pubkey)
+    r = await client.post(
+        "/api/adoptions",
+        json=_adopt_body(qr, berth_id="b-foreign", gateway_id="gw-foreign"),
+        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+    )
+    assert r.status_code == 403
+    assert r.json()["detail"] == "Not authorized for this harbor"
 
 
 async def test_adopt_publishes_provision_req(

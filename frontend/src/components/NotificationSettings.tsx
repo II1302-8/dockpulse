@@ -15,7 +15,10 @@ export function NotificationSettings({ token }: NotificationSettingsProps) {
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
 
   useEffect(() => {
     async function fetchPrefs() {
@@ -86,8 +89,12 @@ export function NotificationSettings({ token }: NotificationSettingsProps) {
           <Bell size={20} strokeWidth={2.5} />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-brand-navy">Notifications</h2>
-          <p className="text-sm text-brand-navy/60">Manage your alert preferences</p>
+          <h2 className="text-lg font-semibold text-brand-navy">
+            Notifications
+          </h2>
+          <p className="text-sm text-brand-navy/60">
+            Manage your alert preferences
+          </p>
         </div>
       </div>
 
@@ -124,17 +131,23 @@ export function NotificationSettings({ token }: NotificationSettingsProps) {
                 "w-12 h-6 rounded-full transition-all relative flex items-center px-1",
                 prefs[item.id as keyof NotificationPrefs]
                   ? "bg-brand-blue shadow-lg shadow-brand-blue/20"
-                  : "bg-slate-200"
+                  : "bg-slate-200",
               )}
             >
               <div
                 className={cn(
                   "w-4 h-4 rounded-full bg-white transition-all shadow-sm flex items-center justify-center",
-                  prefs[item.id as keyof NotificationPrefs] ? "translate-x-6" : "translate-x-0"
+                  prefs[item.id as keyof NotificationPrefs]
+                    ? "translate-x-6"
+                    : "translate-x-0",
                 )}
               >
                 {prefs[item.id as keyof NotificationPrefs] && (
-                  <Check size={10} className="text-brand-blue" strokeWidth={4} />
+                  <Check
+                    size={10}
+                    className="text-brand-blue"
+                    strokeWidth={4}
+                  />
                 )}
               </div>
             </div>
@@ -146,7 +159,7 @@ export function NotificationSettings({ token }: NotificationSettingsProps) {
         <p
           className={cn(
             "text-xs font-bold text-center animate-in fade-in slide-in-from-top-2",
-            message.type === "success" ? "text-emerald-500" : "text-red-500"
+            message.type === "success" ? "text-emerald-500" : "text-red-500",
           )}
         >
           {message.text}

@@ -1,9 +1,9 @@
-import { LayoutDashboard, Anchor, Zap, X } from "lucide-react";
+import { Anchor, LayoutDashboard, X, Zap } from "lucide-react";
 import { useEffect, useRef } from "react";
+import type { components } from "../api-types";
 import { useNow } from "../hooks/useNow";
 import { isOnline } from "../lib/freshness";
 import { cn } from "../lib/utils";
-import type { components } from "../api-types";
 
 type Berth = components["schemas"]["BerthOut"];
 
@@ -31,9 +31,12 @@ export function HarborMasterOverview({
   const totalBerths = berths.length;
   const occupiedBerths = berths.filter((b) => b.status === "occupied").length;
   const availableBerths = totalBerths - occupiedBerths;
-  const occupancyRate = totalBerths > 0 ? Math.round((occupiedBerths / totalBerths) * 100) : 0;
+  const occupancyRate =
+    totalBerths > 0 ? Math.round((occupiedBerths / totalBerths) * 100) : 0;
 
-  const activeNodes = berths.filter((b) => isOnline(b.last_updated, now)).length;
+  const activeNodes = berths.filter((b) =>
+    isOnline(b.last_updated, now),
+  ).length;
 
   return (
     <section
@@ -44,12 +47,16 @@ export function HarborMasterOverview({
         isFirstLoad.current && "opacity-0 pointer-events-none transition-none",
         isOpen
           ? "translate-x-0 opacity-100 pointer-events-auto"
-          : "-translate-x-[150%] opacity-0 pointer-events-none"
+          : "-translate-x-[150%] opacity-0 pointer-events-none",
       )}
     >
       <header className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <LayoutDashboard size={16} className="text-brand-blue" strokeWidth={2.5} />
+          <LayoutDashboard
+            size={16}
+            className="text-brand-blue"
+            strokeWidth={2.5}
+          />
           <h2 className="text-xs font-black text-[#0A2540]/40 uppercase tracking-[0.2em]">
             Harbor Master HUD
           </h2>
@@ -90,7 +97,9 @@ export function HarborMasterOverview({
               </span>
             </div>
             <p className="text-xl font-black text-brand-navy">
-              {availableBerths}<span className="text-sm opacity-30 mx-1">/</span>{totalBerths}
+              {availableBerths}
+              <span className="text-sm opacity-30 mx-1">/</span>
+              {totalBerths}
             </p>
           </div>
           <div className="bg-white/80 border border-white/50 p-4 rounded-3xl shadow-subtle">
@@ -110,11 +119,22 @@ export function HarborMasterOverview({
           </h3>
           <div className="space-y-3">
             {[
-              { label: "IoT Mesh Network", status: "Operational", color: "bg-emerald-500" },
-              { label: "Real-time Stream", status: "Live", color: "bg-emerald-500" },
+              {
+                label: "IoT Mesh Network",
+                status: "Operational",
+                color: "bg-emerald-500",
+              },
+              {
+                label: "Real-time Stream",
+                status: "Live",
+                color: "bg-emerald-500",
+              },
               { label: "Cloud Sync", status: "Active", color: "bg-brand-blue" },
             ].map((s) => (
-              <div key={s.label} className="flex items-center justify-between group">
+              <div
+                key={s.label}
+                className="flex items-center justify-between group"
+              >
                 <span className="text-[10px] font-bold text-brand-navy/60 group-hover:text-brand-navy transition-colors">
                   {s.label}
                 </span>

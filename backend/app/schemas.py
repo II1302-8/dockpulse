@@ -2,7 +2,14 @@ import os
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr, field_validator
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    SecretStr,
+)
 
 # read directly to dodge Settings' import-time SECRET_KEY requirement
 _APP_ENV = os.getenv("APP_ENV", "dev")
@@ -52,14 +59,23 @@ _PASSWORD = Field(
 _BOAT_CLUB = Field(max_length=100, examples=["Saltsjöbadens BK"])
 _EMAIL = Field(examples=["alex@example.com"])
 
+
+def _lower_email(v: str | None) -> str | None:
+    return v.lower() if v else v
+
+
+# email is case-insensitive per RFC 5321; normalize at the type so every
+# schema using EmailField stores a canonical form (lookups, indexes, joins)
+_LOWER_EMAIL = AfterValidator(_lower_email)
+
 Name = Annotated[str, _NAME]
 NameOpt = Annotated[str | None, _NAME]
 PhoneOpt = Annotated[str | None, _PHONE]
 Password = Annotated[SecretStr, _PASSWORD]
 PasswordOpt = Annotated[SecretStr | None, _PASSWORD]
 BoatClubOpt = Annotated[str | None, _BOAT_CLUB]
-EmailField = Annotated[EmailStr, _EMAIL]
-EmailFieldOpt = Annotated[EmailStr | None, _EMAIL]
+EmailField = Annotated[EmailStr, _EMAIL, _LOWER_EMAIL]
+EmailFieldOpt = Annotated[EmailStr | None, _EMAIL, _LOWER_EMAIL]
 
 
 # --- berths / docks / gateways ---
@@ -208,10 +224,6 @@ class UserOut(_BaseSchema):
     role: Role
 
 
-def _normalize_email(value: str | None) -> str | None:
-    return value.strip().lower() if value else value
-
-
 class UserPatch(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
@@ -224,8 +236,6 @@ class UserPatch(BaseModel):
     # required only when password is being changed, verified server-side
     current_password: SecretStr | None = None
 
-    _normalize_email = field_validator("email")(lambda cls, v: _normalize_email(v))
-
 
 class UserCreate(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
@@ -237,16 +247,12 @@ class UserCreate(BaseModel):
     boat_club: BoatClubOpt = None
     password: Password
 
-    _normalize_email = field_validator("email")(lambda cls, v: _normalize_email(v))
-
 
 class LoginIn(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     email: EmailField
     password: SecretStr
-
-    _normalize_email = field_validator("email")(lambda cls, v: _normalize_email(v))
 
 
 class TokenOut(BaseModel):

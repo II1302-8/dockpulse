@@ -9,35 +9,9 @@ from app.dependencies import (
     harbor_id_from_gateway,
     harbor_id_from_node,
     require_harbor_authority,
-    require_harbormaster,
     user_managed_harbor_ids,
 )
 from app.models import Harbor, User
-
-
-def _make_user(role: str) -> User:
-    return User(
-        user_id="u1",
-        firstname="X",
-        lastname="Y",
-        email="x@y.com",
-        password_hash="h",
-        role=role,
-    )
-
-
-async def test_require_harbormaster_raises_for_boat_owner():
-    user = _make_user("boat_owner")
-    with pytest.raises(HTTPException) as exc:
-        await require_harbormaster(user)
-    assert exc.value.status_code == 403
-    assert exc.value.detail == "Harbormaster role required"
-
-
-async def test_require_harbormaster_returns_user_for_harbormaster():
-    user = _make_user("harbormaster")
-    result = await require_harbormaster(user)
-    assert result is user
 
 
 async def test_require_harbor_authority_passes_for_member(

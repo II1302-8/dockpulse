@@ -18,8 +18,6 @@ type SignupForm = {
   confirmPassword: string;
   firstname: string;
   lastname: string;
-  phone: string;
-  boat_club: string;
 };
 
 const emptySignupForm: SignupForm = {
@@ -28,8 +26,6 @@ const emptySignupForm: SignupForm = {
   confirmPassword: "",
   firstname: "",
   lastname: "",
-  phone: "",
-  boat_club: "",
 };
 
 // mirror backend APP_ENV: prod build enforces the 12 char floor, dev/staging relaxed for testing
@@ -170,8 +166,6 @@ export function AuthDialog({
       email: rest.email.trim(),
       firstname: rest.firstname.trim(),
       lastname: rest.lastname.trim(),
-      phone: rest.phone.trim() || null,
-      boat_club: rest.boat_club.trim() || null,
     };
 
     try {
@@ -442,40 +436,6 @@ export function AuthDialog({
                   >
                     {passwordMismatch ? "Passwords do not match" : ""}
                   </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-phone" className={fieldLabelClass}>
-                    Phone
-                    <span className="ml-1 text-[8px] font-bold normal-case tracking-normal text-brand-navy/30">
-                      (optional)
-                    </span>
-                  </Label>
-                  <Input
-                    id="signup-phone"
-                    type="tel"
-                    autoComplete="tel"
-                    value={signupForm.phone}
-                    onChange={(e) => updateSignupField("phone", e.target.value)}
-                    className={fieldInputClass}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-boat-club" className={fieldLabelClass}>
-                    Boat Club
-                    <span className="ml-1 text-[8px] font-bold normal-case tracking-normal text-brand-navy/30">
-                      (optional)
-                    </span>
-                  </Label>
-                  <Input
-                    id="signup-boat-club"
-                    value={signupForm.boat_club}
-                    onChange={(e) =>
-                      updateSignupField("boat_club", e.target.value)
-                    }
-                    className={fieldInputClass}
-                  />
                 </div>
               </fieldset>
 

@@ -9,6 +9,11 @@
 **/.ruff_cache
 **/.mypy_cache
 backend/tests
+**/.coverage
+**/htmlcov
+**/coverage
+backend/pytest.xml
+backend/pytest-coverage.txt
 **/*.log
 **/.DS_Store
 .env

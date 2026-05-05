@@ -4,6 +4,16 @@ dist
 .env
 .env.*
 coverage
+junit.xml
 *.log
 .DS_Store
 .vite
+
+# tests never reach the runtime nginx image, exclude from build context too
+src/test
+**/__tests__
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+vitest.config.ts

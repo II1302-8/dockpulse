@@ -14,7 +14,8 @@
     "format": "biome format --write .",
     "gen:api": "openapi-typescript ../docs/api/openapi.yml -o src/api-types.ts",
     "test": "bunx concurrently -k -s first -n prism,vitest \"bunx @stoplight/prism-cli mock ../docs/api/openapi.yml -p 4010\" \"vitest run\"",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:cov": "bunx concurrently -k -s first -n prism,vitest \"bunx @stoplight/prism-cli mock ../docs/api/openapi.yml -p 4010\" \"vitest run --coverage\""
   },
   "dependencies": {
     "@fontsource-variable/jost": "^5.2.8",
@@ -46,6 +47,7 @@
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/coverage-v8": "^4.1.5",
     "concurrently": "^9.2.1",
     "jsdom": "^29.0.2",
     "openapi-typescript": "^7.13.0",

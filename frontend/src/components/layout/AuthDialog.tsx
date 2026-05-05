@@ -210,7 +210,7 @@ export function AuthDialog({
         if (!next) resetForms();
       }}
     >
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto bg-white/90 backdrop-blur-xl border-white/40 rounded-[32px] p-8 shadow-deep animate-in zoom-in-95 duration-300">
+      <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto bg-white/90 backdrop-blur-xl border-white/40 rounded-[32px] p-5 sm:p-8 shadow-deep animate-in zoom-in-95 duration-300">
         <VisuallyHidden.Root>
           <DialogTitle>Log in or sign up</DialogTitle>
         </VisuallyHidden.Root>
@@ -335,7 +335,7 @@ export function AuthDialog({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label
                       htmlFor="signup-firstname"

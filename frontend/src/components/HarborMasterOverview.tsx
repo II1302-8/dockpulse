@@ -41,13 +41,14 @@ export function HarborMasterOverview({
   return (
     <section
       className={cn(
-        "fixed top-32 w-80 max-h-[calc(100vh-160px)] bg-white/70 backdrop-blur-2xl border border-white/60 shadow-deep",
-        "left-[var(--sidebar-total-offset,32px)]",
+        "fixed bg-white/70 backdrop-blur-2xl border border-white/60 shadow-deep",
+        "bottom-6 left-6 right-6 max-h-[60vh]",
+        "lg:bottom-auto lg:right-auto lg:top-32 lg:w-80 lg:max-h-[calc(100vh-160px)] lg:left-[var(--sidebar-total-offset,32px)]",
         "flex flex-col z-[var(--z-panel)] p-6 font-body rounded-[32px] overflow-hidden transition-all duration-500 ease-in-out",
         isFirstLoad.current && "opacity-0 pointer-events-none transition-none",
         isOpen
-          ? "translate-x-0 opacity-100 pointer-events-auto"
-          : "-translate-x-[150%] opacity-0 pointer-events-none",
+          ? "translate-y-0 opacity-100 pointer-events-auto lg:translate-x-0"
+          : "translate-y-[150%] opacity-0 pointer-events-none lg:-translate-x-[150%] lg:translate-y-0",
       )}
     >
       <header className="mb-6 flex items-center justify-between">

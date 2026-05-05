@@ -71,6 +71,24 @@ async def update_me(body: UserPatch, current_user: CurrentUserDep, session: Sess
     return current_user
 
 
+@router.delete(
+    "/me",
+    status_code=204,
+    operation_id="deleteMe",
+    summary="Delete the current boat-owner account",
+)
+async def delete_me(current_user: CurrentUserDep, session: SessionDep):
+    # harbormasters own hardware adoption records; offboarding them is a
+    # separate admin flow, not self-service
+    if current_user.role != "boat_owner":
+        raise HTTPException(
+            status_code=403,
+            detail="Harbormaster accounts cannot be self-deleted",
+        )
+    await session.delete(current_user)
+    await session.commit()
+
+
 @router.get(
     "/me/notification-prefs",
     response_model=NotificationPrefsOut,

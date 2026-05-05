@@ -1,6 +1,15 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Double, Enum, ForeignKey, Integer, String
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    Double,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -32,9 +41,34 @@ class User(Base):
     role: Mapped[str] = mapped_column(
         user_role_enum, nullable=False, default="boat_owner"
     )
-    assignments: Mapped[list["Assignment"]] = relationship(back_populates="user")
+    assignments: Mapped[list["Assignment"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
     notification_prefs: Mapped["UserNotificationPrefs | None"] = relationship(
         back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )
+
+
+class BerthAvailabilityWindow(Base):
+    __tablename__ = "berth_availability_windows"
+
+    window_id: Mapped[str] = mapped_column(String, primary_key=True)
+    berth_id: Mapped[str] = mapped_column(
+        ForeignKey("berths.berth_id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.user_id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    from_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    return_date: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
 
@@ -141,8 +175,8 @@ class Node(Base):
     adopted_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )
-    adopted_by_user_id: Mapped[str] = mapped_column(
-        ForeignKey("users.user_id"), nullable=False
+    adopted_by_user_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True
     )
 
 
@@ -167,8 +201,8 @@ class AdoptionRequest(Base):
     error_msg: Mapped[str | None] = mapped_column(String)
     mesh_unicast_addr: Mapped[str | None] = mapped_column(String)
     dev_key_fp: Mapped[str | None] = mapped_column(String)
-    created_by_user_id: Mapped[str] = mapped_column(
-        ForeignKey("users.user_id"), nullable=False
+    created_by_user_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False

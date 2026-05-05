@@ -2,7 +2,14 @@ import os
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field,
+    SecretStr,
+)
 
 # read directly to dodge Settings' import-time SECRET_KEY requirement
 _APP_ENV = os.getenv("APP_ENV", "dev")
@@ -52,14 +59,23 @@ _PASSWORD = Field(
 _BOAT_CLUB = Field(max_length=100, examples=["Saltsjöbadens BK"])
 _EMAIL = Field(examples=["alex@example.com"])
 
+
+def _lower_email(v: str | None) -> str | None:
+    return v.lower() if v else v
+
+
+# email is case-insensitive per RFC 5321; normalize at the type so every
+# schema using EmailField stores a canonical form (lookups, indexes, joins)
+_LOWER_EMAIL = AfterValidator(_lower_email)
+
 Name = Annotated[str, _NAME]
 NameOpt = Annotated[str | None, _NAME]
 PhoneOpt = Annotated[str | None, _PHONE]
 Password = Annotated[SecretStr, _PASSWORD]
 PasswordOpt = Annotated[SecretStr | None, _PASSWORD]
 BoatClubOpt = Annotated[str | None, _BOAT_CLUB]
-EmailField = Annotated[EmailStr, _EMAIL]
-EmailFieldOpt = Annotated[EmailStr | None, _EMAIL]
+EmailField = Annotated[EmailStr, _EMAIL, _LOWER_EMAIL]
+EmailFieldOpt = Annotated[EmailStr | None, _EMAIL, _LOWER_EMAIL]
 
 
 # --- berths / docks / gateways ---
@@ -115,6 +131,20 @@ class GatewayOut(_BaseSchema):
     name: str = Field(examples=["Pier A gateway"])
     status: GatewayStatus
     last_seen: datetime | None = Field(default=None, examples=["2026-05-03T14:30:00Z"])
+
+
+class BerthAvailabilityWindowOut(_BaseSchema):
+    window_id: str = Field(examples=["win-0001"])
+    berth_id: str = Field(examples=["berth-001"])
+    user_id: str = Field(examples=["user-001"])
+    from_date: datetime = Field(examples=["2026-06-01T00:00:00Z"])
+    return_date: datetime = Field(examples=["2026-06-08T00:00:00Z"])
+    created_at: datetime = Field(examples=["2026-05-05T14:30:00Z"])
+
+
+class BerthAvailabilityWindowIn(BaseModel):
+    from_date: datetime = Field(examples=["2026-06-01T00:00:00Z"])
+    return_date: datetime = Field(examples=["2026-06-08T00:00:00Z"])
 
 
 # --- nodes / events / adoption ---

@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 
 from app.dependencies import CurrentUserDep, SessionDep
-from app.models import AdoptionRequest, Node, User, UserNotificationPrefs
+from app.models import User, UserNotificationPrefs
 from app.schemas import (
     NotificationPrefsOut,
     NotificationPrefsPatch,
@@ -75,35 +75,16 @@ async def update_me(body: UserPatch, current_user: CurrentUserDep, session: Sess
     "/me",
     status_code=204,
     operation_id="deleteMe",
-    summary="Delete the current user's account",
+    summary="Delete the current boat-owner account",
 )
 async def delete_me(current_user: CurrentUserDep, session: SessionDep):
-    # block account deletion while the user still owns adopted hardware,
-    # otherwise cascading would orphan physical nodes from their owner record
-    owns_nodes = await session.execute(
-        select(Node.node_id)
-        .where(Node.adopted_by_user_id == current_user.user_id)
-        .limit(1)
-    )
-    if owns_nodes.first() is not None:
+    # harbormasters own hardware adoption records; offboarding them is a
+    # separate admin flow, not self-service
+    if current_user.role != "boat_owner":
         raise HTTPException(
-            status_code=409,
-            detail="Release adopted nodes before deleting the account",
+            status_code=403,
+            detail="Harbormaster accounts cannot be self-deleted",
         )
-    owns_requests = await session.execute(
-        select(AdoptionRequest.request_id)
-        .where(
-            AdoptionRequest.created_by_user_id == current_user.user_id,
-            AdoptionRequest.status == "pending",
-        )
-        .limit(1)
-    )
-    if owns_requests.first() is not None:
-        raise HTTPException(
-            status_code=409,
-            detail="Resolve pending adoption requests before deleting the account",
-        )
-
     await session.delete(current_user)
     await session.commit()
 

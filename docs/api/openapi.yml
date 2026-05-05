@@ -1739,7 +1739,7 @@ paths:
           description: Successful Response
       security:
       - HTTPBearer: []
-      summary: Delete the current user's account
+      summary: Delete the current boat-owner account
       tags:
       - users
     get:

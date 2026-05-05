@@ -46,14 +46,47 @@ Starts a Prism mock server from the OpenAPI spec and proxies to it automatically
 
 ## Frontend Tests
 
-Frontend smoke tests use Vitest, React Testing Library, and Prism.
+Frontend tests use Vitest, React Testing Library, and stubbed `fetch`/`EventSource`.
+The structure mirrors the backend test suite: shared fixtures and factories live
+alongside the test files and exercise the same flows the running app does.
 
-The test command starts a Prism mock API from the OpenAPI specification at `docs/api/openapi.yml`, then runs the frontend test suite.
+| Layer        | Backend equivalent                | Frontend equivalent                                       |
+| ------------ | --------------------------------- | --------------------------------------------------------- |
+| Test runner  | `pytest`                          | `vitest run`                                              |
+| HTTP harness | `httpx.AsyncClient` over ASGI app | `mockFetch` helper + `@testing-library/react`             |
+| Streams      | aiomqtt test stubs                | `FakeEventSource` mock with `emit`/`emitOpen`/`emitError` |
+| Fixtures     | `tests/conftest.py`               | `src/test/setup.ts`, `src/test/helpers.tsx`               |
+| Factories    | `tests/_helpers.py`               | `makeBerth`, `makeUser`, `makeEvent`, `buildAuthContext`  |
+| Coverage     | `pytest-cov` (`fail_under = 80`)  | `@vitest/coverage-v8` (`thresholds.lines = 80`)           |
+
+Tests live next to the source they exercise:
+
+```
+src/
+  __tests__/                  app + HarborMap entry tests
+  components/__tests__/       UI panels + layout chrome
+  hooks/__tests__/            data hooks (fake timers + mocked fetch/EventSource)
+  lib/__tests__/              pure helpers
+  pages/__tests__/            page components (Dashboard, Settings)
+  test/                       shared setup, factories, EventSource mock
+```
 
 ### Run tests locally
 
 ```bash
 cd frontend
 bun install
-bun run test
+bun run test           # full suite (boots Prism alongside vitest, mirrors CI)
+bun run test:watch     # vitest watch mode, no Prism
+bun run test:cov       # full suite with v8 coverage report
 ```
+
+### Writing new tests
+
+- Reach for `renderWithAuthLayout` whenever a component uses `useOutletContext`.
+- Use `mockFetch((url, init) => ...)` to replace the network layer; combine with
+  `jsonResponse` / `errorResponse` from `src/test/helpers.tsx`.
+- For SSE-driven hooks, drive the `FakeEventSource` via `getLastEventSource()`
+  and call `emit("berth.update", payload)`.
+- Keep factory builders in sync with `src/api-types.ts` — when a schema changes,
+  the type checker catches stale fixtures.

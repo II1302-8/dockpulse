@@ -13,9 +13,7 @@ import yaml
 # committed spec is canonical, render with prod constraints regardless of caller env
 os.environ["APP_ENV"] = "prod"
 # Settings validates SECRET_KEY length, dump uses a non-secret placeholder
-os.environ.setdefault(
-    "SECRET_KEY", "openapi-dump-placeholder-not-for-jwt-signing"
-)
+os.environ.setdefault("SECRET_KEY", "openapi-dump-placeholder-not-for-jwt-signing")
 
 from app.main import app  # noqa: E402
 

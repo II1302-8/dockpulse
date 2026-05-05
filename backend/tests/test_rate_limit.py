@@ -17,9 +17,7 @@ def enable_rate_limit(monkeypatch):
     limiter.reset()
 
 
-async def test_login_rate_limit_returns_429(
-    client: AsyncClient, enable_rate_limit
-):
+async def test_login_rate_limit_returns_429(client: AsyncClient, enable_rate_limit):
     payload = {"email": "nobody@example.com", "password": "wrong-password"}
     for _ in range(3):
         r = await client.post("/api/auth/login", json=payload)
@@ -28,9 +26,7 @@ async def test_login_rate_limit_returns_429(
     assert r.status_code == 429
 
 
-async def test_register_rate_limit_returns_429(
-    client: AsyncClient, enable_rate_limit
-):
+async def test_register_rate_limit_returns_429(client: AsyncClient, enable_rate_limit):
     base = {
         "firstname": "Rina",
         "lastname": "Limit",

@@ -6,9 +6,7 @@ from enum import StrEnum
 from typing import Annotated
 
 # cli does no JWT but Settings still requires SECRET_KEY pass length validator
-os.environ.setdefault(
-    "SECRET_KEY", "cli-unused-placeholder-not-for-jwt-signing"
-)
+os.environ.setdefault("SECRET_KEY", "cli-unused-placeholder-not-for-jwt-signing")
 
 import typer
 from argon2 import PasswordHasher

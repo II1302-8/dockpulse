@@ -51,13 +51,10 @@ class Settings(BaseSettings):
     @classmethod
     def _validate_secret_key(cls, v: str) -> str:
         if v.strip().lower() in _FORBIDDEN_SECRETS:
-            raise ValueError(
-                "SECRET_KEY is a known placeholder; set a real value"
-            )
+            raise ValueError("SECRET_KEY is a known placeholder; set a real value")
         if len(v) < SECRET_KEY_MIN_LEN:
             raise ValueError(
-                f"SECRET_KEY must be at least {SECRET_KEY_MIN_LEN} chars "
-                f"(got {len(v)})"
+                f"SECRET_KEY must be at least {SECRET_KEY_MIN_LEN} chars (got {len(v)})"
             )
         return v
 

@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr, field_validator
 
 # read directly to dodge Settings' import-time SECRET_KEY requirement
 _APP_ENV = os.getenv("APP_ENV", "dev")
@@ -117,6 +117,20 @@ class GatewayOut(_BaseSchema):
     last_seen: datetime | None = Field(default=None, examples=["2026-05-03T14:30:00Z"])
 
 
+class BerthAvailabilityWindowOut(_BaseSchema):
+    window_id: str = Field(examples=["win-0001"])
+    berth_id: str = Field(examples=["berth-001"])
+    user_id: str = Field(examples=["user-001"])
+    from_date: datetime = Field(examples=["2026-06-01T00:00:00Z"])
+    return_date: datetime = Field(examples=["2026-06-08T00:00:00Z"])
+    created_at: datetime = Field(examples=["2026-05-05T14:30:00Z"])
+
+
+class BerthAvailabilityWindowIn(BaseModel):
+    from_date: datetime = Field(examples=["2026-06-01T00:00:00Z"])
+    return_date: datetime = Field(examples=["2026-06-08T00:00:00Z"])
+
+
 # --- nodes / events / adoption ---
 
 
@@ -194,6 +208,10 @@ class UserOut(_BaseSchema):
     role: Role
 
 
+def _normalize_email(value: str | None) -> str | None:
+    return value.strip().lower() if value else value
+
+
 class UserPatch(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
@@ -206,6 +224,8 @@ class UserPatch(BaseModel):
     # required only when password is being changed, verified server-side
     current_password: SecretStr | None = None
 
+    _normalize_email = field_validator("email")(lambda cls, v: _normalize_email(v))
+
 
 class UserCreate(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
@@ -217,12 +237,16 @@ class UserCreate(BaseModel):
     boat_club: BoatClubOpt = None
     password: Password
 
+    _normalize_email = field_validator("email")(lambda cls, v: _normalize_email(v))
+
 
 class LoginIn(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     email: EmailField
     password: SecretStr
+
+    _normalize_email = field_validator("email")(lambda cls, v: _normalize_email(v))
 
 
 class TokenOut(BaseModel):

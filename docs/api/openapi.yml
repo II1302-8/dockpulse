@@ -154,6 +154,69 @@ components:
       - user_id
       title: AssignmentOut
       type: object
+    BerthAvailabilityWindowIn:
+      properties:
+        from_date:
+          examples:
+          - '2026-06-01T00:00:00Z'
+          format: date-time
+          title: From Date
+          type: string
+        return_date:
+          examples:
+          - '2026-06-08T00:00:00Z'
+          format: date-time
+          title: Return Date
+          type: string
+      required:
+      - from_date
+      - return_date
+      title: BerthAvailabilityWindowIn
+      type: object
+    BerthAvailabilityWindowOut:
+      properties:
+        berth_id:
+          examples:
+          - berth-001
+          title: Berth Id
+          type: string
+        created_at:
+          examples:
+          - '2026-05-05T14:30:00Z'
+          format: date-time
+          title: Created At
+          type: string
+        from_date:
+          examples:
+          - '2026-06-01T00:00:00Z'
+          format: date-time
+          title: From Date
+          type: string
+        return_date:
+          examples:
+          - '2026-06-08T00:00:00Z'
+          format: date-time
+          title: Return Date
+          type: string
+        user_id:
+          examples:
+          - user-001
+          title: User Id
+          type: string
+        window_id:
+          examples:
+          - win-0001
+          title: Window Id
+          type: string
+      required:
+      - window_id
+      - berth_id
+      - user_id
+      - from_date
+      - return_date
+      - created_at
+      title: BerthAvailabilityWindowOut
+      type: object
     BerthOut:
       properties:
         assignment:
@@ -1075,6 +1138,86 @@ paths:
       summary: List all berths
       tags:
       - berths
+  /api/berths/availability:
+    get:
+      operationId: listHarborAvailability
+      parameters:
+      - description: harbor to filter on
+        in: query
+        name: harbor_id
+        required: true
+        schema:
+          description: harbor to filter on
+          title: Harbor Id
+          type: string
+      - description: windows must end after
+        in: query
+        name: from_date
+        required: false
+        schema:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          description: windows must end after
+          title: From Date
+      - description: windows must start before
+        in: query
+        name: return_date
+        required: false
+        schema:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          description: windows must start before
+          title: Return Date
+      - in: query
+        name: length_m
+        required: false
+        schema:
+          anyOf:
+          - minimum: 0
+            type: number
+          - type: 'null'
+          title: Length M
+      - in: query
+        name: width_m
+        required: false
+        schema:
+          anyOf:
+          - minimum: 0
+            type: number
+          - type: 'null'
+          title: Width M
+      - in: query
+        name: depth_m
+        required: false
+        schema:
+          anyOf:
+          - minimum: 0
+            type: number
+          - type: 'null'
+          title: Depth M
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/BerthAvailabilityWindowOut'
+                title: Response Listharboravailability
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: List availability windows in a harbor
+      tags:
+      - berths
   /api/berths/stream:
     get:
       description: Opens a long-lived `text/event-stream` connection. Each message is a JSON-encoded `BerthUpdateEvent`.
@@ -1177,6 +1320,98 @@ paths:
       security:
       - HTTPBearer: []
       summary: Assign a berth to a user
+      tags:
+      - berths
+  /api/berths/{berth_id}/availability:
+    get:
+      operationId: listBerthAvailability
+      parameters:
+      - in: path
+        name: berth_id
+        required: true
+        schema:
+          title: Berth Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/BerthAvailabilityWindowOut'
+                title: Response Listberthavailability
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: List availability windows for a berth
+      tags:
+      - berths
+    post:
+      operationId: createBerthAvailability
+      parameters:
+      - in: path
+        name: berth_id
+        required: true
+        schema:
+          title: Berth Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BerthAvailabilityWindowIn'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BerthAvailabilityWindowOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Create an availability window for a berth
+      tags:
+      - berths
+  /api/berths/{berth_id}/availability/{window_id}:
+    delete:
+      operationId: deleteBerthAvailability
+      parameters:
+      - in: path
+        name: berth_id
+        required: true
+        schema:
+          title: Berth Id
+          type: string
+      - in: path
+        name: window_id
+        required: true
+        schema:
+          title: Window Id
+          type: string
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - HTTPBearer: []
+      summary: Delete an availability window
       tags:
       - berths
   /api/berths/{berth_id}/events:
@@ -1497,6 +1732,16 @@ paths:
       tags:
       - nodes
   /api/users/me:
+    delete:
+      operationId: deleteMe
+      responses:
+        '204':
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      summary: Delete the current user's account
+      tags:
+      - users
     get:
       operationId: getMe
       responses:

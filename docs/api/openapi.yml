@@ -934,6 +934,10 @@ components:
       title: ValidationError
       type: object
   securitySchemes:
+    APIKeyCookie:
+      in: cookie
+      name: dockpulse_access
+      type: apiKey
     HTTPBearer:
       scheme: bearer
       type: http
@@ -978,6 +982,7 @@ paths:
           description: Validation Error
       security:
       - HTTPBearer: []
+      - APIKeyCookie: []
       summary: Create an adoption request for a scanned node
       tags:
       - adoptions
@@ -1006,6 +1011,7 @@ paths:
           description: Validation Error
       security:
       - HTTPBearer: []
+      - APIKeyCookie: []
       summary: Get an adoption request by id
       tags:
       - adoptions
@@ -1040,6 +1046,7 @@ paths:
           description: Validation Error
       security:
       - HTTPBearer: []
+      - APIKeyCookie: []
       summary: Subscribe to adoption progress via Server-Sent Events
       tags:
       - adoptions
@@ -1076,7 +1083,48 @@ paths:
           description: Successful Response
       security:
       - HTTPBearer: []
+      - APIKeyCookie: []
       summary: Invalidate all tokens for the current user
+      tags:
+      - auth
+  /api/auth/me:
+    get:
+      operationId: getCurrentUser
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+          description: Successful Response
+      security:
+      - HTTPBearer: []
+      - APIKeyCookie: []
+      summary: Return the authenticated user
+      tags:
+      - auth
+  /api/auth/refresh:
+    post:
+      operationId: refreshSession
+      parameters:
+      - in: cookie
+        name: dockpulse_refresh
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Dockpulse Refresh
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Rotate the refresh cookie and reissue the access cookie
       tags:
       - auth
   /api/auth/register:
@@ -1296,6 +1344,7 @@ paths:
           description: Validation Error
       security:
       - HTTPBearer: []
+      - APIKeyCookie: []
       summary: Remove a berth assignment
       tags:
       - berths
@@ -1329,6 +1378,7 @@ paths:
           description: Validation Error
       security:
       - HTTPBearer: []
+      - APIKeyCookie: []
       summary: Assign a berth to a user
       tags:
       - berths
@@ -1391,6 +1441,7 @@ paths:
           description: Validation Error
       security:
       - HTTPBearer: []
+      - APIKeyCookie: []
       summary: Create an availability window for a berth
       tags:
       - berths
@@ -1421,6 +1472,7 @@ paths:
           description: Validation Error
       security:
       - HTTPBearer: []
+      - APIKeyCookie: []
       summary: Delete an availability window
       tags:
       - berths
@@ -1461,6 +1513,7 @@ paths:
           description: Validation Error
       security:
       - HTTPBearer: []
+      - APIKeyCookie: []
       summary: List events for a berth
       tags:
       - berths
@@ -1576,6 +1629,7 @@ paths:
           description: Validation Error
       security:
       - HTTPBearer: []
+      - APIKeyCookie: []
       summary: List gateways visible to the harbormaster
       tags:
       - gateways
@@ -1594,6 +1648,7 @@ paths:
           description: Successful Response
       security:
       - HTTPBearer: []
+      - APIKeyCookie: []
       summary: List all harbors
       tags:
       - harbors
@@ -1673,6 +1728,7 @@ paths:
           description: Validation Error
       security:
       - HTTPBearer: []
+      - APIKeyCookie: []
       summary: List nodes with derived health
       tags:
       - nodes
@@ -1710,6 +1766,7 @@ paths:
           description: Validation Error
       security:
       - HTTPBearer: []
+      - APIKeyCookie: []
       summary: Get node detail with recent telemetry
       tags:
       - nodes
@@ -1738,6 +1795,7 @@ paths:
           description: Validation Error
       security:
       - HTTPBearer: []
+      - APIKeyCookie: []
       summary: Mark node as decommissioned
       tags:
       - nodes
@@ -1749,6 +1807,7 @@ paths:
           description: Successful Response
       security:
       - HTTPBearer: []
+      - APIKeyCookie: []
       summary: Delete the current boat-owner account
       tags:
       - users
@@ -1763,6 +1822,7 @@ paths:
           description: Successful Response
       security:
       - HTTPBearer: []
+      - APIKeyCookie: []
       summary: Get current user profile
       tags:
       - users
@@ -1789,6 +1849,7 @@ paths:
           description: Validation Error
       security:
       - HTTPBearer: []
+      - APIKeyCookie: []
       summary: Update current user profile
       tags:
       - users
@@ -1804,6 +1865,7 @@ paths:
           description: Successful Response
       security:
       - HTTPBearer: []
+      - APIKeyCookie: []
       summary: Get notification preferences for the current user
       tags:
       - users
@@ -1830,6 +1892,7 @@ paths:
           description: Validation Error
       security:
       - HTTPBearer: []
+      - APIKeyCookie: []
       summary: Update notification preferences for the current user
       tags:
       - users

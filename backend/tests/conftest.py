@@ -7,6 +7,8 @@ os.environ.setdefault("APP_ENV", "prod")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-not-for-prod-32bytesx")
 # rate limiter is process-global, disable here and the dedicated test re-enables
 os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
+# httpx test client uses http://, Secure cookies would be silently dropped
+os.environ.setdefault("COOKIE_SECURE", "false")
 
 from collections.abc import AsyncIterator
 from pathlib import Path

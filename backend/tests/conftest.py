@@ -5,6 +5,8 @@ import os
 os.environ.setdefault("APP_ENV", "prod")
 # SECRET_KEY validated at import, placeholder satisfies module-level get_settings
 os.environ.setdefault("SECRET_KEY", "test-secret-key-not-for-prod-32bytesx")
+# rate limiter is process-global, disable here and the dedicated test re-enables
+os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
 
 from collections.abc import AsyncIterator
 from pathlib import Path

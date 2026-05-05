@@ -10,6 +10,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp, Receive, Scope, Send
@@ -19,6 +21,7 @@ from app.config import get_settings
 from app.db import get_engine
 from app.logging_config import request_id_var, setup_logging
 from app.mqtt import is_mqtt_connected, mqtt_listener
+from app.rate_limit import limiter
 from app.routers import adoptions, auth, berths, docks, gateways, harbors, nodes, users
 from app.schemas import HealthStatus
 
@@ -139,6 +142,9 @@ app = FastAPI(
     servers=SERVERS,
     lifespan=lifespan,
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(RequestContextMiddleware)
 app.add_middleware(GZipExceptStream, minimum_size=1024)

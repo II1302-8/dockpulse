@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     email_from: str = "DockPulse <noreply@dockpulse.xyz>"
     # csv origins, empty disables CORS middleware (vite proxy makes dev same-origin)
     cors_allowed_origins: Annotated[list[str], NoDecode] = []
+    # per-ip throttle for credential brute-force
+    # proxy deploys need uvicorn --forwarded-allow-ips so client.host is real ip
+    rate_limit_login: str = "10/minute"
+    rate_limit_register: str = "5/hour"
+    # global kill-switch so tests don't have to override every endpoint
+    rate_limit_enabled: bool = True
 
     @field_validator("secret_key")
     @classmethod

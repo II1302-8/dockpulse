@@ -2,12 +2,14 @@ import uuid
 
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from sqlalchemy import select
 
 from app.auth import create_access_token
+from app.config import get_settings
 from app.dependencies import CurrentUserDep, SessionDep
 from app.models import User
+from app.rate_limit import limiter
 from app.schemas import LoginIn, TokenOut, UserCreate, UserOut
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -29,7 +31,8 @@ def _hash_password(password: str) -> str:
     operation_id="registerUser",
     summary="Register a new user",
 )
-async def register(body: UserCreate, session: SessionDep):
+@limiter.limit(lambda: get_settings().rate_limit_register)
+async def register(request: Request, body: UserCreate, session: SessionDep):
     existing = await session.execute(select(User).where(User.email == body.email))
     if existing.scalar_one_or_none() is not None:
         raise HTTPException(status_code=409, detail="Email already in use")
@@ -55,7 +58,8 @@ async def register(body: UserCreate, session: SessionDep):
     operation_id="login",
     summary="Log in and obtain an access token",
 )
-async def login(body: LoginIn, session: SessionDep):
+@limiter.limit(lambda: get_settings().rate_limit_login)
+async def login(request: Request, body: LoginIn, session: SessionDep):
     result = await session.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
 

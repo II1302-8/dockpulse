@@ -3,6 +3,8 @@ import os
 
 # tests must verify the strict password floor, set before any app import
 os.environ.setdefault("APP_ENV", "prod")
+# SECRET_KEY validated at import, placeholder satisfies module-level get_settings
+os.environ.setdefault("SECRET_KEY", "test-secret-key-not-for-prod-32bytesx")
 
 from collections.abc import AsyncIterator
 from pathlib import Path

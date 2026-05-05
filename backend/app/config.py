@@ -1,7 +1,24 @@
 from functools import lru_cache
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+
+# 32 bytes matches the HS256 key length recommendation (RFC 7518 §3.2)
+SECRET_KEY_MIN_LEN = 32
+
+# placeholders that must never reach prod
+_FORBIDDEN_SECRETS = frozenset(
+    {
+        "",
+        "changeme",
+        "change-me",
+        "secret",
+        "cli-unused",
+        "test-secret",
+        "dev-secret",
+    }
+)
 
 
 class Settings(BaseSettings):
@@ -21,6 +38,30 @@ class Settings(BaseSettings):
     app_env: Literal["dev", "staging", "prod"] = "dev"
     resend_api_key: str | None = None
     email_from: str = "DockPulse <noreply@dockpulse.xyz>"
+    # csv origins, empty disables CORS middleware (vite proxy makes dev same-origin)
+    cors_allowed_origins: Annotated[list[str], NoDecode] = []
+
+    @field_validator("secret_key")
+    @classmethod
+    def _validate_secret_key(cls, v: str) -> str:
+        if v.strip().lower() in _FORBIDDEN_SECRETS:
+            raise ValueError(
+                "SECRET_KEY is a known placeholder; set a real value"
+            )
+        if len(v) < SECRET_KEY_MIN_LEN:
+            raise ValueError(
+                f"SECRET_KEY must be at least {SECRET_KEY_MIN_LEN} chars "
+                f"(got {len(v)})"
+            )
+        return v
+
+    @field_validator("cors_allowed_origins", mode="before")
+    @classmethod
+    def _split_cors_origins(cls, v: object) -> object:
+        # env vars come in as comma-separated strings
+        if isinstance(v, str):
+            return [o.strip() for o in v.split(",") if o.strip()]
+        return v
 
 
 @lru_cache

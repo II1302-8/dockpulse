@@ -5,8 +5,10 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Annotated
 
-# SECRET_KEY is required by Settings but unused in the CLI (no JWT).
-os.environ.setdefault("SECRET_KEY", "cli-unused")
+# cli does no JWT but Settings still requires SECRET_KEY pass length validator
+os.environ.setdefault(
+    "SECRET_KEY", "cli-unused-placeholder-not-for-jwt-signing"
+)
 
 import typer
 from argon2 import PasswordHasher

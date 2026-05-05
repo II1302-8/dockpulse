@@ -2,7 +2,7 @@ import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Dock, Gateway, Harbor, User
+from app.models import Dock, Gateway, Harbor, User, UserHarborRole
 from tests._helpers import make_auth_token as _auth_token
 
 
@@ -44,7 +44,7 @@ async def test_list_gateways_rejects_boat_owner(
     assert r.status_code == 403
 
 
-async def test_list_gateways_returns_all_for_harbormaster(
+async def test_list_gateways_excludes_unmanaged_harbor(
     client: AsyncClient, harbor_master: User, gateways_world
 ):
     r = await client.get(
@@ -53,12 +53,29 @@ async def test_list_gateways_returns_all_for_harbormaster(
     )
     assert r.status_code == 200
     body = r.json()
-    assert [g["gateway_id"] for g in body] == ["gw-a", "gw-b", "gw-c"]
-    assert body[0]["dock_id"] == "d1"
-    assert body[0]["status"] == "online"
+    # gw-c sits in h2 and hm1 manages only h1
+    assert [g["gateway_id"] for g in body] == ["gw-a", "gw-b"]
 
 
-async def test_list_gateways_filters_by_harbor(
+async def test_list_gateways_includes_extra_managed_harbor(
+    client: AsyncClient,
+    session: AsyncSession,
+    harbor_master: User,
+    gateways_world,
+):
+    session.add(
+        UserHarborRole(user_id="hm1", harbor_id="h2", role="harbormaster")
+    )
+    await session.commit()
+    r = await client.get(
+        "/api/gateways",
+        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+    )
+    assert r.status_code == 200
+    assert [g["gateway_id"] for g in r.json()] == ["gw-a", "gw-b", "gw-c"]
+
+
+async def test_list_gateways_unmanaged_harbor_filter_returns_empty(
     client: AsyncClient, harbor_master: User, gateways_world
 ):
     r = await client.get(
@@ -66,8 +83,7 @@ async def test_list_gateways_filters_by_harbor(
         headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
     )
     assert r.status_code == 200
-    body = r.json()
-    assert [g["gateway_id"] for g in body] == ["gw-c"]
+    assert r.json() == []
 
 
 async def test_list_gateways_filters_by_dock(
@@ -78,11 +94,10 @@ async def test_list_gateways_filters_by_dock(
         headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
     )
     assert r.status_code == 200
-    body = r.json()
-    assert [g["gateway_id"] for g in body] == ["gw-b"]
+    assert [g["gateway_id"] for g in r.json()] == ["gw-b"]
 
 
-async def test_list_gateways_filters_by_status(
+async def test_list_gateways_filters_by_status_within_scope(
     client: AsyncClient, harbor_master: User, gateways_world
 ):
     r = await client.get(
@@ -90,8 +105,8 @@ async def test_list_gateways_filters_by_status(
         headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
     )
     assert r.status_code == 200
-    body = r.json()
-    assert [g["gateway_id"] for g in body] == ["gw-a", "gw-c"]
+    # gw-c is online but in h2 so it stays excluded
+    assert [g["gateway_id"] for g in r.json()] == ["gw-a"]
 
 
 async def test_list_gateways_rejects_bad_status(

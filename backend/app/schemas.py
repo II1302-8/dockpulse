@@ -104,6 +104,11 @@ class DockWithBerthsOut(_BaseSchema):
     berths: list[BerthOut] = []
 
 
+class HarborOut(_BaseSchema):
+    harbor_id: str = Field(examples=["harbor-saltsjobaden"])
+    name: str = Field(examples=["Saltsjöbaden Marina"])
+
+
 class GatewayOut(_BaseSchema):
     gateway_id: str = Field(examples=["gw-dock-a"])
     dock_id: str = Field(examples=["dock-a"])

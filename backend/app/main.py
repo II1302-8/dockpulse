@@ -17,7 +17,7 @@ from app.adoption.sweeper import sweeper_loop
 from app.db import get_engine
 from app.logging_config import request_id_var, setup_logging
 from app.mqtt import is_mqtt_connected, mqtt_listener
-from app.routers import adoptions, auth, berths, docks, gateways, nodes, users
+from app.routers import adoptions, auth, berths, docks, gateways, harbors, nodes, users
 from app.schemas import HealthStatus
 
 setup_logging()
@@ -145,6 +145,7 @@ app.include_router(adoptions.router)
 app.include_router(auth.router)
 app.include_router(berths.router)
 app.include_router(docks.router)
+app.include_router(harbors.router)
 app.include_router(gateways.router)
 app.include_router(nodes.router)
 app.include_router(users.router)

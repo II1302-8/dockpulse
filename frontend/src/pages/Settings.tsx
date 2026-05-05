@@ -29,6 +29,20 @@ type SettingsForm = {
   password: string;
 };
 
+type AvailabilityForm = {
+  from_date: string;
+  return_date: string;
+};
+
+type AvailabilityWindow = {
+  window_id: string;
+  berth_id: string;
+  user_id: string;
+  from_date: string;
+  return_date: string;
+  created_at: string;
+};
+
 type FieldErrors = Partial<Record<keyof SettingsForm | "general", string>>;
 
 // mirror backend APP_ENV: prod build enforces the 12 char floor, dev/staging relaxed for testing
@@ -44,6 +58,42 @@ function getInitialForm(user: AuthUser | null): SettingsForm {
     current_password: "",
     password: "",
   };
+}
+
+function getAssignedBerth(user: AuthUser | null) {
+  const berthId = user?.assigned_berth_id ?? null;
+  const berthLabel = berthId ? `Berth ${berthId}` : null;
+  return { berthId, berthLabel };
+}
+
+// input[type=date] is YYYY-MM-DD; backend expects ISO datetime, so anchor at UTC midnight
+function dateInputToIso(value: string): string {
+  return `${value}T00:00:00Z`;
+}
+
+function formatDateLong(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+function todayInputValue(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function validateAvailabilityForm(form: AvailabilityForm): string | null {
+  if (!form.from_date) return "Start date is required.";
+  if (!form.return_date) return "Return date is required.";
+
+  if (form.return_date <= form.from_date) {
+    return "Return date must be after the start date.";
+  }
+
+  return null;
 }
 
 function isValidEmail(email: string) {
@@ -135,10 +185,29 @@ function Settings() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
+  const [availabilityForm, setAvailabilityForm] = useState<AvailabilityForm>({
+    from_date: "",
+    return_date: "",
+  });
+  const [availabilityWindows, setAvailabilityWindows] = useState<
+    AvailabilityWindow[]
+  >([]);
+  const [availabilityError, setAvailabilityError] = useState<string | null>(
+    null,
+  );
+  const [availabilitySuccess, setAvailabilitySuccess] = useState<string | null>(
+    null,
+  );
+  const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
+  const [isSavingAvailability, setIsSavingAvailability] = useState(false);
+  const [clearingWindowId, setClearingWindowId] = useState<string | null>(null);
+
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const { berthId, berthLabel } = getAssignedBerth(user);
 
   useEffect(() => {
     document.title = "Settings | DockPulse";
@@ -148,10 +217,43 @@ function Settings() {
     setForm(initialForm);
   }, [initialForm]);
 
+  useEffect(() => {
+    if (!berthId) {
+      setAvailabilityWindows([]);
+      return;
+    }
+
+    const ac = new AbortController();
+    setIsLoadingAvailability(true);
+
+    fetch(`/api/berths/${berthId}/availability`, { signal: ac.signal })
+      .then((res) =>
+        res.ok ? (res.json() as Promise<AvailabilityWindow[]>) : [],
+      )
+      .then((windows) => setAvailabilityWindows(windows))
+      .catch((err) => {
+        if (err.name !== "AbortError") {
+          setAvailabilityError("Could not load existing availability windows.");
+        }
+      })
+      .finally(() => setIsLoadingAvailability(false));
+
+    return () => ac.abort();
+  }, [berthId]);
+
   function updateForm(field: keyof SettingsForm, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: undefined, general: undefined }));
     setSuccessMessage(null);
+  }
+
+  function updateAvailabilityForm(
+    field: keyof AvailabilityForm,
+    value: string,
+  ) {
+    setAvailabilityForm((prev) => ({ ...prev, [field]: value }));
+    setAvailabilityError(null);
+    setAvailabilitySuccess(null);
   }
 
   function clearLocalAuthState() {
@@ -159,6 +261,125 @@ function Settings() {
     localStorage.removeItem("token");
     setToken(null);
     setUser(null);
+  }
+
+  async function handleSaveAvailability(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    if (!token) {
+      setAvailabilityError("You need to log in before updating availability.");
+      setIsLoginOpen(true);
+      return;
+    }
+
+    if (!berthId) {
+      setAvailabilityError("No assigned berth was found for your account.");
+      return;
+    }
+
+    const validationError = validateAvailabilityForm(availabilityForm);
+
+    if (validationError) {
+      setAvailabilityError(validationError);
+      setAvailabilitySuccess(null);
+      return;
+    }
+
+    setIsSavingAvailability(true);
+    setAvailabilityError(null);
+    setAvailabilitySuccess(null);
+
+    try {
+      const res = await fetch(`/api/berths/${berthId}/availability`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          from_date: dateInputToIso(availabilityForm.from_date),
+          return_date: dateInputToIso(availabilityForm.return_date),
+        }),
+      });
+
+      if (!res.ok) {
+        const responseErrors = await getErrorsFromResponse(
+          res,
+          "Could not save berth availability.",
+        );
+        setAvailabilityError(
+          responseErrors.general ??
+            "Could not save berth availability. Please try again.",
+        );
+        return;
+      }
+
+      const savedWindow = (await res.json()) as AvailabilityWindow;
+
+      setAvailabilityWindows((prev) =>
+        [...prev, savedWindow].sort((a, b) =>
+          a.from_date.localeCompare(b.from_date),
+        ),
+      );
+      setAvailabilityForm({ from_date: "", return_date: "" });
+      setAvailabilitySuccess("Berth availability saved successfully.");
+    } catch {
+      setAvailabilityError(
+        "Could not save berth availability. Please try again.",
+      );
+    } finally {
+      setIsSavingAvailability(false);
+    }
+  }
+
+  async function handleClearAvailability(window: AvailabilityWindow) {
+    if (!token) {
+      setAvailabilityError("You need to log in before clearing availability.");
+      setIsLoginOpen(true);
+      return;
+    }
+
+    if (!berthId) {
+      setAvailabilityError("No assigned berth was found for your account.");
+      return;
+    }
+
+    setClearingWindowId(window.window_id);
+    setAvailabilityError(null);
+    setAvailabilitySuccess(null);
+
+    try {
+      const res = await fetch(
+        `/api/berths/${berthId}/availability/${window.window_id}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      if (!res.ok) {
+        const responseErrors = await getErrorsFromResponse(
+          res,
+          "Could not clear berth availability.",
+        );
+        setAvailabilityError(
+          responseErrors.general ??
+            "Could not clear berth availability. Please try again.",
+        );
+        return;
+      }
+
+      setAvailabilityWindows((prev) =>
+        prev.filter((w) => w.window_id !== window.window_id),
+      );
+      setAvailabilitySuccess("Berth availability cleared.");
+    } catch {
+      setAvailabilityError(
+        "Could not clear berth availability. Please try again.",
+      );
+    } finally {
+      setClearingWindowId(null);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -462,6 +683,115 @@ function Settings() {
       </form>
 
       {token && <NotificationSettings token={token} />}
+
+      <section className="mt-6 rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-lg backdrop-blur">
+        <div>
+          <h2 className="text-xl font-semibold text-brand-navy">
+            Berth availability
+          </h2>
+          <p className="mt-1 text-sm text-brand-navy/60">
+            Mark your own berth as available and set the date you return.
+          </p>
+        </div>
+
+        {!berthId ? (
+          <p className="mt-4 rounded-xl bg-yellow-50 p-3 text-sm font-medium text-yellow-700">
+            No assigned berth was found for your account.
+          </p>
+        ) : (
+          <>
+            <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm text-brand-navy">
+              <p className="font-semibold">Assigned berth</p>
+              <p className="mt-1 text-brand-navy/70">{berthLabel}</p>
+            </div>
+
+            {isLoadingAvailability ? (
+              <p className="mt-4 text-sm text-brand-navy/60">
+                Loading availability windows…
+              </p>
+            ) : availabilityWindows.length > 0 ? (
+              <ul className="mt-4 space-y-2">
+                {availabilityWindows.map((window) => (
+                  <li
+                    key={window.window_id}
+                    className="flex items-center justify-between gap-3 rounded-2xl bg-green-50 p-4 text-sm text-green-700"
+                  >
+                    <span>
+                      Available from {formatDateLong(window.from_date)} until
+                      return on {formatDateLong(window.return_date)}.
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={clearingWindowId === window.window_id}
+                      onClick={() => handleClearAvailability(window)}
+                      className="rounded-full"
+                    >
+                      {clearingWindowId === window.window_id
+                        ? "Clearing..."
+                        : "Clear"}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-4 text-sm text-brand-navy/60">
+                No upcoming availability windows.
+              </p>
+            )}
+
+            {availabilityError && (
+              <p className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-medium text-red-600">
+                {availabilityError}
+              </p>
+            )}
+
+            {availabilitySuccess && (
+              <p className="mt-4 rounded-xl bg-green-50 p-3 text-sm font-medium text-green-700">
+                {availabilitySuccess}
+              </p>
+            )}
+
+            <form onSubmit={handleSaveAvailability} className="mt-5 space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className={labelGroupClass}>
+                  <Label htmlFor="availability-from-date">Available from</Label>
+                  <Input
+                    id="availability-from-date"
+                    type="date"
+                    min={todayInputValue()}
+                    value={availabilityForm.from_date}
+                    onChange={(e) =>
+                      updateAvailabilityForm("from_date", e.target.value)
+                    }
+                  />
+                </div>
+
+                <div className={labelGroupClass}>
+                  <Label htmlFor="availability-return-date">Return date</Label>
+                  <Input
+                    id="availability-return-date"
+                    type="date"
+                    value={availabilityForm.return_date}
+                    min={availabilityForm.from_date || todayInputValue()}
+                    onChange={(e) =>
+                      updateAvailabilityForm("return_date", e.target.value)
+                    }
+                  />
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={isSavingAvailability}
+                className="w-full rounded-full bg-brand-blue"
+              >
+                {isSavingAvailability ? "Saving..." : "Save availability"}
+              </Button>
+            </form>
+          </>
+        )}
+      </section>
 
       <section className="mt-6 rounded-3xl border border-red-200 bg-red-50/80 p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-red-700">Delete account</h2>

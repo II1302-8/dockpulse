@@ -222,6 +222,7 @@ class UserOut(_BaseSchema):
     phone: str | None = Field(default=None, examples=["+46 70 123 45 67"])
     boat_club: str | None = Field(default=None, examples=["Saltsjöbadens BK"])
     role: Role
+    assigned_berth_id: str | None = Field(default=None, examples=["berth-001"])
 
 
 class UserPatch(BaseModel):

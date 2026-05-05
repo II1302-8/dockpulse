@@ -19,6 +19,7 @@ export type AuthUser = {
   phone?: string;
   boat_club?: string;
   role?: string;
+  assigned_berth_id?: string | null;
 };
 
 export type AuthOutletContext = {

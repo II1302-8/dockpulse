@@ -775,13 +775,21 @@ components:
       type: object
     UserOut:
       properties:
-        boat_club:
+        assigned_berth_id:
           anyOf:
           - examples: &id019
-            - Saltsjöbadens BK
+            - berth-001
             type: string
           - type: 'null'
           examples: *id019
+          title: Assigned Berth Id
+        boat_club:
+          anyOf:
+          - examples: &id020
+            - Saltsjöbadens BK
+            type: string
+          - type: 'null'
+          examples: *id020
           title: Boat Club
         email:
           examples:
@@ -801,11 +809,11 @@ components:
           type: string
         phone:
           anyOf:
-          - examples: &id020
+          - examples: &id021
             - +46 70 123 45 67
             type: string
           - type: 'null'
-          examples: *id020
+          examples: *id021
           title: Phone
         role:
           enum:
@@ -830,12 +838,12 @@ components:
       properties:
         boat_club:
           anyOf:
-          - examples: &id021
+          - examples: &id022
             - Saltsjöbadens BK
             maxLength: 100
             type: string
           - type: 'null'
-          examples: *id021
+          examples: *id022
           title: Boat Club
         current_password:
           anyOf:
@@ -846,25 +854,14 @@ components:
           title: Current Password
         email:
           anyOf:
-          - examples: &id022
+          - examples: &id023
             - alex@example.com
             format: email
             type: string
           - type: 'null'
-          examples: *id022
+          examples: *id023
           title: Email
         firstname:
-          anyOf:
-          - examples: &id023
-            - Alex
-            maxLength: 100
-            minLength: 1
-            pattern: ^[\p{L}\p{M}'’ .\-]+$
-            type: string
-          - type: 'null'
-          examples: *id023
-          title: Firstname
-        lastname:
           anyOf:
           - examples: &id024
             - Alex
@@ -874,10 +871,21 @@ components:
             type: string
           - type: 'null'
           examples: *id024
+          title: Firstname
+        lastname:
+          anyOf:
+          - examples: &id025
+            - Alex
+            maxLength: 100
+            minLength: 1
+            pattern: ^[\p{L}\p{M}'’ .\-]+$
+            type: string
+          - type: 'null'
+          examples: *id025
           title: Lastname
         password:
           anyOf:
-          - examples: &id025
+          - examples: &id026
             - correct horse battery staple
             format: password
             maxLength: 128
@@ -885,17 +893,17 @@ components:
             type: string
             writeOnly: true
           - type: 'null'
-          examples: *id025
+          examples: *id026
           title: Password
         phone:
           anyOf:
-          - examples: &id026
+          - examples: &id027
             - +46 70 123 45 67
             maxLength: 20
             pattern: ^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$
             type: string
           - type: 'null'
-          examples: *id026
+          examples: *id027
           title: Phone
       title: UserPatch
       type: object

@@ -126,6 +126,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/berths/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List availability windows in a harbor */
+        get: operations["listHarborAvailability"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/berths/stream": {
         parameters: {
             query?: never;
@@ -176,6 +193,41 @@ export interface paths {
         post?: never;
         /** Remove a berth assignment */
         delete: operations["removeBerthAssignment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/berths/{berth_id}/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List availability windows for a berth */
+        get: operations["listBerthAvailability"];
+        put?: never;
+        /** Create an availability window for a berth */
+        post: operations["createBerthAvailability"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/berths/{berth_id}/availability/{window_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an availability window */
+        delete: operations["deleteBerthAvailability"];
         options?: never;
         head?: never;
         patch?: never;
@@ -241,6 +293,23 @@ export interface paths {
         };
         /** List gateways visible to the harbormaster */
         get: operations["listGateways"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/harbors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all harbors */
+        get: operations["listHarbors"];
         put?: never;
         post?: never;
         delete?: never;
@@ -328,7 +397,8 @@ export interface paths {
         get: operations["getMe"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete the current boat-owner account */
+        delete: operations["deleteMe"];
         options?: never;
         head?: never;
         /** Update current user profile */
@@ -359,9 +429,15 @@ export interface components {
     schemas: {
         /** AdoptIn */
         AdoptIn: {
-            /** Berth Id */
+            /**
+             * Berth Id
+             * @example berth-001
+             */
             berth_id: string;
-            /** Gateway Id */
+            /**
+             * Gateway Id
+             * @example gw-dock-a
+             */
             gateway_id: string;
             /**
              * Qr Payload
@@ -371,33 +447,62 @@ export interface components {
         };
         /** AdoptionRequestOut */
         AdoptionRequestOut: {
-            /** Berth Id */
+            /**
+             * Berth Id
+             * @example berth-001
+             */
             berth_id: string;
-            /** Completed At */
+            /**
+             * Completed At
+             * @example 2026-05-03T14:31:00Z
+             */
             completed_at?: string | null;
             /**
              * Created At
              * Format: date-time
+             * @example 2026-05-03T14:30:00Z
              */
             created_at: string;
-            /** Error Code */
+            /**
+             * Error Code
+             * @example timeout
+             */
             error_code?: string | null;
-            /** Error Msg */
+            /**
+             * Error Msg
+             * @example node did not respond
+             */
             error_msg?: string | null;
             /**
              * Expires At
              * Format: date-time
+             * @example 2026-05-03T14:35:00Z
              */
             expires_at: string;
-            /** Gateway Id */
+            /**
+             * Gateway Id
+             * @example gw-dock-a
+             */
             gateway_id: string;
-            /** Mesh Unicast Addr */
+            /**
+             * Mesh Unicast Addr
+             * @example 0x0042
+             */
             mesh_unicast_addr?: string | null;
-            /** Mesh Uuid */
+            /**
+             * Mesh Uuid
+             * @example a1b2c3d4-e5f6-7890-abcd-ef1234567890
+             */
             mesh_uuid: string;
-            /** Request Id */
+            /**
+             * Request Id
+             * @example req-0001
+             */
             request_id: string;
-            /** Serial Number */
+            /**
+             * Serial Number
+             * @example DP-N-000123
+             */
             serial_number: string;
             /**
              * Status
@@ -417,43 +522,133 @@ export interface components {
         };
         /** AssignBerthIn */
         AssignBerthIn: {
-            /** User Id */
+            /**
+             * User Id
+             * @example user-001
+             */
             user_id: string;
         };
         /** AssignmentOut */
         AssignmentOut: {
-            /** Berth Id */
+            /**
+             * Berth Id
+             * @example berth-001
+             */
             berth_id: string;
-            /** User Id */
+            /**
+             * User Id
+             * @example user-001
+             */
             user_id: string;
+        };
+        /** BerthAvailabilityWindowIn */
+        BerthAvailabilityWindowIn: {
+            /**
+             * From Date
+             * Format: date-time
+             * @example 2026-06-01T00:00:00Z
+             */
+            from_date: string;
+            /**
+             * Return Date
+             * Format: date-time
+             * @example 2026-06-08T00:00:00Z
+             */
+            return_date: string;
+        };
+        /** BerthAvailabilityWindowOut */
+        BerthAvailabilityWindowOut: {
+            /**
+             * Berth Id
+             * @example berth-001
+             */
+            berth_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             * @example 2026-05-05T14:30:00Z
+             */
+            created_at: string;
+            /**
+             * From Date
+             * Format: date-time
+             * @example 2026-06-01T00:00:00Z
+             */
+            from_date: string;
+            /**
+             * Return Date
+             * Format: date-time
+             * @example 2026-06-08T00:00:00Z
+             */
+            return_date: string;
+            /**
+             * User Id
+             * @example user-001
+             */
+            user_id: string;
+            /**
+             * Window Id
+             * @example win-0001
+             */
+            window_id: string;
         };
         /** BerthOut */
         BerthOut: {
             assignment?: components["schemas"]["AssignmentOut"] | null;
-            /** Battery Pct */
+            /**
+             * Battery Pct
+             * @example 87
+             */
             battery_pct?: number | null;
-            /** Berth Id */
+            /**
+             * Berth Id
+             * @example berth-001
+             */
             berth_id: string;
-            /** Depth M */
+            /**
+             * Depth M
+             * @example 2
+             */
             depth_m?: number | null;
-            /** Dock Id */
+            /**
+             * Dock Id
+             * @example dock-a
+             */
             dock_id: string;
             /**
              * Is Reserved
              * @default false
              */
             is_reserved: boolean;
-            /** Label */
+            /**
+             * Label
+             * @example A1
+             */
             label?: string | null;
-            /** Last Updated */
+            /**
+             * Last Updated
+             * @example 2026-05-03T14:30:00Z
+             */
             last_updated?: string | null;
-            /** Length M */
+            /**
+             * Length M
+             * @example 8.5
+             */
             length_m?: number | null;
-            /** Sensor Raw */
+            /**
+             * Sensor Raw
+             * @example 1234
+             */
             sensor_raw?: number | null;
-            /** Status */
-            status: string;
-            /** Width M */
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "free" | "occupied";
+            /**
+             * Width M
+             * @example 3.2
+             */
             width_m?: number | null;
         };
         /** BerthUpdateEvent */
@@ -468,11 +663,20 @@ export interface components {
         };
         /** DockOut */
         DockOut: {
-            /** Dock Id */
+            /**
+             * Dock Id
+             * @example dock-a
+             */
             dock_id: string;
-            /** Harbor Id */
+            /**
+             * Harbor Id
+             * @example harbor-saltsjobaden
+             */
             harbor_id: string;
-            /** Name */
+            /**
+             * Name
+             * @example A Pier
+             */
             name: string;
         };
         /** DockWithBerthsOut */
@@ -482,43 +686,77 @@ export interface components {
              * @default []
              */
             berths: components["schemas"]["BerthOut"][];
-            /** Dock Id */
+            /**
+             * Dock Id
+             * @example dock-a
+             */
             dock_id: string;
-            /** Harbor Id */
+            /**
+             * Harbor Id
+             * @example harbor-saltsjobaden
+             */
             harbor_id: string;
-            /** Name */
+            /**
+             * Name
+             * @example A Pier
+             */
             name: string;
         };
         /** EventOut */
         EventOut: {
-            /** Berth Id */
+            /**
+             * Berth Id
+             * @example berth-001
+             */
             berth_id: string;
-            /** Event Id */
+            /**
+             * Event Id
+             * @example evt-0001
+             */
             event_id: string;
             /**
              * Event Type
              * @enum {string}
              */
             event_type: "occupied" | "freed" | "alert_unauthorized" | "heartbeat";
-            /** Node Id */
+            /**
+             * Node Id
+             * @example node-012
+             */
             node_id: string;
-            /** Sensor Raw */
+            /**
+             * Sensor Raw
+             * @example 1234
+             */
             sensor_raw: number;
             /**
              * Timestamp
              * Format: date-time
+             * @example 2026-05-03T14:30:00Z
              */
             timestamp: string;
         };
         /** GatewayOut */
         GatewayOut: {
-            /** Dock Id */
+            /**
+             * Dock Id
+             * @example dock-a
+             */
             dock_id: string;
-            /** Gateway Id */
+            /**
+             * Gateway Id
+             * @example gw-dock-a
+             */
             gateway_id: string;
-            /** Last Seen */
+            /**
+             * Last Seen
+             * @example 2026-05-03T14:30:00Z
+             */
             last_seen?: string | null;
-            /** Name */
+            /**
+             * Name
+             * @example Pier A gateway
+             */
             name: string;
             /**
              * Status
@@ -530,6 +768,19 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HarborOut */
+        HarborOut: {
+            /**
+             * Harbor Id
+             * @example harbor-saltsjobaden
+             */
+            harbor_id: string;
+            /**
+             * Name
+             * @example Saltsjöbaden Marina
+             */
+            name: string;
         };
         /** HealthStatus */
         HealthStatus: {
@@ -548,7 +799,10 @@ export interface components {
              * @enum {string}
              */
             status: "ok" | "degraded";
-            /** Uptime */
+            /**
+             * Uptime
+             * @example 12345.6
+             */
             uptime: number;
         };
         /** LoginIn */
@@ -556,6 +810,7 @@ export interface components {
             /**
              * Email
              * Format: email
+             * @example alex@example.com
              */
             email: string;
             /**
@@ -589,7 +844,6 @@ export interface components {
             gateway_id: string;
             /**
              * Health
-             * @example online
              * @enum {string}
              */
             health: "online" | "stale" | "offline" | "decommissioned";
@@ -644,7 +898,6 @@ export interface components {
             gateway_id: string;
             /**
              * Health
-             * @example online
              * @enum {string}
              */
             health: "online" | "stale" | "offline" | "decommissioned";
@@ -696,60 +949,116 @@ export interface components {
         };
         /** UserCreate */
         UserCreate: {
-            /** Boat Club */
+            /**
+             * Boat Club
+             * @example Saltsjöbadens BK
+             */
             boat_club?: string | null;
             /**
              * Email
              * Format: email
+             * @example alex@example.com
              */
             email: string;
-            /** Firstname */
+            /**
+             * Firstname
+             * @example Alex
+             */
             firstname: string;
-            /** Lastname */
+            /**
+             * Lastname
+             * @example Alex
+             */
             lastname: string;
             /**
              * Password
              * Format: password
+             * @example correct horse battery staple
              */
             password: string;
-            /** Phone */
+            /**
+             * Phone
+             * @example +46 70 123 45 67
+             */
             phone?: string | null;
         };
         /** UserOut */
         UserOut: {
-            /** Boat Club */
+            /**
+             * Assigned Berth Id
+             * @example berth-001
+             */
+            assigned_berth_id?: string | null;
+            /**
+             * Boat Club
+             * @example Saltsjöbadens BK
+             */
             boat_club?: string | null;
-            /** Email */
+            /**
+             * Email
+             * Format: email
+             * @example alex@example.com
+             */
             email: string;
-            /** Firstname */
+            /**
+             * Firstname
+             * @example Alex
+             */
             firstname: string;
-            /** Lastname */
+            /**
+             * Lastname
+             * @example Lindgren
+             */
             lastname: string;
-            /** Phone */
+            /**
+             * Phone
+             * @example +46 70 123 45 67
+             */
             phone?: string | null;
             /**
              * Role
              * @enum {string}
              */
             role: "harbormaster" | "boat_owner";
-            /** User Id */
+            /**
+             * User Id
+             * @example user-001
+             */
             user_id: string;
         };
         /** UserPatch */
         UserPatch: {
-            /** Boat Club */
+            /**
+             * Boat Club
+             * @example Saltsjöbadens BK
+             */
             boat_club?: string | null;
             /** Current Password */
             current_password?: string | null;
-            /** Email */
+            /**
+             * Email
+             * @example alex@example.com
+             */
             email?: string | null;
-            /** Firstname */
+            /**
+             * Firstname
+             * @example Alex
+             */
             firstname?: string | null;
-            /** Lastname */
+            /**
+             * Lastname
+             * @example Alex
+             */
             lastname?: string | null;
-            /** Password */
+            /**
+             * Password
+             * @example correct horse battery staple
+             */
             password?: string | null;
-            /** Phone */
+            /**
+             * Phone
+             * @example +46 70 123 45 67
+             */
             phone?: string | null;
         };
         /** ValidationError */
@@ -994,6 +1303,45 @@ export interface operations {
             };
         };
     };
+    listHarborAvailability: {
+        parameters: {
+            query: {
+                /** @description harbor to filter on */
+                harbor_id: string;
+                /** @description windows must end after */
+                from_date?: string | null;
+                /** @description windows must start before */
+                return_date?: string | null;
+                length_m?: number | null;
+                width_m?: number | null;
+                depth_m?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BerthAvailabilityWindowOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     streamBerths: {
         parameters: {
             query?: never;
@@ -1099,6 +1447,102 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["BerthOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listBerthAvailability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                berth_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BerthAvailabilityWindowOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createBerthAvailability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                berth_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BerthAvailabilityWindowIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BerthAvailabilityWindowOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deleteBerthAvailability: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                berth_id: string;
+                window_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -1239,6 +1683,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listHarbors: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HarborOut"][];
                 };
             };
         };
@@ -1389,6 +1853,24 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["UserOut"];
                 };
+            };
+        };
+    };
+    deleteMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

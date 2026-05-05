@@ -3,9 +3,13 @@ components:
     AdoptIn:
       properties:
         berth_id:
+          examples:
+          - berth-001
           title: Berth Id
           type: string
         gateway_id:
+          examples:
+          - gw-dock-a
           title: Gateway Id
           type: string
         qr_payload:
@@ -21,47 +25,73 @@ components:
     AdoptionRequestOut:
       properties:
         berth_id:
+          examples:
+          - berth-001
           title: Berth Id
           type: string
         completed_at:
           anyOf:
-          - format: date-time
+          - examples: &id001
+            - '2026-05-03T14:31:00Z'
+            format: date-time
             type: string
           - type: 'null'
+          examples: *id001
           title: Completed At
         created_at:
+          examples:
+          - '2026-05-03T14:30:00Z'
           format: date-time
           title: Created At
           type: string
         error_code:
           anyOf:
-          - type: string
+          - examples: &id002
+            - timeout
+            type: string
           - type: 'null'
+          examples: *id002
           title: Error Code
         error_msg:
           anyOf:
-          - type: string
+          - examples: &id003
+            - node did not respond
+            type: string
           - type: 'null'
+          examples: *id003
           title: Error Msg
         expires_at:
+          examples:
+          - '2026-05-03T14:35:00Z'
           format: date-time
           title: Expires At
           type: string
         gateway_id:
+          examples:
+          - gw-dock-a
           title: Gateway Id
           type: string
         mesh_unicast_addr:
           anyOf:
-          - type: string
+          - examples: &id004
+            - '0x0042'
+            type: string
           - type: 'null'
+          examples: *id004
           title: Mesh Unicast Addr
         mesh_uuid:
+          examples:
+          - a1b2c3d4-e5f6-7890-abcd-ef1234567890
           title: Mesh Uuid
           type: string
         request_id:
+          examples:
+          - req-0001
           title: Request Id
           type: string
         serial_number:
+          examples:
+          - DP-N-000123
           title: Serial Number
           type: string
         status:
@@ -98,6 +128,8 @@ components:
     AssignBerthIn:
       properties:
         user_id:
+          examples:
+          - user-001
           minLength: 1
           title: User Id
           type: string
@@ -108,9 +140,13 @@ components:
     AssignmentOut:
       properties:
         berth_id:
+          examples:
+          - berth-001
           title: Berth Id
           type: string
         user_id:
+          examples:
+          - user-001
           title: User Id
           type: string
       required:
@@ -126,18 +162,28 @@ components:
           - type: 'null'
         battery_pct:
           anyOf:
-          - type: integer
+          - examples: &id005
+            - 87
+            type: integer
           - type: 'null'
+          examples: *id005
           title: Battery Pct
         berth_id:
+          examples:
+          - berth-001
           title: Berth Id
           type: string
         depth_m:
           anyOf:
-          - type: number
+          - examples: &id006
+            - 2.0
+            type: number
           - type: 'null'
+          examples: *id006
           title: Depth M
         dock_id:
+          examples:
+          - dock-a
           title: Dock Id
           type: string
         is_reserved:
@@ -146,32 +192,50 @@ components:
           type: boolean
         label:
           anyOf:
-          - type: string
+          - examples: &id007
+            - A1
+            type: string
           - type: 'null'
+          examples: *id007
           title: Label
         last_updated:
           anyOf:
-          - format: date-time
+          - examples: &id008
+            - '2026-05-03T14:30:00Z'
+            format: date-time
             type: string
           - type: 'null'
+          examples: *id008
           title: Last Updated
         length_m:
           anyOf:
-          - type: number
+          - examples: &id009
+            - 8.5
+            type: number
           - type: 'null'
+          examples: *id009
           title: Length M
         sensor_raw:
           anyOf:
-          - type: integer
+          - examples: &id010
+            - 1234
+            type: integer
           - type: 'null'
+          examples: *id010
           title: Sensor Raw
         status:
+          enum:
+          - free
+          - occupied
           title: Status
           type: string
         width_m:
           anyOf:
-          - type: number
+          - examples: &id011
+            - 3.2
+            type: number
           - type: 'null'
+          examples: *id011
           title: Width M
       required:
       - berth_id
@@ -195,12 +259,18 @@ components:
     DockOut:
       properties:
         dock_id:
+          examples:
+          - dock-a
           title: Dock Id
           type: string
         harbor_id:
+          examples:
+          - harbor-saltsjobaden
           title: Harbor Id
           type: string
         name:
+          examples:
+          - A Pier
           title: Name
           type: string
       required:
@@ -218,12 +288,18 @@ components:
           title: Berths
           type: array
         dock_id:
+          examples:
+          - dock-a
           title: Dock Id
           type: string
         harbor_id:
+          examples:
+          - harbor-saltsjobaden
           title: Harbor Id
           type: string
         name:
+          examples:
+          - A Pier
           title: Name
           type: string
       required:
@@ -235,9 +311,13 @@ components:
     EventOut:
       properties:
         berth_id:
+          examples:
+          - berth-001
           title: Berth Id
           type: string
         event_id:
+          examples:
+          - evt-0001
           title: Event Id
           type: string
         event_type:
@@ -249,12 +329,18 @@ components:
           title: Event Type
           type: string
         node_id:
+          examples:
+          - node-012
           title: Node Id
           type: string
         sensor_raw:
+          examples:
+          - 1234
           title: Sensor Raw
           type: integer
         timestamp:
+          examples:
+          - '2026-05-03T14:30:00Z'
           format: date-time
           title: Timestamp
           type: string
@@ -270,18 +356,27 @@ components:
     GatewayOut:
       properties:
         dock_id:
+          examples:
+          - dock-a
           title: Dock Id
           type: string
         gateway_id:
+          examples:
+          - gw-dock-a
           title: Gateway Id
           type: string
         last_seen:
           anyOf:
-          - format: date-time
+          - examples: &id012
+            - '2026-05-03T14:30:00Z'
+            format: date-time
             type: string
           - type: 'null'
+          examples: *id012
           title: Last Seen
         name:
+          examples:
+          - Pier A gateway
           title: Name
           type: string
         status:
@@ -327,6 +422,8 @@ components:
           title: Status
           type: string
         uptime:
+          examples:
+          - 12345.6
           title: Uptime
           type: number
       required:
@@ -339,6 +436,8 @@ components:
     LoginIn:
       properties:
         email:
+          examples:
+          - alex@example.com
           format: email
           title: Email
           type: string
@@ -362,10 +461,11 @@ components:
           type: string
         battery_pct:
           anyOf:
-          - type: integer
+          - examples: &id013
+            - 87
+            type: integer
           - type: 'null'
-          examples:
-          - 87
+          examples: *id013
           title: Battery Pct
         berth_id:
           examples:
@@ -383,17 +483,16 @@ components:
           - stale
           - offline
           - decommissioned
-          examples:
-          - online
           title: Health
           type: string
         last_seen:
           anyOf:
-          - format: date-time
+          - examples: &id014
+            - '2026-05-03T14:30:00Z'
+            format: date-time
             type: string
           - type: 'null'
-          examples:
-          - '2026-05-03T14:30:00Z'
+          examples: *id014
           title: Last Seen
         mesh_unicast_addr:
           examples:
@@ -436,10 +535,11 @@ components:
           type: string
         battery_pct:
           anyOf:
-          - type: integer
+          - examples: &id015
+            - 87
+            type: integer
           - type: 'null'
-          examples:
-          - 87
+          examples: *id015
           title: Battery Pct
         berth_id:
           examples:
@@ -457,17 +557,16 @@ components:
           - stale
           - offline
           - decommissioned
-          examples:
-          - online
           title: Health
           type: string
         last_seen:
           anyOf:
-          - format: date-time
+          - examples: &id016
+            - '2026-05-03T14:30:00Z'
+            format: date-time
             type: string
           - type: 'null'
-          examples:
-          - '2026-05-03T14:30:00Z'
+          examples: *id016
           title: Last Seen
         mesh_unicast_addr:
           examples:
@@ -539,39 +638,53 @@ components:
       properties:
         boat_club:
           anyOf:
-          - maxLength: 100
+          - examples: &id017
+            - Saltsjöbadens BK
+            maxLength: 100
             type: string
           - type: 'null'
+          examples: *id017
           title: Boat Club
         email:
+          examples:
+          - alex@example.com
           format: email
           title: Email
           type: string
         firstname:
+          examples:
+          - Alex
           maxLength: 100
           minLength: 1
           pattern: ^[\p{L}\p{M}'’ .\-]+$
           title: Firstname
           type: string
         lastname:
+          examples:
+          - Alex
           maxLength: 100
           minLength: 1
           pattern: ^[\p{L}\p{M}'’ .\-]+$
           title: Lastname
           type: string
         password:
+          examples:
+          - correct horse battery staple
           format: password
           maxLength: 128
-          minLength: 8
+          minLength: 12
           title: Password
           type: string
           writeOnly: true
         phone:
           anyOf:
-          - maxLength: 20
+          - examples: &id018
+            - +46 70 123 45 67
+            maxLength: 20
             pattern: ^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$
             type: string
           - type: 'null'
+          examples: *id018
           title: Phone
       required:
       - firstname
@@ -584,22 +697,35 @@ components:
       properties:
         boat_club:
           anyOf:
-          - type: string
+          - examples: &id019
+            - Saltsjöbadens BK
+            type: string
           - type: 'null'
+          examples: *id019
           title: Boat Club
         email:
+          examples:
+          - alex@example.com
+          format: email
           title: Email
           type: string
         firstname:
+          examples:
+          - Alex
           title: Firstname
           type: string
         lastname:
+          examples:
+          - Lindgren
           title: Lastname
           type: string
         phone:
           anyOf:
-          - type: string
+          - examples: &id020
+            - +46 70 123 45 67
+            type: string
           - type: 'null'
+          examples: *id020
           title: Phone
         role:
           enum:
@@ -608,6 +734,8 @@ components:
           title: Role
           type: string
         user_id:
+          examples:
+          - user-001
           title: User Id
           type: string
       required:
@@ -622,9 +750,12 @@ components:
       properties:
         boat_club:
           anyOf:
-          - maxLength: 100
+          - examples: &id021
+            - Saltsjöbadens BK
+            maxLength: 100
             type: string
           - type: 'null'
+          examples: *id021
           title: Boat Club
         current_password:
           anyOf:
@@ -635,41 +766,56 @@ components:
           title: Current Password
         email:
           anyOf:
-          - format: email
+          - examples: &id022
+            - alex@example.com
+            format: email
             type: string
           - type: 'null'
+          examples: *id022
           title: Email
         firstname:
           anyOf:
-          - maxLength: 100
+          - examples: &id023
+            - Alex
+            maxLength: 100
             minLength: 1
             pattern: ^[\p{L}\p{M}'’ .\-]+$
             type: string
           - type: 'null'
+          examples: *id023
           title: Firstname
         lastname:
           anyOf:
-          - maxLength: 100
+          - examples: &id024
+            - Alex
+            maxLength: 100
             minLength: 1
             pattern: ^[\p{L}\p{M}'’ .\-]+$
             type: string
           - type: 'null'
+          examples: *id024
           title: Lastname
         password:
           anyOf:
-          - format: password
+          - examples: &id025
+            - correct horse battery staple
+            format: password
             maxLength: 128
-            minLength: 8
+            minLength: 12
             type: string
             writeOnly: true
           - type: 'null'
+          examples: *id025
           title: Password
         phone:
           anyOf:
-          - maxLength: 20
+          - examples: &id026
+            - +46 70 123 45 67
+            maxLength: 20
             pattern: ^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$
             type: string
           - type: 'null'
+          examples: *id026
           title: Phone
       title: UserPatch
       type: object

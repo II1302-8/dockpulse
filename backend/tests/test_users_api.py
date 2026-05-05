@@ -70,12 +70,12 @@ async def test_patch_me_updates_password(
     token = make_token(test_user.user_id)
     r = await client.patch(
         "/api/users/me",
-        json={"password": "newpassword", "current_password": "secretpassword"},
+        json={"password": "newpassword12", "current_password": "secretpassword"},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 200
     await session.refresh(test_user)
-    assert verify_password(test_user.password_hash, "newpassword")
+    assert verify_password(test_user.password_hash, "newpassword12")
 
 
 async def test_patch_me_password_requires_current_password(
@@ -84,7 +84,7 @@ async def test_patch_me_password_requires_current_password(
     token = make_token(test_user.user_id)
     r = await client.patch(
         "/api/users/me",
-        json={"password": "newpassword"},
+        json={"password": "newpassword12"},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 422
@@ -97,7 +97,7 @@ async def test_patch_me_password_rejects_wrong_current_password(
     original_hash = test_user.password_hash
     r = await client.patch(
         "/api/users/me",
-        json={"password": "newpassword", "current_password": "wrongpassword"},
+        json={"password": "newpassword12", "current_password": "wrongpassword"},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 401

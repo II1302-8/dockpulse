@@ -1,10 +1,13 @@
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
+import { Toaster, toast } from "sonner";
 import { Button } from "../shared/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "../shared/ui/dialog";
 import { Input } from "../shared/ui/input";
 import { Label } from "../shared/ui/label";
+import { PasswordInput } from "../shared/ui/password-input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../shared/ui/tabs";
 import { Footer } from "./Footer";
 import { Header } from "./Header";
@@ -41,6 +44,10 @@ type SignupForm = LoginForm & {
   boat_club: string;
 };
 
+// mirror backend APP_ENV: prod build enforces the 12 char floor, dev/staging relaxed for testing
+const PASSWORD_MIN = import.meta.env.MODE === "production" ? 12 : 4;
+const PASSWORD_MAX = 128;
+
 const emptyLoginForm: LoginForm = {
   email: "",
   password: "",
@@ -55,6 +62,22 @@ const emptySignupForm: SignupForm = {
   phone: "",
   boat_club: "",
 };
+
+function RequiredMark() {
+  return (
+    <span aria-hidden="true" className="ml-0.5 text-red-500">
+      *
+    </span>
+  );
+}
+
+function OptionalMark() {
+  return (
+    <span className="ml-1 text-xs font-normal text-muted-foreground">
+      (optional)
+    </span>
+  );
+}
 
 async function getErrorMessage(
   res: Response,
@@ -97,7 +120,29 @@ function MainLayout() {
   const [loginForm, setLoginForm] = useState<LoginForm>(emptyLoginForm);
   const [signupForm, setSignupForm] = useState<SignupForm>(emptySignupForm);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const passwordLength = signupForm.password.length;
+  const passwordTooShort = passwordLength > 0 && passwordLength < PASSWORD_MIN;
+  const passwordValid =
+    passwordLength >= PASSWORD_MIN && passwordLength <= PASSWORD_MAX;
+
+  // live mismatch surfaces under confirm field while typing, not at bottom on submit
+  const passwordMismatch =
+    signupForm.confirmPassword.length > 0 &&
+    signupForm.password !== signupForm.confirmPassword;
+
+  const loginReady =
+    loginForm.email.trim().length > 0 && loginForm.password.length > 0;
+
+  const signupReady =
+    signupForm.email.trim().length > 0 &&
+    signupForm.firstname.trim().length > 0 &&
+    signupForm.lastname.trim().length > 0 &&
+    passwordValid &&
+    signupForm.confirmPassword.length > 0 &&
+    !passwordMismatch;
 
   useEffect(() => {
     if (!token) {
@@ -105,10 +150,12 @@ function MainLayout() {
       return;
     }
 
+    // abort stale /me requests if token changes again before this resolves
+    const ac = new AbortController();
+
     fetch("/api/users/me", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers: { Authorization: `Bearer ${token}` },
+      signal: ac.signal,
     })
       .then((res) => {
         // only 401 clears session, transient errors leave token alone
@@ -127,63 +174,72 @@ function MainLayout() {
       .then((data) => {
         if (data) setUser(data);
       })
-      .catch((err) => console.error("failed to load user", err));
-  }, [token, navigate]);
+      .catch((err) => {
+        if (err.name === "AbortError") return;
+        console.error("failed to load user", err);
+      });
 
-  function clearMessages() {
-    setError(null);
-    setSuccessMessage(null);
-  }
+    return () => ac.abort();
+  }, [token, navigate]);
 
   function updateLoginForm(field: keyof LoginForm, value: string) {
     setLoginForm((prev) => ({ ...prev, [field]: value }));
-    clearMessages();
+    setError(null);
   }
 
   function updateSignupForm(field: keyof SignupForm, value: string) {
     setSignupForm((prev) => ({ ...prev, [field]: value }));
-    clearMessages();
+    setError(null);
+  }
+
+  async function authenticate(email: string, password: string) {
+    const tokenRes = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!tokenRes.ok) {
+      throw new Error(
+        await getErrorMessage(tokenRes, "Wrong email or password."),
+      );
+    }
+
+    const { access_token: accessToken } = await tokenRes.json();
+
+    if (!accessToken) {
+      throw new Error("Login succeeded, but no access token was returned.");
+    }
+
+    localStorage.setItem("token", accessToken);
+    setToken(accessToken);
   }
 
   async function handleLogin(e?: React.FormEvent) {
     e?.preventDefault();
-    clearMessages();
+    if (isSubmitting || !loginReady) return;
+    setError(null);
+    setIsSubmitting(true);
+
+    const email = loginForm.email.trim();
 
     try {
-      const tokenRes = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(loginForm),
-      });
-
-      if (!tokenRes.ok) {
-        throw new Error(
-          await getErrorMessage(tokenRes, "Wrong email or password."),
-        );
-      }
-
-      const { access_token: accessToken } = await tokenRes.json();
-
-      if (!accessToken) {
-        throw new Error("Login succeeded, but no access token was returned.");
-      }
-
-      localStorage.setItem("token", accessToken);
-      setToken(accessToken);
+      await authenticate(email, loginForm.password);
+      // optimistic fill so avatar isn't blank during /me round-trip
+      setUser((prev) => prev ?? { email });
       setIsLoginOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not log in.");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
   async function handleSignup(e?: React.FormEvent) {
     e?.preventDefault();
-    clearMessages();
-
-    if (signupForm.password !== signupForm.confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
+    if (isSubmitting || !signupReady) return;
+    setError(null);
+    setIsSubmitting(true);
 
     const { confirmPassword: _confirmPassword, ...rest } = signupForm;
 
@@ -209,41 +265,63 @@ function MainLayout() {
         );
       }
 
-      setLoginForm({
-        email: signupForm.email,
-        password: signupForm.password,
-      });
-
-      setSignupForm(emptySignupForm);
-      setActiveTab("login");
-      setSuccessMessage("Account created. You can now log in.");
+      // server accepted creds → reuse them to drop user into a logged-in state
+      await authenticate(signupPayload.email, signupForm.password);
+      setUser(
+        (prev) =>
+          prev ?? {
+            email: signupPayload.email,
+            firstname: signupPayload.firstname,
+            lastname: signupPayload.lastname,
+          },
+      );
+      setIsLoginOpen(false);
+      toast.success(`Welcome, ${signupPayload.firstname}!`);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Could not create account.",
       );
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
   async function handleLogout() {
+    if (isLoggingOut) return;
+
     const logoutToken = token;
 
+    setIsLoggingOut(true);
     localStorage.removeItem("token");
     setToken(null);
     setUser(null);
     setIsLoginOpen(false);
     navigate("/", { replace: true });
 
-    if (!logoutToken) return;
+    if (!logoutToken) {
+      setIsLoggingOut(false);
+      return;
+    }
 
     try {
-      await fetch("/api/auth/logout", {
+      const res = await fetch("/api/auth/logout", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${logoutToken}`,
         },
       });
+      // local session already gone, but warn user the server still holds the token
+      if (!res.ok) {
+        toast.warning(
+          "Logged out locally, but the server didn't confirm. Token will expire on its own.",
+        );
+      }
     } catch {
-      // local state already cleared. server token left to expire naturally
+      toast.warning(
+        "Logged out locally, but couldn't reach the server. Token will expire on its own.",
+      );
+    } finally {
+      setIsLoggingOut(false);
     }
   }
 
@@ -255,7 +333,8 @@ function MainLayout() {
   return (
     <div className="bg-transparent duration-1000 font-body min-h-screen overflow-x-hidden relative transition-colors w-screen">
       <Header
-        isLoggedIn={Boolean(user)}
+        isLoggedIn={Boolean(token)}
+        isLoggingOut={isLoggingOut}
         userInitials={userInitials}
         onLoginClickCB={() => setIsLoginOpen(true)}
         onLogoutClickCB={handleLogout}
@@ -285,11 +364,11 @@ function MainLayout() {
             setLoginForm(emptyLoginForm);
             setSignupForm(emptySignupForm);
             setActiveTab("login");
-            clearMessages();
+            setError(null);
           }
         }}
       >
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
           <VisuallyHidden.Root>
             <DialogTitle>Log in or sign up</DialogTitle>
           </VisuallyHidden.Root>
@@ -298,7 +377,7 @@ function MainLayout() {
             value={activeTab}
             onValueChange={(value) => {
               setActiveTab(value as AuthTab);
-              clearMessages();
+              setError(null);
             }}
             className="mt-4"
           >
@@ -309,132 +388,234 @@ function MainLayout() {
 
             <TabsContent value="login" className="mt-4">
               <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <Input
-                    id="login-email"
-                    type="email"
-                    autoComplete="email"
-                    value={loginForm.email}
-                    onChange={(e) => updateLoginForm("email", e.target.value)}
-                  />
-                </div>
+                <fieldset
+                  disabled={isSubmitting}
+                  className="space-y-4 border-0 p-0 m-0 disabled:opacity-60"
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email">
+                      Email
+                      <RequiredMark />
+                    </Label>
+                    <Input
+                      id="login-email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={loginForm.email}
+                      onChange={(e) => updateLoginForm("email", e.target.value)}
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Password</Label>
-                  <Input
-                    id="login-password"
-                    type="password"
-                    autoComplete="current-password"
-                    value={loginForm.password}
-                    onChange={(e) =>
-                      updateLoginForm("password", e.target.value)
-                    }
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="login-password">
+                      Password
+                      <RequiredMark />
+                    </Label>
+                    <PasswordInput
+                      id="login-password"
+                      autoComplete="current-password"
+                      required
+                      value={loginForm.password}
+                      onChange={(e) =>
+                        updateLoginForm("password", e.target.value)
+                      }
+                    />
+                  </div>
+                </fieldset>
 
-                {error && <p className="text-red-500 text-sm">{error}</p>}
-                {successMessage && (
-                  <p className="text-green-600 text-sm">{successMessage}</p>
-                )}
+                <p
+                  role="alert"
+                  aria-live="assertive"
+                  className="text-red-500 text-sm min-h-[1.25rem]"
+                >
+                  {error ?? ""}
+                </p>
 
-                <Button type="submit" className="w-full bg-brand-blue">
-                  Log in
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || !loginReady}
+                  aria-busy={isSubmitting}
+                  className="w-full bg-brand-blue hover:bg-brand-blue/90"
+                >
+                  {isSubmitting && (
+                    <Loader2
+                      className="h-4 w-4 animate-spin"
+                      aria-hidden="true"
+                    />
+                  )}
+                  {isSubmitting ? "Logging in…" : "Log in"}
                 </Button>
               </form>
             </TabsContent>
 
             <TabsContent value="signup" className="mt-4">
               <form onSubmit={handleSignup} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    autoComplete="email"
-                    value={signupForm.email}
-                    onChange={(e) => updateSignupForm("email", e.target.value)}
-                  />
-                </div>
+                <fieldset
+                  disabled={isSubmitting}
+                  className="space-y-4 border-0 p-0 m-0 disabled:opacity-60"
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">
+                      Email
+                      <RequiredMark />
+                    </Label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={signupForm.email}
+                      onChange={(e) =>
+                        updateSignupForm("email", e.target.value)
+                      }
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    autoComplete="new-password"
-                    value={signupForm.password}
-                    onChange={(e) =>
-                      updateSignupForm("password", e.target.value)
-                    }
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">
+                      Password
+                      <RequiredMark />
+                    </Label>
+                    <PasswordInput
+                      id="signup-password"
+                      autoComplete="new-password"
+                      required
+                      minLength={PASSWORD_MIN}
+                      maxLength={PASSWORD_MAX}
+                      aria-invalid={passwordTooShort}
+                      aria-describedby="signup-password-hint"
+                      value={signupForm.password}
+                      onChange={(e) =>
+                        updateSignupForm("password", e.target.value)
+                      }
+                    />
+                    <p
+                      id="signup-password-hint"
+                      aria-live="polite"
+                      className={`text-sm ${
+                        passwordLength === 0
+                          ? "text-muted-foreground"
+                          : passwordValid
+                            ? "text-emerald-600"
+                            : "text-red-500"
+                      }`}
+                    >
+                      {passwordValid
+                        ? `Looks good (${passwordLength} characters).`
+                        : `Must be at least ${PASSWORD_MIN} characters.`}
+                    </p>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-confirm-password">
-                    Confirm password
-                  </Label>
-                  <Input
-                    id="signup-confirm-password"
-                    type="password"
-                    autoComplete="new-password"
-                    value={signupForm.confirmPassword}
-                    onChange={(e) =>
-                      updateSignupForm("confirmPassword", e.target.value)
-                    }
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-confirm-password">
+                      Confirm password
+                      <RequiredMark />
+                    </Label>
+                    <PasswordInput
+                      id="signup-confirm-password"
+                      autoComplete="new-password"
+                      required
+                      aria-invalid={passwordMismatch}
+                      aria-describedby="signup-confirm-hint"
+                      value={signupForm.confirmPassword}
+                      onChange={(e) =>
+                        updateSignupForm("confirmPassword", e.target.value)
+                      }
+                    />
+                    <p
+                      id="signup-confirm-hint"
+                      aria-live="polite"
+                      className="text-red-500 text-sm min-h-[1.25rem]"
+                    >
+                      {passwordMismatch ? "Passwords do not match." : ""}
+                    </p>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-firstname">First name</Label>
-                  <Input
-                    id="signup-firstname"
-                    autoComplete="given-name"
-                    value={signupForm.firstname}
-                    onChange={(e) =>
-                      updateSignupForm("firstname", e.target.value)
-                    }
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-firstname">
+                      First name
+                      <RequiredMark />
+                    </Label>
+                    <Input
+                      id="signup-firstname"
+                      autoComplete="given-name"
+                      required
+                      value={signupForm.firstname}
+                      onChange={(e) =>
+                        updateSignupForm("firstname", e.target.value)
+                      }
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-lastname">Last name</Label>
-                  <Input
-                    id="signup-lastname"
-                    autoComplete="family-name"
-                    value={signupForm.lastname}
-                    onChange={(e) =>
-                      updateSignupForm("lastname", e.target.value)
-                    }
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-lastname">
+                      Last name
+                      <RequiredMark />
+                    </Label>
+                    <Input
+                      id="signup-lastname"
+                      autoComplete="family-name"
+                      required
+                      value={signupForm.lastname}
+                      onChange={(e) =>
+                        updateSignupForm("lastname", e.target.value)
+                      }
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-phone">Phone (optional)</Label>
-                  <Input
-                    id="signup-phone"
-                    type="tel"
-                    autoComplete="tel"
-                    value={signupForm.phone}
-                    onChange={(e) => updateSignupForm("phone", e.target.value)}
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-phone">
+                      Phone
+                      <OptionalMark />
+                    </Label>
+                    <Input
+                      id="signup-phone"
+                      type="tel"
+                      autoComplete="tel"
+                      value={signupForm.phone}
+                      onChange={(e) =>
+                        updateSignupForm("phone", e.target.value)
+                      }
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="signup-boat-club">Boat club (optional)</Label>
-                  <Input
-                    id="signup-boat-club"
-                    value={signupForm.boat_club}
-                    onChange={(e) =>
-                      updateSignupForm("boat_club", e.target.value)
-                    }
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-boat-club">
+                      Boat club
+                      <OptionalMark />
+                    </Label>
+                    <Input
+                      id="signup-boat-club"
+                      value={signupForm.boat_club}
+                      onChange={(e) =>
+                        updateSignupForm("boat_club", e.target.value)
+                      }
+                    />
+                  </div>
+                </fieldset>
 
-                {error && <p className="text-red-500 text-sm">{error}</p>}
+                <p
+                  role="alert"
+                  aria-live="assertive"
+                  className="text-red-500 text-sm min-h-[1.25rem]"
+                >
+                  {error ?? ""}
+                </p>
 
-                <Button type="submit" className="w-full bg-brand-navy">
-                  Sign up
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || !signupReady}
+                  aria-busy={isSubmitting}
+                  className="w-full bg-brand-navy hover:bg-brand-navy/90"
+                >
+                  {isSubmitting && (
+                    <Loader2
+                      className="h-4 w-4 animate-spin"
+                      aria-hidden="true"
+                    />
+                  )}
+                  {isSubmitting ? "Creating account…" : "Sign up"}
                 </Button>
               </form>
             </TabsContent>
@@ -443,6 +624,8 @@ function MainLayout() {
       </Dialog>
 
       <Footer />
+
+      <Toaster position="top-center" richColors />
     </div>
   );
 }

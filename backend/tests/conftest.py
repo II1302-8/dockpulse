@@ -1,5 +1,9 @@
 import asyncio
 import os
+
+# tests must verify the strict password floor, set before any app import
+os.environ.setdefault("APP_ENV", "prod")
+
 from collections.abc import AsyncIterator
 from pathlib import Path
 

@@ -7,14 +7,9 @@ from tests._helpers import make_auth_token as _auth_token
 
 
 @pytest_asyncio.fixture
-async def gateways_world(session: AsyncSession):
+async def gateways_world(session: AsyncSession, harbor_h1):
     # gateway has no relationship() to dock, flush order not enforced, stage commits
-    session.add_all(
-        [
-            Harbor(harbor_id="h1", name="Harbor 1"),
-            Harbor(harbor_id="h2", name="Harbor 2"),
-        ]
-    )
+    session.add(Harbor(harbor_id="h2", name="Harbor 2"))
     await session.commit()
     session.add_all(
         [

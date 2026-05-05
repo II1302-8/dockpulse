@@ -4,7 +4,7 @@ import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Berth, Dock, Event, Gateway, Harbor, Node, User
+from app.models import Berth, Dock, Event, Gateway, Node, User
 from tests._helpers import make_auth_token as _auth_token
 
 
@@ -26,8 +26,6 @@ def _node(node_id: str, berth_id: str, gateway_id: str, *, user_id: str, **over)
 @pytest_asyncio.fixture
 async def fleet(session: AsyncSession, harbor_master: User):
     # FK ordering, gateway and node have no relationship() so flush order not enforced
-    session.add_all([Harbor(harbor_id="h1", name="H1")])
-    await session.commit()
     session.add_all([Dock(dock_id="d1", harbor_id="h1", name="D1")])
     await session.commit()
     now = datetime.now(UTC)

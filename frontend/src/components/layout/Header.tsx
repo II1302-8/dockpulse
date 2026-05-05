@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { Loader2, Menu, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { getMarinaNameCB } from "../../lib/marinas";
@@ -35,7 +35,7 @@ function Header({
   const isOnMarinaHome = location.pathname === marinaPath;
 
   useEffect(() => {
-    function handlePointerDown(event: MouseEvent) {
+    function handleOutsidePointer(event: MouseEvent) {
       const target = event.target as Node;
 
       if (!mobileMenuRef.current?.contains(target)) {
@@ -54,11 +54,11 @@ function Header({
       }
     }
 
-    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("mousedown", handleOutsidePointer);
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("mousedown", handleOutsidePointer);
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
@@ -114,12 +114,20 @@ function Header({
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-brand-blue/20 bg-white text-xl font-black text-brand-navy shadow-lg"
-            aria-label="Open navigation menu"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-brand-blue/20 bg-white text-brand-navy shadow-lg"
+            aria-label={
+              isMobileMenuOpen
+                ? "Close navigation menu"
+                : "Open navigation menu"
+            }
             aria-haspopup="menu"
             aria-expanded={isMobileMenuOpen}
           >
-            ☰
+            {isMobileMenuOpen ? (
+              <X size={20} strokeWidth={3} aria-hidden="true" />
+            ) : (
+              <Menu size={20} strokeWidth={3} aria-hidden="true" />
+            )}
           </button>
 
           {isMobileMenuOpen && (
@@ -168,9 +176,17 @@ function Header({
                     type="button"
                     role="menuitem"
                     onClick={handleLogoutClick}
-                    className="block w-full rounded-xl px-3 py-3 text-left text-sm font-semibold text-brand-navy hover:bg-slate-100"
+                    disabled={isLoggingOut}
+                    aria-busy={isLoggingOut}
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-3 text-left text-sm font-semibold text-brand-navy hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Log out
+                    {isLoggingOut && (
+                      <Loader2
+                        className="h-4 w-4 animate-spin"
+                        aria-hidden="true"
+                      />
+                    )}
+                    {isLoggingOut ? "Logging out…" : "Log out"}
                   </button>
                 </>
               )}

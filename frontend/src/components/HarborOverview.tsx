@@ -46,10 +46,13 @@ export function HarborOverview({
   return (
     <section
       className={cn(
-        "fixed left-8 top-32 z-[110] flex max-h-[calc(100vh-160px)] w-72 flex-col overflow-hidden rounded-[32px] border border-white/60 bg-white/70 p-6 font-body shadow-deep backdrop-blur-2xl transition-all duration-500 ease-in-out lg:pointer-events-auto lg:translate-x-0 lg:opacity-100",
+        "fixed z-[110] flex flex-col overflow-hidden rounded-[32px] border border-white/60 bg-white/70 p-6 font-body shadow-deep backdrop-blur-2xl transition-all duration-500 ease-in-out",
+        "bottom-6 left-6 right-6 max-h-[60vh]",
+        "lg:bottom-auto lg:right-auto lg:left-8 lg:top-32 lg:w-72 lg:max-h-[calc(100vh-160px)]",
+        "lg:pointer-events-auto lg:translate-x-0 lg:opacity-100",
         isOpen
-          ? "pointer-events-auto translate-x-0 opacity-100"
-          : "pointer-events-none -translate-x-[150%] opacity-0",
+          ? "pointer-events-auto translate-y-0 opacity-100 lg:translate-x-0"
+          : "pointer-events-none translate-y-[150%] opacity-0 lg:-translate-x-[150%] lg:translate-y-0",
       )}
     >
       <header className="mb-4 flex items-center justify-between animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both">

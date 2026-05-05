@@ -5,8 +5,13 @@ from typing import Annotated, Literal
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select
 
-from app.dependencies import HarbormasterDep, SessionDep
-from app.models import Berth, Event, Node
+from app.dependencies import (
+    CurrentUserDep,
+    HarbormasterForNodeDep,
+    SessionDep,
+    user_managed_harbor_ids,
+)
+from app.models import Berth, Dock, Event, Node
 from app.mqtt import publish_decommission_req
 from app.schemas import NodeDetailOut, NodeHealthOut
 
@@ -59,7 +64,7 @@ def _to_health_out(node: Node, berth: Berth | None, now: datetime) -> dict:
     summary="List nodes with derived health",
 )
 async def list_nodes(
-    _: HarbormasterDep,
+    user: CurrentUserDep,
     session: SessionDep,
     gateway_id: Annotated[str | None, Query(description="Filter by gateway")] = None,
     berth_id: Annotated[str | None, Query(description="Filter by berth")] = None,
@@ -67,7 +72,17 @@ async def list_nodes(
         HealthLiteral | None, Query(description="Filter by health")
     ] = None,
 ) -> list[dict]:
-    stmt = select(Node)
+    if user.role != "harbormaster":
+        raise HTTPException(status_code=403, detail="Harbormaster role required")
+    managed = await user_managed_harbor_ids(user, session)
+    if not managed:
+        return []
+    stmt = (
+        select(Node)
+        .join(Berth, Berth.berth_id == Node.berth_id)
+        .join(Dock, Dock.dock_id == Berth.dock_id)
+        .where(Dock.harbor_id.in_(managed))
+    )
     if gateway_id:
         stmt = stmt.where(Node.gateway_id == gateway_id)
     if berth_id:
@@ -98,7 +113,7 @@ async def list_nodes(
 )
 async def get_node(
     node_id: str,
-    _: HarbormasterDep,
+    _: HarbormasterForNodeDep,
     session: SessionDep,
     events_limit: Annotated[int, Query(ge=1, le=500)] = RECENT_EVENTS_LIMIT,
 ) -> dict:
@@ -129,7 +144,7 @@ async def get_node(
 )
 async def decommission_node(
     node_id: str,
-    _: HarbormasterDep,
+    _: HarbormasterForNodeDep,
     session: SessionDep,
 ) -> dict:
     node = await session.get(Node, node_id)

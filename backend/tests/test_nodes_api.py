@@ -4,7 +4,7 @@ import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Berth, Dock, Event, Gateway, Node, User
+from app.models import Berth, Dock, Event, Gateway, Harbor, Node, User
 from tests._helpers import make_auth_token as _auth_token
 
 
@@ -291,3 +291,69 @@ async def test_decommission_rejects_boat_owner(
         headers={"Authorization": f"Bearer {_auth_token(boat_owner.user_id)}"},
     )
     assert r.status_code == 403
+
+
+@pytest_asyncio.fixture
+async def foreign_node(session: AsyncSession, fleet):
+    session.add_all(
+        [
+            Harbor(harbor_id="h2", name="Other Harbor"),
+            Dock(dock_id="d2", harbor_id="h2", name="D2"),
+        ]
+    )
+    await session.commit()
+    session.add_all(
+        [
+            Berth(berth_id="b-foreign", dock_id="d2", status="free"),
+            Gateway(
+                gateway_id="gw-foreign", dock_id="d2", name="GF", status="online"
+            ),
+        ]
+    )
+    await session.commit()
+    session.add(
+        _node(
+            "n-foreign",
+            "b-foreign",
+            "gw-foreign",
+            user_id="hm1",
+            adopted_at=datetime.now(UTC),
+        )
+    )
+    await session.commit()
+
+
+async def test_list_nodes_excludes_unmanaged_harbor(
+    client: AsyncClient, harbor_master: User, foreign_node
+):
+    r = await client.get(
+        "/api/nodes",
+        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+    )
+    assert r.status_code == 200
+    ids = [n["node_id"] for n in r.json()]
+    assert "n-foreign" not in ids
+
+
+async def test_get_foreign_node_returns_403(
+    client: AsyncClient, harbor_master: User, foreign_node
+):
+    r = await client.get(
+        "/api/nodes/n-foreign",
+        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+    )
+    assert r.status_code == 403
+
+
+async def test_decommission_foreign_node_returns_403(
+    client: AsyncClient,
+    harbor_master: User,
+    foreign_node,
+    published_decommission_reqs: list[dict],
+):
+    r = await client.post(
+        "/api/nodes/n-foreign/decommission",
+        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+    )
+    assert r.status_code == 403
+    assert published_decommission_reqs == []

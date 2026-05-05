@@ -305,9 +305,7 @@ async def foreign_node(session: AsyncSession, fleet):
     session.add_all(
         [
             Berth(berth_id="b-foreign", dock_id="d2", status="free"),
-            Gateway(
-                gateway_id="gw-foreign", dock_id="d2", name="GF", status="online"
-            ),
+            Gateway(gateway_id="gw-foreign", dock_id="d2", name="GF", status="online"),
         ]
     )
     await session.commit()

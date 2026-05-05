@@ -33,15 +33,11 @@ async def require_harbor_authority(
         )
     )
     if row.scalar_one_or_none() is None:
-        raise HTTPException(
-            status_code=403, detail="Not authorized for this harbor"
-        )
+        raise HTTPException(status_code=403, detail="Not authorized for this harbor")
     return user
 
 
-async def user_managed_harbor_ids(
-    user: User, session: AsyncSession
-) -> set[str]:
+async def user_managed_harbor_ids(user: User, session: AsyncSession) -> set[str]:
     result = await session.execute(
         select(UserHarborRole.harbor_id).where(
             UserHarborRole.user_id == user.user_id,
@@ -64,9 +60,7 @@ async def harbor_id_from_berth(berth_id: str, session: SessionDep) -> str:
 
 
 async def harbor_id_from_dock(dock_id: str, session: SessionDep) -> str:
-    row = await session.execute(
-        select(Dock.harbor_id).where(Dock.dock_id == dock_id)
-    )
+    row = await session.execute(select(Dock.harbor_id).where(Dock.dock_id == dock_id))
     harbor_id = row.scalar_one_or_none()
     if harbor_id is None:
         raise HTTPException(status_code=404, detail="Dock not found")
@@ -98,9 +92,7 @@ async def harbor_id_from_node(node_id: str, session: SessionDep) -> str:
     return harbor_id
 
 
-async def harbor_id_from_adoption_request(
-    request_id: str, session: SessionDep
-) -> str:
+async def harbor_id_from_adoption_request(request_id: str, session: SessionDep) -> str:
     row = await session.execute(
         select(Dock.harbor_id)
         .join(Berth, Berth.dock_id == Dock.dock_id)
@@ -109,9 +101,7 @@ async def harbor_id_from_adoption_request(
     )
     harbor_id = row.scalar_one_or_none()
     if harbor_id is None:
-        raise HTTPException(
-            status_code=404, detail="Adoption request not found"
-        )
+        raise HTTPException(status_code=404, detail="Adoption request not found")
     return harbor_id
 
 
@@ -157,9 +147,7 @@ async def require_harbormaster_for_adoption_request(
 
 HarbormasterForBerthDep = Annotated[User, Depends(require_harbormaster_for_berth)]
 HarbormasterForDockDep = Annotated[User, Depends(require_harbormaster_for_dock)]
-HarbormasterForGatewayDep = Annotated[
-    User, Depends(require_harbormaster_for_gateway)
-]
+HarbormasterForGatewayDep = Annotated[User, Depends(require_harbormaster_for_gateway)]
 HarbormasterForNodeDep = Annotated[User, Depends(require_harbormaster_for_node)]
 HarbormasterForAdoptionRequestDep = Annotated[
     User, Depends(require_harbormaster_for_adoption_request)

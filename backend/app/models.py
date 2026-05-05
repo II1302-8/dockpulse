@@ -257,9 +257,7 @@ class Assignment(Base):
 class UserHarborRole(Base):
     __tablename__ = "user_harbor_roles"
     __table_args__ = (
-        CheckConstraint(
-            "role = 'harbormaster'", name="user_harbor_roles_role_check"
-        ),
+        CheckConstraint("role = 'harbormaster'", name="user_harbor_roles_role_check"),
     )
 
     user_id: Mapped[str] = mapped_column(

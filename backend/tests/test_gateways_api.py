@@ -63,9 +63,7 @@ async def test_list_gateways_includes_extra_managed_harbor(
     harbor_master: User,
     gateways_world,
 ):
-    session.add(
-        UserHarborRole(user_id="hm1", harbor_id="h2", role="harbormaster")
-    )
+    session.add(UserHarborRole(user_id="hm1", harbor_id="h2", role="harbormaster"))
     await session.commit()
     r = await client.get(
         "/api/gateways",

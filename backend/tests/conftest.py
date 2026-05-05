@@ -158,9 +158,7 @@ async def harbor_master(session: AsyncSession, harbor_h1) -> User:
     )
     session.add(user)
     await session.flush()
-    session.add(
-        UserHarborRole(user_id="hm1", harbor_id="h1", role="harbormaster")
-    )
+    session.add(UserHarborRole(user_id="hm1", harbor_id="h1", role="harbormaster"))
     await session.commit()
     return user
 

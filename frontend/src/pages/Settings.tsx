@@ -7,6 +7,14 @@ import type {
 } from "../components/layout/MainLayout";
 import { NotificationSettings } from "../components/NotificationSettings";
 import { Button } from "../components/shared/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../components/shared/ui/dialog";
 import { Input } from "../components/shared/ui/input";
 import { Label } from "../components/shared/ui/label";
 import { PasswordInput } from "../components/shared/ui/password-input";
@@ -78,7 +86,10 @@ function isSettingsField(field: unknown): field is keyof SettingsForm {
   );
 }
 
-async function getErrorsFromResponse(res: Response): Promise<FieldErrors> {
+async function getErrorsFromResponse(
+  res: Response,
+  fallback: string,
+): Promise<FieldErrors> {
   try {
     const data = await res.json();
 
@@ -103,9 +114,9 @@ async function getErrorsFromResponse(res: Response): Promise<FieldErrors> {
     if (typeof data.message === "string") return { general: data.message };
     if (typeof data.error === "string") return { general: data.error };
 
-    return { general: `Request failed. Status: ${res.status}` };
+    return { general: `${fallback} Status: ${res.status}` };
   } catch {
-    return { general: `Request failed. Status: ${res.status}` };
+    return { general: `${fallback} Status: ${res.status}` };
   }
 }
 
@@ -144,12 +155,10 @@ function Settings() {
   }
 
   function clearLocalAuthState() {
-    setUser(null);
-    setToken(null);
-
+    // mirrors MainLayout.handleLogout local cleanup, minus the server logout
     localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("authToken");
+    setToken(null);
+    setUser(null);
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -198,7 +207,7 @@ function Settings() {
       });
 
       if (!res.ok) {
-        setErrors(await getErrorsFromResponse(res));
+        setErrors(await getErrorsFromResponse(res, "Could not save profile."));
         return;
       }
 
@@ -227,14 +236,19 @@ function Settings() {
 
     const trimmedConfirmation = deleteConfirmText.trim();
     const normalizedConfirmation = trimmedConfirmation.toLowerCase();
-    const email = user?.email ?? "";
-    const normalizedEmail = email.trim().toLowerCase();
+    const email = user?.email?.trim() ?? "";
+    const normalizedEmail = email.toLowerCase();
 
+    // DELETE stays case-sensitive on purpose, email match is case-insensitive
     if (
       trimmedConfirmation !== "DELETE" &&
-      normalizedConfirmation !== normalizedEmail
+      (!normalizedEmail || normalizedConfirmation !== normalizedEmail)
     ) {
-      setDeleteError(`Type DELETE or ${email} to confirm.`);
+      setDeleteError(
+        email
+          ? `Type DELETE or ${email} to confirm.`
+          : "Type DELETE to confirm.",
+      );
       return;
     }
 
@@ -250,7 +264,10 @@ function Settings() {
       });
 
       if (!res.ok) {
-        const responseErrors = await getErrorsFromResponse(res);
+        const responseErrors = await getErrorsFromResponse(
+          res,
+          "Could not delete account.",
+        );
         setDeleteError(
           responseErrors.general ??
             "Could not delete account. Please try again.",
@@ -455,6 +472,7 @@ function Settings() {
 
         <Button
           type="button"
+          variant="destructive"
           onClick={() => {
             setDeleteConfirmText("");
             setDeleteError(null);
@@ -462,70 +480,86 @@ function Settings() {
             setSuccessMessage(null);
             setIsDeleteOpen(true);
           }}
-          className="mt-4 rounded-full bg-red-600 hover:bg-red-700"
+          className="mt-4 rounded-full"
         >
           Delete account
         </Button>
       </section>
 
-      {isDeleteOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
-            <h2 className="text-xl font-semibold text-brand-navy">
-              Confirm account deletion
-            </h2>
-
-            <p className="mt-2 text-sm text-brand-navy/70">
+      <Dialog
+        open={isDeleteOpen}
+        onOpenChange={(next) => {
+          // block close mid-request so the in-flight DELETE has a place to surface errors
+          if (isDeleting && !next) return;
+          setIsDeleteOpen(next);
+          if (!next) {
+            setDeleteConfirmText("");
+            setDeleteError(null);
+          }
+        }}
+      >
+        <DialogContent className="rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>Confirm account deletion</DialogTitle>
+            <DialogDescription>
               This will permanently delete your account. To confirm, type{" "}
               <span className="font-semibold text-red-600">DELETE</span> or your
-              account email:
-            </p>
+              account email.
+            </DialogDescription>
+          </DialogHeader>
 
-            <p className="mt-2 rounded-xl bg-slate-100 px-3 py-2 text-sm font-medium text-brand-navy">
-              {user.email}
-            </p>
+          <p className="rounded-xl bg-slate-100 px-3 py-2 text-sm font-medium text-brand-navy">
+            {user.email}
+          </p>
 
-            <div className="mt-4 space-y-1.5">
-              <Label htmlFor="delete-confirm">Confirmation</Label>
-              <Input
-                id="delete-confirm"
-                value={deleteConfirmText}
-                onChange={(e) => {
-                  setDeleteConfirmText(e.target.value);
-                  setDeleteError(null);
-                }}
-                placeholder="Type DELETE or your email"
-              />
-              {deleteError && <p className={errorClass}>{deleteError}</p>}
-            </div>
-
-            <div className="mt-6 flex gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={isDeleting}
-                onClick={() => {
-                  setIsDeleteOpen(false);
-                  setDeleteConfirmText("");
-                  setDeleteError(null);
-                }}
-                className="flex-1 rounded-full"
-              >
-                Cancel
-              </Button>
-
-              <Button
-                type="button"
-                disabled={isDeleting || !canDelete}
-                onClick={handleDeleteAccount}
-                className="flex-1 rounded-full bg-red-600 hover:bg-red-700"
-              >
-                {isDeleting ? "Deleting..." : "Delete account"}
-              </Button>
-            </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="delete-confirm">Confirmation</Label>
+            <Input
+              id="delete-confirm"
+              value={deleteConfirmText}
+              onChange={(e) => {
+                setDeleteConfirmText(e.target.value);
+                setDeleteError(null);
+              }}
+              placeholder="Type DELETE or your email"
+              autoComplete="off"
+              aria-invalid={Boolean(deleteError)}
+              aria-describedby={deleteError ? "delete-error" : undefined}
+            />
+            {deleteError && (
+              <p id="delete-error" className={errorClass}>
+                {deleteError}
+              </p>
+            )}
           </div>
-        </div>
-      )}
+
+          <DialogFooter className="gap-3 sm:gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isDeleting}
+              onClick={() => setIsDeleteOpen(false)}
+              className="flex-1 rounded-full"
+            >
+              Cancel
+            </Button>
+
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={isDeleting || !canDelete}
+              aria-busy={isDeleting}
+              onClick={handleDeleteAccount}
+              className="flex-1 rounded-full"
+            >
+              {isDeleting && (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              )}
+              {isDeleting ? "Deleting..." : "Delete account"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }

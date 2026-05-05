@@ -9,7 +9,11 @@ from sqlalchemy.orm import selectinload
 from sse_starlette.sse import EventSourceResponse
 
 from app import broadcaster
-from app.dependencies import CurrentUserDep, HarbormasterDep, SessionDep
+from app.dependencies import (
+    CurrentUserDep,
+    HarbormasterForBerthDep,
+    SessionDep,
+)
 from app.models import Assignment, Berth, BerthAvailabilityWindow, Dock, Event, User
 from app.schemas import (
     AssignBerthIn,
@@ -114,7 +118,7 @@ async def assign_berth(
     berth_id: str,
     body: AssignBerthIn,
     session: SessionDep,
-    _: HarbormasterDep,
+    _: HarbormasterForBerthDep,
 ):
     berth = await session.get(Berth, berth_id)
     if not berth:
@@ -140,7 +144,7 @@ async def assign_berth(
 async def list_berth_events(
     berth_id: str,
     session: SessionDep,
-    _: HarbormasterDep,
+    _: HarbormasterForBerthDep,
     limit: int = Query(100, ge=1, le=1000),
 ):
     berth = await session.get(Berth, berth_id)
@@ -162,7 +166,7 @@ async def list_berth_events(
     summary="Remove a berth assignment",
 )
 async def remove_berth_assignment(
-    berth_id: str, session: SessionDep, _: HarbormasterDep
+    berth_id: str, session: SessionDep, _: HarbormasterForBerthDep
 ):
     berth = await session.get(Berth, berth_id)
     if not berth:

@@ -32,7 +32,7 @@ export function HarborOverview({
   return (
     <section
       className={cn(
-        "fixed top-32 left-8 w-72 max-h-[calc(100vh-160px)] bg-white/70 backdrop-blur-2xl border border-white/60 shadow-deep flex flex-col z-[var(--z-panel)] p-6 font-body rounded-[32px] overflow-hidden transition-all duration-500 ease-in-out",
+        "fixed top-32 left-8 w-72 max-h-[calc(100vh-160px)] bg-white/70 backdrop-blur-2xl border border-white/60 shadow-deep flex flex-col z-[var(--z-panel)] p-6 font-body rounded-[32px] overflow-hidden transition-all duration-500 ease-in-out lg:translate-x-0 lg:opacity-100 lg:pointer-events-auto",
         isOpen
           ? "translate-x-0 opacity-100 pointer-events-auto"
           : "-translate-x-[150%] opacity-0 pointer-events-none"

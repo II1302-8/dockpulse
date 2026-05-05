@@ -7,10 +7,10 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useParams, useOutletContext } from "react-router-dom";
-import { cn } from "../lib/utils";
+import { Link, useOutletContext, useParams } from "react-router-dom";
 import type { components } from "../api-types";
 import { useBerthDetail } from "../hooks/useBerthDetail";
+import { cn } from "../lib/utils";
 import type { AuthOutletContext } from "./layout/MainLayout";
 
 type Event = components["schemas"]["EventOut"];
@@ -31,7 +31,7 @@ export function BerthDetailPanel({
   const { marinaSlug } = useParams<{ marinaSlug: string }>();
   const { user: currentUser, token } = useOutletContext<AuthOutletContext>();
   const isHarborMaster = currentUser?.role === "harbormaster";
-  
+
   const { berth: fetchedBerth, isLoading, error } = useBerthDetail(berthId);
   const [events, setEvents] = useState<Event[]>([]);
   const [isEventsLoading, setIsEventsLoading] = useState(false);
@@ -39,24 +39,28 @@ export function BerthDetailPanel({
 
   useEffect(() => {
     if (!isHarborMaster) return;
-    
+
+    const controller = new AbortController();
     async function fetchEvents() {
       setIsEventsLoading(true);
       try {
         const res = await fetch(`/api/berths/${berthId}/events`, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
+          signal: controller.signal,
         });
         if (res.ok) {
           const data = await res.json();
           setEvents(data);
         }
       } catch (err) {
+        if ((err as Error).name === "AbortError") return;
         console.error("Failed to fetch berth events", err);
       } finally {
-        setIsEventsLoading(false);
+        if (!controller.signal.aborted) setIsEventsLoading(false);
       }
     }
     fetchEvents();
+    return () => controller.abort();
   }, [berthId, isHarborMaster, token]);
   const [isClosing, setIsClosing] = useState(false);
 
@@ -211,13 +215,13 @@ export function BerthDetailPanel({
               </span>
             </div>
 
-            {isHarborMaster && berth.assignment && (
+            {isHarborMaster && berth.assignment && marinaSlug && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-550 fill-mode-both border-t border-black/5 pt-6 mt-6">
                 <span className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40 mb-3 block">
                   Ownership Details
                 </span>
                 <Link
-                  to={`/${marinaSlug || "saltsjobaden"}/profile/${berth.assignment.user_id}`}
+                  to={`/${marinaSlug}/profile/${berth.assignment.user_id}`}
                   className="flex items-center gap-4 p-4 bg-white/60 hover:bg-brand-blue/5 border border-white/60 rounded-2xl transition-all group shadow-sm hover:shadow-md"
                 >
                   <div className="w-10 h-10 rounded-full bg-brand-blue/10 flex items-center justify-center text-brand-blue group-hover:scale-110 transition-transform">
@@ -278,11 +282,16 @@ export function BerthDetailPanel({
                   <div className="space-y-3">
                     {events.slice(0, 5).map((ev) => (
                       <div key={ev.event_id} className="flex gap-3 items-start">
-                        <div className={cn(
-                          "w-1.5 h-1.5 rounded-full mt-1.5",
-                          ev.event_type === "occupied" ? "bg-red-500" : 
-                          ev.event_type === "freed" ? "bg-emerald-500" : "bg-slate-300"
-                        )} />
+                        <div
+                          className={cn(
+                            "w-1.5 h-1.5 rounded-full mt-1.5",
+                            ev.event_type === "occupied"
+                              ? "bg-red-500"
+                              : ev.event_type === "freed"
+                                ? "bg-emerald-500"
+                                : "bg-slate-300",
+                          )}
+                        />
                         <div className="flex-1">
                           <p className="text-[11px] font-bold text-brand-navy/70 capitalize">
                             {ev.event_type}

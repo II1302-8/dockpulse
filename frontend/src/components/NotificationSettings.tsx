@@ -13,6 +13,7 @@ interface NotificationSettingsProps {
 
 export function NotificationSettings({ token }: NotificationSettingsProps) {
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -25,9 +26,13 @@ export function NotificationSettings({ token }: NotificationSettingsProps) {
         if (res.ok) {
           const data = await res.json();
           setPrefs(data);
+          setLoadError(null);
+        } else {
+          setLoadError(`Failed to load preferences (status ${res.status}).`);
         }
       } catch (err) {
         console.error("Failed to fetch notification prefs", err);
+        setLoadError("Network error loading preferences.");
       }
     }
     fetchPrefs();
@@ -64,7 +69,15 @@ export function NotificationSettings({ token }: NotificationSettingsProps) {
     }
   }
 
-  if (!prefs) return null;
+  if (!prefs) {
+    if (!loadError) return null;
+    return (
+      <div className="space-y-2 rounded-3xl border border-red-500/10 bg-red-500/5 p-6 mt-8">
+        <h2 className="text-sm font-bold text-red-500">Notifications</h2>
+        <p className="text-xs font-bold text-red-500/80">{loadError}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5 rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-lg backdrop-blur mt-8">

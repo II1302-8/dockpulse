@@ -41,7 +41,8 @@ export function DashboardLayoutProvider({ children, userRole }: { children: Reac
 
   const isDesktop = windowWidth >= 1024;
 
-  // Reset panels on navigation
+  // close panels when route changes
+  // biome-ignore lint/correctness/useExhaustiveDependencies: pathname is the trigger, body uses none
   useEffect(() => {
     setIsOverviewOpen(false);
     setIsActivityLogOpen(false);

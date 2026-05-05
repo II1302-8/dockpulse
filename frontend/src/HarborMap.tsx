@@ -1,40 +1,49 @@
 import { LayoutDashboard } from "lucide-react";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
-import { SvgMap } from "./svgMap";
+import { ActivityLogPanel } from "./components/ActivityLogPanel";
 import { BerthDetailPanel } from "./components/BerthDetailPanel";
+import { HarborMasterOverview } from "./components/HarborMasterOverview";
 import { HarborOverview } from "./components/HarborOverview";
+import { useDashboardLayout } from "./components/layout/DashboardLayoutContext";
+import type { AuthOutletContext } from "./components/layout/MainLayout";
 import { MapLegend } from "./components/MapLegend";
 import { NorthArrow } from "./components/NorthArrow";
-import { HarborMasterOverview } from "./components/HarborMasterOverview";
-import { ActivityLogPanel } from "./components/ActivityLogPanel";
-import type { AuthOutletContext } from "./components/layout/MainLayout";
-import { useDashboardLayout } from "./components/layout/DashboardLayoutContext";
 import { useBerthsStream } from "./hooks/useBerthsStream";
+import { mapBerthIds } from "./svg";
+import { SvgMap } from "./svgMap";
 
 export function HarborMap() {
   const { user } = useOutletContext<AuthOutletContext>();
-  const { berths, error, isLoading } = useBerthsStream();
+  const { berths: apiBerths, error, isLoading, refetchACB } = useBerthsStream();
+  // drop API rows with no slot on rendered map, otherwise overview counts skew
+  const berths = useMemo(
+    () => apiBerths.filter((b) => mapBerthIds.has(b.berth_id)),
+    [apiBerths],
+  );
   const [selectedBerthId, setSelectedBerthId] = useState<string | null>(null);
-  
-  const { 
-    isOverviewOpen, 
-    setIsOverviewOpen, 
+
+  const {
+    isOverviewOpen,
+    setIsOverviewOpen,
     isActivityLogOpen,
-    setIsActivityLogOpen 
+    setIsActivityLogOpen,
   } = useDashboardLayout();
 
   const [showInitialSpinner, setShowInitialSpinner] = useState(true);
-  
+
   // Panning State
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  
+
   const containerRef = useRef<HTMLDivElement>(null);
 
   const userRole = user?.role?.toLowerCase()?.trim();
   const isHarborMaster = userRole === "harbormaster";
+
+  // visitor has no SideMenu, so HarborOverview needs its own open/close state
+  const [isVisitorOverviewOpen, setIsVisitorOverviewOpen] = useState(true);
 
   useEffect(() => {
     if (!isLoading) {
@@ -43,19 +52,25 @@ export function HarborMap() {
   }, [isLoading]);
 
   // Panning Handlers
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('.berth-group')) return;
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
-  }, [offset]);
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if ((e.target as HTMLElement).closest(".berth-group")) return;
+      setIsDragging(true);
+      setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
+    },
+    [offset],
+  );
 
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!isDragging) return;
-    setOffset({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y,
-    });
-  }, [isDragging, dragStart]);
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      if (!isDragging) return;
+      setOffset({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y,
+      });
+    },
+    [isDragging, dragStart],
+  );
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
@@ -65,24 +80,23 @@ export function HarborMap() {
     setSelectedBerthId(id);
   };
 
-  const selectedBerth = selectedBerthId 
-    ? berths.find(b => b.berth_id === selectedBerthId) 
+  const selectedBerth = selectedBerthId
+    ? berths.find((b) => b.berth_id === selectedBerthId)
     : undefined;
 
   return (
-    <div 
-      className="w-full h-full relative overflow-hidden font-body bg-transparent pointer-events-auto"
-      onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
-      onMouseLeave={handleMouseUp}
-    >
+    <div className="w-full h-full relative overflow-hidden font-body bg-transparent pointer-events-auto">
       <section
         ref={containerRef}
         onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        aria-label="Harbor interactive map"
         className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing z-[var(--z-map)] pointer-events-auto touch-none"
-        style={{ 
+        style={{
           transform: `translate(${offset.x}px, ${offset.y}px)`,
-          transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+          transition: isDragging ? "none" : "transform 0.1s ease-out",
         }}
       >
         <SvgMap
@@ -107,6 +121,13 @@ export function HarborMap() {
           role="alert"
         >
           <span className="text-sm font-bold text-red-500">{error}</span>
+          <button
+            type="button"
+            className="px-4 py-2 bg-[#0A2540] text-white rounded-full text-xs font-bold hover:bg-[#0093E9] transition-colors"
+            onClick={refetchACB}
+          >
+            Retry
+          </button>
         </div>
       )}
 
@@ -121,7 +142,8 @@ export function HarborMap() {
         <HarborOverview
           key="public-overview"
           berths={berths}
-          isOpen={true}
+          isOpen={isVisitorOverviewOpen}
+          onCloseCB={() => setIsVisitorOverviewOpen(false)}
         />
       )}
 
@@ -135,13 +157,14 @@ export function HarborMap() {
       <MapLegend />
       <NorthArrow />
 
-      {isHarborMaster && (
+      {!isHarborMaster && !isVisitorOverviewOpen && (
         <button
           type="button"
-          onClick={() => setIsOverviewOpen(true)}
-          className="fixed bottom-8 left-8 w-14 h-14 bg-white/70 backdrop-blur-xl border border-white/60 shadow-deep rounded-2xl flex items-center justify-center text-brand-blue hover:scale-110 active:scale-95 transition-all z-[var(--z-controls)]"
+          onClick={() => setIsVisitorOverviewOpen(true)}
+          aria-label="Show harbor overview"
+          className="fixed bottom-8 left-8 lg:hidden w-12 h-12 bg-white/70 backdrop-blur-xl border border-white/60 shadow-deep rounded-2xl flex items-center justify-center text-brand-blue hover:scale-110 active:scale-95 transition-all z-[var(--z-controls)]"
         >
-          <LayoutDashboard size={24} strokeWidth={2.5} />
+          <LayoutDashboard size={20} strokeWidth={2.5} />
         </button>
       )}
 

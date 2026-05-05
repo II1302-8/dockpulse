@@ -1,10 +1,5 @@
-import {
-  Activity,
-  LayoutDashboard,
-  Menu,
-  Settings,
-  X,
-} from "lucide-react";
+import { Activity, LayoutDashboard, Menu, Settings, X } from "lucide-react";
+import { Link, useParams } from "react-router-dom";
 import { cn } from "../../lib/utils";
 
 interface SideMenuProps {
@@ -24,6 +19,9 @@ export function SideMenu({
   isOverviewActive,
   isActivityLogActive,
 }: SideMenuProps) {
+  const { marinaSlug } = useParams<{ marinaSlug: string }>();
+  const settingsPath = marinaSlug ? `/${marinaSlug}/settings` : null;
+
   const menuItems = [
     {
       id: "overview",
@@ -47,7 +45,7 @@ export function SideMenu({
       <nav
         className={cn(
           "hidden lg:flex fixed left-4 top-24 bottom-6 z-[var(--z-nav)] pointer-events-auto flex-col bg-white/70 backdrop-blur-2xl border border-white/60 shadow-deep rounded-[32px] transition-all duration-500 ease-in-out overflow-hidden font-body py-6",
-          isExpanded ? "w-64 px-6" : "w-20 px-4"
+          isExpanded ? "w-64 px-6" : "w-20 px-4",
         )}
       >
         <button
@@ -55,20 +53,30 @@ export function SideMenu({
           onClick={onToggle}
           className={cn(
             "rounded-2xl hover:bg-[#0A2540]/5 text-[#0A2540]/60 transition-all mb-8 flex items-center group w-full h-12 flex-shrink-0",
-            isExpanded ? "px-3 gap-4" : "justify-center"
+            isExpanded ? "px-3 gap-4" : "justify-center",
           )}
         >
           <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
             {isExpanded ? (
-              <X size={24} strokeWidth={2.5} className="text-[#0A2540]/80 animate-in spin-in-90 duration-300" />
+              <X
+                size={24}
+                strokeWidth={2.5}
+                className="text-[#0A2540]/80 animate-in spin-in-90 duration-300"
+              />
             ) : (
-              <Menu size={24} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" />
+              <Menu
+                size={24}
+                strokeWidth={2.5}
+                className="group-hover:scale-110 transition-transform"
+              />
             )}
           </div>
-          <span className={cn(
-            "font-black text-xs uppercase tracking-widest text-[#0A2540] transition-all duration-300 whitespace-nowrap overflow-hidden",
-            isExpanded ? "opacity-100 w-auto" : "opacity-0 w-0"
-          )}>
+          <span
+            className={cn(
+              "font-black text-xs uppercase tracking-widest text-[#0A2540] transition-all duration-300 whitespace-nowrap overflow-hidden",
+              isExpanded ? "opacity-100 w-auto" : "opacity-0 w-0",
+            )}
+          >
             Close Menu
           </span>
         </button>
@@ -84,7 +92,7 @@ export function SideMenu({
                 isExpanded ? "px-3 gap-4" : "justify-center",
                 item.active
                   ? "bg-brand-blue text-white shadow-lg shadow-brand-blue/20"
-                  : "hover:bg-[#0A2540]/5 text-[#0A2540]/40 hover:text-[#0A2540]/80"
+                  : "hover:bg-[#0A2540]/5 text-[#0A2540]/40 hover:text-[#0A2540]/80",
               )}
             >
               <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
@@ -94,11 +102,13 @@ export function SideMenu({
                   className="transition-transform group-hover:scale-110"
                 />
               </div>
-              
-              <span className={cn(
-                "font-black text-[11px] uppercase tracking-widest whitespace-nowrap transition-all duration-300 overflow-hidden",
-                isExpanded ? "opacity-100 w-auto" : "opacity-0 w-0"
-              )}>
+
+              <span
+                className={cn(
+                  "font-black text-[11px] uppercase tracking-widest whitespace-nowrap transition-all duration-300 overflow-hidden",
+                  isExpanded ? "opacity-100 w-auto" : "opacity-0 w-0",
+                )}
+              >
                 {item.label}
               </span>
 
@@ -109,33 +119,37 @@ export function SideMenu({
           ))}
         </div>
 
-        <a
-          href="/saltsjobaden/settings"
-          className={cn(
-            "mt-auto flex items-center h-12 rounded-2xl hover:bg-[#0A2540]/5 text-[#0A2540]/40 hover:text-[#0A2540]/80 transition-all group w-full flex-shrink-0",
-            isExpanded ? "px-3 gap-4" : "justify-center"
-          )}
-        >
-          <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
-            <Settings
-              size={22}
-              strokeWidth={2.5}
-              className="transition-transform group-hover:rotate-90"
-            />
-          </div>
-          <span className={cn(
-            "font-black text-[11px] uppercase tracking-widest whitespace-nowrap transition-all duration-300 overflow-hidden",
-            isExpanded ? "opacity-100 w-auto" : "opacity-0 w-0"
-          )}>
-            Settings
-          </span>
-        </a>
+        {settingsPath && (
+          <Link
+            to={settingsPath}
+            className={cn(
+              "mt-auto flex items-center h-12 rounded-2xl hover:bg-[#0A2540]/5 text-[#0A2540]/40 hover:text-[#0A2540]/80 transition-all group w-full flex-shrink-0",
+              isExpanded ? "px-3 gap-4" : "justify-center",
+            )}
+          >
+            <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
+              <Settings
+                size={22}
+                strokeWidth={2.5}
+                className="transition-transform group-hover:rotate-90"
+              />
+            </div>
+            <span
+              className={cn(
+                "font-black text-[11px] uppercase tracking-widest whitespace-nowrap transition-all duration-300 overflow-hidden",
+                isExpanded ? "opacity-100 w-auto" : "opacity-0 w-0",
+              )}
+            >
+              Settings
+            </span>
+          </Link>
+        )}
       </nav>
 
       {/* Mobile Bottom Dock (below lg) */}
       <nav
         className={cn(
-          "lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[var(--z-nav)] pointer-events-auto w-[90%] max-w-sm h-16 bg-white/80 backdrop-blur-3xl border border-white/60 shadow-deep rounded-full flex items-center justify-around px-2 font-body"
+          "lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[var(--z-nav)] pointer-events-auto w-[90%] max-w-sm h-16 bg-white/80 backdrop-blur-3xl border border-white/60 shadow-deep rounded-full flex items-center justify-around px-2 font-body",
         )}
       >
         {menuItems.map((item) => (
@@ -147,7 +161,7 @@ export function SideMenu({
               "flex flex-col items-center justify-center w-14 h-14 rounded-full transition-all relative",
               item.active
                 ? "bg-brand-blue text-white shadow-lg shadow-brand-blue/30 scale-110 -translate-y-2"
-                : "text-[#0A2540]/40"
+                : "text-[#0A2540]/40",
             )}
           >
             <item.icon size={20} strokeWidth={2.5} />
@@ -158,13 +172,15 @@ export function SideMenu({
             )}
           </button>
         ))}
-        
-        <a
-          href="/saltsjobaden/settings"
-          className="flex items-center justify-center w-14 h-14 rounded-full text-[#0A2540]/40 hover:text-[#0A2540]/80 transition-all"
-        >
-          <Settings size={20} strokeWidth={2.5} />
-        </a>
+
+        {settingsPath && (
+          <Link
+            to={settingsPath}
+            className="flex items-center justify-center w-14 h-14 rounded-full text-[#0A2540]/40 hover:text-[#0A2540]/80 transition-all"
+          >
+            <Settings size={20} strokeWidth={2.5} />
+          </Link>
+        )}
       </nav>
     </>
   );

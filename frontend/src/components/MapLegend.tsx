@@ -5,7 +5,7 @@ export function MapLegend() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className="fixed top-32 left-8 lg:left-[21rem] z-[55] flex flex-col items-start gap-2 pointer-events-none opacity-40 hover:opacity-100 transition-opacity duration-300">
+    <div className="fixed top-32 left-8 lg:left-[21rem] z-[var(--z-map-content)] flex flex-col items-start gap-2 pointer-events-none opacity-40 hover:opacity-100 transition-opacity duration-300">
       {/* Desktop / Expanded Legend */}
       <div
         className={`p-2 transition-all duration-500 ease-in-out pointer-events-auto ${

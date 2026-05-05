@@ -187,7 +187,7 @@ export function ActivityLogPanel({
     <section
       className={cn(
         "fixed bg-white/70 backdrop-blur-2xl border border-white/60 shadow-deep",
-        "bottom-6 left-6 right-6 max-h-[60vh]",
+        "bottom-28 left-6 right-6 max-h-[55vh]",
         "lg:bottom-auto lg:right-auto lg:top-32 lg:w-80 lg:max-h-[calc(100vh-160px)] lg:left-[var(--sidebar-total-offset,32px)]",
         "flex flex-col z-[var(--z-panel)] p-6 font-body rounded-[32px] overflow-hidden transition-all duration-500 ease-in-out",
         (!isLoaded || isFirstLoad.current) &&

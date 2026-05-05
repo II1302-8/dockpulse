@@ -90,7 +90,7 @@ export function BerthDetailPanel({
         "pointer-events-auto fixed z-[110] flex flex-col overflow-hidden transition-all duration-500",
         "border border-white/40 bg-white/40 shadow-deep backdrop-blur-xl",
         "rounded-[32px] p-0 font-body",
-        "bottom-6 left-6 right-6 max-h-[calc(100vh-160px)]",
+        "bottom-28 left-6 right-6 max-h-[calc(100vh-220px)]",
         "md:left-auto md:right-8 md:max-w-md",
         "lg:top-32 lg:right-8 lg:bottom-auto lg:w-80",
         "animate-in fade-in slide-in-from-bottom-6 duration-700 fill-mode-both lg:slide-in-from-right-8",

@@ -2,6 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     DateTime,
     Double,
     Enum,
@@ -251,3 +252,24 @@ class Assignment(Base):
 
     berth: Mapped["Berth"] = relationship(back_populates="assignment")
     user: Mapped["User"] = relationship(back_populates="assignments")
+
+
+class UserHarborRole(Base):
+    __tablename__ = "user_harbor_roles"
+    __table_args__ = (
+        CheckConstraint(
+            "role = 'harbormaster'", name="user_harbor_roles_role_check"
+        ),
+    )
+
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.user_id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    )
+    harbor_id: Mapped[str] = mapped_column(
+        ForeignKey("harbors.harbor_id", ondelete="CASCADE"),
+        primary_key=True,
+        index=True,
+    )
+    role: Mapped[str] = mapped_column(String, primary_key=True)

@@ -4,12 +4,12 @@ function Footer() {
   return (
     <footer
       className={cn(
-        "animate-in backdrop-blur-2xl bg-white/70 border border-white/60 bottom-6 duration-700 fade-in fixed flex gap-6 h-10 items-center px-6 rounded-full shadow-deep slide-in-from-bottom-4 z-50 text-[10px] font-bold uppercase tracking-widest text-[#0A2540]/60 transition-all",
+        "pointer-events-none fixed bottom-4 z-40 hidden h-10 animate-in items-center gap-6 rounded-full border border-white/60 bg-white/70 px-6 text-[10px] font-bold uppercase tracking-widest text-[#0A2540]/60 shadow-deep backdrop-blur-2xl duration-700 fade-in slide-in-from-bottom-4 transition-all md:flex",
         "left-[calc(var(--sidebar-total-offset,24px)+16px)]",
       )}
     >
       <span>{new Date().getFullYear()} DockPulse</span>
-      <span className="w-1 h-1 bg-[#0093E9]/30 rounded-full" />
+      <span className="h-1 w-1 rounded-full bg-[#0093E9]/30" />
       <span>Maritime Monitoring</span>
     </footer>
   );

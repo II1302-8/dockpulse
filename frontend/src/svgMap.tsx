@@ -125,35 +125,47 @@ export function SvgMap({
 
     const fill =
       state === "green" ? greenFill : state === "red" ? redFill : greyFill;
+
     const symbolColor =
       state === "green"
         ? greenSymbol
         : state === "red"
           ? redSymbol
           : greySymbol;
+
     const cx = slot.x + slot.width / 2;
     const cy = slot.y + slot.height / 2;
     const symbolSize = Math.min(slot.width, slot.height) * symbolScale;
+
+    function openBerthDetails() {
+      onBerthClickCB?.(slot.berth_id);
+    }
 
     return (
       // biome-ignore lint/a11y/useSemanticElements: <button> is not valid in SVG
       <g
         key={slot.id}
+        data-berth-id={slot.berth_id}
         className={`berth-group cursor-pointer outline-none ${isSelected ? "selected" : ""}`}
-        onClick={() => onBerthClickCB?.(slot.berth_id)}
+        onClick={openBerthDetails}
+        onTouchEnd={(event) => {
+          event.preventDefault();
+          openBerthDetails();
+        }}
         role="button"
         tabIndex={0}
         aria-label={`View details for ${slot.label}`}
         aria-pressed={isSelected}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            onBerthClickCB?.(slot.berth_id);
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openBerthDetails();
           }
         }}
-        style={{ pointerEvents: "all" }}
+        style={{ pointerEvents: "all", touchAction: "manipulation" }}
       >
         <title>{slot.label}</title>
-        {/* Hit area - invisible but ensures the entire slot is clickable */}
+
         <rect
           x={slot.x}
           y={slot.y}
@@ -162,6 +174,7 @@ export function SvgMap({
           fill="transparent"
           style={{ pointerEvents: "all" }}
         />
+
         <rect
           x={slot.x}
           y={slot.y}
@@ -171,7 +184,9 @@ export function SvgMap({
           stroke={isSelected ? selectedStroke : "none"}
           strokeWidth={isSelected ? 4 : 0}
           className="berth-rect transition-all duration-300"
+          style={{ pointerEvents: "none" }}
         />
+
         {state === "green" && (
           <circle
             cx={cx}
@@ -180,10 +195,16 @@ export function SvgMap({
             fill="none"
             stroke={symbolColor}
             strokeWidth={symbolStrokeWidth}
+            style={{ pointerEvents: "none" }}
           />
         )}
+
         {state === "red" && (
-          <g stroke={symbolColor} strokeWidth={symbolStrokeWidth}>
+          <g
+            stroke={symbolColor}
+            strokeWidth={symbolStrokeWidth}
+            style={{ pointerEvents: "none" }}
+          >
             <line
               x1={cx - symbolSize}
               y1={cy - symbolSize}
@@ -198,6 +219,7 @@ export function SvgMap({
             />
           </g>
         )}
+
         {state === "grey" && (
           <circle
             cx={cx}
@@ -205,6 +227,7 @@ export function SvgMap({
             r={symbolSize * 0.5}
             fill={symbolColor}
             opacity="0.3"
+            style={{ pointerEvents: "none" }}
           />
         )}
       </g>
@@ -222,7 +245,9 @@ export function SvgMap({
       aria-labelledby="harbor-berth-map-title"
     >
       <title id="harbor-berth-map-title">Harbor berth map</title>
+
       <rect x="0" y="0" width="850" height="600" fill="transparent" />
+
       <rect
         x={horizontalPier.x}
         y={horizontalPier.y}
@@ -232,6 +257,7 @@ export function SvgMap({
         stroke={stroke}
         strokeWidth="3"
       />
+
       <rect
         x={verticalPier.x}
         y={verticalPier.y}
@@ -241,9 +267,11 @@ export function SvgMap({
         stroke={stroke}
         strokeWidth="3"
       />
+
       {topSlots.map(renderBerthCB)}
       {leftSlots.map(renderBerthCB)}
       {rightSlots.map(renderBerthCB)}
+
       {topBerths.map((berth) => (
         <line
           key={getLineKey("top-line", berth)}
@@ -253,8 +281,10 @@ export function SvgMap({
           y2={berth.y2}
           stroke={stroke}
           strokeWidth="3"
+          style={{ pointerEvents: "none" }}
         />
       ))}
+
       {leftSideBerths.map((berth) => (
         <line
           key={getLineKey("left-line", berth)}
@@ -264,8 +294,10 @@ export function SvgMap({
           y2={berth.y2}
           stroke={stroke}
           strokeWidth="3"
+          style={{ pointerEvents: "none" }}
         />
       ))}
+
       {rightSideBerths.map((berth) => (
         <line
           key={getLineKey("right-line", berth)}
@@ -275,6 +307,7 @@ export function SvgMap({
           y2={berth.y2}
           stroke={stroke}
           strokeWidth="3"
+          style={{ pointerEvents: "none" }}
         />
       ))}
     </svg>

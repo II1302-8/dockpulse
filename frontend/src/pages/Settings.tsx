@@ -533,7 +533,7 @@ function Settings() {
     normalizedDeleteConfirmText === normalizedUserEmail;
 
   return (
-    <main className="mx-auto max-w-2xl px-4 pt-36 pb-20">
+    <main className="mx-auto max-w-2xl px-4 pt-24 pb-20 lg:pt-36">
       <div className="mb-6">
         <h1 className="text-3xl font-semibold text-brand-navy">Settings</h1>
         <p className="mt-1 text-brand-navy/60">

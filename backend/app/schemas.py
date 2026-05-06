@@ -301,6 +301,15 @@ class AdoptionUpdateEvent(BaseModel):
     request: AdoptionRequestOut
 
 
+class AdoptionStateEvent(BaseModel):
+    type: Literal["adoption.state"] = "adoption.state"
+    request_id: str
+    state: str = Field(
+        examples=["link-open"],
+        description="Provisioning phase reported by the gateway",
+    )
+
+
 # --- notification preferences ---
 
 

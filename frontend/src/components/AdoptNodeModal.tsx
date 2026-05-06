@@ -545,7 +545,7 @@ function ProgressStep({
   requestId: string;
   onClose: () => void;
 }) {
-  const { request, state } = useAdoptionStream(requestId);
+  const { request, state, phase } = useAdoptionStream(requestId);
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
 
@@ -597,7 +597,9 @@ function ProgressStep({
               ? "Provisioning succeeded"
               : status === "err"
                 ? "Provisioning failed"
-                : "Awaiting gateway"}
+                : phase
+                  ? humanizePhase(phase)
+                  : "Awaiting gateway"}
           </div>
           {request && (
             <p className="text-[10px] font-mono text-brand-navy/50 mt-1 break-all">
@@ -768,6 +770,21 @@ const ADOPT_ERROR_MESSAGES: Record<string, string> = {
   unknown:
     "Provisioning failed for an unknown reason. Retry, then check gateway logs.",
 };
+
+// codes mirror the provisioner state machine in dp_mesh_provisioner.c
+const PROV_PHASES: Record<string, string> = {
+  started: "Scanning for node",
+  "link-open": "BLE link open",
+  "pb-adv-done": "Key exchange done",
+  "cfg-app-key": "Configuring app key",
+  "cfg-bind": "Binding model",
+  "cfg-pub-set": "Setting publish address",
+  complete: "Finalizing",
+};
+
+function humanizePhase(state: string): string {
+  return PROV_PHASES[state] ?? state;
+}
 
 function humanizeAdoptError(
   code: string | null | undefined,

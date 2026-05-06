@@ -87,3 +87,50 @@ async def test_gateway_status_increments_attempts_on_repeat(session):
 
     pending = await session.get(PendingGateway, "gw-repeat")
     assert pending.attempts == 2
+
+
+async def test_provision_state_fans_out_to_broadcaster():
+    from app import broadcaster
+    from app.mqtt import _handle_message
+
+    # craft a fake message because aiomqtt.Message is awkward to construct
+    class _Topic:
+        value = "dockpulse/v1/gw/gw-x/provision/state"
+
+    class _Msg:
+        topic = _Topic()
+        payload = b'{"req_id":"r-1","state":"link-open"}'
+
+    received: list[dict] = []
+    async with broadcaster.subscribe() as queue:
+        await _handle_message(_Msg())
+        # one event should be in the queue
+        event = await queue.get()
+        received.append(event)
+
+    assert received == [
+        {"type": "adoption.state", "request_id": "r-1", "state": "link-open"}
+    ]
+
+
+async def test_provision_state_ignores_malformed_payload():
+    from app import broadcaster
+    from app.mqtt import _handle_message
+
+    class _Topic:
+        value = "dockpulse/v1/gw/gw-x/provision/state"
+
+    class _Msg:
+        topic = _Topic()
+        payload = b'{"req_id":"r-1"}'  # missing 'state'
+
+    async with broadcaster.subscribe() as queue:
+        await _handle_message(_Msg())
+        # no event should be queued; check via timeout
+        import asyncio
+
+        try:
+            event = await asyncio.wait_for(queue.get(), timeout=0.1)
+            raise AssertionError(f"unexpected event {event}")
+        except TimeoutError:
+            pass

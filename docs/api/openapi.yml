@@ -131,6 +131,27 @@ components:
       - created_at
       title: AdoptionRequestOut
       type: object
+    AdoptionStateEvent:
+      properties:
+        request_id:
+          title: Request Id
+          type: string
+        state:
+          description: Provisioning phase reported by the gateway
+          examples:
+          - link-open
+          title: State
+          type: string
+        type:
+          const: adoption.state
+          default: adoption.state
+          title: Type
+          type: string
+      required:
+      - request_id
+      - state
+      title: AdoptionStateEvent
+      type: object
     AdoptionUpdateEvent:
       properties:
         request:
@@ -1101,9 +1122,9 @@ paths:
   /api/adoptions/{request_id}/stream:
     get:
       description: Opens a long-lived `text/event-stream` for a single adoption request. The first frame
-        is a snapshot of the current state. Subsequent frames are `AdoptionUpdateEvent`s emitted when
-        the gateway reports back. The stream closes once the request reaches a terminal state (`ok` or
-        `err`).
+        is a snapshot of the current state. Subsequent frames are `AdoptionUpdateEvent` (DB-backed terminal/snapshot
+        transitions) or `AdoptionStateEvent` (advisory phase events forwarded from the gateway). The stream
+        closes once the request reaches a terminal state (`ok` or `err`).
       operationId: streamAdoption
       parameters:
       - in: path
@@ -1117,8 +1138,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AdoptionUpdateEvent'
-          description: Each frame is a JSON-encoded AdoptionUpdateEvent.
+                anyOf:
+                - $ref: '#/components/schemas/AdoptionUpdateEvent'
+                - $ref: '#/components/schemas/AdoptionStateEvent'
+                title: Response 200 Streamadoption
+          description: Each frame is a JSON-encoded AdoptionUpdateEvent or AdoptionStateEvent.
         '404':
           description: Adoption request not found
         '422':

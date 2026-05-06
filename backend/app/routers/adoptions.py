@@ -22,7 +22,12 @@ from app.dependencies import (
 )
 from app.models import AdoptionRequest, Berth, Gateway, Node
 from app.mqtt import publish_provision_req
-from app.schemas import AdoptIn, AdoptionRequestOut, AdoptionUpdateEvent
+from app.schemas import (
+    AdoptIn,
+    AdoptionRequestOut,
+    AdoptionStateEvent,
+    AdoptionUpdateEvent,
+)
 
 router = APIRouter(prefix="/api/adoptions", tags=["adoptions"])
 
@@ -176,15 +181,19 @@ async def get_adoption(request_id: str, session: SessionDep):
     description=(
         "Opens a long-lived `text/event-stream` for a single adoption "
         "request. The first frame is a snapshot of the current state. "
-        "Subsequent frames are `AdoptionUpdateEvent`s emitted when the "
-        "gateway reports back. The stream closes once the request reaches "
-        "a terminal state (`ok` or `err`)."
+        "Subsequent frames are `AdoptionUpdateEvent` (DB-backed terminal/"
+        "snapshot transitions) or `AdoptionStateEvent` (advisory phase "
+        "events forwarded from the gateway). The stream closes once the "
+        "request reaches a terminal state (`ok` or `err`)."
     ),
     response_class=EventSourceResponse,
     responses={
         200: {
-            "model": AdoptionUpdateEvent,
-            "description": "Each frame is a JSON-encoded AdoptionUpdateEvent.",
+            "model": AdoptionUpdateEvent | AdoptionStateEvent,
+            "description": (
+                "Each frame is a JSON-encoded AdoptionUpdateEvent or "
+                "AdoptionStateEvent."
+            ),
         },
         404: {"description": "Adoption request not found"},
     },
@@ -209,11 +218,17 @@ async def stream_adoption(request_id: str, request: Request, session: SessionDep
                     event = await asyncio.wait_for(queue.get(), timeout=1.0)
                 except TimeoutError:
                     continue
-                if event.get("type") != "adoption.update":
+                etype = event.get("type")
+                if etype == "adoption.state":
+                    if event.get("request_id") != request_id:
+                        continue
+                    yield {"event": etype, "data": json.dumps(event)}
+                    continue
+                if etype != "adoption.update":
                     continue
                 if event["request"]["request_id"] != request_id:
                     continue
-                yield {"event": event["type"], "data": json.dumps(event)}
+                yield {"event": etype, "data": json.dumps(event)}
                 if event["request"]["status"] != "pending":
                     return
 

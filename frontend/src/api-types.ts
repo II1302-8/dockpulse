@@ -64,7 +64,7 @@ export interface paths {
         };
         /**
          * Subscribe to adoption progress via Server-Sent Events
-         * @description Opens a long-lived `text/event-stream` for a single adoption request. The first frame is a snapshot of the current state. Subsequent frames are `AdoptionUpdateEvent`s emitted when the gateway reports back. The stream closes once the request reaches a terminal state (`ok` or `err`).
+         * @description Opens a long-lived `text/event-stream` for a single adoption request. The first frame is a snapshot of the current state. Subsequent frames are `AdoptionUpdateEvent` (DB-backed terminal/snapshot transitions) or `AdoptionStateEvent` (advisory phase events forwarded from the gateway). The stream closes once the request reaches a terminal state (`ok` or `err`).
          */
         get: operations["streamAdoption"];
         put?: never;
@@ -609,6 +609,23 @@ export interface components {
              * @enum {string}
              */
             status: "pending" | "ok" | "err";
+        };
+        /** AdoptionStateEvent */
+        AdoptionStateEvent: {
+            /** Request Id */
+            request_id: string;
+            /**
+             * State
+             * @description Provisioning phase reported by the gateway
+             * @example link-open
+             */
+            state: string;
+            /**
+             * Type
+             * @default adoption.state
+             * @constant
+             */
+            type: "adoption.state";
         };
         /** AdoptionUpdateEvent */
         AdoptionUpdateEvent: {
@@ -1320,13 +1337,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Each frame is a JSON-encoded AdoptionUpdateEvent. */
+            /** @description Each frame is a JSON-encoded AdoptionUpdateEvent or AdoptionStateEvent. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AdoptionUpdateEvent"];
+                    "application/json": components["schemas"]["AdoptionUpdateEvent"] | components["schemas"]["AdoptionStateEvent"];
                 };
             };
             /** @description Adoption request not found */

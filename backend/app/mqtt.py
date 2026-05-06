@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 import aiomqtt
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app import broadcaster
 from app.adoption.finalize import complete_adoption_err, complete_adoption_ok
 from app.config import get_settings
 from app.db import get_sessionmaker
@@ -23,6 +24,7 @@ HEARTBEAT_TOPIC = "harbor/+/+/+/heartbeat"
 # with the legacy berth tree.
 GATEWAY_TOPIC_PREFIX = "dockpulse/v1/gw"
 PROVISION_RESP_TOPIC = f"{GATEWAY_TOPIC_PREFIX}/+/provision/resp"
+PROVISION_STATE_TOPIC = f"{GATEWAY_TOPIC_PREFIX}/+/provision/state"
 GATEWAY_STATUS_TOPIC = f"{GATEWAY_TOPIC_PREFIX}/+/status"
 
 RECONNECT_DELAY = 5
@@ -181,6 +183,19 @@ async def _handle_message(message: aiomqtt.Message) -> None:
     gateway_topic = _parse_gateway_topic(topic)
     if gateway_topic is not None:
         gateway_id, kind = gateway_topic
+        # provision/state is advisory-only; just fan out to SSE without DB hit
+        if kind == "provision/state":
+            req_id = payload.get("req_id")
+            state = payload.get("state")
+            if isinstance(req_id, str) and isinstance(state, str):
+                broadcaster.publish(
+                    {
+                        "type": "adoption.state",
+                        "request_id": req_id,
+                        "state": state,
+                    }
+                )
+            return
         async with get_sessionmaker()() as session:
             if kind == "provision/resp":
                 await _handle_provision_resp(session, payload)
@@ -272,6 +287,7 @@ async def mqtt_listener() -> None:
                 await client.subscribe(STATUS_TOPIC)
                 await client.subscribe(HEARTBEAT_TOPIC)
                 await client.subscribe(PROVISION_RESP_TOPIC)
+                await client.subscribe(PROVISION_STATE_TOPIC)
                 await client.subscribe(GATEWAY_STATUS_TOPIC)
                 async for message in client.messages:
                     await _handle_message(message)

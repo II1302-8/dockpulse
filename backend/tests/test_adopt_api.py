@@ -228,14 +228,41 @@ async def test_adopt_rejects_berth_with_active_node(
     assert r.status_code == 409
 
 
-async def test_adopt_rejects_reused_jti(
+async def test_adopt_idempotent_while_pending(
     client: AsyncClient, harbor_master: User, harbor_world, factory_pubkey
 ):
+    """Reposting same claim while pending returns the existing row, not 409.
+    Lets retries on flaky networks land cleanly without tripping the unique."""
     qr = _make_qr_payload(factory_pubkey, jti="reused-jti")
     creds = _creds(harbor_master.user_id)
 
     first = await client.post("/api/adoptions", json=_adopt_body(qr), cookies=creds)
     assert first.status_code == 202
+
+    second = await client.post("/api/adoptions", json=_adopt_body(qr), cookies=creds)
+    assert second.status_code == 200
+    assert second.json()["request_id"] == first.json()["request_id"]
+
+
+async def test_adopt_rejects_reused_jti_when_terminal(
+    client: AsyncClient,
+    session: AsyncSession,
+    harbor_master: User,
+    harbor_world,
+    factory_pubkey,
+):
+    qr = _make_qr_payload(factory_pubkey, jti="reused-terminal")
+    creds = _creds(harbor_master.user_id)
+
+    first = await client.post("/api/adoptions", json=_adopt_body(qr), cookies=creds)
+    assert first.status_code == 202
+    request_id = first.json()["request_id"]
+
+    # mark the request terminal so the second post represents a real bug
+    row = await session.get(AdoptionRequest, request_id)
+    row.status = "err"
+    row.error_code = "cfg-fail"
+    await session.commit()
 
     second = await client.post("/api/adoptions", json=_adopt_body(qr), cookies=creds)
     assert second.status_code == 409

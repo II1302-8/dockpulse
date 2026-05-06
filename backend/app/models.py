@@ -158,6 +158,24 @@ class Gateway(Base):
         gateway_status_enum, nullable=False, default="offline"
     )
     last_seen: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # null = use ADOPTION_TTL default in routers/adoptions.py
+    provision_ttl_s: Mapped[int | None] = mapped_column(Integer)
+
+
+class PendingGateway(Base):
+    """gateway_ids seen on MQTT before they have a row in `gateways`.
+    populated by _handle_gateway_status; consumed by harbormaster UI / dpcli."""
+
+    __tablename__ = "pending_gateways"
+
+    gateway_id: Mapped[str] = mapped_column(String, primary_key=True)
+    first_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
 
 class Node(Base):

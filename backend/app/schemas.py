@@ -131,6 +131,18 @@ class GatewayOut(_BaseSchema):
     name: str = Field(examples=["Pier A gateway"])
     status: GatewayStatus
     last_seen: datetime | None = Field(default=None, examples=["2026-05-03T14:30:00Z"])
+    provision_ttl_s: int | None = Field(
+        default=None,
+        examples=[180],
+        description="Per-gateway override; null falls back to ADOPTION_TTL",
+    )
+
+
+class PendingGatewayOut(_BaseSchema):
+    gateway_id: str = Field(examples=["gw-unregistered"])
+    first_seen_at: datetime = Field(examples=["2026-05-06T11:29:00Z"])
+    last_seen_at: datetime = Field(examples=["2026-05-06T11:32:00Z"])
+    attempts: int = Field(examples=[3])
 
 
 class BerthAvailabilityWindowOut(_BaseSchema):
@@ -259,11 +271,21 @@ class LoginIn(BaseModel):
 # --- system ---
 
 
+class AdoptionPipelineStatus(BaseModel):
+    pending: int = Field(examples=[0], description="Pending adoption requests")
+    err_last_15min: int = Field(
+        examples=[0], description="Failed adoptions in the last 15 minutes"
+    )
+
+
 class HealthStatus(BaseModel):
     status: Literal["ok", "degraded"]
     uptime: float = Field(examples=[12345.6])
     database: Literal["ok", "error"]
     mqtt: Literal["ok", "error"]
+    gateways_online: int = Field(examples=[1])
+    gateways_total: int = Field(examples=[1])
+    adoption: AdoptionPipelineStatus
 
 
 # --- realtime events ---

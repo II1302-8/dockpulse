@@ -22,6 +22,25 @@ components:
       - gateway_id
       title: AdoptIn
       type: object
+    AdoptionPipelineStatus:
+      properties:
+        err_last_15min:
+          description: Failed adoptions in the last 15 minutes
+          examples:
+          - 0
+          title: Err Last 15Min
+          type: integer
+        pending:
+          description: Pending adoption requests
+          examples:
+          - 0
+          title: Pending
+          type: integer
+      required:
+      - pending
+      - err_last_15min
+      title: AdoptionPipelineStatus
+      type: object
     AdoptionRequestOut:
       properties:
         berth_id:
@@ -442,6 +461,15 @@ components:
           - Pier A gateway
           title: Name
           type: string
+        provision_ttl_s:
+          anyOf:
+          - examples: &id013
+            - 180
+            type: integer
+          - type: 'null'
+          description: Per-gateway override; null falls back to ADOPTION_TTL
+          examples: *id013
+          title: Provision Ttl S
         status:
           enum:
           - online
@@ -483,12 +511,24 @@ components:
       type: object
     HealthStatus:
       properties:
+        adoption:
+          $ref: '#/components/schemas/AdoptionPipelineStatus'
         database:
           enum:
           - ok
           - error
           title: Database
           type: string
+        gateways_online:
+          examples:
+          - 1
+          title: Gateways Online
+          type: integer
+        gateways_total:
+          examples:
+          - 1
+          title: Gateways Total
+          type: integer
         mqtt:
           enum:
           - ok
@@ -511,6 +551,9 @@ components:
       - uptime
       - database
       - mqtt
+      - gateways_online
+      - gateways_total
+      - adoption
       title: HealthStatus
       type: object
     LoginIn:
@@ -541,11 +584,11 @@ components:
           type: string
         battery_pct:
           anyOf:
-          - examples: &id013
+          - examples: &id014
             - 87
             type: integer
           - type: 'null'
-          examples: *id013
+          examples: *id014
           title: Battery Pct
         berth_id:
           examples:
@@ -567,12 +610,12 @@ components:
           type: string
         last_seen:
           anyOf:
-          - examples: &id014
+          - examples: &id015
             - '2026-05-03T14:30:00Z'
             format: date-time
             type: string
           - type: 'null'
-          examples: *id014
+          examples: *id015
           title: Last Seen
         mesh_unicast_addr:
           examples:
@@ -615,11 +658,11 @@ components:
           type: string
         battery_pct:
           anyOf:
-          - examples: &id015
+          - examples: &id016
             - 87
             type: integer
           - type: 'null'
-          examples: *id015
+          examples: *id016
           title: Battery Pct
         berth_id:
           examples:
@@ -641,12 +684,12 @@ components:
           type: string
         last_seen:
           anyOf:
-          - examples: &id016
+          - examples: &id017
             - '2026-05-03T14:30:00Z'
             format: date-time
             type: string
           - type: 'null'
-          examples: *id016
+          examples: *id017
           title: Last Seen
         mesh_unicast_addr:
           examples:
@@ -700,16 +743,47 @@ components:
           title: Notify Departure
       title: NotificationPrefsPatch
       type: object
+    PendingGatewayOut:
+      properties:
+        attempts:
+          examples:
+          - 3
+          title: Attempts
+          type: integer
+        first_seen_at:
+          examples:
+          - '2026-05-06T11:29:00Z'
+          format: date-time
+          title: First Seen At
+          type: string
+        gateway_id:
+          examples:
+          - gw-unregistered
+          title: Gateway Id
+          type: string
+        last_seen_at:
+          examples:
+          - '2026-05-06T11:32:00Z'
+          format: date-time
+          title: Last Seen At
+          type: string
+      required:
+      - gateway_id
+      - first_seen_at
+      - last_seen_at
+      - attempts
+      title: PendingGatewayOut
+      type: object
     UserCreate:
       properties:
         boat_club:
           anyOf:
-          - examples: &id017
+          - examples: &id018
             - Saltsjöbadens BK
             maxLength: 100
             type: string
           - type: 'null'
-          examples: *id017
+          examples: *id018
           title: Boat Club
         email:
           examples:
@@ -744,13 +818,13 @@ components:
           writeOnly: true
         phone:
           anyOf:
-          - examples: &id018
+          - examples: &id019
             - +46 70 123 45 67
             maxLength: 20
             pattern: ^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$
             type: string
           - type: 'null'
-          examples: *id018
+          examples: *id019
           title: Phone
       required:
       - firstname
@@ -763,19 +837,19 @@ components:
       properties:
         assigned_berth_id:
           anyOf:
-          - examples: &id019
+          - examples: &id020
             - berth-001
             type: string
           - type: 'null'
-          examples: *id019
+          examples: *id020
           title: Assigned Berth Id
         boat_club:
           anyOf:
-          - examples: &id020
+          - examples: &id021
             - Saltsjöbadens BK
             type: string
           - type: 'null'
-          examples: *id020
+          examples: *id021
           title: Boat Club
         email:
           examples:
@@ -795,11 +869,11 @@ components:
           type: string
         phone:
           anyOf:
-          - examples: &id021
+          - examples: &id022
             - +46 70 123 45 67
             type: string
           - type: 'null'
-          examples: *id021
+          examples: *id022
           title: Phone
         role:
           enum:
@@ -824,12 +898,12 @@ components:
       properties:
         boat_club:
           anyOf:
-          - examples: &id022
+          - examples: &id023
             - Saltsjöbadens BK
             maxLength: 100
             type: string
           - type: 'null'
-          examples: *id022
+          examples: *id023
           title: Boat Club
         current_password:
           anyOf:
@@ -840,25 +914,14 @@ components:
           title: Current Password
         email:
           anyOf:
-          - examples: &id023
+          - examples: &id024
             - alex@example.com
             format: email
             type: string
           - type: 'null'
-          examples: *id023
+          examples: *id024
           title: Email
         firstname:
-          anyOf:
-          - examples: &id024
-            - Alex
-            maxLength: 100
-            minLength: 1
-            pattern: ^[\p{L}\p{M}'’ .\-]+$
-            type: string
-          - type: 'null'
-          examples: *id024
-          title: Firstname
-        lastname:
           anyOf:
           - examples: &id025
             - Alex
@@ -868,10 +931,21 @@ components:
             type: string
           - type: 'null'
           examples: *id025
+          title: Firstname
+        lastname:
+          anyOf:
+          - examples: &id026
+            - Alex
+            maxLength: 100
+            minLength: 1
+            pattern: ^[\p{L}\p{M}'’ .\-]+$
+            type: string
+          - type: 'null'
+          examples: *id026
           title: Lastname
         password:
           anyOf:
-          - examples: &id026
+          - examples: &id027
             - correct horse battery staple
             format: password
             maxLength: 128
@@ -879,17 +953,17 @@ components:
             type: string
             writeOnly: true
           - type: 'null'
-          examples: *id026
+          examples: *id027
           title: Password
         phone:
           anyOf:
-          - examples: &id027
+          - examples: &id028
             - +46 70 123 45 67
             maxLength: 20
             pattern: ^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$
             type: string
           - type: 'null'
-          examples: *id027
+          examples: *id028
           title: Phone
       title: UserPatch
       type: object
@@ -1631,6 +1705,48 @@ paths:
       security:
       - APIKeyCookie: []
       summary: List gateways visible to the harbormaster
+      tags:
+      - gateways
+  /api/gateways/pending:
+    get:
+      operationId: listPendingGateways
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/PendingGatewayOut'
+                title: Response Listpendinggateways
+                type: array
+          description: Successful Response
+      security:
+      - APIKeyCookie: []
+      summary: List unknown gateway ids seen on MQTT
+      tags:
+      - gateways
+  /api/gateways/pending/{gateway_id}:
+    delete:
+      operationId: dismissPendingGateway
+      parameters:
+      - in: path
+        name: gateway_id
+        required: true
+        schema:
+          title: Gateway Id
+          type: string
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - APIKeyCookie: []
+      summary: Dismiss a pending gateway entry
       tags:
       - gateways
   /api/harbors:

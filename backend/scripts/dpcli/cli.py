@@ -25,6 +25,7 @@ from app.models import (
     Gateway,
     Harbor,
     Node,
+    PendingGateway,
     User,
     UserHarborRole,
 )
@@ -247,6 +248,12 @@ def list_nodes():
 
 
 @app.command()
+def list_pending_gateways():
+    """List unknown gateway ids seen on MQTT."""
+    asyncio.run(_list_pending_gateways())
+
+
+@app.command()
 def decommission_node(
     node_id: Annotated[str, typer.Argument(help="Node ID to decommission")],
     yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation")] = False,
@@ -376,6 +383,10 @@ async def _create_gateway(gateway_id: str, dock_id: str, name: str) -> None:
         session.add(
             Gateway(gateway_id=gateway_id, dock_id=dock_id, name=name, status="offline")
         )
+        # clear any pending row so it doesn't show up in /api/gateways/pending
+        pending = await session.get(PendingGateway, gateway_id)
+        if pending is not None:
+            await session.delete(pending)
         await session.commit()
     typer.echo(
         f"Created gateway {gateway_id} on dock {dock_id} "
@@ -395,6 +406,23 @@ async def _list_gateways() -> None:
             g.name,
             g.status,
             g.last_seen.isoformat() if g.last_seen else "",
+        )
+    _console.print(table)
+
+
+async def _list_pending_gateways() -> None:
+    async with get_sessionmaker()() as session:
+        result = await session.execute(
+            select(PendingGateway).order_by(PendingGateway.last_seen_at.desc())
+        )
+        rows = result.scalars().all()
+    table = Table("ID", "First Seen", "Last Seen", "Attempts")
+    for r in rows:
+        table.add_row(
+            r.gateway_id,
+            r.first_seen_at.isoformat(),
+            r.last_seen_at.isoformat(),
+            str(r.attempts),
         )
     _console.print(table)
 

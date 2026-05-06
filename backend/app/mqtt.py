@@ -11,7 +11,7 @@ from app.adoption.finalize import complete_adoption_err, complete_adoption_ok
 from app.config import get_settings
 from app.db import get_sessionmaker
 from app.events import process_heartbeat, process_sensor_reading
-from app.models import Gateway
+from app.models import Gateway, PendingGateway
 
 logger = logging.getLogger(__name__)
 
@@ -146,11 +146,27 @@ async def _handle_gateway_status(
         logger.warning("gateway status payload missing 'online': %s", payload)
         return
     gateway = await session.get(Gateway, gateway_id)
+    now = datetime.now(UTC)
     if gateway is None:
-        logger.info("status for unknown gateway %s", gateway_id)
+        # record so harbormaster can find unknown gateways without log diving
+        pending = await session.get(PendingGateway, gateway_id)
+        if pending is None:
+            session.add(
+                PendingGateway(
+                    gateway_id=gateway_id,
+                    first_seen_at=now,
+                    last_seen_at=now,
+                    attempts=1,
+                )
+            )
+        else:
+            pending.last_seen_at = now
+            pending.attempts += 1
+        await session.commit()
+        logger.info("status for unknown gateway %s (recorded as pending)", gateway_id)
         return
     gateway.status = "online" if online else "offline"
-    gateway.last_seen = datetime.now(UTC)
+    gateway.last_seen = now
     await session.commit()
 
 

@@ -352,6 +352,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/gateways/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List unknown gateway ids seen on MQTT */
+        get: operations["listPendingGateways"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/gateways/pending/{gateway_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Dismiss a pending gateway entry */
+        delete: operations["dismissPendingGateway"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/harbors": {
         parameters: {
             query?: never;
@@ -495,6 +529,21 @@ export interface components {
              * @description Base64url-encoded JSON from QR fragment (uuid, oob, sn, jwt)
              */
             qr_payload: string;
+        };
+        /** AdoptionPipelineStatus */
+        AdoptionPipelineStatus: {
+            /**
+             * Err Last 15Min
+             * @description Failed adoptions in the last 15 minutes
+             * @example 0
+             */
+            err_last_15min: number;
+            /**
+             * Pending
+             * @description Pending adoption requests
+             * @example 0
+             */
+            pending: number;
         };
         /** AdoptionRequestOut */
         AdoptionRequestOut: {
@@ -810,6 +859,12 @@ export interface components {
              */
             name: string;
             /**
+             * Provision Ttl S
+             * @description Per-gateway override; null falls back to ADOPTION_TTL
+             * @example 180
+             */
+            provision_ttl_s?: number | null;
+            /**
              * Status
              * @enum {string}
              */
@@ -835,11 +890,22 @@ export interface components {
         };
         /** HealthStatus */
         HealthStatus: {
+            adoption: components["schemas"]["AdoptionPipelineStatus"];
             /**
              * Database
              * @enum {string}
              */
             database: "ok" | "error";
+            /**
+             * Gateways Online
+             * @example 1
+             */
+            gateways_online: number;
+            /**
+             * Gateways Total
+             * @example 1
+             */
+            gateways_total: number;
             /**
              * Mqtt
              * @enum {string}
@@ -986,6 +1052,31 @@ export interface components {
             notify_arrival?: boolean | null;
             /** Notify Departure */
             notify_departure?: boolean | null;
+        };
+        /** PendingGatewayOut */
+        PendingGatewayOut: {
+            /**
+             * Attempts
+             * @example 3
+             */
+            attempts: number;
+            /**
+             * First Seen At
+             * Format: date-time
+             * @example 2026-05-06T11:29:00Z
+             */
+            first_seen_at: string;
+            /**
+             * Gateway Id
+             * @example gw-unregistered
+             */
+            gateway_id: string;
+            /**
+             * Last Seen At
+             * Format: date-time
+             * @example 2026-05-06T11:32:00Z
+             */
+            last_seen_at: string;
         };
         /** UserCreate */
         UserCreate: {
@@ -1795,6 +1886,55 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["GatewayOut"][];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listPendingGateways: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PendingGatewayOut"][];
+                };
+            };
+        };
+    };
+    dismissPendingGateway: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                gateway_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

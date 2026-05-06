@@ -65,3 +65,25 @@ async def test_publish_provision_req_noop_when_disconnected():
         ttl_s=60,
         berth_id="berth-1",
     )
+
+
+async def test_gateway_status_records_unknown_id_as_pending(session):
+    from app.models import PendingGateway
+    from app.mqtt import _handle_gateway_status
+
+    await _handle_gateway_status(session, "gw-unregistered", {"online": True})
+
+    pending = await session.get(PendingGateway, "gw-unregistered")
+    assert pending is not None
+    assert pending.attempts == 1
+
+
+async def test_gateway_status_increments_attempts_on_repeat(session):
+    from app.models import PendingGateway
+    from app.mqtt import _handle_gateway_status
+
+    await _handle_gateway_status(session, "gw-repeat", {"online": True})
+    await _handle_gateway_status(session, "gw-repeat", {"online": False})
+
+    pending = await session.get(PendingGateway, "gw-repeat")
+    assert pending.attempts == 2

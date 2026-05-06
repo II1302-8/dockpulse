@@ -5,6 +5,7 @@ import time
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime, timedelta
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,15 +13,16 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from sqlalchemy import text
+from sqlalchemy import func, select, text
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.adoption.sweeper import sweeper_loop
 from app.auth import require_csrf
 from app.config import get_settings
-from app.db import get_engine
+from app.db import get_engine, get_sessionmaker
 from app.logging_config import request_id_var, setup_logging
+from app.models import AdoptionRequest, Gateway
 from app.mqtt import is_mqtt_connected, mqtt_listener
 from app.rate_limit import limiter
 from app.routers import adoptions, auth, berths, docks, gateways, harbors, nodes, users
@@ -199,6 +201,43 @@ async def health():
         db_ok = False
 
     mqtt_ok = is_mqtt_connected()
+
+    # adoption + gateway counters help oncall spot a degraded pipeline at a glance
+    gateways_online = gateways_total = pending = err_last_15min = 0
+    if db_ok:
+        try:
+            async with get_sessionmaker()() as session:
+                gateways_total = (
+                    await session.scalar(select(func.count()).select_from(Gateway))
+                ) or 0
+                gateways_online = (
+                    await session.scalar(
+                        select(func.count())
+                        .select_from(Gateway)
+                        .where(Gateway.status == "online")
+                    )
+                ) or 0
+                pending = (
+                    await session.scalar(
+                        select(func.count())
+                        .select_from(AdoptionRequest)
+                        .where(AdoptionRequest.status == "pending")
+                    )
+                ) or 0
+                cutoff = datetime.now(UTC) - timedelta(minutes=15)
+                err_last_15min = (
+                    await session.scalar(
+                        select(func.count())
+                        .select_from(AdoptionRequest)
+                        .where(
+                            AdoptionRequest.status == "err",
+                            AdoptionRequest.completed_at >= cutoff,
+                        )
+                    )
+                ) or 0
+        except Exception:
+            db_ok = False
+
     status = "ok" if db_ok and mqtt_ok else "degraded"
 
     return JSONResponse(
@@ -208,5 +247,11 @@ async def health():
             "uptime": time.monotonic() - _start_time,
             "database": "ok" if db_ok else "error",
             "mqtt": "ok" if mqtt_ok else "error",
+            "gateways_online": gateways_online,
+            "gateways_total": gateways_total,
+            "adoption": {
+                "pending": pending,
+                "err_last_15min": err_last_15min,
+            },
         },
     )

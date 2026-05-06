@@ -115,3 +115,53 @@ async def test_list_gateways_rejects_bad_status(
         cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 422
+
+
+async def test_list_pending_gateways_returns_recorded_ids(
+    client: AsyncClient, session: AsyncSession, harbor_master: User, harbor_world
+):
+    from app.models import PendingGateway
+
+    session.add(PendingGateway(gateway_id="gw-unknown", attempts=3))
+    await session.commit()
+
+    r = await client.get(
+        "/api/gateways/pending", cookies=_creds(harbor_master.user_id)
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert len(body) == 1
+    assert body[0]["gateway_id"] == "gw-unknown"
+    assert body[0]["attempts"] == 3
+
+
+async def test_list_pending_gateways_rejects_non_harbormaster(
+    client: AsyncClient, harbor_world
+):
+    r = await client.get("/api/gateways/pending")
+    assert r.status_code == 401
+
+
+async def test_dismiss_pending_gateway(
+    client: AsyncClient, session: AsyncSession, harbor_master: User, harbor_world
+):
+    from app.models import PendingGateway
+
+    session.add(PendingGateway(gateway_id="gw-bye", attempts=1))
+    await session.commit()
+
+    r = await client.delete(
+        "/api/gateways/pending/gw-bye", cookies=_creds(harbor_master.user_id)
+    )
+    assert r.status_code == 204
+
+    assert await session.get(PendingGateway, "gw-bye") is None
+
+
+async def test_dismiss_unknown_pending_returns_404(
+    client: AsyncClient, harbor_master: User, harbor_world
+):
+    r = await client.delete(
+        "/api/gateways/pending/nope", cookies=_creds(harbor_master.user_id)
+    )
+    assert r.status_code == 404

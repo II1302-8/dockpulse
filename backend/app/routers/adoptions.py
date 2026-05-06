@@ -5,7 +5,7 @@ import json
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sse_starlette.sse import EventSourceResponse
@@ -65,6 +65,7 @@ async def create_adoption(
     body: AdoptIn,
     current_user: CurrentUserDep,
     session: SessionDep,
+    response: Response,
 ):
     qr = _decode_qr_payload(body.qr_payload)
     claim = _verify_claim(qr)
@@ -100,6 +101,25 @@ async def create_adoption(
     if active_node.scalar_one_or_none() is not None:
         raise HTTPException(status_code=409, detail="Berth already has an active node")
 
+    # idempotent retry: same claim_jti while previous attempt still pending
+    # returns the existing row instead of 409. terminal rows still 409 because
+    # the operation is no longer in-flight and a fresh request would be a bug.
+    existing = (
+        await session.execute(
+            select(AdoptionRequest).where(AdoptionRequest.claim_jti == claim.jti)
+        )
+    ).scalar_one_or_none()
+    if existing is not None:
+        if existing.status == "pending":
+            response.status_code = 200
+            return existing
+        raise HTTPException(status_code=409, detail="Claim has already been used")
+
+    ttl = (
+        timedelta(seconds=gateway.provision_ttl_s)
+        if gateway.provision_ttl_s
+        else ADOPTION_TTL
+    )
     now = datetime.now(UTC)
     request = AdoptionRequest(
         request_id=str(uuid.uuid4()),
@@ -108,7 +128,7 @@ async def create_adoption(
         claim_jti=claim.jti,
         gateway_id=body.gateway_id,
         berth_id=body.berth_id,
-        expires_at=now + ADOPTION_TTL,
+        expires_at=now + ttl,
         status="pending",
         created_by_user_id=current_user.user_id,
         created_at=now,
@@ -129,7 +149,7 @@ async def create_adoption(
         request_id=request.request_id,
         mesh_uuid=claim.mesh_uuid,
         oob=oob,
-        ttl_s=int(ADOPTION_TTL.total_seconds()),
+        ttl_s=int(ttl.total_seconds()),
         berth_id=body.berth_id,
     )
     return request

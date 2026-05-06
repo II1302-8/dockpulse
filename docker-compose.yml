@@ -89,6 +89,8 @@ services:
       APP_ENV: ${APP_ENV:-dev}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-DockPulse <noreply@dockpulse.xyz>}
+      CF_ACCESS_TEAM_DOMAIN: ${CF_ACCESS_TEAM_DOMAIN:-}
+      CF_ACCESS_AUD: ${CF_ACCESS_AUD:-}
     volumes:
       - mqtt-pki:/certs:ro
     depends_on:
@@ -100,7 +102,13 @@ services:
         condition: service_healthy
     networks: [internal]
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request,sys; r=urllib.request.urlopen('http://127.0.0.1:8000/api/health',timeout=3); sys.exit(0 if r.status<500 else 1)"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request,sys; r=urllib.request.urlopen('http://127.0.0.1:8000/api/health',timeout=3); sys.exit(0 if r.status<500 else 1)",
+        ]
       interval: 30s
       timeout: 5s
       retries: 3

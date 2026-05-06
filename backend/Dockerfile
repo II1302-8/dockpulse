@@ -12,12 +12,17 @@ COPY --from=ghcr.io/astral-sh/uv:0.5 /uv /uvx /bin/
 WORKDIR /app
 COPY backend/pyproject.toml backend/uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
+# install project itself so [project.scripts] entrypoints (dpcli) land in .venv/bin
+COPY backend/app /app/app/
+COPY backend/scripts /app/scripts/
+RUN uv sync --frozen --no-dev
 
 FROM base AS runtime
 RUN groupadd --system app && useradd --system --gid app --home-dir /app app
 WORKDIR /app
 COPY --from=builder /app/.venv /app/.venv
 COPY --chown=app:app backend/app /app/app/
+COPY --chown=app:app backend/scripts /app/scripts/
 COPY --chown=app:app backend/alembic /app/alembic/
 COPY --chown=app:app backend/alembic.ini backend/pyproject.toml backend/uv.lock /app/
 COPY --chown=app:app docs/api/openapi.yml /docs/api/openapi.yml

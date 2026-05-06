@@ -21,6 +21,7 @@ dependencies = [
   "argon2-cffi>=21.0",
   "resend>=2.29.0",
   "slowapi>=0.1.9",
+  "typer>=0.25",
 ]
 
 [project.scripts]
@@ -40,7 +41,6 @@ dev = [
   "ruff>=0.11",
   "pre-commit>=4.5",
   "pytest-cov>=7.1.0",
-  "typer>=0.25",
 ]
 
 [tool.pytest.ini_options]

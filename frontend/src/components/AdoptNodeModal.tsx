@@ -57,6 +57,7 @@ export function AdoptNodeModal({ open, onClose }: Props) {
     try {
       const req = await apiJson<AdoptionRequest>("/api/adoptions", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           qr_payload: qrPayload,
           gateway_id: gateway.gateway_id,

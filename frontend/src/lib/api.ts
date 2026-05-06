@@ -15,11 +15,16 @@ function readCsrfCookie(): string | null {
 
 function withCsrfHeader(init: RequestInit | undefined): RequestInit {
   const method = (init?.method ?? "GET").toUpperCase();
-  if (SAFE_METHODS.has(method)) return init ?? {};
-  const csrf = readCsrfCookie();
-  if (!csrf) return init ?? {};
   const headers = new Headers(init?.headers);
-  if (!headers.has(CSRF_HEADER)) headers.set(CSRF_HEADER, csrf);
+  // string bodies are JSON.stringify output by convention here; default header
+  // so callers can't trip pydantic's "body: Input should be a valid dict" by
+  // forgetting the content type
+  if (typeof init?.body === "string" && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+  if (SAFE_METHODS.has(method)) return { ...init, headers };
+  const csrf = readCsrfCookie();
+  if (csrf && !headers.has(CSRF_HEADER)) headers.set(CSRF_HEADER, csrf);
   return { ...init, headers };
 }
 

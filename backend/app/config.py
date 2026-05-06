@@ -81,14 +81,32 @@ class Settings(BaseSettings):
 
     @field_validator("factory_pubkey", mode="before")
     @classmethod
-    def _decode_pubkey_newlines(cls, v: object) -> object:
-        # docker compose dotenv parsers below v2.24 reject multi-line
-        # values, so the convention is to set FACTORY_PUBKEY as a
-        # single-line string with literal \n separators. PEM loaders
-        # require real newlines
-        if isinstance(v, str) and "\\n" in v:
-            return v.replace("\\n", "\n")
-        return v
+    def _decode_pubkey(cls, v: object) -> object:
+        # accept three input shapes from env so every deploy target
+        # works regardless of dotenv-parser quirks:
+        #   1. real PEM with newlines (works on Compose v2.24+)
+        #   2. single-line with literal "\n" separators (older Compose)
+        #   3. base64-encoded PEM (Komodo, Coolify, anything that
+        #      tokenises on whitespace or chokes on dashes)
+        if not isinstance(v, str) or not v:
+            return v
+        if v.lstrip().startswith("-----BEGIN"):
+            if "\\n" in v:
+                return v.replace("\\n", "\n")
+            return v
+        # base64: decode and trust the PEM loader to validate. tolerate
+        # whitespace/newlines that some platforms inject mid-string
+        import base64
+        import binascii
+        try:
+            decoded = base64.b64decode("".join(v.split()), validate=True).decode()
+        except (binascii.Error, UnicodeDecodeError) as err:
+            raise ValueError(
+                "FACTORY_PUBKEY is neither a PEM nor valid base64"
+            ) from err
+        if not decoded.lstrip().startswith("-----BEGIN"):
+            raise ValueError("FACTORY_PUBKEY base64 did not decode to a PEM")
+        return decoded
 
 
 @lru_cache

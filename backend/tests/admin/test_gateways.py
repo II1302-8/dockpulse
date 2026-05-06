@@ -1,4 +1,4 @@
-"""Gateway create/patch/dismiss-pending."""
+"""gateway create / patch / dismiss-pending"""
 
 from httpx import AsyncClient
 

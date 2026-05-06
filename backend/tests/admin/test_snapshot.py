@@ -1,4 +1,4 @@
-"""GET /api/admin/snapshot + auth gate."""
+"""snapshot endpoint + auth gate"""
 
 from httpx import AsyncClient
 

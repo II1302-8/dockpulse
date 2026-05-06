@@ -1,4 +1,4 @@
-"""Dock CRUD."""
+"""dock crud"""
 
 from httpx import AsyncClient
 

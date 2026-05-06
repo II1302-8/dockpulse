@@ -1,5 +1,5 @@
-// admin API client. CF Access at the edge attaches the JWT for us; we just
-// fetch same-origin and read the response. No cookies, no CSRF dance.
+// cf access attaches the jwt at the edge so this is just same-origin fetch
+// no cookies, no csrf dance
 
 export class AdminApiError extends Error {
   constructor(
@@ -43,7 +43,7 @@ export async function adminPost<T>(path: string, body?: unknown): Promise<T> {
     method: "POST",
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  // 204 / empty bodies (eg dismiss-pending)
+  // 204 means empty body, eg dismiss-pending
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }

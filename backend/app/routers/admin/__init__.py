@@ -1,12 +1,8 @@
-"""Admin endpoints for the per-env admin SPA at admin.<env>.dockpulse.xyz.
+"""endpoints for admin.<env>.dockpulse.xyz, auth via Cf-Access-Jwt-Assertion
 
-Auth is Cloudflare Access (Zero Trust): the SPA is behind a CF tunnel + Access
-policy, and CF attaches a signed JWT in the Cf-Access-Jwt-Assertion header on
-every request. This package validates that assertion instead of using the
-harbormaster cookie path, so admins are decoupled from the user/role table.
-
-Sub-routers are split per resource for navigability; they're aggregated here
-under a single /api/admin prefix gated by require_cf_access.
+cf access gates the host at the edge, backend validates jwt per request so
+admins are decoupled from the user/role table. sub-routers per resource
+aggregated under one /api/admin prefix
 """
 
 from fastapi import APIRouter, Depends

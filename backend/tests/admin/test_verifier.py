@@ -1,4 +1,4 @@
-"""CF Access JWT verifier — covers every accept/reject path."""
+"""cf access jwt verifier, accept + reject paths"""
 
 import time
 

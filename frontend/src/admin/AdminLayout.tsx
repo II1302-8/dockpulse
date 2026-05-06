@@ -12,15 +12,26 @@ import { NavLink, Outlet } from "react-router-dom";
 import { cn } from "../lib/utils";
 import { detectEnv } from "./env";
 
+// admin host mounts spa at root, other hosts under /admin
+const BASE =
+  typeof window !== "undefined" && window.location.hostname.startsWith("admin.")
+    ? ""
+    : "/admin";
+
 const NAV = [
-  { to: "/admin", label: "Snapshot", icon: Home, end: true },
-  { to: "/admin/harbors", label: "Harbors", icon: Anchor, end: false },
-  { to: "/admin/docks", label: "Docks", icon: Cable, end: false },
-  { to: "/admin/berths", label: "Berths", icon: Sailboat, end: false },
-  { to: "/admin/gateways", label: "Gateways", icon: Cpu, end: false },
-  { to: "/admin/nodes", label: "Nodes", icon: ScrollText, end: false },
-  { to: "/admin/adoptions", label: "Adoptions", icon: CircleAlert, end: false },
-  { to: "/admin/users", label: "Users", icon: Users, end: false },
+  { to: `${BASE}` || "/", label: "Snapshot", icon: Home, end: true },
+  { to: `${BASE}/harbors`, label: "Harbors", icon: Anchor, end: false },
+  { to: `${BASE}/docks`, label: "Docks", icon: Cable, end: false },
+  { to: `${BASE}/berths`, label: "Berths", icon: Sailboat, end: false },
+  { to: `${BASE}/gateways`, label: "Gateways", icon: Cpu, end: false },
+  { to: `${BASE}/nodes`, label: "Nodes", icon: ScrollText, end: false },
+  {
+    to: `${BASE}/adoptions`,
+    label: "Adoptions",
+    icon: CircleAlert,
+    end: false,
+  },
+  { to: `${BASE}/users`, label: "Users", icon: Users, end: false },
 ];
 
 export function AdminLayout() {

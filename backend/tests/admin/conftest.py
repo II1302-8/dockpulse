@@ -1,8 +1,8 @@
-"""Shared fixtures for admin endpoint tests.
+"""shared fixtures for admin endpoint tests, jwks mocked in-process
 
-JWKS is mocked locally so the suite never touches the network — we generate
-an RSA keypair, build a JWKS document around the public key, sign tokens
-with the private key, and patch PyJWKClient.fetch_data to return our JWKS.
+generates an rsa keypair, builds a jwks document around the public key,
+signs tokens with the private key, patches PyJWKClient.fetch_data so the
+suite never touches the network
 """
 
 import time
@@ -22,7 +22,7 @@ KID = "test-kid"
 
 @pytest.fixture
 def cf_keys(monkeypatch):
-    """Generate RSA keypair, point cf_access at a fake JWKS for it."""
+    """generate rsa keypair, point cf_access at a fake jwks built from it"""
     priv = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     pub = priv.public_key()
     nums = pub.public_numbers()
@@ -50,9 +50,9 @@ def cf_keys(monkeypatch):
 
 @pytest.fixture
 def mint(cf_keys):
-    """Returns a callable that mints CF Access JWTs signed by the test key.
+    """callable minting cf access jwts signed by the test key
 
-    Pass overrides to test rejection paths: mint(exp=…, aud=…, iss=…, email=…).
+    pass overrides to drive rejection tests, e.g. mint(exp=..., aud=...)
     """
 
     def _mint(**overrides) -> str:
@@ -78,6 +78,5 @@ def mint(cf_keys):
 
 @pytest.fixture
 def auth_headers(mint):
-    """Default auth header for the happy path. Tests that need a custom
-    payload should call mint(...) directly."""
+    """happy-path admin headers, tests needing custom payloads call mint() directly"""
     return {"Cf-Access-Jwt-Assertion": mint()}

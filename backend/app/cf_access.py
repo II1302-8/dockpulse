@@ -1,11 +1,9 @@
-"""Cloudflare Access JWT verification
+"""verify Cf-Access-Jwt-Assertion for /api/admin/*
 
-Used by the /api/admin/* endpoints — Cloudflare attaches a signed JWT in the
-Cf-Access-Jwt-Assertion header on every request from a Zero-Trust-authenticated
-browser. Backend validates: signature against the team's JWKS, audience against
-the app's AUD tag, issuer matches the team domain, and standard exp/iat/nbf.
+cf attaches the signed jwt at the edge after sso, backend validates against
+team jwks. signature + audience + issuer + standard exp/iat/nbf
 
-Reference: https://developers.cloudflare.com/cloudflare-one/identity/authorization-cookie/validating-json/
+ref https://developers.cloudflare.com/cloudflare-one/identity/authorization-cookie/validating-json/
 """
 
 import logging
@@ -20,20 +18,19 @@ from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
-# JWKS cache TTL: CF rotates per-app keys infrequently but we don't want to
-# pin forever. Library refetches on key-not-found anyway.
+# library refetches on key-not-found so 1h is fine even if cf rotates
 JWKS_CACHE_TTL_S = 3600
 HEADER = "Cf-Access-Jwt-Assertion"
 
 
 class AccessAuthError(Exception):
-    """Caller is missing or has an invalid CF Access assertion"""
+    """missing or invalid cf access assertion"""
 
 
 @dataclass(frozen=True)
 class AccessIdentity:
     email: str
-    sub: str  # CF user id
+    sub: str  # cf user id
 
 
 _jwks_clients: dict[str, PyJWKClient] = {}
@@ -52,7 +49,7 @@ def _jwks_client(team_domain: str) -> PyJWKClient:
 
 
 def verify_assertion(token: str) -> AccessIdentity:
-    """Validate a Cf-Access-Jwt-Assertion. Returns the identity or raises."""
+    """raises AccessAuthError on any validation failure"""
     s = get_settings()
     if not s.cf_access_team_domain or not s.cf_access_aud:
         raise AccessAuthError("CF Access not configured on this server")
@@ -83,5 +80,5 @@ def verify_assertion(token: str) -> AccessIdentity:
 
 
 def _now_s() -> int:
-    # extracted so tests can patch
+    # patch point for time-based tests
     return int(time.time())

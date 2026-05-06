@@ -1,4 +1,4 @@
-"""Shared admin-router primitives: CF Access dep + argon2 hasher singleton."""
+"""shared admin-router primitives, cf access dep + argon2 hasher singleton"""
 
 import logging
 from typing import Annotated

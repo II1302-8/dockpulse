@@ -1,4 +1,4 @@
-"""GET /api/admin/snapshot — aggregate dpcli list-* state for the SPA dashboard."""
+"""aggregate of dpcli list-* state, single fetch for the spa dashboard"""
 
 from datetime import UTC, datetime, timedelta
 

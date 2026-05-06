@@ -1,13 +1,11 @@
-// runtime env detection from hostname so one image deploys everywhere.
-// CF tunnel routes admin.<env>.dockpulse.xyz to this SPA; the host tells
-// us which backend we're talking to.
+// hostname tells us which env we're in so one image deploys everywhere
 
 export type AdminEnv = "prod" | "staging" | "dev";
 
 export interface EnvInfo {
   env: AdminEnv;
   label: string;
-  bannerClass: string; // tailwind classes for the env banner
+  bannerClass: string;
 }
 
 export function detectEnv(): EnvInfo {

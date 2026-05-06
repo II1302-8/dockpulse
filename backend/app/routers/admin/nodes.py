@@ -1,4 +1,4 @@
-"""Node decommission (DB flip + MQTT publish)."""
+"""node decommission, db flip + mqtt publish"""
 
 import uuid
 

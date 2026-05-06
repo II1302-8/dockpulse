@@ -1,4 +1,4 @@
-"""User CRUD + harbormaster harbor-grants."""
+"""user crud + harbormaster harbor-grants"""
 
 import uuid
 from typing import Annotated, Literal

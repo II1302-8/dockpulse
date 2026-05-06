@@ -1,4 +1,4 @@
-"""Node decommission."""
+"""node decommission"""
 
 from httpx import AsyncClient
 

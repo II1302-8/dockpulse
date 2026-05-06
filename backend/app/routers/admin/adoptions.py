@@ -1,4 +1,4 @@
-"""Adoption admin: cancel, bulk delete, sweeper trigger."""
+"""adoption admin, cancel + bulk delete + sweeper trigger"""
 
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import delete
@@ -39,8 +39,7 @@ async def cancel_adoption(request_id: str, session: SessionDep) -> dict:
     operation_id="adminBulkDeleteAdoptions",
 )
 async def bulk_delete_adoptions(session: SessionDep, status: str = "err") -> dict:
-    """Delete adoption_requests rows by status. Default 'err'; pass 'pending' to
-    cancel-and-delete, or 'all' for a full wipe (use sparingly)."""
+    """default 'err', pass 'pending' to cancel-and-delete, 'all' to wipe"""
     if status == "all":
         result = await session.execute(delete(AdoptionRequest))
     elif status in {"err", "pending", "ok"}:

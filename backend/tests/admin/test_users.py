@@ -1,4 +1,4 @@
-"""User CRUD + harbor grant/revoke."""
+"""user crud + harbor grant/revoke"""
 
 from httpx import AsyncClient
 
@@ -45,7 +45,7 @@ async def test_grant_harbor_to_harbormaster(
     )
     assert r.status_code == 201
 
-    # idempotent — second call no-ops
+    # second call no-ops
     r2 = await client.post(
         f"/api/admin/users/{harbor_master.user_id}/harbor-grants",
         headers=auth_headers,
@@ -69,7 +69,7 @@ async def test_grant_harbor_rejects_non_harbormaster(
 async def test_revoke_harbor(
     client: AsyncClient, auth_headers, harbor_master, harbor_world
 ):
-    # harbor_master fixture seeds UserHarborRole(hm1, h1, harbormaster) already
+    # harbor_master fixture already seeds UserHarborRole(hm1, h1, harbormaster)
     r = await client.delete(
         f"/api/admin/users/{harbor_master.user_id}/harbor-grants/h1",
         headers=auth_headers,

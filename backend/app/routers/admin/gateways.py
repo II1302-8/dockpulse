@@ -1,4 +1,4 @@
-"""Gateway CRUD + dock reassignment + dismiss-pending."""
+"""gateway crud + dock reassignment + dismiss-pending"""
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field

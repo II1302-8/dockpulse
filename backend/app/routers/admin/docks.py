@@ -1,4 +1,4 @@
-"""Dock CRUD."""
+"""dock crud"""
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field

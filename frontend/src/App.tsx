@@ -12,16 +12,33 @@ const Settings = lazy(() =>
   import("./pages/Settings").then((m) => ({ default: m.Settings })),
 );
 
-// admin SPA — gated by CF Access at the edge, no in-app auth
+// cf access gates admin host at the edge so no in-app auth needed
 const AdminApp = lazy(() =>
   import("./admin/AdminApp").then((m) => ({ default: m.AdminApp })),
 );
 
+// hostname fork avoids needing a second build target or tunnel-side rewrite
+// admin.* serves only the panel, public routes unreachable on that host
+const isAdminHost =
+  typeof window !== "undefined" &&
+  window.location.hostname.startsWith("admin.");
+
 export function App() {
+  if (isAdminHost) {
+    return (
+      <BrowserRouter>
+        <Suspense fallback={<div className="h-full w-full" />}>
+          <AdminApp />
+        </Suspense>
+      </BrowserRouter>
+    );
+  }
+
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+          {/* /admin path on non-admin hosts so localhost:5173/admin works */}
           <Route
             path="/admin/*"
             element={

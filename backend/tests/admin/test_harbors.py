@@ -1,4 +1,4 @@
-"""Harbor CRUD."""
+"""harbor crud"""
 
 from httpx import AsyncClient
 

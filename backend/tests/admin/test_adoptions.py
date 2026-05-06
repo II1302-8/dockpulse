@@ -1,4 +1,4 @@
-"""Adoption admin: cancel, bulk delete, sweeper trigger."""
+"""adoption admin endpoints"""
 
 from datetime import UTC, datetime, timedelta
 

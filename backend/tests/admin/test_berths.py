@@ -1,4 +1,4 @@
-"""Berth CRUD + reset."""
+"""berth crud + reset"""
 
 from httpx import AsyncClient
 

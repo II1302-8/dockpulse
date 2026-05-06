@@ -103,10 +103,9 @@ services:
     logging: *loki-logging
 
   cloudflared-admin:
-    # exposes admin.dockpulse.xyz exclusively over a CF Zero-Trust tunnel
-    # (no public listener on the host). CF Access policy in front handles
-    # SSO; backend then validates Cf-Access-Jwt-Assertion on /api/admin/*
-    # path-split is configured in the CF dashboard for this tunnel:
+    # admin.dockpulse.xyz only over a cf zero-trust tunnel, no public listener
+    # cf access gates the host, backend validates jwt on /api/admin/*
+    # path-split lives in the cf dashboard for this tunnel:
     #   admin.dockpulse.xyz/api/*  -> http://backend:8000
     #   admin.dockpulse.xyz/*      -> http://frontend:5173
     container_name: dockpulse-prod-cloudflared-admin

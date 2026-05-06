@@ -1,4 +1,4 @@
-"""Berth CRUD + force-reset."""
+"""berth crud + force-reset"""
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field

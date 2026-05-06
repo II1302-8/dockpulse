@@ -1105,7 +1105,7 @@ components:
       - type
       title: ValidationError
       type: object
-    app__routers__admin__UserCreate:
+    app__routers__admin__users__UserCreate:
       properties:
         boat_club:
           anyOf:
@@ -1154,7 +1154,7 @@ components:
       - lastname
       title: UserCreate
       type: object
-    app__routers__admin__UserPatch:
+    app__routers__admin__users__UserPatch:
       properties:
         boat_club:
           anyOf:
@@ -1348,9 +1348,7 @@ openapi: 3.1.0
 paths:
   /api/admin/adoptions:
     delete:
-      description: 'Delete adoption_requests rows by status. Default ''err''; pass ''pending'' to
-
-        cancel-and-delete, or ''all'' for a full wipe (use sparingly).'
+      description: default 'err', pass 'pending' to cancel-and-delete, 'all' to wipe
       operationId: adminBulkDeleteAdoptions
       parameters:
       - in: query
@@ -2047,9 +2045,6 @@ paths:
       - admin
   /api/admin/snapshot:
     get:
-      description: 'One-shot view that reflects what dpcli list-* commands return,
-
-        suitable for the admin SPA''s landing dashboard.'
       operationId: adminSnapshot
       parameters:
       - in: header
@@ -2155,7 +2150,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/app__routers__admin__UserCreate'
+              $ref: '#/components/schemas/app__routers__admin__users__UserCreate'
         required: true
       responses:
         '201':
@@ -2226,7 +2221,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/app__routers__admin__UserPatch'
+              $ref: '#/components/schemas/app__routers__admin__users__UserPatch'
         required: true
       responses:
         '200':

@@ -17,11 +17,14 @@ const AdminApp = lazy(() =>
   import("./admin/AdminApp").then((m) => ({ default: m.AdminApp })),
 );
 
-// hostname fork avoids needing a second build target or tunnel-side rewrite
-// admin.* serves only the panel, public routes unreachable on that host
+// admin.* hostname forks the entire app to admin-only (no public routes)
 const isAdminHost =
   typeof window !== "undefined" &&
   window.location.hostname.startsWith("admin.");
+
+// admin route exists in dev so localhost:5173/admin works during bun dev,
+// stays hidden on prod public hosts so staging.dockpulse.xyz/admin 404s
+const exposeAdminRoute = import.meta.env.DEV;
 
 export function App() {
   if (isAdminHost) {
@@ -38,15 +41,16 @@ export function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          {/* /admin path on non-admin hosts so localhost:5173/admin works */}
-          <Route
-            path="/admin/*"
-            element={
-              <Suspense fallback={<div className="h-full w-full" />}>
-                <AdminApp />
-              </Suspense>
-            }
-          />
+          {exposeAdminRoute && (
+            <Route
+              path="/admin/*"
+              element={
+                <Suspense fallback={<div className="h-full w-full" />}>
+                  <AdminApp />
+                </Suspense>
+              }
+            />
+          )}
 
           <Route path="/" element={<Navigate to="/saltsjobaden" replace />} />
 

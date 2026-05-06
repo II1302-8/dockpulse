@@ -79,6 +79,17 @@ class Settings(BaseSettings):
             return [o.strip() for o in v.split(",") if o.strip()]
         return v
 
+    @field_validator("factory_pubkey", mode="before")
+    @classmethod
+    def _decode_pubkey_newlines(cls, v: object) -> object:
+        # docker compose dotenv parsers below v2.24 reject multi-line
+        # values, so the convention is to set FACTORY_PUBKEY as a
+        # single-line string with literal \n separators. PEM loaders
+        # require real newlines
+        if isinstance(v, str) and "\\n" in v:
+            return v.replace("\\n", "\n")
+        return v
+
 
 @lru_cache
 def get_settings() -> Settings:

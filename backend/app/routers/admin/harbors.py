@@ -23,7 +23,18 @@ class HarborPatch(BaseModel):
     lng: float | None = None
 
 
-@router.get("/harbors", operation_id="adminListHarbors")
+class HarborAdminOut(BaseModel):
+    harbor_id: str
+    name: str
+    lat: float | None = None
+    lng: float | None = None
+
+
+@router.get(
+    "/harbors",
+    response_model=list[HarborAdminOut],
+    operation_id="adminListHarbors",
+)
 async def list_harbors(session: SessionDep) -> list[dict]:
     rows = (
         (await session.execute(select(Harbor).order_by(Harbor.harbor_id)))
@@ -36,7 +47,12 @@ async def list_harbors(session: SessionDep) -> list[dict]:
     ]
 
 
-@router.post("/harbors", operation_id="adminCreateHarbor", status_code=201)
+@router.post(
+    "/harbors",
+    response_model=HarborAdminOut,
+    operation_id="adminCreateHarbor",
+    status_code=201,
+)
 async def create_harbor(body: HarborCreate, session: SessionDep) -> dict:
     if await session.get(Harbor, body.harbor_id) is not None:
         raise HTTPException(
@@ -48,7 +64,11 @@ async def create_harbor(body: HarborCreate, session: SessionDep) -> dict:
     return {"harbor_id": h.harbor_id, "name": h.name, "lat": h.lat, "lng": h.lng}
 
 
-@router.patch("/harbors/{harbor_id}", operation_id="adminPatchHarbor")
+@router.patch(
+    "/harbors/{harbor_id}",
+    response_model=HarborAdminOut,
+    operation_id="adminPatchHarbor",
+)
 async def patch_harbor(harbor_id: str, body: HarborPatch, session: SessionDep) -> dict:
     h = await session.get(Harbor, harbor_id)
     if h is None:

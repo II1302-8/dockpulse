@@ -1,6 +1,8 @@
 import { Route, Routes } from "react-router-dom";
 import { AdminLayout } from "./AdminLayout";
 import { StubPage } from "./pages/_stub";
+import { AdoptionsPage } from "./pages/Adoptions";
+import { NodesPage } from "./pages/Nodes";
 import { SnapshotPage } from "./pages/Snapshot";
 
 export function AdminApp() {
@@ -44,24 +46,8 @@ export function AdminApp() {
             />
           }
         />
-        <Route
-          path="nodes"
-          element={
-            <StubPage
-              title="Nodes"
-              hint="Decommission adopted sensor nodes (DB flag + MQTT decommission/req publish)."
-            />
-          }
-        />
-        <Route
-          path="adoptions"
-          element={
-            <StubPage
-              title="Adoptions"
-              hint="Cancel pending adoptions, bulk-delete err rows, force a sweeper run."
-            />
-          }
-        />
+        <Route path="nodes" element={<NodesPage />} />
+        <Route path="adoptions" element={<AdoptionsPage />} />
         <Route
           path="users"
           element={

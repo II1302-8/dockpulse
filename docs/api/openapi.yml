@@ -22,6 +22,81 @@ components:
       - gateway_id
       title: AdoptIn
       type: object
+    AdoptionAdminOut:
+      properties:
+        berth_id:
+          title: Berth Id
+          type: string
+        completed_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Completed At
+        created_at:
+          format: date-time
+          title: Created At
+          type: string
+        error_code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Error Code
+        error_msg:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Error Msg
+        expires_at:
+          format: date-time
+          title: Expires At
+          type: string
+        gateway_id:
+          title: Gateway Id
+          type: string
+        mesh_uuid:
+          title: Mesh Uuid
+          type: string
+        request_id:
+          title: Request Id
+          type: string
+        serial_number:
+          title: Serial Number
+          type: string
+        status:
+          examples:
+          - pending
+          title: Status
+          type: string
+      required:
+      - request_id
+      - mesh_uuid
+      - serial_number
+      - gateway_id
+      - berth_id
+      - status
+      - expires_at
+      - created_at
+      title: AdoptionAdminOut
+      type: object
+    AdoptionCancelOut:
+      properties:
+        error_code:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Error Code
+        request_id:
+          title: Request Id
+          type: string
+        status:
+          title: Status
+          type: string
+      required:
+      - request_id
+      - status
+      title: AdoptionCancelOut
+      type: object
     AdoptionPipelineStatus:
       properties:
         err_last_15min:
@@ -194,6 +269,49 @@ components:
       - user_id
       title: AssignmentOut
       type: object
+    BerthAdminOut:
+      properties:
+        berth_id:
+          title: Berth Id
+          type: string
+        depth_m:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Depth M
+        dock_id:
+          title: Dock Id
+          type: string
+        is_reserved:
+          title: Is Reserved
+          type: boolean
+        label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Label
+        length_m:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Length M
+        status:
+          examples:
+          - free
+          title: Status
+          type: string
+        width_m:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Width M
+      required:
+      - berth_id
+      - dock_id
+      - status
+      - is_reserved
+      title: BerthAdminOut
+      type: object
     BerthAvailabilityWindowIn:
       properties:
         from_date:
@@ -297,6 +415,24 @@ components:
       - berth_id
       - dock_id
       title: BerthCreate
+      type: object
+    BerthCreatedOut:
+      properties:
+        berth_id:
+          title: Berth Id
+          type: string
+        dock_id:
+          title: Dock Id
+          type: string
+        label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Label
+      required:
+      - berth_id
+      - dock_id
+      title: BerthCreatedOut
       type: object
     BerthOut:
       properties:
@@ -420,6 +556,52 @@ components:
           title: Width M
       title: BerthPatch
       type: object
+    BerthPatchOut:
+      properties:
+        berth_id:
+          title: Berth Id
+          type: string
+        depth_m:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Depth M
+        is_reserved:
+          title: Is Reserved
+          type: boolean
+        label:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Label
+        length_m:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Length M
+        width_m:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Width M
+      required:
+      - berth_id
+      - is_reserved
+      title: BerthPatchOut
+      type: object
+    BerthResetOut:
+      properties:
+        berth_id:
+          title: Berth Id
+          type: string
+        status:
+          title: Status
+          type: string
+      required:
+      - berth_id
+      - status
+      title: BerthResetOut
+      type: object
     BerthUpdateEvent:
       properties:
         berth:
@@ -432,6 +614,53 @@ components:
       required:
       - berth
       title: BerthUpdateEvent
+      type: object
+    BulkDeleteOut:
+      properties:
+        deleted:
+          title: Deleted
+          type: integer
+        status_filter:
+          title: Status Filter
+          type: string
+      required:
+      - deleted
+      - status_filter
+      title: BulkDeleteOut
+      type: object
+    DecommissionOut:
+      properties:
+        node_id:
+          title: Node Id
+          type: string
+        noop:
+          title: Noop
+          type: boolean
+        status:
+          title: Status
+          type: string
+      required:
+      - node_id
+      - status
+      - noop
+      title: DecommissionOut
+      type: object
+    DockAdminOut:
+      properties:
+        dock_id:
+          title: Dock Id
+          type: string
+        harbor_id:
+          title: Harbor Id
+          type: string
+        name:
+          title: Name
+          type: string
+      required:
+      - dock_id
+      - harbor_id
+      - name
+      title: DockAdminOut
       type: object
     DockCreate:
       properties:
@@ -594,6 +823,21 @@ components:
       - name
       title: GatewayCreate
       type: object
+    GatewayCreatedOut:
+      properties:
+        gateway_id:
+          title: Gateway Id
+          type: string
+        status:
+          examples:
+          - offline
+          title: Status
+          type: string
+      required:
+      - gateway_id
+      - status
+      title: GatewayCreatedOut
+      type: object
     GatewayOut:
       properties:
         dock_id:
@@ -668,6 +912,45 @@ components:
           title: Provision Ttl S
       title: GatewayPatch
       type: object
+    GatewayPatchOut:
+      properties:
+        dock_id:
+          title: Dock Id
+          type: string
+        gateway_id:
+          title: Gateway Id
+          type: string
+        name:
+          title: Name
+          type: string
+        provision_ttl_s:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Provision Ttl S
+      required:
+      - gateway_id
+      - name
+      - dock_id
+      title: GatewayPatchOut
+      type: object
+    GrantResultOut:
+      properties:
+        harbor_id:
+          title: Harbor Id
+          type: string
+        noop:
+          title: Noop
+          type: boolean
+        user_id:
+          title: User Id
+          type: string
+      required:
+      - user_id
+      - harbor_id
+      - noop
+      title: GrantResultOut
+      type: object
     HTTPValidationError:
       properties:
         detail:
@@ -676,6 +959,29 @@ components:
           title: Detail
           type: array
       title: HTTPValidationError
+      type: object
+    HarborAdminOut:
+      properties:
+        harbor_id:
+          title: Harbor Id
+          type: string
+        lat:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Lat
+        lng:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Lng
+        name:
+          title: Name
+          type: string
+      required:
+      - harbor_id
+      - name
+      title: HarborAdminOut
       type: object
     HarborCreate:
       properties:
@@ -714,6 +1020,19 @@ components:
       required:
       - harbor_id
       title: HarborGrant
+      type: object
+    HarborGrantOut:
+      properties:
+        harbor_id:
+          title: Harbor Id
+          type: string
+        role:
+          title: Role
+          type: string
+      required:
+      - harbor_id
+      - role
+      title: HarborGrantOut
       type: object
     HarborOut:
       properties:
@@ -1018,6 +1337,198 @@ components:
       - attempts
       title: PendingGatewayOut
       type: object
+    SnapshotAdoption:
+      properties:
+        err_last_15min:
+          title: Err Last 15Min
+          type: integer
+        pending:
+          title: Pending
+          type: integer
+      required:
+      - pending
+      - err_last_15min
+      title: SnapshotAdoption
+      type: object
+    SnapshotGateway:
+      properties:
+        dock_id:
+          title: Dock Id
+          type: string
+        gateway_id:
+          title: Gateway Id
+          type: string
+        last_seen:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Last Seen
+        name:
+          title: Name
+          type: string
+        provision_ttl_s:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Provision Ttl S
+        status:
+          examples:
+          - online
+          title: Status
+          type: string
+      required:
+      - gateway_id
+      - dock_id
+      - name
+      - status
+      title: SnapshotGateway
+      type: object
+    SnapshotNode:
+      properties:
+        adopted_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Adopted At
+        berth_id:
+          title: Berth Id
+          type: string
+        gateway_id:
+          title: Gateway Id
+          type: string
+        node_id:
+          title: Node Id
+          type: string
+        status:
+          examples:
+          - provisioned
+          title: Status
+          type: string
+      required:
+      - node_id
+      - berth_id
+      - gateway_id
+      - status
+      title: SnapshotNode
+      type: object
+    SnapshotOut:
+      properties:
+        adoption:
+          $ref: '#/components/schemas/SnapshotAdoption'
+        gateways:
+          items:
+            $ref: '#/components/schemas/SnapshotGateway'
+          title: Gateways
+          type: array
+        nodes:
+          items:
+            $ref: '#/components/schemas/SnapshotNode'
+          title: Nodes
+          type: array
+        pending_gateways:
+          items:
+            $ref: '#/components/schemas/SnapshotPending'
+          title: Pending Gateways
+          type: array
+      required:
+      - gateways
+      - nodes
+      - pending_gateways
+      - adoption
+      title: SnapshotOut
+      type: object
+    SnapshotPending:
+      properties:
+        attempts:
+          title: Attempts
+          type: integer
+        first_seen_at:
+          format: date-time
+          title: First Seen At
+          type: string
+        gateway_id:
+          title: Gateway Id
+          type: string
+        last_seen_at:
+          format: date-time
+          title: Last Seen At
+          type: string
+      required:
+      - gateway_id
+      - first_seen_at
+      - last_seen_at
+      - attempts
+      title: SnapshotPending
+      type: object
+    SweeperRunOut:
+      properties:
+        expired:
+          title: Expired
+          type: integer
+        pruned:
+          title: Pruned
+          type: integer
+      required:
+      - expired
+      - pruned
+      title: SweeperRunOut
+      type: object
+    UserAdminOut:
+      properties:
+        boat_club:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Boat Club
+        email:
+          title: Email
+          type: string
+        firstname:
+          title: Firstname
+          type: string
+        lastname:
+          title: Lastname
+          type: string
+        phone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Phone
+        role:
+          examples:
+          - harbormaster
+          title: Role
+          type: string
+        user_id:
+          title: User Id
+          type: string
+      required:
+      - user_id
+      - email
+      - firstname
+      - lastname
+      - role
+      title: UserAdminOut
+      type: object
+    UserCreatedOut:
+      properties:
+        email:
+          title: Email
+          type: string
+        role:
+          title: Role
+          type: string
+        user_id:
+          title: User Id
+          type: string
+      required:
+      - user_id
+      - email
+      - role
+      title: UserCreatedOut
+      type: object
     UserOut:
       properties:
         assigned_berth_id:
@@ -1078,6 +1589,23 @@ components:
       - email
       - role
       title: UserOut
+      type: object
+    UserPatchOut:
+      properties:
+        email:
+          title: Email
+          type: string
+        role:
+          title: Role
+          type: string
+        user_id:
+          title: User Id
+          type: string
+      required:
+      - user_id
+      - email
+      - role
+      title: UserPatchOut
       type: object
     ValidationError:
       properties:
@@ -1371,9 +1899,7 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties: true
-                title: Response Adminbulkdeleteadoptions
-                type: object
+                $ref: '#/components/schemas/BulkDeleteOut'
           description: Successful Response
         '422':
           content:
@@ -1382,6 +1908,54 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       summary: Bulk Delete Adoptions
+      tags:
+      - admin
+    get:
+      operationId: adminListAdoptions
+      parameters:
+      - in: query
+        name: status
+        required: false
+        schema:
+          anyOf:
+          - pattern: ^(pending|err|ok)$
+            type: string
+          - type: 'null'
+          title: Status
+      - in: query
+        name: limit
+        required: false
+        schema:
+          default: 50
+          maximum: 500
+          minimum: 1
+          title: Limit
+          type: integer
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/AdoptionAdminOut'
+                title: Response Adminlistadoptions
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: List Adoptions
       tags:
       - admin
   /api/admin/adoptions/{request_id}/cancel:
@@ -1407,9 +1981,7 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties: true
-                title: Response Admincanceladoption
-                type: object
+                $ref: '#/components/schemas/AdoptionCancelOut'
           description: Successful Response
         '422':
           content:
@@ -1438,8 +2010,7 @@ paths:
             application/json:
               schema:
                 items:
-                  additionalProperties: true
-                  type: object
+                  $ref: '#/components/schemas/BerthAdminOut'
                 title: Response Adminlistberths
                 type: array
           description: Successful Response
@@ -1474,9 +2045,7 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties: true
-                title: Response Admincreateberth
-                type: object
+                $ref: '#/components/schemas/BerthCreatedOut'
           description: Successful Response
         '422':
           content:
@@ -1545,9 +2114,7 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties: true
-                title: Response Adminpatchberth
-                type: object
+                $ref: '#/components/schemas/BerthPatchOut'
           description: Successful Response
         '422':
           content:
@@ -1581,9 +2148,7 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties: true
-                title: Response Adminresetberth
-                type: object
+                $ref: '#/components/schemas/BerthResetOut'
           description: Successful Response
         '422':
           content:
@@ -1612,8 +2177,7 @@ paths:
             application/json:
               schema:
                 items:
-                  additionalProperties: true
-                  type: object
+                  $ref: '#/components/schemas/DockAdminOut'
                 title: Response Adminlistdocks
                 type: array
           description: Successful Response
@@ -1648,9 +2212,7 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties: true
-                title: Response Admincreatedock
-                type: object
+                $ref: '#/components/schemas/DockAdminOut'
           description: Successful Response
         '422':
           content:
@@ -1719,9 +2281,7 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties: true
-                title: Response Adminpatchdock
-                type: object
+                $ref: '#/components/schemas/DockAdminOut'
           description: Successful Response
         '422':
           content:
@@ -1755,9 +2315,7 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties: true
-                title: Response Admincreategateway
-                type: object
+                $ref: '#/components/schemas/GatewayCreatedOut'
           description: Successful Response
         '422':
           content:
@@ -1856,9 +2414,7 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties: true
-                title: Response Adminpatchgateway
-                type: object
+                $ref: '#/components/schemas/GatewayPatchOut'
           description: Successful Response
         '422':
           content:
@@ -1887,8 +2443,7 @@ paths:
             application/json:
               schema:
                 items:
-                  additionalProperties: true
-                  type: object
+                  $ref: '#/components/schemas/HarborAdminOut'
                 title: Response Adminlistharbors
                 type: array
           description: Successful Response
@@ -1923,9 +2478,7 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties: true
-                title: Response Admincreateharbor
-                type: object
+                $ref: '#/components/schemas/HarborAdminOut'
           description: Successful Response
         '422':
           content:
@@ -1994,9 +2547,7 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties: true
-                title: Response Adminpatchharbor
-                type: object
+                $ref: '#/components/schemas/HarborAdminOut'
           description: Successful Response
         '422':
           content:
@@ -2030,9 +2581,7 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties: true
-                title: Response Admindecommissionnode
-                type: object
+                $ref: '#/components/schemas/DecommissionOut'
           description: Successful Response
         '422':
           content:
@@ -2060,9 +2609,7 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties: true
-                title: Response Adminsnapshot
-                type: object
+                $ref: '#/components/schemas/SnapshotOut'
           description: Successful Response
         '422':
           content:
@@ -2090,9 +2637,7 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties: true
-                title: Response Adminrunsweeper
-                type: object
+                $ref: '#/components/schemas/SweeperRunOut'
           description: Successful Response
         '422':
           content:
@@ -2121,8 +2666,7 @@ paths:
             application/json:
               schema:
                 items:
-                  additionalProperties: true
-                  type: object
+                  $ref: '#/components/schemas/UserAdminOut'
                 title: Response Adminlistusers
                 type: array
           description: Successful Response
@@ -2157,9 +2701,7 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties: true
-                title: Response Admincreateuser
-                type: object
+                $ref: '#/components/schemas/UserCreatedOut'
           description: Successful Response
         '422':
           content:
@@ -2228,9 +2770,7 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties: true
-                title: Response Adminpatchuser
-                type: object
+                $ref: '#/components/schemas/UserPatchOut'
           description: Successful Response
         '422':
           content:
@@ -2265,8 +2805,7 @@ paths:
             application/json:
               schema:
                 items:
-                  additionalProperties: true
-                  type: object
+                  $ref: '#/components/schemas/HarborGrantOut'
                 title: Response Adminlistusergrants
                 type: array
           description: Successful Response
@@ -2307,9 +2846,7 @@ paths:
           content:
             application/json:
               schema:
-                additionalProperties: true
-                title: Response Admingrantharbor
-                type: object
+                $ref: '#/components/schemas/GrantResultOut'
           description: Successful Response
         '422':
           content:

@@ -254,6 +254,7 @@ function Header({
                 aria-label="Open user menu"
                 aria-haspopup="menu"
                 aria-expanded={isDesktopMenuOpen}
+                title={isDesktopMenuOpen ? undefined : "Account menu"}
               >
                 {userInitials}
               </button>

@@ -3,6 +3,7 @@
 import uuid
 
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 from app.dependencies import SessionDep
 from app.models import Node
@@ -11,8 +12,15 @@ from app.mqtt import publish_decommission_req
 router = APIRouter()
 
 
+class DecommissionOut(BaseModel):
+    node_id: str
+    status: str
+    noop: bool
+
+
 @router.post(
     "/nodes/{node_id}/decommission",
+    response_model=DecommissionOut,
     operation_id="adminDecommissionNode",
 )
 async def decommission_node(node_id: str, session: SessionDep) -> dict:

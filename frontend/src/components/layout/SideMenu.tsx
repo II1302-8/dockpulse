@@ -51,6 +51,8 @@ export function SideMenu({
         <button
           type="button"
           onClick={onToggle}
+          title={isExpanded ? undefined : "Expand menu"}
+          aria-label={isExpanded ? "Close menu" : "Expand menu"}
           className={cn(
             "rounded-2xl hover:bg-[#0A2540]/5 text-[#0A2540]/60 transition-all mb-8 flex items-center group w-full h-12 flex-shrink-0",
             isExpanded ? "px-3 gap-4" : "justify-center",
@@ -87,6 +89,8 @@ export function SideMenu({
               key={item.id}
               type="button"
               onClick={item.onClick}
+              title={isExpanded ? undefined : item.label}
+              aria-label={item.label}
               className={cn(
                 "w-full flex items-center h-12 rounded-2xl transition-all group relative flex-shrink-0",
                 isExpanded ? "px-3 gap-4" : "justify-center",
@@ -122,6 +126,8 @@ export function SideMenu({
         {settingsPath && (
           <Link
             to={settingsPath}
+            title={isExpanded ? undefined : "Settings"}
+            aria-label="Settings"
             className={cn(
               "mt-auto flex items-center h-12 rounded-2xl hover:bg-[#0A2540]/5 text-[#0A2540]/40 hover:text-[#0A2540]/80 transition-all group w-full flex-shrink-0",
               isExpanded ? "px-3 gap-4" : "justify-center",
@@ -157,6 +163,8 @@ export function SideMenu({
             key={item.id}
             type="button"
             onClick={item.onClick}
+            title={item.label}
+            aria-label={item.label}
             className={cn(
               "flex flex-col items-center justify-center w-14 h-14 rounded-full transition-all relative",
               item.active
@@ -176,6 +184,8 @@ export function SideMenu({
         {settingsPath && (
           <Link
             to={settingsPath}
+            title="Settings"
+            aria-label="Settings"
             className="flex items-center justify-center w-14 h-14 rounded-full text-[#0A2540]/40 hover:text-[#0A2540]/80 transition-all"
           >
             <Settings size={20} strokeWidth={2.5} />

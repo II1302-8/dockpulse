@@ -27,7 +27,42 @@ class BerthPatch(BaseModel):
     is_reserved: bool | None = None
 
 
-@router.get("/berths", operation_id="adminListBerths")
+class BerthAdminOut(BaseModel):
+    berth_id: str
+    dock_id: str
+    label: str | None = None
+    length_m: float | None = None
+    width_m: float | None = None
+    depth_m: float | None = None
+    status: str = Field(examples=["free"])
+    is_reserved: bool
+
+
+class BerthCreatedOut(BaseModel):
+    berth_id: str
+    dock_id: str
+    label: str | None = None
+
+
+class BerthPatchOut(BaseModel):
+    berth_id: str
+    label: str | None = None
+    length_m: float | None = None
+    width_m: float | None = None
+    depth_m: float | None = None
+    is_reserved: bool
+
+
+class BerthResetOut(BaseModel):
+    berth_id: str
+    status: str
+
+
+@router.get(
+    "/berths",
+    response_model=list[BerthAdminOut],
+    operation_id="adminListBerths",
+)
 async def list_berths(session: SessionDep) -> list[dict]:
     rows = (
         (await session.execute(select(Berth).order_by(Berth.dock_id, Berth.berth_id)))
@@ -49,7 +84,12 @@ async def list_berths(session: SessionDep) -> list[dict]:
     ]
 
 
-@router.post("/berths", operation_id="adminCreateBerth", status_code=201)
+@router.post(
+    "/berths",
+    response_model=BerthCreatedOut,
+    operation_id="adminCreateBerth",
+    status_code=201,
+)
 async def create_berth(body: BerthCreate, session: SessionDep) -> dict:
     if await session.get(Dock, body.dock_id) is None:
         raise HTTPException(status_code=404, detail=f"Dock {body.dock_id} not found")
@@ -71,7 +111,11 @@ async def create_berth(body: BerthCreate, session: SessionDep) -> dict:
     return {"berth_id": b.berth_id, "dock_id": b.dock_id, "label": b.label}
 
 
-@router.patch("/berths/{berth_id}", operation_id="adminPatchBerth")
+@router.patch(
+    "/berths/{berth_id}",
+    response_model=BerthPatchOut,
+    operation_id="adminPatchBerth",
+)
 async def patch_berth(berth_id: str, body: BerthPatch, session: SessionDep) -> dict:
     b = await session.get(Berth, berth_id)
     if b is None:
@@ -110,7 +154,11 @@ async def delete_berth(berth_id: str, session: SessionDep) -> None:
     await session.commit()
 
 
-@router.post("/berths/{berth_id}/reset", operation_id="adminResetBerth")
+@router.post(
+    "/berths/{berth_id}/reset",
+    response_model=BerthResetOut,
+    operation_id="adminResetBerth",
+)
 async def reset_berth(berth_id: str, session: SessionDep) -> dict:
     b = await session.get(Berth, berth_id)
     if b is None:

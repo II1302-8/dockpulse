@@ -40,7 +40,44 @@ class HarborGrant(BaseModel):
     harbor_id: str = Field(min_length=1, max_length=64)
 
 
-@router.get("/users", operation_id="adminListUsers")
+class UserAdminOut(BaseModel):
+    user_id: str
+    email: str
+    firstname: str
+    lastname: str
+    role: str = Field(examples=["harbormaster"])
+    phone: str | None = None
+    boat_club: str | None = None
+
+
+class UserCreatedOut(BaseModel):
+    user_id: str
+    email: str
+    role: str
+
+
+class UserPatchOut(BaseModel):
+    user_id: str
+    email: str
+    role: str
+
+
+class HarborGrantOut(BaseModel):
+    harbor_id: str
+    role: str
+
+
+class GrantResultOut(BaseModel):
+    user_id: str
+    harbor_id: str
+    noop: bool
+
+
+@router.get(
+    "/users",
+    response_model=list[UserAdminOut],
+    operation_id="adminListUsers",
+)
 async def list_users(session: SessionDep) -> list[dict]:
     rows = (await session.execute(select(User).order_by(User.email))).scalars().all()
     return [
@@ -57,7 +94,12 @@ async def list_users(session: SessionDep) -> list[dict]:
     ]
 
 
-@router.post("/users", operation_id="adminCreateUser", status_code=201)
+@router.post(
+    "/users",
+    response_model=UserCreatedOut,
+    operation_id="adminCreateUser",
+    status_code=201,
+)
 async def create_user(
     body: UserCreate,
     session: SessionDep,
@@ -85,7 +127,11 @@ async def create_user(
     return {"user_id": u.user_id, "email": u.email, "role": u.role}
 
 
-@router.patch("/users/{user_id}", operation_id="adminPatchUser")
+@router.patch(
+    "/users/{user_id}",
+    response_model=UserPatchOut,
+    operation_id="adminPatchUser",
+)
 async def patch_user(user_id: str, body: UserPatch, session: SessionDep) -> dict:
     u = await session.get(User, user_id)
     if u is None:
@@ -117,7 +163,11 @@ async def delete_user(user_id: str, session: SessionDep) -> None:
         ) from err
 
 
-@router.get("/users/{user_id}/harbor-grants", operation_id="adminListUserGrants")
+@router.get(
+    "/users/{user_id}/harbor-grants",
+    response_model=list[HarborGrantOut],
+    operation_id="adminListUserGrants",
+)
 async def list_user_grants(user_id: str, session: SessionDep) -> list[dict]:
     if await session.get(User, user_id) is None:
         raise HTTPException(status_code=404, detail="User not found")
@@ -135,6 +185,7 @@ async def list_user_grants(user_id: str, session: SessionDep) -> list[dict]:
 
 @router.post(
     "/users/{user_id}/harbor-grants",
+    response_model=GrantResultOut,
     operation_id="adminGrantHarbor",
     status_code=201,
 )

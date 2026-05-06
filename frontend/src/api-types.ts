@@ -11,7 +11,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Adoptions */
+        get: operations["adminListAdoptions"];
         put?: never;
         post?: never;
         /**
@@ -866,6 +867,49 @@ export interface components {
              */
             qr_payload: string;
         };
+        /** AdoptionAdminOut */
+        AdoptionAdminOut: {
+            /** Berth Id */
+            berth_id: string;
+            /** Completed At */
+            completed_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error Code */
+            error_code?: string | null;
+            /** Error Msg */
+            error_msg?: string | null;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Gateway Id */
+            gateway_id: string;
+            /** Mesh Uuid */
+            mesh_uuid: string;
+            /** Request Id */
+            request_id: string;
+            /** Serial Number */
+            serial_number: string;
+            /**
+             * Status
+             * @example pending
+             */
+            status: string;
+        };
+        /** AdoptionCancelOut */
+        AdoptionCancelOut: {
+            /** Error Code */
+            error_code?: string | null;
+            /** Request Id */
+            request_id: string;
+            /** Status */
+            status: string;
+        };
         /** AdoptionPipelineStatus */
         AdoptionPipelineStatus: {
             /**
@@ -994,6 +1038,28 @@ export interface components {
              */
             user_id: string;
         };
+        /** BerthAdminOut */
+        BerthAdminOut: {
+            /** Berth Id */
+            berth_id: string;
+            /** Depth M */
+            depth_m?: number | null;
+            /** Dock Id */
+            dock_id: string;
+            /** Is Reserved */
+            is_reserved: boolean;
+            /** Label */
+            label?: string | null;
+            /** Length M */
+            length_m?: number | null;
+            /**
+             * Status
+             * @example free
+             */
+            status: string;
+            /** Width M */
+            width_m?: number | null;
+        };
         /** BerthAvailabilityWindowIn */
         BerthAvailabilityWindowIn: {
             /**
@@ -1059,6 +1125,15 @@ export interface components {
             length_m?: number | null;
             /** Width M */
             width_m?: number | null;
+        };
+        /** BerthCreatedOut */
+        BerthCreatedOut: {
+            /** Berth Id */
+            berth_id: string;
+            /** Dock Id */
+            dock_id: string;
+            /** Label */
+            label?: string | null;
         };
         /** BerthOut */
         BerthOut: {
@@ -1132,6 +1207,28 @@ export interface components {
             /** Width M */
             width_m?: number | null;
         };
+        /** BerthPatchOut */
+        BerthPatchOut: {
+            /** Berth Id */
+            berth_id: string;
+            /** Depth M */
+            depth_m?: number | null;
+            /** Is Reserved */
+            is_reserved: boolean;
+            /** Label */
+            label?: string | null;
+            /** Length M */
+            length_m?: number | null;
+            /** Width M */
+            width_m?: number | null;
+        };
+        /** BerthResetOut */
+        BerthResetOut: {
+            /** Berth Id */
+            berth_id: string;
+            /** Status */
+            status: string;
+        };
         /** BerthUpdateEvent */
         BerthUpdateEvent: {
             berth: components["schemas"]["BerthOut"];
@@ -1141,6 +1238,31 @@ export interface components {
              * @constant
              */
             type: "berth.update";
+        };
+        /** BulkDeleteOut */
+        BulkDeleteOut: {
+            /** Deleted */
+            deleted: number;
+            /** Status Filter */
+            status_filter: string;
+        };
+        /** DecommissionOut */
+        DecommissionOut: {
+            /** Node Id */
+            node_id: string;
+            /** Noop */
+            noop: boolean;
+            /** Status */
+            status: string;
+        };
+        /** DockAdminOut */
+        DockAdminOut: {
+            /** Dock Id */
+            dock_id: string;
+            /** Harbor Id */
+            harbor_id: string;
+            /** Name */
+            name: string;
         };
         /** DockCreate */
         DockCreate: {
@@ -1242,6 +1364,16 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** GatewayCreatedOut */
+        GatewayCreatedOut: {
+            /** Gateway Id */
+            gateway_id: string;
+            /**
+             * Status
+             * @example offline
+             */
+            status: string;
+        };
         /** GatewayOut */
         GatewayOut: {
             /**
@@ -1288,10 +1420,41 @@ export interface components {
             /** Provision Ttl S */
             provision_ttl_s?: number | null;
         };
+        /** GatewayPatchOut */
+        GatewayPatchOut: {
+            /** Dock Id */
+            dock_id: string;
+            /** Gateway Id */
+            gateway_id: string;
+            /** Name */
+            name: string;
+            /** Provision Ttl S */
+            provision_ttl_s?: number | null;
+        };
+        /** GrantResultOut */
+        GrantResultOut: {
+            /** Harbor Id */
+            harbor_id: string;
+            /** Noop */
+            noop: boolean;
+            /** User Id */
+            user_id: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HarborAdminOut */
+        HarborAdminOut: {
+            /** Harbor Id */
+            harbor_id: string;
+            /** Lat */
+            lat?: number | null;
+            /** Lng */
+            lng?: number | null;
+            /** Name */
+            name: string;
         };
         /** HarborCreate */
         HarborCreate: {
@@ -1308,6 +1471,13 @@ export interface components {
         HarborGrant: {
             /** Harbor Id */
             harbor_id: string;
+        };
+        /** HarborGrantOut */
+        HarborGrantOut: {
+            /** Harbor Id */
+            harbor_id: string;
+            /** Role */
+            role: string;
         };
         /** HarborOut */
         HarborOut: {
@@ -1521,6 +1691,110 @@ export interface components {
              */
             last_seen_at: string;
         };
+        /** SnapshotAdoption */
+        SnapshotAdoption: {
+            /** Err Last 15Min */
+            err_last_15min: number;
+            /** Pending */
+            pending: number;
+        };
+        /** SnapshotGateway */
+        SnapshotGateway: {
+            /** Dock Id */
+            dock_id: string;
+            /** Gateway Id */
+            gateway_id: string;
+            /** Last Seen */
+            last_seen?: string | null;
+            /** Name */
+            name: string;
+            /** Provision Ttl S */
+            provision_ttl_s?: number | null;
+            /**
+             * Status
+             * @example online
+             */
+            status: string;
+        };
+        /** SnapshotNode */
+        SnapshotNode: {
+            /** Adopted At */
+            adopted_at?: string | null;
+            /** Berth Id */
+            berth_id: string;
+            /** Gateway Id */
+            gateway_id: string;
+            /** Node Id */
+            node_id: string;
+            /**
+             * Status
+             * @example provisioned
+             */
+            status: string;
+        };
+        /** SnapshotOut */
+        SnapshotOut: {
+            adoption: components["schemas"]["SnapshotAdoption"];
+            /** Gateways */
+            gateways: components["schemas"]["SnapshotGateway"][];
+            /** Nodes */
+            nodes: components["schemas"]["SnapshotNode"][];
+            /** Pending Gateways */
+            pending_gateways: components["schemas"]["SnapshotPending"][];
+        };
+        /** SnapshotPending */
+        SnapshotPending: {
+            /** Attempts */
+            attempts: number;
+            /**
+             * First Seen At
+             * Format: date-time
+             */
+            first_seen_at: string;
+            /** Gateway Id */
+            gateway_id: string;
+            /**
+             * Last Seen At
+             * Format: date-time
+             */
+            last_seen_at: string;
+        };
+        /** SweeperRunOut */
+        SweeperRunOut: {
+            /** Expired */
+            expired: number;
+            /** Pruned */
+            pruned: number;
+        };
+        /** UserAdminOut */
+        UserAdminOut: {
+            /** Boat Club */
+            boat_club?: string | null;
+            /** Email */
+            email: string;
+            /** Firstname */
+            firstname: string;
+            /** Lastname */
+            lastname: string;
+            /** Phone */
+            phone?: string | null;
+            /**
+             * Role
+             * @example harbormaster
+             */
+            role: string;
+            /** User Id */
+            user_id: string;
+        };
+        /** UserCreatedOut */
+        UserCreatedOut: {
+            /** Email */
+            email: string;
+            /** Role */
+            role: string;
+            /** User Id */
+            user_id: string;
+        };
         /** UserOut */
         UserOut: {
             /**
@@ -1563,6 +1837,15 @@ export interface components {
              * User Id
              * @example user-001
              */
+            user_id: string;
+        };
+        /** UserPatchOut */
+        UserPatchOut: {
+            /** Email */
+            email: string;
+            /** Role */
+            role: string;
+            /** User Id */
             user_id: string;
         };
         /** ValidationError */
@@ -1697,6 +1980,40 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    adminListAdoptions: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                limit?: number;
+            };
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdoptionAdminOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     adminBulkDeleteAdoptions: {
         parameters: {
             query?: {
@@ -1716,9 +2033,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["BulkDeleteOut"];
                 };
             };
             /** @description Validation Error */
@@ -1751,9 +2066,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["AdoptionCancelOut"];
                 };
             };
             /** @description Validation Error */
@@ -1784,9 +2097,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    }[];
+                    "application/json": components["schemas"]["BerthAdminOut"][];
                 };
             };
             /** @description Validation Error */
@@ -1821,9 +2132,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["BerthCreatedOut"];
                 };
             };
             /** @description Validation Error */
@@ -1891,9 +2200,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["BerthPatchOut"];
                 };
             };
             /** @description Validation Error */
@@ -1926,9 +2233,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["BerthResetOut"];
                 };
             };
             /** @description Validation Error */
@@ -1959,9 +2264,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    }[];
+                    "application/json": components["schemas"]["DockAdminOut"][];
                 };
             };
             /** @description Validation Error */
@@ -1996,9 +2299,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DockAdminOut"];
                 };
             };
             /** @description Validation Error */
@@ -2066,9 +2367,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DockAdminOut"];
                 };
             };
             /** @description Validation Error */
@@ -2103,9 +2402,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["GatewayCreatedOut"];
                 };
             };
             /** @description Validation Error */
@@ -2204,9 +2501,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["GatewayPatchOut"];
                 };
             };
             /** @description Validation Error */
@@ -2237,9 +2532,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    }[];
+                    "application/json": components["schemas"]["HarborAdminOut"][];
                 };
             };
             /** @description Validation Error */
@@ -2274,9 +2567,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["HarborAdminOut"];
                 };
             };
             /** @description Validation Error */
@@ -2344,9 +2635,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["HarborAdminOut"];
                 };
             };
             /** @description Validation Error */
@@ -2379,9 +2668,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["DecommissionOut"];
                 };
             };
             /** @description Validation Error */
@@ -2412,9 +2699,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["SnapshotOut"];
                 };
             };
             /** @description Validation Error */
@@ -2445,9 +2730,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["SweeperRunOut"];
                 };
             };
             /** @description Validation Error */
@@ -2478,9 +2761,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    }[];
+                    "application/json": components["schemas"]["UserAdminOut"][];
                 };
             };
             /** @description Validation Error */
@@ -2515,9 +2796,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["UserCreatedOut"];
                 };
             };
             /** @description Validation Error */
@@ -2585,9 +2864,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["UserPatchOut"];
                 };
             };
             /** @description Validation Error */
@@ -2620,9 +2897,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    }[];
+                    "application/json": components["schemas"]["HarborGrantOut"][];
                 };
             };
             /** @description Validation Error */
@@ -2659,9 +2934,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["GrantResultOut"];
                 };
             };
             /** @description Validation Error */

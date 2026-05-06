@@ -21,7 +21,17 @@ class DockPatch(BaseModel):
     harbor_id: str | None = Field(default=None, min_length=1, max_length=64)
 
 
-@router.get("/docks", operation_id="adminListDocks")
+class DockAdminOut(BaseModel):
+    dock_id: str
+    harbor_id: str
+    name: str
+
+
+@router.get(
+    "/docks",
+    response_model=list[DockAdminOut],
+    operation_id="adminListDocks",
+)
 async def list_docks(session: SessionDep) -> list[dict]:
     rows = (
         (await session.execute(select(Dock).order_by(Dock.harbor_id, Dock.dock_id)))
@@ -33,7 +43,12 @@ async def list_docks(session: SessionDep) -> list[dict]:
     ]
 
 
-@router.post("/docks", operation_id="adminCreateDock", status_code=201)
+@router.post(
+    "/docks",
+    response_model=DockAdminOut,
+    operation_id="adminCreateDock",
+    status_code=201,
+)
 async def create_dock(body: DockCreate, session: SessionDep) -> dict:
     if await session.get(Harbor, body.harbor_id) is None:
         raise HTTPException(
@@ -49,7 +64,11 @@ async def create_dock(body: DockCreate, session: SessionDep) -> dict:
     return {"dock_id": d.dock_id, "harbor_id": d.harbor_id, "name": d.name}
 
 
-@router.patch("/docks/{dock_id}", operation_id="adminPatchDock")
+@router.patch(
+    "/docks/{dock_id}",
+    response_model=DockAdminOut,
+    operation_id="adminPatchDock",
+)
 async def patch_dock(dock_id: str, body: DockPatch, session: SessionDep) -> dict:
     d = await session.get(Dock, dock_id)
     if d is None:

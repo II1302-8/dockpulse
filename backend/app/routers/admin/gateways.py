@@ -24,7 +24,24 @@ class GatewayPatch(BaseModel):
     )
 
 
-@router.post("/gateways", operation_id="adminCreateGateway", status_code=201)
+class GatewayCreatedOut(BaseModel):
+    gateway_id: str
+    status: str = Field(examples=["offline"])
+
+
+class GatewayPatchOut(BaseModel):
+    gateway_id: str
+    name: str
+    dock_id: str
+    provision_ttl_s: int | None = None
+
+
+@router.post(
+    "/gateways",
+    response_model=GatewayCreatedOut,
+    operation_id="adminCreateGateway",
+    status_code=201,
+)
 async def create_gateway(body: GatewayCreate, session: SessionDep) -> dict:
     if await session.get(Dock, body.dock_id) is None:
         raise HTTPException(status_code=404, detail=f"Dock {body.dock_id} not found")
@@ -54,7 +71,11 @@ async def create_gateway(body: GatewayCreate, session: SessionDep) -> dict:
     return {"gateway_id": gw.gateway_id, "status": gw.status}
 
 
-@router.patch("/gateways/{gateway_id}", operation_id="adminPatchGateway")
+@router.patch(
+    "/gateways/{gateway_id}",
+    response_model=GatewayPatchOut,
+    operation_id="adminPatchGateway",
+)
 async def patch_gateway(
     gateway_id: str, body: GatewayPatch, session: SessionDep
 ) -> dict:

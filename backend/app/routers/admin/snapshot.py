@@ -3,6 +3,7 @@
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter
+from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 
 from app.dependencies import SessionDep
@@ -11,8 +12,45 @@ from app.models import AdoptionRequest, Gateway, Node, PendingGateway
 router = APIRouter()
 
 
+class SnapshotGateway(BaseModel):
+    gateway_id: str
+    dock_id: str
+    name: str
+    status: str = Field(examples=["online"])
+    last_seen: datetime | None = None
+    provision_ttl_s: int | None = None
+
+
+class SnapshotNode(BaseModel):
+    node_id: str
+    berth_id: str
+    gateway_id: str
+    status: str = Field(examples=["provisioned"])
+    adopted_at: datetime | None = None
+
+
+class SnapshotPending(BaseModel):
+    gateway_id: str
+    first_seen_at: datetime
+    last_seen_at: datetime
+    attempts: int
+
+
+class SnapshotAdoption(BaseModel):
+    pending: int
+    err_last_15min: int
+
+
+class SnapshotOut(BaseModel):
+    gateways: list[SnapshotGateway]
+    nodes: list[SnapshotNode]
+    pending_gateways: list[SnapshotPending]
+    adoption: SnapshotAdoption
+
+
 @router.get(
     "/snapshot",
+    response_model=SnapshotOut,
     operation_id="adminSnapshot",
     summary="Aggregate state across the gateway/node/adoption pipeline",
 )

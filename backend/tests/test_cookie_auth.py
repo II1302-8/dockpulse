@@ -163,6 +163,35 @@ async def test_refresh_without_cookie_returns_401(client: AsyncClient):
     assert r.status_code == 401
 
 
+async def test_state_changing_request_without_csrf_header_is_rejected(
+    client: AsyncClient, session: AsyncSession
+):
+    await _register_user(session)
+    await client.post(
+        "/api/auth/login",
+        json={"email": "cora@example.com", "password": "supersecret"},
+    )
+    # bypass the conftest event-hook that would echo the cookie
+    raw = await client.post(
+        "/api/auth/refresh",
+        headers={"X-CSRF-Token": "wrong-value"},
+    )
+    assert raw.status_code == 403
+    assert raw.json()["detail"] == "CSRF token mismatch"
+
+
+async def test_csrf_skipped_on_login_when_no_cookie(
+    client: AsyncClient, session: AsyncSession
+):
+    await _register_user(session)
+    # first login has no csrf cookie yet, dep must skip rather than reject
+    r = await client.post(
+        "/api/auth/login",
+        json={"email": "cora@example.com", "password": "supersecret"},
+    )
+    assert r.status_code == 200
+
+
 async def test_logout_clears_cookies_and_revokes_refresh(
     client: AsyncClient, session: AsyncSession
 ):

@@ -192,6 +192,23 @@ def factory_pubkey(monkeypatch) -> str:
     return priv_pem
 
 
+_SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
+
+
+async def _attach_csrf_header(request) -> None:
+    # mirror the frontend double-submit echo so tests don't repeat it
+    if request.method in _SAFE_METHODS:
+        return
+    if "X-CSRF-Token" in request.headers:
+        return
+    cookie_header = request.headers.get("cookie", "")
+    for chunk in cookie_header.split(";"):
+        name, _, value = chunk.strip().partition("=")
+        if name == "dockpulse_csrf" and value:
+            request.headers["X-CSRF-Token"] = value
+            return
+
+
 @pytest_asyncio.fixture
 async def client(session: AsyncSession) -> AsyncIterator[AsyncClient]:
     async def _override() -> AsyncIterator[AsyncSession]:
@@ -199,6 +216,10 @@ async def client(session: AsyncSession) -> AsyncIterator[AsyncClient]:
 
     app.dependency_overrides[get_session] = _override
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as c:
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        event_hooks={"request": [_attach_csrf_header]},
+    ) as c:
         yield c
     app.dependency_overrides.clear()

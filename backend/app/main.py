@@ -6,7 +6,7 @@ import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
@@ -17,6 +17,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.adoption.sweeper import sweeper_loop
+from app.auth import require_csrf
 from app.config import get_settings
 from app.db import get_engine
 from app.logging_config import request_id_var, setup_logging
@@ -141,6 +142,8 @@ app = FastAPI(
     openapi_tags=TAGS_METADATA,
     servers=SERVERS,
     lifespan=lifespan,
+    # double-submit csrf check on every non-safe method, dep no-ops on GET/HEAD/OPTIONS
+    dependencies=[Depends(require_csrf)],
 )
 
 app.state.limiter = limiter

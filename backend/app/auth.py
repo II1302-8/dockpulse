@@ -5,7 +5,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 import jwt
-from fastapi import Cookie, Depends, Header, HTTPException, Request, Response
+from fastapi import Depends, HTTPException, Request, Response
 from fastapi.security import (
     APIKeyCookie,
     HTTPAuthorizationCredentials,
@@ -180,19 +180,14 @@ async def get_current_user(
     return user
 
 
-async def require_csrf(
-    request: Request,
-    csrf_cookie: Annotated[str | None, Cookie(alias=CSRF_COOKIE)] = None,
-    csrf_header: Annotated[str | None, Header(alias=CSRF_HEADER)] = None,
-) -> None:
-    # log-only during the rollout, commit 3 flips this to enforce
+async def require_csrf(request: Request) -> None:
+    # raw header/cookie reads so this dep doesn't pollute openapi parameters
     if request.method in {"GET", "HEAD", "OPTIONS"}:
         return
+    csrf_cookie = request.cookies.get(CSRF_COOKIE)
+    # anonymous flows like /login arrive without the cookie, no token to compare
     if csrf_cookie is None:
         return
+    csrf_header = request.headers.get(CSRF_HEADER)
     if csrf_header is None or not secrets.compare_digest(csrf_header, csrf_cookie):
-        _logger.warning(
-            "csrf mismatch on %s %s, would reject in enforce mode",
-            request.method,
-            request.url.path,
-        )
+        raise HTTPException(status_code=403, detail="CSRF token mismatch")

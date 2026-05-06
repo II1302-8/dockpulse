@@ -10,9 +10,8 @@ import logging
 import time
 from dataclasses import dataclass
 
-import httpx
 import jwt
-from jwt import PyJWKClient
+from jwt import PyJWKClient, PyJWKClientError
 
 from app.config import get_settings
 
@@ -67,10 +66,10 @@ def verify_assertion(token: str) -> AccessIdentity:
             issuer=s.cf_access_team_domain.rstrip("/"),
             options={"require": ["exp", "iat", "iss", "aud", "sub"]},
         )
+    except PyJWKClientError as err:
+        raise AccessAuthError(f"jwks fetch failed: {err}") from err
     except jwt.PyJWTError as err:
         raise AccessAuthError(f"invalid assertion: {err}") from err
-    except httpx.HTTPError as err:
-        raise AccessAuthError(f"jwks fetch failed: {err}") from err
 
     email = payload.get("email")
     if not isinstance(email, str) or not email:

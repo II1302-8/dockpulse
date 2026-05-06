@@ -456,6 +456,29 @@ components:
       - timestamp
       title: EventOut
       type: object
+    GatewayCreate:
+      properties:
+        dock_id:
+          maxLength: 64
+          minLength: 1
+          title: Dock Id
+          type: string
+        gateway_id:
+          maxLength: 64
+          minLength: 1
+          title: Gateway Id
+          type: string
+        name:
+          maxLength: 128
+          minLength: 1
+          title: Name
+          type: string
+      required:
+      - gateway_id
+      - dock_id
+      - name
+      title: GatewayCreate
+      type: object
     GatewayOut:
       properties:
         dock_id:
@@ -503,6 +526,24 @@ components:
       - name
       - status
       title: GatewayOut
+      type: object
+    GatewayPatch:
+      properties:
+        name:
+          anyOf:
+          - maxLength: 128
+            minLength: 1
+            type: string
+          - type: 'null'
+          title: Name
+        provision_ttl_s:
+          anyOf:
+          - maximum: 3600.0
+            minimum: 10.0
+            type: integer
+          - type: 'null'
+          title: Provision Ttl S
+      title: GatewayPatch
       type: object
     HTTPValidationError:
       properties:
@@ -1036,6 +1077,226 @@ info:
   version: 0.1.0
 openapi: 3.1.0
 paths:
+  /api/admin/adoptions:
+    delete:
+      description: 'Delete adoption_requests rows by status. Default ''err''; pass ''pending'' to
+
+        cancel-and-delete, or ''all'' for a full wipe (use sparingly).'
+      operationId: adminBulkDeleteAdoptions
+      parameters:
+      - in: query
+        name: status
+        required: false
+        schema:
+          default: err
+          title: Status
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Adminbulkdeleteadoptions
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Bulk Delete Adoptions
+      tags:
+      - admin
+  /api/admin/adoptions/{request_id}/cancel:
+    post:
+      operationId: adminCancelAdoption
+      parameters:
+      - in: path
+        name: request_id
+        required: true
+        schema:
+          title: Request Id
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Admincanceladoption
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Cancel Adoption
+      tags:
+      - admin
+  /api/admin/gateways:
+    post:
+      operationId: adminCreateGateway
+      parameters:
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GatewayCreate'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Admincreategateway
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Create Gateway
+      tags:
+      - admin
+  /api/admin/gateways/pending/{gateway_id}:
+    delete:
+      operationId: adminDismissPending
+      parameters:
+      - in: path
+        name: gateway_id
+        required: true
+        schema:
+          title: Gateway Id
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Dismiss Pending
+      tags:
+      - admin
+  /api/admin/gateways/{gateway_id}:
+    patch:
+      operationId: adminPatchGateway
+      parameters:
+      - in: path
+        name: gateway_id
+        required: true
+        schema:
+          title: Gateway Id
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GatewayPatch'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Adminpatchgateway
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Patch Gateway
+      tags:
+      - admin
+  /api/admin/nodes/{node_id}/decommission:
+    post:
+      operationId: adminDecommissionNode
+      parameters:
+      - in: path
+        name: node_id
+        required: true
+        schema:
+          title: Node Id
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Admindecommissionnode
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Decommission Node
+      tags:
+      - admin
   /api/admin/snapshot:
     get:
       description: 'One-shot view that reflects what dpcli list-* commands return,
@@ -1067,6 +1328,36 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       summary: Aggregate state across the gateway/node/adoption pipeline
+      tags:
+      - admin
+  /api/admin/sweeper/run:
+    post:
+      operationId: adminRunSweeper
+      parameters:
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Adminrunsweeper
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Force a sweeper iteration (timeout expired pendings + prune old errs)
       tags:
       - admin
   /api/adoptions:

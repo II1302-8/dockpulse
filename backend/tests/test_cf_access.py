@@ -142,3 +142,162 @@ async def test_admin_snapshot_returns_state(client: AsyncClient, cf_keys, harbor
     assert "nodes" in body
     assert "pending_gateways" in body
     assert body["adoption"]["pending"] == 0
+
+
+# ---- gateway endpoints ----
+
+
+async def test_admin_create_gateway(
+    client: AsyncClient, cf_keys, harbor_world, session
+):
+    # harbor_world seeds gw1 on d1; need a fresh dock for the new gateway
+    from app.models import Dock
+
+    session.add(Dock(dock_id="d2", harbor_id="h1", name="Dock 2"))
+    await session.commit()
+
+    token = _mint(cf_keys)
+    r = await client.post(
+        "/api/admin/gateways",
+        headers={"Cf-Access-Jwt-Assertion": token},
+        json={"gateway_id": "gw-new", "dock_id": "d2", "name": "New Gateway"},
+    )
+    assert r.status_code == 201
+    assert r.json()["gateway_id"] == "gw-new"
+
+
+async def test_admin_create_gateway_rejects_unknown_dock(
+    client: AsyncClient, cf_keys, harbor_world
+):
+    token = _mint(cf_keys)
+    r = await client.post(
+        "/api/admin/gateways",
+        headers={"Cf-Access-Jwt-Assertion": token},
+        json={"gateway_id": "gw-x", "dock_id": "missing", "name": "X"},
+    )
+    assert r.status_code == 404
+
+
+async def test_admin_patch_gateway_ttl(
+    client: AsyncClient, cf_keys, harbor_world, session
+):
+    # patch the existing gw1 from harbor_world (no new gateway needed)
+    token = _mint(cf_keys)
+    r = await client.patch(
+        "/api/admin/gateways/gw1",
+        headers={"Cf-Access-Jwt-Assertion": token},
+        json={"provision_ttl_s": 300},
+    )
+    assert r.status_code == 200
+    assert r.json()["provision_ttl_s"] == 300
+
+
+async def test_admin_dismiss_pending_gateway(
+    client: AsyncClient, cf_keys, harbor_world, session
+):
+    from app.models import PendingGateway
+
+    session.add(PendingGateway(gateway_id="gw-dismiss", attempts=2))
+    await session.commit()
+    token = _mint(cf_keys)
+
+    r = await client.delete(
+        "/api/admin/gateways/pending/gw-dismiss",
+        headers={"Cf-Access-Jwt-Assertion": token},
+    )
+    assert r.status_code == 204
+
+
+# ---- node decommission ----
+
+
+async def test_admin_decommission_unknown_node_returns_404(
+    client: AsyncClient, cf_keys, harbor_world
+):
+    token = _mint(cf_keys)
+    r = await client.post(
+        "/api/admin/nodes/no-such-node/decommission",
+        headers={"Cf-Access-Jwt-Assertion": token},
+    )
+    assert r.status_code == 404
+
+
+# ---- adoption admin ----
+
+
+async def test_admin_bulk_delete_adoptions(
+    client: AsyncClient, cf_keys, harbor_world, harbor_master, session
+):
+    from datetime import UTC, datetime, timedelta
+
+    from app.models import AdoptionRequest
+
+    now = datetime.now(UTC)
+    session.add_all(
+        [
+            AdoptionRequest(
+                request_id="r-err",
+                mesh_uuid="aa" * 16,
+                serial_number="sn-err",
+                claim_jti="jti-err",
+                gateway_id="gw1",
+                berth_id="b1",
+                expires_at=now + timedelta(seconds=300),
+                status="err",
+                error_code="cfg-fail",
+                created_by_user_id="hm1",
+                created_at=now,
+                completed_at=now,
+            ),
+            AdoptionRequest(
+                request_id="r-pending",
+                mesh_uuid="bb" * 16,
+                serial_number="sn-pending",
+                claim_jti="jti-pending",
+                gateway_id="gw1",
+                berth_id="b1",
+                expires_at=now + timedelta(seconds=300),
+                status="pending",
+                created_by_user_id="hm1",
+                created_at=now,
+            ),
+        ]
+    )
+    await session.commit()
+    token = _mint(cf_keys)
+
+    r = await client.delete(
+        "/api/admin/adoptions",
+        headers={"Cf-Access-Jwt-Assertion": token},
+        params={"status": "err"},
+    )
+    assert r.status_code == 200
+    assert r.json() == {"deleted": 1, "status_filter": "err"}
+
+    # pending row untouched
+    assert await session.get(AdoptionRequest, "r-pending") is not None
+    assert await session.get(AdoptionRequest, "r-err") is None
+
+
+async def test_admin_bulk_delete_rejects_bad_status(
+    client: AsyncClient, cf_keys, harbor_world
+):
+    token = _mint(cf_keys)
+    r = await client.delete(
+        "/api/admin/adoptions",
+        headers={"Cf-Access-Jwt-Assertion": token},
+        params={"status": "garbage"},
+    )
+    assert r.status_code == 400
+
+
+async def test_admin_run_sweeper(client: AsyncClient, cf_keys, harbor_world):
+    token = _mint(cf_keys)
+    r = await client.post(
+        "/api/admin/sweeper/run",
+        headers={"Cf-Access-Jwt-Assertion": token},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["expired"] == 0
+    assert body["pruned"] == 0

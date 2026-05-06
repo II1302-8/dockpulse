@@ -4,6 +4,8 @@
  *   - cookie-setting auth flow for `/api/auth/*` (Prism enforces APIKeyCookie
  *     security but never emits Set-Cookie because the spec doesn't declare it,
  *     so login appears to succeed but `/me` 401s on every subsequent call)
+ *   - adoption POST + SSE pair for `/api/adoptions[/<id>/stream]` so the
+ *     adopt modal can demo the full flow without a real backend + gateway
  *
  * `bun dev:mock` runs this alongside Prism and Vite proxies the matching paths.
  */
@@ -127,13 +129,132 @@ function encodeFrame(event: string, data: unknown): Uint8Array {
   return new TextEncoder().encode(payload);
 }
 
+// fake adoption requests live in-memory so the SSE stream can echo + finalize them
+type MockAdoptionRequest = {
+  request_id: string;
+  mesh_uuid: string;
+  serial_number: string;
+  gateway_id: string;
+  berth_id: string;
+  status: "pending" | "ok" | "err";
+  error_code: string | null;
+  error_msg: string | null;
+  mesh_unicast_addr: string | null;
+  expires_at: string;
+  created_at: string;
+  completed_at: string | null;
+};
+
+const mockAdoptions = new Map<string, MockAdoptionRequest>();
+
+function newAdoption(body: { gateway_id?: string; berth_id?: string }): MockAdoptionRequest {
+  const now = new Date();
+  return {
+    request_id: crypto.randomUUID(),
+    mesh_uuid: crypto.randomUUID().replace(/-/g, ""),
+    serial_number: "DP-N-MOCK-001",
+    gateway_id: body.gateway_id ?? "gw-mock",
+    berth_id: body.berth_id ?? "berth-mock",
+    status: "pending",
+    error_code: null,
+    error_msg: null,
+    mesh_unicast_addr: null,
+    expires_at: new Date(now.getTime() + 180_000).toISOString(),
+    created_at: now.toISOString(),
+    completed_at: null,
+  };
+}
+
+function adoptionStream(request: MockAdoptionRequest, signal: AbortSignal): Response {
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      // initial snapshot, mirrors backend's first frame
+      controller.enqueue(
+        encodeFrame("adoption.update", { type: "adoption.update", request }),
+      );
+      // resolve after a short delay so the modal shows the spinner state
+      const handle = setTimeout(() => {
+        if (signal.aborted) return;
+        const finalized: MockAdoptionRequest = {
+          ...request,
+          status: "ok",
+          mesh_unicast_addr: "0x0042",
+          completed_at: new Date().toISOString(),
+        };
+        mockAdoptions.set(request.request_id, finalized);
+        controller.enqueue(
+          encodeFrame("adoption.update", {
+            type: "adoption.update",
+            request: finalized,
+          }),
+        );
+        try {
+          controller.close();
+        } catch {
+          /* already closed */
+        }
+      }, 2500);
+      signal.addEventListener("abort", () => {
+        clearTimeout(handle);
+        try {
+          controller.close();
+        } catch {
+          /* already closed */
+        }
+      });
+    },
+  });
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
+}
+
+async function handleAdoptions(req: Request, url: URL): Promise<Response | null> {
+  const path = url.pathname;
+  if (path === "/api/adoptions" && req.method === "POST") {
+    if (!hasAccessCookie(req)) return unauthorized();
+    let body: { gateway_id?: string; berth_id?: string } = {};
+    try {
+      body = (await req.json()) as typeof body;
+    } catch {
+      /* allow empty body */
+    }
+    const request = newAdoption(body);
+    mockAdoptions.set(request.request_id, request);
+    return new Response(JSON.stringify(request), {
+      status: 202,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  const streamMatch = path.match(/^\/api\/adoptions\/([^/]+)\/stream$/);
+  if (streamMatch && req.method === "GET") {
+    const id = streamMatch[1];
+    const request = mockAdoptions.get(id);
+    if (!request) {
+      return new Response(JSON.stringify({ detail: "Adoption request not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    return adoptionStream(request, req.signal);
+  }
+  return null;
+}
+
 Bun.serve({
   port: PORT,
-  fetch(req) {
+  async fetch(req) {
     const url = new URL(req.url);
 
     const authResponse = handleAuth(req, url);
     if (authResponse) return authResponse;
+
+    const adoptionResponse = await handleAdoptions(req, url);
+    if (adoptionResponse) return adoptionResponse;
 
     if (url.pathname !== "/api/berths/stream") {
       return new Response("not found", { status: 404 });

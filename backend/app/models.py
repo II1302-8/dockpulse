@@ -211,18 +211,6 @@ class AdoptionRequest(Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
-class FactoryKey(Base):
-    __tablename__ = "factory_keys"
-
-    key_id: Mapped[str] = mapped_column(String, primary_key=True)
-    algorithm: Mapped[str] = mapped_column(String, nullable=False)
-    public_key_pem: Mapped[str] = mapped_column(String, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
-    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-
-
 class UserNotificationPrefs(Base):
     __tablename__ = "user_notification_prefs"
 

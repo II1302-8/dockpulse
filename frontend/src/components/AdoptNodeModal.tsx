@@ -506,8 +506,7 @@ function ProgressStep({
           )}
           {status === "err" && (
             <p className="text-[11px] text-red-600 mt-2">
-              {request?.error_code}
-              {request?.error_msg ? ` — ${request.error_msg}` : ""}
+              {humanizeAdoptError(request?.error_code, request?.error_msg)}
             </p>
           )}
           {stale && (
@@ -621,6 +620,27 @@ function ErrorBlock({
       </div>
     </div>
   );
+}
+
+// codes mirror II1302-8/.github docs/mqtt-contract.yml provision/resp enum
+const ADOPT_ERROR_MESSAGES: Record<string, string> = {
+  busy: "Gateway is provisioning another node. Wait a moment and retry.",
+  "bad-uuid": "QR contained an invalid mesh UUID. Re-scan the node sticker.",
+  "bad-oob": "QR contained an invalid out-of-band key. Re-scan the node sticker.",
+  "start-fail": "Gateway mesh stack refused to start. Power-cycle the gateway.",
+  timeout: "Node did not respond in time. Move it closer to the gateway and retry.",
+  unknown: "Provisioning failed for an unknown reason. Retry, then check gateway logs.",
+};
+
+function humanizeAdoptError(
+  code: string | null | undefined,
+  msg: string | null | undefined,
+): string {
+  if (!code) return msg ?? "Provisioning failed.";
+  const friendly = ADOPT_ERROR_MESSAGES[code];
+  if (friendly) return msg ? `${friendly} (${msg})` : friendly;
+  // unknown code, surface raw values so support has something to grep
+  return msg ? `${code} — ${msg}` : code;
 }
 
 function mapAdoptError(err: ApiError): string {

@@ -190,6 +190,7 @@ async def publish_provision_req(
     mesh_uuid: str,
     oob: str,
     ttl_s: int,
+    berth_id: str,
 ) -> None:
     """Publish a provisioning command to a gateway"""
     if _client is None:
@@ -197,11 +198,14 @@ async def publish_provision_req(
         return
 
     topic = f"{GATEWAY_TOPIC_PREFIX}/{gateway_id}/provision/req"
+    # berth_id pinned so gateway routes uplink to the right berth instead of
+    # falling back to the unicast addr per mqtt-contract.yml provision/req
     body = {
         "req_id": request_id,
         "uuid": mesh_uuid,
         "oob": oob,
         "ttl_s": ttl_s,
+        "berth_id": berth_id,
     }
     await _client.publish(topic, payload=json.dumps(body), qos=PUBLISH_QOS)
 

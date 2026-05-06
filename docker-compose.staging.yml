@@ -29,6 +29,7 @@ services:
     container_name: dockpulse-staging-backend
     environment:
       LOG_FORMAT: json
+      FACTORY_PUBKEY: ${FACTORY_PUBKEY:?FACTORY_PUBKEY must be set in staging (Ed25519 PEM that verifies factory-signed QR claims)}
     logging: *loki-logging
 
   frontend:

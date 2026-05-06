@@ -20,7 +20,11 @@ Override via env var if needed.
 ### Users
 
 ```bash
-dpcli create-user --email admin@harbor.se --role harbormaster  # prompts for name + password
+dpcli create-user --email admin@harbor.se --role harbormaster
+# prompts for password; firstname/lastname default to "Harbor"/"Master" for
+# harbormasters (press enter to accept). boat_owner role still requires names.
+dpcli grant-harbor admin@harbor.se h1      # scope harbormaster authority to a harbor
+dpcli revoke-harbor admin@harbor.se h1
 dpcli promote-user admin@harbor.se
 dpcli demote-user admin@harbor.se
 dpcli list-users
@@ -66,4 +70,5 @@ dpcli ack-alert <alert-id>
 ```bash
 dpcli seed-db
 dpcli create-user --email admin@harbor.se --role harbormaster
+dpcli grant-harbor admin@harbor.se h1
 ```

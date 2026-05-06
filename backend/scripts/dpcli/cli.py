@@ -16,7 +16,16 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.db import get_sessionmaker
-from app.models import Alert, Assignment, Berth, Dock, Event, Harbor, User
+from app.models import (
+    Alert,
+    Assignment,
+    Berth,
+    Dock,
+    Event,
+    Harbor,
+    User,
+    UserHarborRole,
+)
 
 app = typer.Typer(help="DockPulse developer CLI")
 berth_app = typer.Typer(help="Berth management")
@@ -46,17 +55,23 @@ class AlertType(StrEnum):
 
 @app.command()
 def create_user(
-    firstname: Annotated[str, typer.Option(prompt=True)],
-    lastname: Annotated[str, typer.Option(prompt=True)],
     email: Annotated[str, typer.Option(prompt=True)],
     password: Annotated[
         str, typer.Option(prompt=True, hide_input=True, confirmation_prompt=True)
     ],
     role: Annotated[Role, typer.Option(help="User role")] = Role.boat_owner,
+    firstname: Annotated[str | None, typer.Option()] = None,
+    lastname: Annotated[str | None, typer.Option()] = None,
     phone: Annotated[str | None, typer.Option()] = None,
     boat_club: Annotated[str | None, typer.Option()] = None,
 ):
     """Register a new user directly in the database."""
+    # harbormasters represent the harbor not a person, so accept generic defaults
+    is_hm = role == Role.harbormaster
+    if firstname is None:
+        firstname = typer.prompt("Firstname", default="Harbor" if is_hm else None)
+    if lastname is None:
+        lastname = typer.prompt("Lastname", default="Master" if is_hm else None)
     asyncio.run(
         _create_user(firstname, lastname, email, password, role, phone, boat_club)
     )
@@ -82,6 +97,24 @@ def demote_user(
 def list_users():
     """List all users in the database."""
     asyncio.run(_list_users())
+
+
+@app.command()
+def grant_harbor(
+    email: Annotated[str, typer.Argument(help="Harbormaster email")],
+    harbor_id: Annotated[str, typer.Argument(help="Harbor ID to grant authority over")],
+):
+    """Grant a harbormaster authority over a harbor."""
+    asyncio.run(_grant_harbor(email, harbor_id))
+
+
+@app.command()
+def revoke_harbor(
+    email: Annotated[str, typer.Argument(help="Harbormaster email")],
+    harbor_id: Annotated[str, typer.Argument(help="Harbor ID to revoke")],
+):
+    """Revoke a harbormaster's authority over a harbor."""
+    asyncio.run(_revoke_harbor(email, harbor_id))
 
 
 @app.command()
@@ -237,6 +270,70 @@ async def _set_role(email: str, role: Role) -> None:
         user.role = role.value
         await session.commit()
     typer.echo(f"Set {email} to {role.value}")
+
+
+async def _grant_harbor(email: str, harbor_id: str) -> None:
+    async with get_sessionmaker()() as session:
+        user = (
+            await session.execute(select(User).where(User.email == email))
+        ).scalar_one_or_none()
+        if user is None:
+            typer.echo(f"Error: no user with email {email}", err=True)
+            raise typer.Exit(1)
+        if user.role != "harbormaster":
+            typer.echo(
+                f"Error: {email} has role {user.role!r}, must be harbormaster "
+                f"(use `dpcli promote-user {email}` first)",
+                err=True,
+            )
+            raise typer.Exit(1)
+        if await session.get(Harbor, harbor_id) is None:
+            typer.echo(f"Error: no harbor with id {harbor_id}", err=True)
+            raise typer.Exit(1)
+        existing = (
+            await session.execute(
+                select(UserHarborRole).where(
+                    UserHarborRole.user_id == user.user_id,
+                    UserHarborRole.harbor_id == harbor_id,
+                    UserHarborRole.role == "harbormaster",
+                )
+            )
+        ).scalar_one_or_none()
+        if existing is not None:
+            typer.echo(f"{email} already harbormaster for {harbor_id}")
+            return
+        session.add(
+            UserHarborRole(
+                user_id=user.user_id, harbor_id=harbor_id, role="harbormaster"
+            )
+        )
+        await session.commit()
+    typer.echo(f"Granted {email} harbormaster authority over {harbor_id}")
+
+
+async def _revoke_harbor(email: str, harbor_id: str) -> None:
+    async with get_sessionmaker()() as session:
+        user = (
+            await session.execute(select(User).where(User.email == email))
+        ).scalar_one_or_none()
+        if user is None:
+            typer.echo(f"Error: no user with email {email}", err=True)
+            raise typer.Exit(1)
+        row = (
+            await session.execute(
+                select(UserHarborRole).where(
+                    UserHarborRole.user_id == user.user_id,
+                    UserHarborRole.harbor_id == harbor_id,
+                    UserHarborRole.role == "harbormaster",
+                )
+            )
+        ).scalar_one_or_none()
+        if row is None:
+            typer.echo(f"{email} is not harbormaster for {harbor_id}")
+            return
+        await session.delete(row)
+        await session.commit()
+    typer.echo(f"Revoked {email} harbormaster authority over {harbor_id}")
 
 
 async def _list_users() -> None:

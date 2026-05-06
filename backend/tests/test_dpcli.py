@@ -9,7 +9,14 @@ def test_help_lists_commands():
     result = runner.invoke(app, ["--help"])
     assert result.exit_code == 0
     # spot-check a few commands so import + registration regressions surface
-    for cmd in ("create-user", "promote-user", "seed-db", "berth"):
+    for cmd in (
+        "create-user",
+        "promote-user",
+        "grant-harbor",
+        "revoke-harbor",
+        "seed-db",
+        "berth",
+    ):
         assert cmd in result.output
 
 

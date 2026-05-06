@@ -43,6 +43,15 @@ dpcli list-berths
 dpcli create-berth vh-d1 --label A3 --length 12 --width 4 --depth 2.5
 ```
 
+### Gateways
+
+```bash
+dpcli create-gateway esp32-vh-1 vh-d1 --name "Vasahamnen pier 1 gateway"
+dpcli list-gateways
+# status flips to 'online' once the gateway publishes
+# dockpulse/v1/gw/<gateway_id>/status with {"online": true}
+```
+
 ### Berth management
 
 ```bash

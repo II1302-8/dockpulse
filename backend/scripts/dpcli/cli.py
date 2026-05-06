@@ -22,6 +22,7 @@ from app.models import (
     Berth,
     Dock,
     Event,
+    Gateway,
     Harbor,
     User,
     UserHarborRole,
@@ -221,6 +222,24 @@ def create_berth(
 
 
 @app.command()
+def create_gateway(
+    gateway_id: Annotated[
+        str, typer.Argument(help="Stable gateway ID matching the ESP32 firmware")
+    ],
+    dock_id: Annotated[str, typer.Argument(help="Dock this gateway covers")],
+    name: Annotated[str, typer.Option(prompt=True, help="Display name")],
+):
+    """Register a gateway so its MQTT status messages are accepted."""
+    asyncio.run(_create_gateway(gateway_id, dock_id, name))
+
+
+@app.command()
+def list_gateways():
+    """List all gateways."""
+    asyncio.run(_list_gateways())
+
+
+@app.command()
 def create_event(
     berth_id: Annotated[str, typer.Argument(help="Berth ID")],
     event_type: Annotated[EventType, typer.Argument(help="Event type")],
@@ -316,6 +335,50 @@ async def _create_dock(dock_id: str, harbor_id: str, name: str) -> None:
         session.add(Dock(dock_id=dock_id, harbor_id=harbor_id, name=name))
         await session.commit()
     typer.echo(f"Created dock {dock_id} under harbor {harbor_id}")
+
+
+async def _create_gateway(gateway_id: str, dock_id: str, name: str) -> None:
+    async with get_sessionmaker()() as session:
+        if await session.get(Dock, dock_id) is None:
+            typer.echo(f"Error: no dock with id {dock_id}", err=True)
+            raise typer.Exit(1)
+        if await session.get(Gateway, gateway_id) is not None:
+            typer.echo(f"Error: gateway {gateway_id} already exists", err=True)
+            raise typer.Exit(1)
+        # dock_id is unique on gateways table (one gateway per dock)
+        clash = (
+            await session.execute(select(Gateway).where(Gateway.dock_id == dock_id))
+        ).scalar_one_or_none()
+        if clash is not None:
+            typer.echo(
+                f"Error: dock {dock_id} already has gateway {clash.gateway_id}",
+                err=True,
+            )
+            raise typer.Exit(1)
+        session.add(
+            Gateway(gateway_id=gateway_id, dock_id=dock_id, name=name, status="offline")
+        )
+        await session.commit()
+    typer.echo(
+        f"Created gateway {gateway_id} on dock {dock_id} "
+        "(status=offline until first MQTT status msg)"
+    )
+
+
+async def _list_gateways() -> None:
+    async with get_sessionmaker()() as session:
+        result = await session.execute(select(Gateway).order_by(Gateway.gateway_id))
+        gateways = result.scalars().all()
+    table = Table("ID", "Dock", "Name", "Status", "Last Seen")
+    for g in gateways:
+        table.add_row(
+            g.gateway_id,
+            g.dock_id,
+            g.name,
+            g.status,
+            g.last_seen.isoformat() if g.last_seen else "",
+        )
+    _console.print(table)
 
 
 async def _grant_harbor(email: str, harbor_id: str) -> None:

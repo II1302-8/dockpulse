@@ -9,6 +9,7 @@ import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import broadcaster
@@ -65,20 +66,57 @@ async def complete_adoption_ok(
     request.dev_key_fp = dev_key_fp
     request.completed_at = now
 
-    node = Node(
-        node_id=str(uuid.uuid4()),
-        mesh_uuid=request.mesh_uuid,
-        serial_number=request.serial_number,
-        berth_id=request.berth_id,
-        gateway_id=request.gateway_id,
-        mesh_unicast_addr=mesh_unicast_addr,
-        dev_key_fp=dev_key_fp,
-        status="provisioned",
-        adopted_at=now,
-        adopted_by_user_id=request.created_by_user_id,
-    )
-    session.add(node)
-    await session.commit()
+    # upsert by mesh_uuid so re-adoption (factory-reset + new sticker on
+    # the same physical device) refreshes the existing Node row instead
+    # of tripping nodes_mesh_uuid_key. node_id stays stable so events
+    # and alerts that reference it survive
+    existing = (
+        await session.execute(select(Node).where(Node.mesh_uuid == request.mesh_uuid))
+    ).scalar_one_or_none()
+    if existing is None:
+        node = Node(
+            node_id=str(uuid.uuid4()),
+            mesh_uuid=request.mesh_uuid,
+            serial_number=request.serial_number,
+            berth_id=request.berth_id,
+            gateway_id=request.gateway_id,
+            mesh_unicast_addr=mesh_unicast_addr,
+            dev_key_fp=dev_key_fp,
+            status="provisioned",
+            adopted_at=now,
+            adopted_by_user_id=request.created_by_user_id,
+        )
+        session.add(node)
+    else:
+        existing.serial_number = request.serial_number
+        existing.berth_id = request.berth_id
+        existing.gateway_id = request.gateway_id
+        existing.mesh_unicast_addr = mesh_unicast_addr
+        existing.dev_key_fp = dev_key_fp
+        existing.status = "provisioned"
+        existing.adopted_at = now
+        existing.adopted_by_user_id = request.created_by_user_id
+        node = existing
+
+    try:
+        await session.commit()
+    except IntegrityError as err:
+        # safety net so a constraint violation never crashes the MQTT
+        # listener. flips the request to err so the harbormaster gets a
+        # clear UI signal, then bails
+        await session.rollback()
+        logger.warning(
+            "adoption ok flush hit integrity error, marking err: request=%s err=%s",
+            request_id,
+            err,
+        )
+        await complete_adoption_err(
+            session,
+            request_id=request_id,
+            error_code="finalize-conflict",
+            error_msg="duplicate node identity",
+        )
+        return
     await session.refresh(request)
     publish_adoption_update(request)
     logger.info(

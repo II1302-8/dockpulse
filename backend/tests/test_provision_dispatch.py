@@ -103,6 +103,48 @@ async def test_provision_resp_ignores_unknown_request(session: AsyncSession):
     # Nothing to assert beyond not raising.
 
 
+async def test_provision_resp_ok_upserts_existing_mesh_uuid(
+    session: AsyncSession, adoption_setup: AdoptionRequest, harbor_master: User
+):
+    """Same physical device re-adopted after factory reset reuses the
+    existing Node row instead of crashing on nodes_mesh_uuid_key."""
+    # seed a Node row that matches the request's mesh_uuid (prior adoption)
+    now = datetime.now(UTC)
+    prior = Node(
+        node_id="prior-node-id",
+        mesh_uuid="abcd" * 8,
+        serial_number="DP-N-1",
+        berth_id="b1",
+        gateway_id="gw1",
+        mesh_unicast_addr="0x0099",
+        dev_key_fp="old-fp",
+        status="provisioned",
+        adopted_at=now,
+        adopted_by_user_id=harbor_master.user_id,
+    )
+    session.add(prior)
+    await session.commit()
+
+    payload = {
+        "req_id": "req-1",
+        "status": "ok",
+        "unicast_addr": "0x0007",
+        "dev_key_fp": "fresh-fp",
+    }
+    await _handle_provision_resp(session, payload)
+
+    # exactly one Node, same node_id, refreshed addr + dev_key
+    nodes = (await session.execute(select(Node))).scalars().all()
+    assert len(nodes) == 1
+    assert nodes[0].node_id == "prior-node-id"
+    assert nodes[0].mesh_unicast_addr == "0x0007"
+    assert nodes[0].dev_key_fp == "fresh-fp"
+    assert nodes[0].status == "provisioned"
+
+    request = await session.get(AdoptionRequest, "req-1")
+    assert request.status == "ok"
+
+
 async def test_provision_resp_is_idempotent_on_completed_request(
     session: AsyncSession, adoption_setup: AdoptionRequest
 ):

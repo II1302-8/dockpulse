@@ -135,25 +135,31 @@ async def _handle_provision_resp(session: AsyncSession, payload: dict) -> None:
         logger.warning("invalid provision/resp payload: %s", payload)
         return
 
-    if status == "ok":
-        unicast = payload.get("unicast_addr")
-        dev_key_fp = payload.get("dev_key_fp")
-        if not unicast or not dev_key_fp:
-            logger.warning("provision/resp ok missing fields: %s", payload)
-            return
-        await complete_adoption_ok(
-            session,
-            request_id=request_id,
-            mesh_unicast_addr=unicast,
-            dev_key_fp=dev_key_fp,
-        )
-    else:
-        await complete_adoption_err(
-            session,
-            request_id=request_id,
-            error_code=payload.get("code", "unknown"),
-            error_msg=payload.get("msg"),
-        )
+    try:
+        if status == "ok":
+            unicast = payload.get("unicast_addr")
+            dev_key_fp = payload.get("dev_key_fp")
+            if not unicast or not dev_key_fp:
+                logger.warning("provision/resp ok missing fields: %s", payload)
+                return
+            await complete_adoption_ok(
+                session,
+                request_id=request_id,
+                mesh_unicast_addr=unicast,
+                dev_key_fp=dev_key_fp,
+            )
+        else:
+            await complete_adoption_err(
+                session,
+                request_id=request_id,
+                error_code=payload.get("code", "unknown"),
+                error_msg=payload.get("msg"),
+            )
+    except Exception:
+        # last-resort guard so a buggy finalize path can't kill the
+        # listener and drop every other in-flight adoption stream
+        await session.rollback()
+        logger.exception("provision/resp finalize crashed: req=%s", request_id)
 
 
 async def _handle_gateway_status(

@@ -102,6 +102,26 @@ services:
       - traefik.http.services.dockpulse-web.loadbalancer.server.port=5173
     logging: *loki-logging
 
+  cloudflared-admin:
+    # admin.dockpulse.xyz only over a cf zero-trust tunnel, no public listener
+    # cf access gates the host, backend validates jwt on /api/admin/*
+    # path-split lives in the cf dashboard for this tunnel:
+    #   admin.dockpulse.xyz/api/*  -> http://backend:8000
+    #   admin.dockpulse.xyz/*      -> http://frontend:5173
+    container_name: dockpulse-prod-cloudflared-admin
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_ADMIN_TUNNEL_TOKEN}
+    depends_on:
+      frontend:
+        condition: service_started
+      backend:
+        condition: service_started
+    networks: [internal]
+    logging: *loki-logging
+
 networks:
   dockpulse:
     external: true

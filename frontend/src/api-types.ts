@@ -4,6 +4,342 @@
  */
 
 export interface paths {
+    "/api/admin/adoptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Bulk Delete Adoptions
+         * @description default 'err', pass 'pending' to cancel-and-delete, 'all' to wipe
+         */
+        delete: operations["adminBulkDeleteAdoptions"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/adoptions/{request_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Adoption */
+        post: operations["adminCancelAdoption"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/berths": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Berths */
+        get: operations["adminListBerths"];
+        put?: never;
+        /** Create Berth */
+        post: operations["adminCreateBerth"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/berths/{berth_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Berth */
+        delete: operations["adminDeleteBerth"];
+        options?: never;
+        head?: never;
+        /** Patch Berth */
+        patch: operations["adminPatchBerth"];
+        trace?: never;
+    };
+    "/api/admin/berths/{berth_id}/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reset Berth */
+        post: operations["adminResetBerth"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/docks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Docks */
+        get: operations["adminListDocks"];
+        put?: never;
+        /** Create Dock */
+        post: operations["adminCreateDock"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/docks/{dock_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Dock */
+        delete: operations["adminDeleteDock"];
+        options?: never;
+        head?: never;
+        /** Patch Dock */
+        patch: operations["adminPatchDock"];
+        trace?: never;
+    };
+    "/api/admin/gateways": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Gateway */
+        post: operations["adminCreateGateway"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/gateways/pending/{gateway_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Dismiss Pending */
+        delete: operations["adminDismissPending"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/gateways/{gateway_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Gateway */
+        delete: operations["adminDeleteGateway"];
+        options?: never;
+        head?: never;
+        /** Patch Gateway */
+        patch: operations["adminPatchGateway"];
+        trace?: never;
+    };
+    "/api/admin/harbors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Harbors */
+        get: operations["adminListHarbors"];
+        put?: never;
+        /** Create Harbor */
+        post: operations["adminCreateHarbor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/harbors/{harbor_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Harbor */
+        delete: operations["adminDeleteHarbor"];
+        options?: never;
+        head?: never;
+        /** Patch Harbor */
+        patch: operations["adminPatchHarbor"];
+        trace?: never;
+    };
+    "/api/admin/nodes/{node_id}/decommission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decommission Node */
+        post: operations["adminDecommissionNode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/snapshot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Aggregate state across the gateway/node/adoption pipeline */
+        get: operations["adminSnapshot"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/sweeper/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Force a sweeper iteration (timeout expired pendings + prune old errs) */
+        post: operations["adminRunSweeper"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Users */
+        get: operations["adminListUsers"];
+        put?: never;
+        /** Create User */
+        post: operations["adminCreateUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete User */
+        delete: operations["adminDeleteUser"];
+        options?: never;
+        head?: never;
+        /** Patch User */
+        patch: operations["adminPatchUser"];
+        trace?: never;
+    };
+    "/api/admin/users/{user_id}/harbor-grants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List User Grants */
+        get: operations["adminListUserGrants"];
+        put?: never;
+        /** Grant Harbor */
+        post: operations["adminGrantHarbor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/users/{user_id}/harbor-grants/{harbor_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke Harbor */
+        delete: operations["adminRevokeHarbor"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/adoptions": {
         parameters: {
             query?: never;
@@ -709,6 +1045,21 @@ export interface components {
              */
             window_id: string;
         };
+        /** BerthCreate */
+        BerthCreate: {
+            /** Berth Id */
+            berth_id: string;
+            /** Depth M */
+            depth_m?: number | null;
+            /** Dock Id */
+            dock_id: string;
+            /** Label */
+            label?: string | null;
+            /** Length M */
+            length_m?: number | null;
+            /** Width M */
+            width_m?: number | null;
+        };
         /** BerthOut */
         BerthOut: {
             assignment?: components["schemas"]["AssignmentOut"] | null;
@@ -768,6 +1119,19 @@ export interface components {
              */
             width_m?: number | null;
         };
+        /** BerthPatch */
+        BerthPatch: {
+            /** Depth M */
+            depth_m?: number | null;
+            /** Is Reserved */
+            is_reserved?: boolean | null;
+            /** Label */
+            label?: string | null;
+            /** Length M */
+            length_m?: number | null;
+            /** Width M */
+            width_m?: number | null;
+        };
         /** BerthUpdateEvent */
         BerthUpdateEvent: {
             berth: components["schemas"]["BerthOut"];
@@ -777,6 +1141,15 @@ export interface components {
              * @constant
              */
             type: "berth.update";
+        };
+        /** DockCreate */
+        DockCreate: {
+            /** Dock Id */
+            dock_id: string;
+            /** Harbor Id */
+            harbor_id: string;
+            /** Name */
+            name: string;
         };
         /** DockOut */
         DockOut: {
@@ -795,6 +1168,13 @@ export interface components {
              * @example A Pier
              */
             name: string;
+        };
+        /** DockPatch */
+        DockPatch: {
+            /** Harbor Id */
+            harbor_id?: string | null;
+            /** Name */
+            name?: string | null;
         };
         /** DockWithBerthsOut */
         DockWithBerthsOut: {
@@ -853,6 +1233,15 @@ export interface components {
              */
             timestamp: string;
         };
+        /** GatewayCreate */
+        GatewayCreate: {
+            /** Dock Id */
+            dock_id: string;
+            /** Gateway Id */
+            gateway_id: string;
+            /** Name */
+            name: string;
+        };
         /** GatewayOut */
         GatewayOut: {
             /**
@@ -887,10 +1276,38 @@ export interface components {
              */
             status: "online" | "offline";
         };
+        /** GatewayPatch */
+        GatewayPatch: {
+            /**
+             * Dock Id
+             * @description Reassign to dock
+             */
+            dock_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Provision Ttl S */
+            provision_ttl_s?: number | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HarborCreate */
+        HarborCreate: {
+            /** Harbor Id */
+            harbor_id: string;
+            /** Lat */
+            lat?: number | null;
+            /** Lng */
+            lng?: number | null;
+            /** Name */
+            name: string;
+        };
+        /** HarborGrant */
+        HarborGrant: {
+            /** Harbor Id */
+            harbor_id: string;
         };
         /** HarborOut */
         HarborOut: {
@@ -904,6 +1321,15 @@ export interface components {
              * @example Saltsjöbaden Marina
              */
             name: string;
+        };
+        /** HarborPatch */
+        HarborPatch: {
+            /** Lat */
+            lat?: number | null;
+            /** Lng */
+            lng?: number | null;
+            /** Name */
+            name?: string | null;
         };
         /** HealthStatus */
         HealthStatus: {
@@ -1095,41 +1521,6 @@ export interface components {
              */
             last_seen_at: string;
         };
-        /** UserCreate */
-        UserCreate: {
-            /**
-             * Boat Club
-             * @example Saltsjöbadens BK
-             */
-            boat_club?: string | null;
-            /**
-             * Email
-             * Format: email
-             * @example alex@example.com
-             */
-            email: string;
-            /**
-             * Firstname
-             * @example Alex
-             */
-            firstname: string;
-            /**
-             * Lastname
-             * @example Alex
-             */
-            lastname: string;
-            /**
-             * Password
-             * Format: password
-             * @example correct horse battery staple
-             */
-            password: string;
-            /**
-             * Phone
-             * @example +46 70 123 45 67
-             */
-            phone?: string | null;
-        };
         /** UserOut */
         UserOut: {
             /**
@@ -1174,8 +1565,96 @@ export interface components {
              */
             user_id: string;
         };
+        /** ValidationError */
+        ValidationError: {
+            /** Context */
+            ctx?: Record<string, never>;
+            /** Input */
+            input?: unknown;
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
+        };
+        /** UserCreate */
+        app__routers__admin__users__UserCreate: {
+            /** Boat Club */
+            boat_club?: string | null;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Firstname */
+            firstname: string;
+            /** Lastname */
+            lastname: string;
+            /**
+             * Password
+             * Format: password
+             */
+            password: string;
+            /** Phone */
+            phone?: string | null;
+            /**
+             * Role
+             * @default boat_owner
+             * @enum {string}
+             */
+            role: "harbormaster" | "boat_owner";
+        };
         /** UserPatch */
-        UserPatch: {
+        app__routers__admin__users__UserPatch: {
+            /** Boat Club */
+            boat_club?: string | null;
+            /** Firstname */
+            firstname?: string | null;
+            /** Lastname */
+            lastname?: string | null;
+            /** Phone */
+            phone?: string | null;
+            /** Role */
+            role?: ("harbormaster" | "boat_owner") | null;
+        };
+        /** UserCreate */
+        app__schemas__UserCreate: {
+            /**
+             * Boat Club
+             * @example Saltsjöbadens BK
+             */
+            boat_club?: string | null;
+            /**
+             * Email
+             * Format: email
+             * @example alex@example.com
+             */
+            email: string;
+            /**
+             * Firstname
+             * @example Alex
+             */
+            firstname: string;
+            /**
+             * Lastname
+             * @example Alex
+             */
+            lastname: string;
+            /**
+             * Password
+             * Format: password
+             * @example correct horse battery staple
+             */
+            password: string;
+            /**
+             * Phone
+             * @example +46 70 123 45 67
+             */
+            phone?: string | null;
+        };
+        /** UserPatch */
+        app__schemas__UserPatch: {
             /**
              * Boat Club
              * @example Saltsjöbadens BK
@@ -1209,19 +1688,6 @@ export interface components {
              */
             phone?: string | null;
         };
-        /** ValidationError */
-        ValidationError: {
-            /** Context */
-            ctx?: Record<string, never>;
-            /** Input */
-            input?: unknown;
-            /** Location */
-            loc: (string | number)[];
-            /** Message */
-            msg: string;
-            /** Error Type */
-            type: string;
-        };
     };
     responses: never;
     parameters: never;
@@ -1231,6 +1697,1016 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    adminBulkDeleteAdoptions: {
+        parameters: {
+            query?: {
+                status?: string;
+            };
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminCancelAdoption: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminListBerths: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminCreateBerth: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BerthCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminDeleteBerth: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                berth_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminPatchBerth: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                berth_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BerthPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminResetBerth: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                berth_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminListDocks: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminCreateDock: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DockCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminDeleteDock: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                dock_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminPatchDock: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                dock_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DockPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminCreateGateway: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GatewayCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminDismissPending: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                gateway_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminDeleteGateway: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                gateway_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminPatchGateway: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                gateway_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GatewayPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminListHarbors: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminCreateHarbor: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HarborCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminDeleteHarbor: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                harbor_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminPatchHarbor: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                harbor_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HarborPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminDecommissionNode: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                node_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminSnapshot: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminRunSweeper: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminListUsers: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminCreateUser: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["app__routers__admin__users__UserCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminDeleteUser: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminPatchUser: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["app__routers__admin__users__UserPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminListUserGrants: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminGrantHarbor: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HarborGrant"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminRevokeHarbor: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                user_id: string;
+                harbor_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     createAdoption: {
         parameters: {
             query?: never;
@@ -1473,7 +2949,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UserCreate"];
+                "application/json": components["schemas"]["app__schemas__UserCreate"];
             };
         };
         responses: {
@@ -2160,7 +3636,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UserPatch"];
+                "application/json": components["schemas"]["app__schemas__UserPatch"];
             };
         };
         responses: {

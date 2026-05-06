@@ -53,6 +53,11 @@ class Settings(BaseSettings):
     # None lets cookie_secure derive from app_env, override for tunnels in staging
     cookie_secure: bool | None = None
     cookie_domain: str | None = None
+    # both unset = /api/admin/* always 401
+    # team_domain example: https://dockpulse.cloudflareaccess.com
+    # aud is the application AUD tag from cf access dashboard
+    cf_access_team_domain: str | None = None
+    cf_access_aud: str | None = None
 
     @property
     def cookies_require_https(self) -> bool:

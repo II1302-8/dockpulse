@@ -101,9 +101,7 @@ async def _handle_status(session: AsyncSession, payload: dict, berth_id: str) ->
         # made it to the nodes table (failed adoption pre-self-heal, or
         # legacy hardware from before the watchdog). harbormaster needs
         # to factory-reset the affected node by hand.
-        logger.warning(
-            "ghost status node=%s berth=%s err=%s", node_id, berth_id, e
-        )
+        logger.warning("ghost status node=%s berth=%s err=%s", node_id, berth_id, e)
 
 
 async def _handle_heartbeat(

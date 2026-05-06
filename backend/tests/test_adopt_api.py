@@ -244,24 +244,59 @@ async def test_adopt_idempotent_while_pending(
     assert second.json()["request_id"] == first.json()["request_id"]
 
 
-async def test_adopt_rejects_reused_jti_when_terminal(
+async def test_adopt_recycles_err_row_on_retry(
+    client: AsyncClient,
+    session: AsyncSession,
+    harbor_master: User,
+    harbor_world,
+    factory_pubkey,
+    published_provision_reqs,
+):
+    """Re-pasting the same QR after a failed adoption recycles the err row
+    and re-fires provisioning. The QR sticker is single-use so the user
+    has no other path to retry."""
+    qr = _make_qr_payload(factory_pubkey, jti="recyclable-err")
+    creds = _creds(harbor_master.user_id)
+
+    first = await client.post("/api/adoptions", json=_adopt_body(qr), cookies=creds)
+    assert first.status_code == 202
+    request_id = first.json()["request_id"]
+    assert len(published_provision_reqs) == 1
+
+    row = await session.get(AdoptionRequest, request_id)
+    row.status = "err"
+    row.error_code = "cfg-fail"
+    row.error_msg = "previous attempt"
+    await session.commit()
+
+    second = await client.post("/api/adoptions", json=_adopt_body(qr), cookies=creds)
+    assert second.status_code == 200
+    assert second.json()["request_id"] == request_id
+    assert second.json()["status"] == "pending"
+    assert second.json()["error_code"] is None
+    assert second.json()["error_msg"] is None
+    # gateway must receive a fresh provision/req on retry
+    assert len(published_provision_reqs) == 2
+    assert published_provision_reqs[1]["request_id"] == request_id
+
+
+async def test_adopt_rejects_reused_jti_when_already_ok(
     client: AsyncClient,
     session: AsyncSession,
     harbor_master: User,
     harbor_world,
     factory_pubkey,
 ):
-    qr = _make_qr_payload(factory_pubkey, jti="reused-terminal")
+    """Successful adoptions are terminal; reposting same claim is a real bug."""
+    qr = _make_qr_payload(factory_pubkey, jti="reused-ok")
     creds = _creds(harbor_master.user_id)
 
     first = await client.post("/api/adoptions", json=_adopt_body(qr), cookies=creds)
     assert first.status_code == 202
     request_id = first.json()["request_id"]
 
-    # mark the request terminal so the second post represents a real bug
     row = await session.get(AdoptionRequest, request_id)
-    row.status = "err"
-    row.error_code = "cfg-fail"
+    row.status = "ok"
     await session.commit()
 
     second = await client.post("/api/adoptions", json=_adopt_body(qr), cookies=creds)

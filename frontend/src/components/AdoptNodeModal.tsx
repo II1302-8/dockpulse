@@ -3,8 +3,10 @@ import {
   AlertCircle,
   Camera,
   CheckCircle2,
+  Circle,
   ClipboardPaste,
   Loader2,
+  RotateCw,
   Wifi,
   X,
 } from "lucide-react";
@@ -78,6 +80,10 @@ export function AdoptNodeModal({ open, onClose }: Props) {
   const [requestId, setRequestId] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // bumped on each submit so ProgressStep remounts and re-opens SSE.
+  // backend recycles err'd rows so retries reuse the same request_id but
+  // need a fresh stream connection
+  const [attempt, setAttempt] = useState(0);
 
   // reset on close so reopening starts fresh
   useEffect(() => {
@@ -89,6 +95,7 @@ export function AdoptNodeModal({ open, onClose }: Props) {
       setRequestId(null);
       setSubmitError(null);
       setSubmitting(false);
+      setAttempt(0);
     }
   }, [open]);
 
@@ -110,6 +117,7 @@ export function AdoptNodeModal({ open, onClose }: Props) {
       });
       setRequestId(req.request_id);
       setStep("progress");
+      setAttempt((n) => n + 1);
     } catch (err) {
       setSubmitError(
         err instanceof ApiError
@@ -190,7 +198,13 @@ export function AdoptNodeModal({ open, onClose }: Props) {
             />
           )}
           {step === "progress" && requestId && (
-            <ProgressStep requestId={requestId} onClose={onClose} />
+            <ProgressStep
+              key={`${requestId}-${attempt}`}
+              requestId={requestId}
+              onClose={onClose}
+              onRetry={handleSubmit}
+              retrying={submitting}
+            />
           )}
         </div>
       </div>
@@ -541,9 +555,13 @@ function CameraScan({ onDecode }: { onDecode: (text: string) => void }) {
 function ProgressStep({
   requestId,
   onClose,
+  onRetry,
+  retrying,
 }: {
   requestId: string;
   onClose: () => void;
+  onRetry: () => void;
+  retrying: boolean;
 }) {
   const { request, state, phase } = useAdoptionStream(requestId);
   const [cancelling, setCancelling] = useState(false);
@@ -570,6 +588,7 @@ function ProgressStep({
   return (
     <div className="space-y-4">
       <SectionHead title="Adoption progress" hint={`request ${requestId}`} />
+      <PhaseSteps phase={phase} status={status} />
       <div
         className={cn(
           "p-6 rounded-2xl border flex items-start gap-4",
@@ -617,6 +636,11 @@ function ProgressStep({
               {humanizeAdoptError(request?.error_code, request?.error_msg)}
             </p>
           )}
+          {status === "err" && phase && (
+            <p className="text-[10px] font-mono text-brand-navy/50 mt-1">
+              failed at {humanizePhase(phase)}
+            </p>
+          )}
           {stale && (
             <p className="text-[11px] text-amber-600 mt-2">
               Stream connection lost. Refresh to retry.
@@ -645,6 +669,34 @@ function ProgressStep({
             Hide
           </button>
         </div>
+      ) : status === "err" ? (
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onRetry}
+            disabled={retrying}
+            className={cn(
+              "flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-all",
+              "bg-gradient-to-r from-brand-blue to-brand-cyan text-white shadow-lg shadow-brand-blue/20",
+              "hover:shadow-xl hover:shadow-brand-blue/40 hover:-translate-y-0.5",
+              "active:translate-y-0 disabled:opacity-50 disabled:grayscale disabled:hover:translate-y-0",
+            )}
+          >
+            {retrying ? (
+              <Loader2 size={14} strokeWidth={3} className="animate-spin" />
+            ) : (
+              <RotateCw size={14} strokeWidth={3} />
+            )}
+            {retrying ? "Retrying" : "Retry"}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-brand-navy/5 hover:bg-brand-navy/10 text-brand-navy transition-all"
+          >
+            Close
+          </button>
+        </div>
       ) : (
         <button
           type="button"
@@ -655,6 +707,64 @@ function ProgressStep({
         </button>
       )}
     </div>
+  );
+}
+
+// canonical phase order from dp_mesh_provisioner.c emit_state calls.
+// "started" is implicit before any state event arrives
+const PHASE_ORDER = [
+  "started",
+  "link-open",
+  "pb-adv-done",
+  "cfg-app-key",
+  "cfg-bind",
+  "cfg-pub-set",
+  "complete",
+] as const;
+
+function PhaseSteps({
+  phase,
+  status,
+}: {
+  phase: string | null;
+  status: "pending" | "ok" | "err";
+}) {
+  const currentIdx = phase ? PHASE_ORDER.indexOf(phase as never) : -1;
+  return (
+    <ol className="flex items-center gap-1 overflow-x-auto py-1">
+      {PHASE_ORDER.map((p, i) => {
+        const done = status === "ok" || i < currentIdx;
+        const active = status === "pending" && i === currentIdx;
+        const failed = status === "err" && i === currentIdx;
+        return (
+          <li
+            key={p}
+            className={cn(
+              "flex items-center gap-1.5 px-2 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest shrink-0",
+              done && "text-emerald-600 bg-emerald-500/10",
+              active && "text-brand-blue bg-brand-blue/10",
+              failed && "text-red-600 bg-red-500/10",
+              !done &&
+                !active &&
+                !failed &&
+                "text-brand-navy/30 bg-brand-navy/5",
+            )}
+            aria-current={active ? "step" : undefined}
+          >
+            {done ? (
+              <CheckCircle2 size={10} strokeWidth={3} />
+            ) : active ? (
+              <Loader2 size={10} strokeWidth={3} className="animate-spin" />
+            ) : failed ? (
+              <AlertCircle size={10} strokeWidth={3} />
+            ) : (
+              <Circle size={10} strokeWidth={3} />
+            )}
+            {humanizePhase(p)}
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
@@ -760,7 +870,15 @@ const ADOPT_ERROR_MESSAGES: Record<string, string> = {
   "bad-oob":
     "QR contained an invalid out-of-band key. Re-scan the node sticker.",
   "cfg-fail":
-    "BLE-mesh handshake failed. Power-cycle the node, confirm it's in unprovisioned mode, and retry.",
+    "BLE-mesh handshake failed. Hit retry — the node self-resets after 90s if cfg never completes, so retry should land cleanly.",
+  "appkey-send":
+    "Gateway couldn't send the app-key step. Check gateway logs and retry.",
+  "bind-send":
+    "Gateway couldn't send the model-bind step. Check gateway logs and retry.",
+  "pubset-send":
+    "Gateway couldn't send the publish-set step. Check gateway logs and retry.",
+  "link-close":
+    "BLE link closed before configuration finished. Confirm range and retry.",
   "start-fail": "Gateway mesh stack refused to start. Power-cycle the gateway.",
   timeout:
     "Node didn't broadcast an unprovisioned beacon within 180s. Most often it's already in another mesh — factory-reset the node, confirm range, then retry.",

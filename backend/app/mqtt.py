@@ -96,7 +96,14 @@ async def _handle_status(session: AsyncSession, payload: dict, berth_id: str) ->
                 node_id,
             )
     except ValueError as e:
-        logger.warning("%s", e)
+        # ghost activity: gateway emitted status for a berth_id we don't
+        # know. usually means a node was provisioned in mesh but never
+        # made it to the nodes table (failed adoption pre-self-heal, or
+        # legacy hardware from before the watchdog). harbormaster needs
+        # to factory-reset the affected node by hand.
+        logger.warning(
+            "ghost status node=%s berth=%s err=%s", node_id, berth_id, e
+        )
 
 
 async def _handle_heartbeat(

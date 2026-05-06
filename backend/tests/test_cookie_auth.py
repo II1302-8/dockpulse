@@ -30,9 +30,7 @@ async def _register_user(session: AsyncSession) -> User:
     return user
 
 
-async def test_login_sets_session_cookies(
-    client: AsyncClient, session: AsyncSession
-):
+async def test_login_sets_session_cookies(client: AsyncClient, session: AsyncSession):
     await _register_user(session)
     r = await client.post(
         "/api/auth/login",
@@ -59,9 +57,7 @@ async def test_login_persists_refresh_token_row(
     assert rows[0].revoked_at is None
 
 
-async def test_me_works_with_cookie_only(
-    client: AsyncClient, session: AsyncSession
-):
+async def test_me_works_with_cookie_only(client: AsyncClient, session: AsyncSession):
     await _register_user(session)
     await client.post(
         "/api/auth/login",
@@ -89,10 +85,10 @@ async def test_refresh_rotates_cookies_and_revokes_old_jti(
     assert new_refresh != old_refresh
 
     rows = (
-        await session.execute(
-            select(RefreshToken).order_by(RefreshToken.issued_at)
-        )
-    ).scalars().all()
+        (await session.execute(select(RefreshToken).order_by(RefreshToken.issued_at)))
+        .scalars()
+        .all()
+    )
     assert len(rows) == 2
     assert rows[0].revoked_at is not None
     assert rows[1].revoked_at is None
@@ -114,9 +110,7 @@ async def test_refresh_reuse_burns_family_and_bumps_token_version(
     await client.post("/api/auth/refresh")
 
     # attacker replays the leaked refresh on a fresh client
-    attacker = AsyncClient(
-        transport=client._transport, base_url=client.base_url
-    )
+    attacker = AsyncClient(transport=client._transport, base_url=client.base_url)
     attacker.cookies.set(REFRESH_COOKIE, leaked_refresh)
     r = await attacker.post("/api/auth/refresh")
     await attacker.aclose()

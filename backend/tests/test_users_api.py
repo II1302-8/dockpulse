@@ -252,9 +252,7 @@ async def test_login_unknown_email_returns_401(client: AsyncClient):
 
 async def test_logout_returns_204(client: AsyncClient, test_user: User):
     token = make_token(test_user.user_id)
-    r = await client.post(
-        "/api/auth/logout", cookies=_creds(token)
-    )
+    r = await client.post("/api/auth/logout", cookies=_creds(token))
     assert r.status_code == 204
 
 
@@ -274,9 +272,7 @@ async def test_get_notification_prefs_returns_defaults(
     client: AsyncClient, test_user: User
 ):
     token = make_token(test_user.user_id)
-    r = await client.get(
-        "/api/users/me/notification-prefs", cookies=_creds(token)
-    )
+    r = await client.get("/api/users/me/notification-prefs", cookies=_creds(token))
     assert r.status_code == 200
     data = r.json()
     assert data["notify_arrival"] is True

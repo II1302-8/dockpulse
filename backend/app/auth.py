@@ -138,13 +138,9 @@ def clear_session_cookies(response: Response) -> None:
 
 def _decode_access(token: str) -> dict:
     try:
-        payload = jwt.decode(
-            token, get_settings().secret_key, algorithms=[ALGORITHM]
-        )
+        payload = jwt.decode(token, get_settings().secret_key, algorithms=[ALGORITHM])
     except jwt.PyJWTError as err:
-        raise HTTPException(
-            status_code=401, detail="Invalid or expired token"
-        ) from err
+        raise HTTPException(status_code=401, detail="Invalid or expired token") from err
     if payload.get("type") not in (None, "access"):
         raise HTTPException(status_code=401, detail="Invalid or expired token")
     return payload
@@ -161,9 +157,7 @@ async def get_current_user(
         user_id: str = payload["sub"]
         token_version: int = payload["ver"]
     except KeyError as err:
-        raise HTTPException(
-            status_code=401, detail="Invalid or expired token"
-        ) from err
+        raise HTTPException(status_code=401, detail="Invalid or expired token") from err
 
     user = await session.get(User, user_id)
     if user is None or user.token_version != token_version:

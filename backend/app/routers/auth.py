@@ -135,9 +135,7 @@ async def refresh_session(
             refresh_cookie, get_settings().secret_key, algorithms=[ALGORITHM]
         )
     except jwt.PyJWTError as err:
-        raise HTTPException(
-            status_code=401, detail="Invalid refresh token"
-        ) from err
+        raise HTTPException(status_code=401, detail="Invalid refresh token") from err
     if payload.get("type") != "refresh":
         raise HTTPException(status_code=401, detail="Invalid refresh token")
     jti = payload.get("jti")
@@ -178,9 +176,7 @@ async def refresh_session(
     operation_id="logout",
     summary="Invalidate all tokens for the current user",
 )
-async def logout(
-    current_user: CurrentUserDep, session: SessionDep, response: Response
-):
+async def logout(current_user: CurrentUserDep, session: SessionDep, response: Response):
     current_user.token_version += 1
     session.add(current_user)
     await _revoke_all_refresh_tokens_for(current_user.user_id, session)

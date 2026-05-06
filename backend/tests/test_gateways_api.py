@@ -125,9 +125,7 @@ async def test_list_pending_gateways_returns_recorded_ids(
     session.add(PendingGateway(gateway_id="gw-unknown", attempts=3))
     await session.commit()
 
-    r = await client.get(
-        "/api/gateways/pending", cookies=_creds(harbor_master.user_id)
-    )
+    r = await client.get("/api/gateways/pending", cookies=_creds(harbor_master.user_id))
     assert r.status_code == 200
     body = r.json()
     assert len(body) == 1

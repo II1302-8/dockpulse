@@ -12,6 +12,7 @@ async def test_subscriber_receives_state_change_event(session, seeded_berth):
             session,
             berth_id="b1",
             node_id="n1",
+            mesh_unicast_addr="0x0042",
             occupied=True,
             sensor_raw=500,
             battery_pct=80,
@@ -37,7 +38,12 @@ async def test_subscriber_receives_heartbeat_event(session, seeded_berth):
 async def test_multiple_subscribers_each_receive_events(session, seeded_berth):
     async with broadcaster.subscribe() as q1, broadcaster.subscribe() as q2:
         await process_sensor_reading(
-            session, berth_id="b1", node_id="n1", occupied=True, sensor_raw=500
+            session,
+            berth_id="b1",
+            node_id="n1",
+            mesh_unicast_addr="0x0042",
+            occupied=True,
+            sensor_raw=500,
         )
         e1 = await asyncio.wait_for(q1.get(), timeout=1.0)
         e2 = await asyncio.wait_for(q2.get(), timeout=1.0)
@@ -51,6 +57,7 @@ async def test_subscriber_does_not_receive_noop_sensor_reading(session, seeded_b
         session,
         berth_id="b1",
         node_id="n1",
+        mesh_unicast_addr="0x0042",
         occupied=False,
         sensor_raw=100,
         battery_pct=80,
@@ -60,6 +67,7 @@ async def test_subscriber_does_not_receive_noop_sensor_reading(session, seeded_b
             session,
             berth_id="b1",
             node_id="n1",
+            mesh_unicast_addr="0x0042",
             occupied=False,
             sensor_raw=110,
             battery_pct=80,
@@ -75,6 +83,7 @@ async def test_subscriber_receives_battery_change_without_status_change(
         session,
         berth_id="b1",
         node_id="n1",
+        mesh_unicast_addr="0x0042",
         occupied=False,
         sensor_raw=100,
         battery_pct=80,
@@ -84,6 +93,7 @@ async def test_subscriber_receives_battery_change_without_status_change(
             session,
             berth_id="b1",
             node_id="n1",
+            mesh_unicast_addr="0x0042",
             occupied=False,
             sensor_raw=100,
             battery_pct=70,

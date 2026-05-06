@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from app import broadcaster
-from app.models import Berth, Event, User
+from app.models import Berth, Event, Node, User
 from app.notifications import send_email
 from app.schemas import BerthUpdateEvent
 
@@ -76,6 +76,7 @@ async def process_sensor_reading(
     *,
     berth_id: str,
     node_id: str,
+    mesh_unicast_addr: str,
     occupied: bool,
     sensor_raw: int,
     battery_pct: int | None = None,
@@ -84,6 +85,17 @@ async def process_sensor_reading(
     berth = await _load_berth(session, berth_id)
     if berth is None:
         raise ValueError(f"Unknown berth: {berth_id}")
+
+    # reject rogue nodes publishing to a berth they aren't bound to
+    registered = await session.execute(
+        select(Node).where(Node.berth_id == berth_id, Node.status != "decommissioned")
+    )
+    node = registered.scalar_one_or_none()
+    if node is not None and node.mesh_unicast_addr != mesh_unicast_addr:
+        raise ValueError(
+            f"unicast addr mismatch for berth {berth_id}: "
+            f"registered={node.mesh_unicast_addr} got={mesh_unicast_addr}"
+        )
 
     prev_status = berth.status
     prev_battery = berth.battery_pct
@@ -108,6 +120,7 @@ async def process_sensor_reading(
         node_id=node_id,
         event_type="occupied" if occupied else "freed",
         sensor_raw=sensor_raw,
+        mesh_unicast_addr=mesh_unicast_addr,
         timestamp=now,
     )
     berth.status = new_status

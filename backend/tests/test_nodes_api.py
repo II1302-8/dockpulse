@@ -181,6 +181,7 @@ async def test_get_node_returns_detail_with_events(
                 node_id="n-online",
                 event_type="occupied",
                 sensor_raw=300,
+                mesh_unicast_addr="0x0042",
                 timestamp=now - timedelta(minutes=2),
             ),
             Event(
@@ -189,6 +190,7 @@ async def test_get_node_returns_detail_with_events(
                 node_id="n-online",
                 event_type="freed",
                 sensor_raw=900,
+                mesh_unicast_addr="0x0042",
                 timestamp=now - timedelta(minutes=1),
             ),
         ]

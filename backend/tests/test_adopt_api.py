@@ -82,6 +82,7 @@ def _signed_claim(priv: str, **overrides) -> tuple[dict, str]:
         "iss": "factory",
         "sub": "DP-N-000123",
         "uuid": "0123456789abcdef0123456789abcdef",
+        "oob": "00112233445566778899aabbccddeeff",
         "jti": "claim-jti-malformed",
         "iat": now,
         "exp": now + 3600,
@@ -98,20 +99,8 @@ def _qr_invalid_encoding(_priv: str) -> str:
     return "!!! not base64 !!!"
 
 
-def _qr_without_oob(priv: str) -> str:
-    claim, token = _signed_claim(priv)
-    return _b64({"v": 1, "uuid": claim["uuid"], "sn": claim["sub"], "jwt": token})
-
-
-def _qr_empty_oob(priv: str) -> str:
-    claim, token = _signed_claim(priv)
-    return _b64(
-        {"v": 1, "uuid": claim["uuid"], "oob": "", "sn": claim["sub"], "jwt": token}
-    )
-
-
 def _qr_without_jwt(_priv: str) -> str:
-    return _b64({"v": 1, "sn": "X"})
+    return _b64({"v": 2, "sn": "X"})
 
 
 def _qr_bad_signature(_priv: str) -> str:
@@ -119,14 +108,41 @@ def _qr_bad_signature(_priv: str) -> str:
     return _make_qr_payload(other_priv)
 
 
+def _qr_jwt_missing_oob(priv: str) -> str:
+    """factory tool would always sign oob, manually elide here to test
+    the required-claims gate in claims.py."""
+    now = int(time.time())
+    claim = {
+        "iss": "factory",
+        "sub": "DP-N-000123",
+        "uuid": "0123456789abcdef0123456789abcdef",
+        "jti": "claim-no-oob",
+        "iat": now,
+        "exp": now + 3600,
+    }
+    token = jwt.encode(claim, priv, algorithm=ALGORITHM)
+    return _b64({"v": 2, "sn": claim["sub"], "jwt": token})
+
+
+def _qr_jwt_oob_bad_format(priv: str) -> str:
+    _claim, token = _signed_claim(priv, oob="not-hex-and-too-short")
+    return _b64({"v": 2, "sn": "DP-N-000123", "jwt": token})
+
+
+def _qr_non_base64(_priv: str) -> str:
+    # contains chars outside the urlsafe-base64 alphabet
+    return "!!!not-base64!!!"
+
+
 @pytest.mark.parametrize(
     "qr_factory",
     [
         pytest.param(_qr_invalid_encoding, id="invalid_encoding"),
-        pytest.param(_qr_without_oob, id="without_oob"),
-        pytest.param(_qr_empty_oob, id="empty_oob"),
         pytest.param(_qr_without_jwt, id="without_jwt"),
         pytest.param(_qr_bad_signature, id="bad_signature"),
+        pytest.param(_qr_jwt_missing_oob, id="jwt_missing_oob"),
+        pytest.param(_qr_jwt_oob_bad_format, id="jwt_oob_bad_format"),
+        pytest.param(_qr_non_base64, id="non_base64"),
     ],
 )
 async def test_adopt_rejects_malformed_qr(
@@ -143,6 +159,26 @@ async def test_adopt_rejects_malformed_qr(
         cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 400
+    rows = (await session.execute(select(AdoptionRequest))).scalars().all()
+    assert rows == []
+
+
+async def test_adopt_rejects_oversize_qr_payload(
+    client: AsyncClient,
+    session: AsyncSession,
+    harbor_master: User,
+    harbor_world,
+    factory_pubkey,
+):
+    """Pydantic max_length caps the payload before our handler runs.
+    FastAPI surfaces validation errors as 422."""
+    huge = _make_qr_payload(factory_pubkey) + ("A" * 5000)
+    r = await client.post(
+        "/api/adoptions",
+        json=_adopt_body(huge),
+        cookies=_creds(harbor_master.user_id),
+    )
+    assert r.status_code == 422
     rows = (await session.execute(select(AdoptionRequest))).scalars().all()
     assert rows == []
 

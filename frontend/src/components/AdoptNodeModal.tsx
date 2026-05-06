@@ -80,9 +80,8 @@ export function AdoptNodeModal({ open, onClose }: Props) {
   const [requestId, setRequestId] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  // bumped on each submit so ProgressStep remounts and re-opens SSE.
-  // backend recycles err'd rows so retries reuse the same request_id but
-  // need a fresh stream connection
+  // remount ProgressStep on each submit so SSE reconnects, recycled
+  // err'd rows reuse the same request_id but need a fresh stream
   const [attempt, setAttempt] = useState(0);
 
   // reset on close so reopening starts fresh
@@ -710,8 +709,8 @@ function ProgressStep({
   );
 }
 
-// canonical phase order from dp_mesh_provisioner.c emit_state calls.
-// "started" is implicit before any state event arrives
+// mirrors dp_mesh_provisioner.c emit_state ordering, "started" is
+// implicit before any state event arrives
 const PHASE_ORDER = [
   "started",
   "link-open",

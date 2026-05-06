@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     # proxy deploys need uvicorn --forwarded-allow-ips so client.host is real ip
     rate_limit_login: str = "10/minute"
     rate_limit_register: str = "5/hour"
+    # adoption is auth-protected but a compromised harbormaster cookie can
+    # still flood random QR pastes (JWT verify + pending row + mqtt publish)
+    rate_limit_adopt: str = "20/minute"
     # global kill-switch so tests don't have to override every endpoint
     rate_limit_enabled: bool = True
     # short access ttl narrows xss / leaked-token blast radius

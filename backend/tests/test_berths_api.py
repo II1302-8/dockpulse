@@ -7,6 +7,7 @@ async def test_api_reflects_mqtt_reading(client, session, seeded_berth):
         session,
         berth_id="b1",
         node_id="n1",
+        mesh_unicast_addr="0x0042",
         occupied=True,
         sensor_raw=500,
         battery_pct=80,
@@ -24,7 +25,12 @@ async def test_api_reflects_mqtt_reading(client, session, seeded_berth):
 
 async def test_api_filter_by_status(client, session, seeded_berth):
     await process_sensor_reading(
-        session, berth_id="b1", node_id="n1", occupied=True, sensor_raw=500
+        session,
+        berth_id="b1",
+        node_id="n1",
+        mesh_unicast_addr="0x0042",
+        occupied=True,
+        sensor_raw=500,
     )
 
     r_occupied = await client.get("/api/berths?status=occupied")
@@ -53,7 +59,12 @@ async def test_list_berth_events_returns_events(
     client, session, seeded_berth, harbor_master
 ):
     await process_sensor_reading(
-        session, berth_id="b1", node_id="n1", occupied=True, sensor_raw=500
+        session,
+        berth_id="b1",
+        node_id="n1",
+        mesh_unicast_addr="0x0042",
+        occupied=True,
+        sensor_raw=500,
     )
     r = await client.get(
         "/api/berths/b1/events", cookies=auth_cookies(harbor_master.user_id)

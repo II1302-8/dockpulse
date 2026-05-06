@@ -67,18 +67,14 @@ def make_qr_payload(priv_pem: str, **claim_overrides) -> str:
         "iss": "factory",
         "sub": "DP-N-000123",
         "uuid": "0123456789abcdef0123456789abcdef",
+        "oob": "00112233445566778899aabbccddeeff",
         "jti": "claim-jti-1",
         "iat": now,
         "exp": now + 3600,
     }
     claim.update(claim_overrides)
     token = jwt.encode(claim, priv_pem, algorithm=FACTORY_JWT_ALGORITHM)
-    qr = {
-        "v": 1,
-        "uuid": claim["uuid"],
-        "oob": "00112233445566778899aabbccddeeff",
-        "sn": claim["sub"],
-        "jwt": token,
-    }
+    # uuid + oob both live inside the JWT, sn kept for log readability
+    qr = {"v": 2, "sn": claim["sub"], "jwt": token}
     raw = json.dumps(qr).encode()
     return base64.urlsafe_b64encode(raw).rstrip(b"=").decode()

@@ -216,8 +216,12 @@ class AdoptionRequestOut(_BaseSchema):
 
 
 class AdoptIn(BaseModel):
+    # 4096 fits real QR (~430 chars) without leaving an authed client a free
+    # path to multi-MB JSON parse
     qr_payload: str = Field(
-        description="Base64url-encoded JSON from QR fragment (uuid, oob, sn, jwt)"
+        min_length=1,
+        max_length=4096,
+        description="Base64url-encoded JSON from QR fragment (uuid, oob, sn, jwt)",
     )
     berth_id: str = Field(examples=["berth-001"])
     gateway_id: str = Field(examples=["gw-dock-a"])

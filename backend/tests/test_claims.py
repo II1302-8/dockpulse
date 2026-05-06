@@ -21,6 +21,7 @@ def _claim_payload(**overrides) -> dict:
         "iss": "factory",
         "sub": "DP-N-000123",
         "uuid": "0123456789abcdef0123456789abcdef",
+        "oob": "00112233445566778899aabbccddeeff",
         "jti": "claim-jti-1",
         "iat": now,
         "exp": now + 3600,
@@ -37,8 +38,35 @@ def test_verify_returns_claim_on_valid_token(factory_keys):
 
     assert claim.serial_number == "DP-N-000123"
     assert claim.mesh_uuid == "0123456789abcdef0123456789abcdef"
+    assert claim.oob_hex == "00112233445566778899aabbccddeeff"
     assert claim.jti == "claim-jti-1"
     assert claim.expires_at > datetime.now(UTC).replace(tzinfo=None)
+
+
+def test_verify_rejects_missing_oob(factory_keys):
+    priv, _ = factory_keys
+    payload = _claim_payload()
+    del payload["oob"]
+    token = jwt.encode(payload, priv, algorithm=ALGORITHM)
+
+    with pytest.raises(ClaimError, match="oob"):
+        verify_claim_jwt(token)
+
+
+def test_verify_rejects_oob_wrong_length(factory_keys):
+    priv, _ = factory_keys
+    token = jwt.encode(_claim_payload(oob="deadbeef"), priv, algorithm=ALGORITHM)
+
+    with pytest.raises(ClaimError, match="oob"):
+        verify_claim_jwt(token)
+
+
+def test_verify_rejects_oob_non_hex(factory_keys):
+    priv, _ = factory_keys
+    token = jwt.encode(_claim_payload(oob="GG" * 16), priv, algorithm=ALGORITHM)
+
+    with pytest.raises(ClaimError, match="oob"):
+        verify_claim_jwt(token)
 
 
 def test_verify_rejects_bad_signature(factory_keys):

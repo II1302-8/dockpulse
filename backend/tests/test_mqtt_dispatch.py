@@ -8,6 +8,7 @@ async def test_status_handler_persists_reading(session, seeded_berth):
     payload = {
         "node_id": "n1",
         "berth_id": "b1",
+        "mesh_unicast_addr": "0x0042",
         "occupied": True,
         "sensor_raw": 500,
         "battery_pct": 80,
@@ -33,13 +34,14 @@ async def test_status_handler_skips_on_missing_fields(session, seeded_berth):
 
 
 async def test_status_handler_skips_unknown_berth(session):
-    # no seeded_berth fixture — berth "b1" doesn't exist
+    # no seeded_berth fixture, berth "b1" doesn't exist
     payload = {
         "node_id": "n1",
+        "mesh_unicast_addr": "0x0042",
         "occupied": True,
         "sensor_raw": 500,
     }
-    # Should not raise; ValueError is logged and swallowed.
+    # should not raise, ValueError is logged and swallowed
     await _handle_status(session, payload, "b1")
 
 

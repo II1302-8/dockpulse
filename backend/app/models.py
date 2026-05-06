@@ -128,6 +128,7 @@ class Event(Base):
     node_id: Mapped[str] = mapped_column(String, nullable=False)
     event_type: Mapped[str] = mapped_column(event_type_enum, nullable=False)
     sensor_raw: Mapped[int] = mapped_column(Integer, nullable=False)
+    mesh_unicast_addr: Mapped[str] = mapped_column(String, nullable=False)
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     berth: Mapped["Berth"] = relationship(back_populates="events")

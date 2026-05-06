@@ -75,7 +75,13 @@ async def _handle_status(session: AsyncSession, payload: dict, berth_id: str) ->
     node_id = payload.get("node_id")
     occupied = payload.get("occupied")
     sensor_raw = payload.get("sensor_raw")
-    if node_id is None or occupied is None or sensor_raw is None:
+    mesh_unicast_addr = payload.get("mesh_unicast_addr")
+    if (
+        node_id is None
+        or occupied is None
+        or sensor_raw is None
+        or not mesh_unicast_addr
+    ):
         logger.warning("status payload missing fields for berth %s", berth_id)
         return
 
@@ -84,6 +90,7 @@ async def _handle_status(session: AsyncSession, payload: dict, berth_id: str) ->
             session,
             berth_id=berth_id,
             node_id=node_id,
+            mesh_unicast_addr=mesh_unicast_addr,
             occupied=bool(occupied),
             sensor_raw=int(sensor_raw),
             battery_pct=payload.get("battery_pct"),
@@ -96,12 +103,16 @@ async def _handle_status(session: AsyncSession, payload: dict, berth_id: str) ->
                 node_id,
             )
     except ValueError as e:
-        # ghost activity: gateway emitted status for a berth_id we don't
-        # know. usually means a node was provisioned in mesh but never
-        # made it to the nodes table (failed adoption pre-self-heal, or
-        # legacy hardware from before the watchdog). harbormaster needs
-        # to factory-reset the affected node by hand.
-        logger.warning("ghost status node=%s berth=%s err=%s", node_id, berth_id, e)
+        # ghost activity, either an unknown berth_id (failed adoption from
+        # pre-self-heal firmware) or unicast mismatch (rogue node).
+        # harbormaster has to factory-reset the affected node by hand
+        logger.warning(
+            "ghost status node=%s berth=%s addr=%s err=%s",
+            node_id,
+            berth_id,
+            mesh_unicast_addr,
+            e,
+        )
 
 
 async def _handle_heartbeat(

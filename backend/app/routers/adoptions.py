@@ -13,6 +13,7 @@ from sse_starlette.sse import EventSourceResponse
 from app import broadcaster
 from app.adoption.claims import ClaimError, FactoryClaim, verify_claim_jwt
 from app.adoption.finalize import complete_adoption_err
+from app.config import get_settings
 from app.dependencies import (
     CurrentUserDep,
     SessionDep,
@@ -22,6 +23,7 @@ from app.dependencies import (
 )
 from app.models import AdoptionRequest, Berth, Gateway, Node
 from app.mqtt import publish_provision_req
+from app.rate_limit import limiter
 from app.schemas import (
     AdoptIn,
     AdoptionRequestOut,
@@ -37,15 +39,24 @@ SSE_PING_SECONDS = 15
 
 
 def _decode_qr_payload(payload: str) -> dict:
-    """Decode base64url-encoded JSON from a QR fragment"""
+    """Decode base64url-encoded JSON from a QR fragment.
+
+    Treats decode and JSON failures as 400. Pydantic's max_length on the
+    field caps the input size before we get here, so this only handles
+    the parse-error surface.
+    """
     padded = payload + "=" * (-len(payload) % 4)
+    # urlsafe variant has no validate flag, translate to std then b64decode
+    # with validate=True so non-alphabet chars are rejected, not stripped
     try:
-        decoded = base64.urlsafe_b64decode(padded)
+        as_std = padded.translate(str.maketrans({"-": "+", "_": "/"}))
+        decoded = base64.b64decode(as_std, validate=True)
     except (binascii.Error, ValueError) as err:
         raise HTTPException(status_code=400, detail="Invalid QR encoding") from err
     try:
+        # UnicodeDecodeError subclasses ValueError, caught alongside
         data = json.loads(decoded)
-    except json.JSONDecodeError as err:
+    except (json.JSONDecodeError, UnicodeDecodeError) as err:
         raise HTTPException(status_code=400, detail="Invalid QR JSON") from err
     if not isinstance(data, dict) or "jwt" not in data:
         raise HTTPException(status_code=400, detail="QR missing 'jwt' field")
@@ -66,7 +77,9 @@ def _verify_claim(qr: dict) -> FactoryClaim:
     operation_id="createAdoption",
     summary="Create an adoption request for a scanned node",
 )
+@limiter.limit(lambda: get_settings().rate_limit_adopt)
 async def create_adoption(
+    request: Request,
     body: AdoptIn,
     current_user: CurrentUserDep,
     session: SessionDep,
@@ -74,10 +87,9 @@ async def create_adoption(
 ):
     qr = _decode_qr_payload(body.qr_payload)
     claim = _verify_claim(qr)
-
-    oob = qr.get("oob")
-    if not isinstance(oob, str) or not oob:
-        raise HTTPException(status_code=400, detail="QR missing 'oob' field")
+    # oob comes from the signed claim, tampering with the outer QR field
+    # has no effect since backend only reads the signed value
+    oob = claim.oob_hex
 
     # role + harbor authority before any other lookups
     harbor_id = await harbor_id_from_berth(body.berth_id, session)

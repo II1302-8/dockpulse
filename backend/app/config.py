@@ -98,6 +98,7 @@ class Settings(BaseSettings):
         # whitespace/newlines that some platforms inject mid-string
         import base64
         import binascii
+
         try:
             decoded = base64.b64decode("".join(v.split()), validate=True).decode()
         except (binascii.Error, UnicodeDecodeError) as err:

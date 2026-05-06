@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Outlet, useNavigate, useSearchParams } from "react-router-dom";
 import { Toaster } from "sonner";
 import { type AuthUser, useAuth } from "../../lib/auth-context";
 import { cn } from "../../lib/utils";
@@ -113,6 +113,17 @@ function MainLayoutContent({
 function MainLayout() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // route guard redirect lands here with ?login=1, open the dialog and consume the flag
+  useEffect(() => {
+    if (searchParams.get("login") === "1") {
+      setIsLoginOpen(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete("login");
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   return (
     <DashboardLayoutProvider userRole={user?.role}>

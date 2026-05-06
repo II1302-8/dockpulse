@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { MainLayout } from "./components/layout/MainLayout";
+import { RequireAuth } from "./components/RequireAuth";
 import { AuthProvider } from "./lib/auth-context";
 
 const Dashboard = lazy(() =>
@@ -31,9 +32,11 @@ export function App() {
             <Route
               path="settings"
               element={
-                <Suspense fallback={<div className="h-full w-full" />}>
-                  <Settings />
-                </Suspense>
+                <RequireAuth>
+                  <Suspense fallback={<div className="h-full w-full" />}>
+                    <Settings />
+                  </Suspense>
+                </RequireAuth>
               }
             />
           </Route>

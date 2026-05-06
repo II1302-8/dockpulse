@@ -257,6 +257,47 @@ components:
       - created_at
       title: BerthAvailabilityWindowOut
       type: object
+    BerthCreate:
+      properties:
+        berth_id:
+          maxLength: 64
+          minLength: 1
+          title: Berth Id
+          type: string
+        depth_m:
+          anyOf:
+          - exclusiveMinimum: 0.0
+            type: number
+          - type: 'null'
+          title: Depth M
+        dock_id:
+          maxLength: 64
+          minLength: 1
+          title: Dock Id
+          type: string
+        label:
+          anyOf:
+          - maxLength: 64
+            type: string
+          - type: 'null'
+          title: Label
+        length_m:
+          anyOf:
+          - exclusiveMinimum: 0.0
+            type: number
+          - type: 'null'
+          title: Length M
+        width_m:
+          anyOf:
+          - exclusiveMinimum: 0.0
+            type: number
+          - type: 'null'
+          title: Width M
+      required:
+      - berth_id
+      - dock_id
+      title: BerthCreate
+      type: object
     BerthOut:
       properties:
         assignment:
@@ -346,6 +387,39 @@ components:
       - status
       title: BerthOut
       type: object
+    BerthPatch:
+      properties:
+        depth_m:
+          anyOf:
+          - exclusiveMinimum: 0.0
+            type: number
+          - type: 'null'
+          title: Depth M
+        is_reserved:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Is Reserved
+        label:
+          anyOf:
+          - maxLength: 64
+            type: string
+          - type: 'null'
+          title: Label
+        length_m:
+          anyOf:
+          - exclusiveMinimum: 0.0
+            type: number
+          - type: 'null'
+          title: Length M
+        width_m:
+          anyOf:
+          - exclusiveMinimum: 0.0
+            type: number
+          - type: 'null'
+          title: Width M
+      title: BerthPatch
+      type: object
     BerthUpdateEvent:
       properties:
         berth:
@@ -358,6 +432,29 @@ components:
       required:
       - berth
       title: BerthUpdateEvent
+      type: object
+    DockCreate:
+      properties:
+        dock_id:
+          maxLength: 64
+          minLength: 1
+          title: Dock Id
+          type: string
+        harbor_id:
+          maxLength: 64
+          minLength: 1
+          title: Harbor Id
+          type: string
+        name:
+          maxLength: 128
+          minLength: 1
+          title: Name
+          type: string
+      required:
+      - dock_id
+      - harbor_id
+      - name
+      title: DockCreate
       type: object
     DockOut:
       properties:
@@ -381,6 +478,24 @@ components:
       - harbor_id
       - name
       title: DockOut
+      type: object
+    DockPatch:
+      properties:
+        harbor_id:
+          anyOf:
+          - maxLength: 64
+            minLength: 1
+            type: string
+          - type: 'null'
+          title: Harbor Id
+        name:
+          anyOf:
+          - maxLength: 128
+            minLength: 1
+            type: string
+          - type: 'null'
+          title: Name
+      title: DockPatch
       type: object
     DockWithBerthsOut:
       properties:
@@ -529,6 +644,14 @@ components:
       type: object
     GatewayPatch:
       properties:
+        dock_id:
+          anyOf:
+          - maxLength: 64
+            minLength: 1
+            type: string
+          - type: 'null'
+          description: Reassign to dock
+          title: Dock Id
         name:
           anyOf:
           - maxLength: 128
@@ -554,6 +677,44 @@ components:
           type: array
       title: HTTPValidationError
       type: object
+    HarborCreate:
+      properties:
+        harbor_id:
+          maxLength: 64
+          minLength: 1
+          title: Harbor Id
+          type: string
+        lat:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Lat
+        lng:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Lng
+        name:
+          maxLength: 128
+          minLength: 1
+          title: Name
+          type: string
+      required:
+      - harbor_id
+      - name
+      title: HarborCreate
+      type: object
+    HarborGrant:
+      properties:
+        harbor_id:
+          maxLength: 64
+          minLength: 1
+          title: Harbor Id
+          type: string
+      required:
+      - harbor_id
+      title: HarborGrant
+      type: object
     HarborOut:
       properties:
         harbor_id:
@@ -570,6 +731,27 @@ components:
       - harbor_id
       - name
       title: HarborOut
+      type: object
+    HarborPatch:
+      properties:
+        lat:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Lat
+        lng:
+          anyOf:
+          - type: number
+          - type: 'null'
+          title: Lng
+        name:
+          anyOf:
+          - maxLength: 128
+            minLength: 1
+            type: string
+          - type: 'null'
+          title: Name
+      title: HarborPatch
       type: object
     HealthStatus:
       properties:
@@ -836,16 +1018,190 @@ components:
       - attempts
       title: PendingGatewayOut
       type: object
-    UserCreate:
+    UserOut:
+      properties:
+        assigned_berth_id:
+          anyOf:
+          - examples: &id018
+            - berth-001
+            type: string
+          - type: 'null'
+          examples: *id018
+          title: Assigned Berth Id
+        boat_club:
+          anyOf:
+          - examples: &id019
+            - Saltsjöbadens BK
+            type: string
+          - type: 'null'
+          examples: *id019
+          title: Boat Club
+        email:
+          examples:
+          - alex@example.com
+          format: email
+          title: Email
+          type: string
+        firstname:
+          examples:
+          - Alex
+          title: Firstname
+          type: string
+        lastname:
+          examples:
+          - Lindgren
+          title: Lastname
+          type: string
+        phone:
+          anyOf:
+          - examples: &id020
+            - +46 70 123 45 67
+            type: string
+          - type: 'null'
+          examples: *id020
+          title: Phone
+        role:
+          enum:
+          - harbormaster
+          - boat_owner
+          title: Role
+          type: string
+        user_id:
+          examples:
+          - user-001
+          title: User Id
+          type: string
+      required:
+      - user_id
+      - firstname
+      - lastname
+      - email
+      - role
+      title: UserOut
+      type: object
+    ValidationError:
+      properties:
+        ctx:
+          title: Context
+          type: object
+        input:
+          title: Input
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          title: Location
+          type: array
+        msg:
+          title: Message
+          type: string
+        type:
+          title: Error Type
+          type: string
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+      type: object
+    app__routers__admin__UserCreate:
       properties:
         boat_club:
           anyOf:
-          - examples: &id018
+          - maxLength: 128
+            type: string
+          - type: 'null'
+          title: Boat Club
+        email:
+          format: email
+          title: Email
+          type: string
+        firstname:
+          maxLength: 64
+          minLength: 1
+          title: Firstname
+          type: string
+        lastname:
+          maxLength: 64
+          minLength: 1
+          title: Lastname
+          type: string
+        password:
+          format: password
+          maxLength: 128
+          minLength: 8
+          title: Password
+          type: string
+          writeOnly: true
+        phone:
+          anyOf:
+          - maxLength: 32
+            type: string
+          - type: 'null'
+          title: Phone
+        role:
+          default: boat_owner
+          enum:
+          - harbormaster
+          - boat_owner
+          title: Role
+          type: string
+      required:
+      - email
+      - password
+      - firstname
+      - lastname
+      title: UserCreate
+      type: object
+    app__routers__admin__UserPatch:
+      properties:
+        boat_club:
+          anyOf:
+          - maxLength: 128
+            type: string
+          - type: 'null'
+          title: Boat Club
+        firstname:
+          anyOf:
+          - maxLength: 64
+            minLength: 1
+            type: string
+          - type: 'null'
+          title: Firstname
+        lastname:
+          anyOf:
+          - maxLength: 64
+            minLength: 1
+            type: string
+          - type: 'null'
+          title: Lastname
+        phone:
+          anyOf:
+          - maxLength: 32
+            type: string
+          - type: 'null'
+          title: Phone
+        role:
+          anyOf:
+          - enum:
+            - harbormaster
+            - boat_owner
+            type: string
+          - type: 'null'
+          title: Role
+      title: UserPatch
+      type: object
+    app__schemas__UserCreate:
+      properties:
+        boat_club:
+          anyOf:
+          - examples: &id021
             - Saltsjöbadens BK
             maxLength: 100
             type: string
           - type: 'null'
-          examples: *id018
+          examples: *id021
           title: Boat Club
         email:
           examples:
@@ -880,13 +1236,13 @@ components:
           writeOnly: true
         phone:
           anyOf:
-          - examples: &id019
+          - examples: &id022
             - +46 70 123 45 67
             maxLength: 20
             pattern: ^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$
             type: string
           - type: 'null'
-          examples: *id019
+          examples: *id022
           title: Phone
       required:
       - firstname
@@ -895,68 +1251,7 @@ components:
       - password
       title: UserCreate
       type: object
-    UserOut:
-      properties:
-        assigned_berth_id:
-          anyOf:
-          - examples: &id020
-            - berth-001
-            type: string
-          - type: 'null'
-          examples: *id020
-          title: Assigned Berth Id
-        boat_club:
-          anyOf:
-          - examples: &id021
-            - Saltsjöbadens BK
-            type: string
-          - type: 'null'
-          examples: *id021
-          title: Boat Club
-        email:
-          examples:
-          - alex@example.com
-          format: email
-          title: Email
-          type: string
-        firstname:
-          examples:
-          - Alex
-          title: Firstname
-          type: string
-        lastname:
-          examples:
-          - Lindgren
-          title: Lastname
-          type: string
-        phone:
-          anyOf:
-          - examples: &id022
-            - +46 70 123 45 67
-            type: string
-          - type: 'null'
-          examples: *id022
-          title: Phone
-        role:
-          enum:
-          - harbormaster
-          - boat_owner
-          title: Role
-          type: string
-        user_id:
-          examples:
-          - user-001
-          title: User Id
-          type: string
-      required:
-      - user_id
-      - firstname
-      - lastname
-      - email
-      - role
-      title: UserOut
-      type: object
-    UserPatch:
+    app__schemas__UserPatch:
       properties:
         boat_club:
           anyOf:
@@ -1028,32 +1323,6 @@ components:
           examples: *id028
           title: Phone
       title: UserPatch
-      type: object
-    ValidationError:
-      properties:
-        ctx:
-          title: Context
-          type: object
-        input:
-          title: Input
-        loc:
-          items:
-            anyOf:
-            - type: string
-            - type: integer
-          title: Location
-          type: array
-        msg:
-          title: Message
-          type: string
-        type:
-          title: Error Type
-          type: string
-      required:
-      - loc
-      - msg
-      - type
-      title: ValidationError
       type: object
   securitySchemes:
     APIKeyCookie:
@@ -1153,6 +1422,318 @@ paths:
       summary: Cancel Adoption
       tags:
       - admin
+  /api/admin/berths:
+    get:
+      operationId: adminListBerths
+      parameters:
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  additionalProperties: true
+                  type: object
+                title: Response Adminlistberths
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: List Berths
+      tags:
+      - admin
+    post:
+      operationId: adminCreateBerth
+      parameters:
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BerthCreate'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Admincreateberth
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Create Berth
+      tags:
+      - admin
+  /api/admin/berths/{berth_id}:
+    delete:
+      operationId: adminDeleteBerth
+      parameters:
+      - in: path
+        name: berth_id
+        required: true
+        schema:
+          title: Berth Id
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Delete Berth
+      tags:
+      - admin
+    patch:
+      operationId: adminPatchBerth
+      parameters:
+      - in: path
+        name: berth_id
+        required: true
+        schema:
+          title: Berth Id
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BerthPatch'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Adminpatchberth
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Patch Berth
+      tags:
+      - admin
+  /api/admin/berths/{berth_id}/reset:
+    post:
+      operationId: adminResetBerth
+      parameters:
+      - in: path
+        name: berth_id
+        required: true
+        schema:
+          title: Berth Id
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Adminresetberth
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Reset Berth
+      tags:
+      - admin
+  /api/admin/docks:
+    get:
+      operationId: adminListDocks
+      parameters:
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  additionalProperties: true
+                  type: object
+                title: Response Adminlistdocks
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: List Docks
+      tags:
+      - admin
+    post:
+      operationId: adminCreateDock
+      parameters:
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DockCreate'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Admincreatedock
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Create Dock
+      tags:
+      - admin
+  /api/admin/docks/{dock_id}:
+    delete:
+      operationId: adminDeleteDock
+      parameters:
+      - in: path
+        name: dock_id
+        required: true
+        schema:
+          title: Dock Id
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Delete Dock
+      tags:
+      - admin
+    patch:
+      operationId: adminPatchDock
+      parameters:
+      - in: path
+        name: dock_id
+        required: true
+        schema:
+          title: Dock Id
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DockPatch'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Adminpatchdock
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Patch Dock
+      tags:
+      - admin
   /api/admin/gateways:
     post:
       operationId: adminCreateGateway
@@ -1220,6 +1801,35 @@ paths:
       tags:
       - admin
   /api/admin/gateways/{gateway_id}:
+    delete:
+      operationId: adminDeleteGateway
+      parameters:
+      - in: path
+        name: gateway_id
+        required: true
+        schema:
+          title: Gateway Id
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Delete Gateway
+      tags:
+      - admin
     patch:
       operationId: adminPatchGateway
       parameters:
@@ -1259,6 +1869,144 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       summary: Patch Gateway
+      tags:
+      - admin
+  /api/admin/harbors:
+    get:
+      operationId: adminListHarbors
+      parameters:
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  additionalProperties: true
+                  type: object
+                title: Response Adminlistharbors
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: List Harbors
+      tags:
+      - admin
+    post:
+      operationId: adminCreateHarbor
+      parameters:
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HarborCreate'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Admincreateharbor
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Create Harbor
+      tags:
+      - admin
+  /api/admin/harbors/{harbor_id}:
+    delete:
+      operationId: adminDeleteHarbor
+      parameters:
+      - in: path
+        name: harbor_id
+        required: true
+        schema:
+          title: Harbor Id
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Delete Harbor
+      tags:
+      - admin
+    patch:
+      operationId: adminPatchHarbor
+      parameters:
+      - in: path
+        name: harbor_id
+        required: true
+        schema:
+          title: Harbor Id
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HarborPatch'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Adminpatchharbor
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Patch Harbor
       tags:
       - admin
   /api/admin/nodes/{node_id}/decommission:
@@ -1358,6 +2106,259 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       summary: Force a sweeper iteration (timeout expired pendings + prune old errs)
+      tags:
+      - admin
+  /api/admin/users:
+    get:
+      operationId: adminListUsers
+      parameters:
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  additionalProperties: true
+                  type: object
+                title: Response Adminlistusers
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: List Users
+      tags:
+      - admin
+    post:
+      operationId: adminCreateUser
+      parameters:
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/app__routers__admin__UserCreate'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Admincreateuser
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Create User
+      tags:
+      - admin
+  /api/admin/users/{user_id}:
+    delete:
+      operationId: adminDeleteUser
+      parameters:
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          title: User Id
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Delete User
+      tags:
+      - admin
+    patch:
+      operationId: adminPatchUser
+      parameters:
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          title: User Id
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/app__routers__admin__UserPatch'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Adminpatchuser
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Patch User
+      tags:
+      - admin
+  /api/admin/users/{user_id}/harbor-grants:
+    get:
+      operationId: adminListUserGrants
+      parameters:
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          title: User Id
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  additionalProperties: true
+                  type: object
+                title: Response Adminlistusergrants
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: List User Grants
+      tags:
+      - admin
+    post:
+      operationId: adminGrantHarbor
+      parameters:
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          title: User Id
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HarborGrant'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Admingrantharbor
+                type: object
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Grant Harbor
+      tags:
+      - admin
+  /api/admin/users/{user_id}/harbor-grants/{harbor_id}:
+    delete:
+      operationId: adminRevokeHarbor
+      parameters:
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          title: User Id
+          type: string
+      - in: path
+        name: harbor_id
+        required: true
+        schema:
+          title: Harbor Id
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Revoke Harbor
       tags:
       - admin
   /api/adoptions:
@@ -1562,7 +2563,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserCreate'
+              $ref: '#/components/schemas/app__schemas__UserCreate'
         required: true
       responses:
         '201':
@@ -2290,7 +3291,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserPatch'
+              $ref: '#/components/schemas/app__schemas__UserPatch'
         required: true
       responses:
         '200':

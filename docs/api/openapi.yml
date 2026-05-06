@@ -14,6 +14,8 @@ components:
           type: string
         qr_payload:
           description: Base64url-encoded JSON from QR fragment (uuid, oob, sn, jwt)
+          maxLength: 4096
+          minLength: 1
           title: Qr Payload
           type: string
       required:

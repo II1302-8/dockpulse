@@ -63,4 +63,5 @@ async def test_publish_provision_req_noop_when_disconnected():
         mesh_uuid="abcd" * 8,
         oob="ff" * 16,
         ttl_s=60,
+        berth_id="berth-1",
     )

@@ -410,5 +410,6 @@ async def test_adopt_publishes_provision_req(
     assert call["gateway_id"] == "gw1"
     assert call["mesh_uuid"] == "0123456789abcdef0123456789abcdef"
     assert call["oob"] == "00112233445566778899aabbccddeeff"
-    assert call["ttl_s"] == 60
+    assert call["ttl_s"] == 180
+    assert call["berth_id"] == r.json()["berth_id"]
     assert call["request_id"] == r.json()["request_id"]

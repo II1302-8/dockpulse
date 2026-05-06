@@ -25,7 +25,8 @@ from app.schemas import AdoptIn, AdoptionRequestOut, AdoptionUpdateEvent
 
 router = APIRouter(prefix="/api/adoptions", tags=["adoptions"])
 
-ADOPTION_TTL = timedelta(seconds=60)
+# 180s leaves headroom for retries on flaky gateway-to-node BLE handshake
+ADOPTION_TTL = timedelta(seconds=180)
 SSE_PING_SECONDS = 15
 
 
@@ -128,6 +129,7 @@ async def create_adoption(
         mesh_uuid=claim.mesh_uuid,
         oob=oob,
         ttl_s=int(ADOPTION_TTL.total_seconds()),
+        berth_id=body.berth_id,
     )
     return request
 

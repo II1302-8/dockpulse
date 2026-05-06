@@ -34,11 +34,13 @@ dpcli delete-user admin@harbor.se          # asks for confirmation; skip with --
 ### Harbor / Dock / Berths
 
 ```bash
-dpcli seed-db                              # inserts h1 / d1 / b1–b5 if not present
+dpcli seed-db                              # dev-only fixture: h1 / d1 / b1–b5
+dpcli create-harbor sthlm-vh --name "Vasahamnen" --lat 59.32 --lng 18.09
+dpcli create-dock vh-d1 sthlm-vh --name "Main Dock"
 dpcli list-harbors
 dpcli list-docks
 dpcli list-berths
-dpcli create-berth d1 --label A3 --length 12 --width 4 --depth 2.5
+dpcli create-berth vh-d1 --label A3 --length 12 --width 4 --depth 2.5
 ```
 
 ### Berth management

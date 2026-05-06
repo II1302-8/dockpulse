@@ -188,6 +188,27 @@ def reset_berth(
 
 
 @app.command()
+def create_harbor(
+    harbor_id: Annotated[str, typer.Argument(help="Stable harbor ID, e.g. 'sthlm-vh'")],
+    name: Annotated[str, typer.Option(prompt=True, help="Display name")],
+    lat: Annotated[float | None, typer.Option(help="Latitude")] = None,
+    lng: Annotated[float | None, typer.Option(help="Longitude")] = None,
+):
+    """Add a new harbor."""
+    asyncio.run(_create_harbor(harbor_id, name, lat, lng))
+
+
+@app.command()
+def create_dock(
+    dock_id: Annotated[str, typer.Argument(help="Stable dock ID")],
+    harbor_id: Annotated[str, typer.Argument(help="Parent harbor ID")],
+    name: Annotated[str, typer.Option(prompt=True, help="Display name")],
+):
+    """Add a new dock under a harbor."""
+    asyncio.run(_create_dock(dock_id, harbor_id, name))
+
+
+@app.command()
 def create_berth(
     dock_id: Annotated[str, typer.Argument(help="Dock ID")],
     label: Annotated[str | None, typer.Option(help="Human-readable label")] = None,
@@ -270,6 +291,31 @@ async def _set_role(email: str, role: Role) -> None:
         user.role = role.value
         await session.commit()
     typer.echo(f"Set {email} to {role.value}")
+
+
+async def _create_harbor(
+    harbor_id: str, name: str, lat: float | None, lng: float | None
+) -> None:
+    async with get_sessionmaker()() as session:
+        if await session.get(Harbor, harbor_id) is not None:
+            typer.echo(f"Error: harbor {harbor_id} already exists", err=True)
+            raise typer.Exit(1)
+        session.add(Harbor(harbor_id=harbor_id, name=name, lat=lat, lng=lng))
+        await session.commit()
+    typer.echo(f"Created harbor {harbor_id} ({name})")
+
+
+async def _create_dock(dock_id: str, harbor_id: str, name: str) -> None:
+    async with get_sessionmaker()() as session:
+        if await session.get(Harbor, harbor_id) is None:
+            typer.echo(f"Error: no harbor with id {harbor_id}", err=True)
+            raise typer.Exit(1)
+        if await session.get(Dock, dock_id) is not None:
+            typer.echo(f"Error: dock {dock_id} already exists", err=True)
+            raise typer.Exit(1)
+        session.add(Dock(dock_id=dock_id, harbor_id=harbor_id, name=name))
+        await session.commit()
+    typer.echo(f"Created dock {dock_id} under harbor {harbor_id}")
 
 
 async def _grant_harbor(email: str, harbor_id: str) -> None:

@@ -200,7 +200,11 @@ function Header({
           {isOnMarinaHome ? (
             <div className="block min-w-0 cursor-default">{logoContent}</div>
           ) : (
-            <Link to={marinaPath} className="block min-w-0" onClick={closeMenus}>
+            <Link
+              to={marinaPath}
+              className="block min-w-0"
+              onClick={closeMenus}
+            >
               {logoContent}
             </Link>
           )}

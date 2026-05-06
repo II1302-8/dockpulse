@@ -182,7 +182,7 @@ function GatewayStep({
   if (gateways.length === 0)
     return (
       <ErrorBlock
-        message="No online gateways. Check broker connectivity and retry."
+        message="No online gateways. Confirm your harbor assignment, or check broker connectivity if a gateway should be visible."
         actionLabel="Retry"
         onAction={refetch}
       />

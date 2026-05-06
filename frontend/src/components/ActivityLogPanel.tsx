@@ -2,6 +2,7 @@ import { Activity, Clock, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import type { components } from "../api-types";
+import { apiFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import type { AuthOutletContext } from "./layout/MainLayout";
 
@@ -34,7 +35,7 @@ export function ActivityLogPanel({
   isOpen,
   onCloseCB,
 }: ActivityLogPanelProps) {
-  const { user, token } = useOutletContext<AuthOutletContext>();
+  const { user } = useOutletContext<AuthOutletContext>();
   const isLoaded = !!user && user.role !== undefined;
   const isFirstLoad = useRef(true);
   const historyFetchedRef = useRef(false);
@@ -87,9 +88,8 @@ export function ActivityLogPanel({
       const results = await Promise.all(
         sampleBerths.map(async (berth) => {
           try {
-            const res = await fetch(
+            const res = await apiFetch(
               `/api/berths/${berth.berth_id}/events?limit=5`,
-              { headers: { Authorization: `Bearer ${token}` } },
             );
             if (!res.ok) return [] as ActivityEvent[];
             const data = await res.json();
@@ -132,7 +132,7 @@ export function ActivityLogPanel({
     }
 
     fetchInitialHistory();
-  }, [isLoaded, berths, token]);
+  }, [isLoaded, berths]);
 
   // diff live berth stream into synthetic events
   useEffect(() => {

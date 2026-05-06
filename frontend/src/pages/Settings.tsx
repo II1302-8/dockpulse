@@ -18,6 +18,8 @@ import {
 import { Input } from "../components/shared/ui/input";
 import { Label } from "../components/shared/ui/label";
 import { PasswordInput } from "../components/shared/ui/password-input";
+import { apiFetch } from "../lib/api";
+import { useAuth } from "../lib/auth-context";
 
 type SettingsForm = {
   firstname: string;
@@ -174,9 +176,8 @@ const errorClass = "text-sm text-red-500";
 const labelGroupClass = "space-y-1.5";
 
 function Settings() {
-  const { user, setUser, token, setToken, setIsLoginOpen } =
-    useOutletContext<AuthOutletContext>();
-
+  const { user, setIsLoginOpen } = useOutletContext<AuthOutletContext>();
+  const { refresh, logout } = useAuth();
   const navigate = useNavigate();
 
   const initialForm = useMemo(() => getInitialForm(user), [user]);
@@ -226,7 +227,7 @@ function Settings() {
     const ac = new AbortController();
     setIsLoadingAvailability(true);
 
-    fetch(`/api/berths/${berthId}/availability`, { signal: ac.signal })
+    apiFetch(`/api/berths/${berthId}/availability`, { signal: ac.signal })
       .then((res) =>
         res.ok ? (res.json() as Promise<AvailabilityWindow[]>) : [],
       )
@@ -256,17 +257,10 @@ function Settings() {
     setAvailabilitySuccess(null);
   }
 
-  function clearLocalAuthState() {
-    // mirrors MainLayout.handleLogout local cleanup, minus the server logout
-    localStorage.removeItem("token");
-    setToken(null);
-    setUser(null);
-  }
-
   async function handleSaveAvailability(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    if (!token) {
+    if (!user) {
       setAvailabilityError("You need to log in before updating availability.");
       setIsLoginOpen(true);
       return;
@@ -290,12 +284,9 @@ function Settings() {
     setAvailabilitySuccess(null);
 
     try {
-      const res = await fetch(`/api/berths/${berthId}/availability`, {
+      const res = await apiFetch(`/api/berths/${berthId}/availability`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           from_date: dateInputToIso(availabilityForm.from_date),
           return_date: dateInputToIso(availabilityForm.return_date),
@@ -333,7 +324,7 @@ function Settings() {
   }
 
   async function handleClearAvailability(window: AvailabilityWindow) {
-    if (!token) {
+    if (!user) {
       setAvailabilityError("You need to log in before clearing availability.");
       setIsLoginOpen(true);
       return;
@@ -349,12 +340,9 @@ function Settings() {
     setAvailabilitySuccess(null);
 
     try {
-      const res = await fetch(
+      const res = await apiFetch(
         `/api/berths/${berthId}/availability/${window.window_id}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        },
+        { method: "DELETE" },
       );
 
       if (!res.ok) {
@@ -385,7 +373,7 @@ function Settings() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    if (!token) {
+    if (!user) {
       setErrors({ general: "You need to log in before editing settings." });
       setIsLoginOpen(true);
       return;
@@ -418,12 +406,9 @@ function Settings() {
     setSuccessMessage(null);
 
     try {
-      const res = await fetch("/api/users/me", {
+      const res = await apiFetch("/api/users/me", {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
@@ -434,7 +419,7 @@ function Settings() {
 
       const updatedUser = (await res.json()) as AuthUser;
 
-      setUser(updatedUser);
+      await refresh();
       setForm({
         ...getInitialForm(updatedUser),
         current_password: "",
@@ -449,7 +434,7 @@ function Settings() {
   }
 
   async function handleDeleteAccount() {
-    if (!token) {
+    if (!user) {
       setDeleteError("You need to log in before deleting your account.");
       setIsLoginOpen(true);
       return;
@@ -477,12 +462,7 @@ function Settings() {
     setDeleteError(null);
 
     try {
-      const res = await fetch("/api/users/me", {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await apiFetch("/api/users/me", { method: "DELETE" });
 
       if (!res.ok) {
         const responseErrors = await getErrorsFromResponse(
@@ -496,7 +476,8 @@ function Settings() {
         return;
       }
 
-      clearLocalAuthState();
+      // logout to clear cookies + provider state, account is already gone server-side
+      await logout();
       setIsDeleteOpen(false);
       navigate("/");
       setIsLoginOpen(true);
@@ -682,7 +663,7 @@ function Settings() {
         </Button>
       </form>
 
-      {token && <NotificationSettings token={token} />}
+      {user && <NotificationSettings />}
 
       <section className="mt-6 rounded-3xl border border-slate-200 bg-white/80 p-6 shadow-lg backdrop-blur">
         <div>

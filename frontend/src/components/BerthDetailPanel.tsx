@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { Link, useOutletContext, useParams } from "react-router-dom";
 import type { components } from "../api-types";
 import { useBerthDetail } from "../hooks/useBerthDetail";
+import { apiFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import type { AuthOutletContext } from "./layout/MainLayout";
 
@@ -28,7 +29,7 @@ export function BerthDetailPanel({
   berth: liveBerth,
 }: BerthDetailPanelProps) {
   const { marinaSlug } = useParams<{ marinaSlug: string }>();
-  const { user: currentUser, token } = useOutletContext<AuthOutletContext>();
+  const { user: currentUser } = useOutletContext<AuthOutletContext>();
   const isHarborMaster = currentUser?.role === "harbormaster";
 
   const { berth: fetchedBerth, isLoading, error } = useBerthDetail(berthId);
@@ -47,8 +48,7 @@ export function BerthDetailPanel({
       setIsEventsLoading(true);
 
       try {
-        const res = await fetch(`/api/berths/${berthId}/events`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        const res = await apiFetch(`/api/berths/${berthId}/events`, {
           signal: controller.signal,
         });
 
@@ -68,7 +68,7 @@ export function BerthDetailPanel({
     fetchEvents();
 
     return () => controller.abort();
-  }, [berthId, isHarborMaster, token]);
+  }, [berthId, isHarborMaster]);
 
   function handleClose(event?: React.MouseEvent<HTMLButtonElement>) {
     event?.stopPropagation();

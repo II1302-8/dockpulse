@@ -25,7 +25,17 @@ from app.logging_config import request_id_var, setup_logging
 from app.models import AdoptionRequest, Gateway
 from app.mqtt import is_mqtt_connected, mqtt_listener
 from app.rate_limit import limiter
-from app.routers import adoptions, auth, berths, docks, gateways, harbors, nodes, users
+from app.routers import (
+    admin,
+    adoptions,
+    auth,
+    berths,
+    docks,
+    gateways,
+    harbors,
+    nodes,
+    users,
+)
 from app.schemas import HealthStatus
 
 setup_logging()
@@ -73,6 +83,13 @@ TAGS_METADATA = [
     {"name": "adoptions", "description": "Node adoption requests"},
     {"name": "gateways", "description": "Gateway listing and status"},
     {"name": "nodes", "description": "Adopted node inventory and lifecycle"},
+    {
+        "name": "admin",
+        "description": (
+            "Admin endpoints for the per-env panel at admin.<env>.dockpulse.xyz; "
+            "auth is Cloudflare Access (Cf-Access-Jwt-Assertion header)"
+        ),
+    },
 ]
 
 SERVERS = [
@@ -167,6 +184,7 @@ if _cors_origins:
         max_age=600,
     )
 
+app.include_router(admin.router)
 app.include_router(adoptions.router)
 app.include_router(auth.router)
 app.include_router(berths.router)

@@ -1,8 +1,15 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useParams,
+} from "react-router-dom";
 import { MainLayout } from "./components/layout/MainLayout";
 import { RequireAuth } from "./components/RequireAuth";
 import { AuthProvider } from "./lib/auth-context";
+import { MARINAS } from "./lib/marinas";
 
 const Dashboard = lazy(() =>
   import("./pages/Dashboard").then((m) => ({ default: m.Dashboard })),
@@ -11,6 +18,24 @@ const Dashboard = lazy(() =>
 const Settings = lazy(() =>
   import("./pages/Settings").then((m) => ({ default: m.Settings })),
 );
+
+const NotFound = lazy(() =>
+  import("./pages/NotFound").then((m) => ({ default: m.NotFound })),
+);
+
+// validates :marinaSlug against the registry so unknown slugs 404
+// instead of rendering a generic dashboard for "marina admin" etc
+function MarinaGuard() {
+  const { marinaSlug } = useParams<{ marinaSlug: string }>();
+  if (!marinaSlug || !(marinaSlug in MARINAS)) {
+    return (
+      <Suspense fallback={<div className="h-full w-full" />}>
+        <NotFound />
+      </Suspense>
+    );
+  }
+  return <MainLayout />;
+}
 
 // cf access gates admin host at the edge so no in-app auth needed
 const AdminApp = lazy(() =>
@@ -54,7 +79,7 @@ export function App() {
 
           <Route path="/" element={<Navigate to="/saltsjobaden" replace />} />
 
-          <Route path="/:marinaSlug" element={<MainLayout />}>
+          <Route path="/:marinaSlug" element={<MarinaGuard />}>
             <Route
               index
               element={
@@ -75,6 +100,15 @@ export function App() {
               }
             />
           </Route>
+
+          <Route
+            path="*"
+            element={
+              <Suspense fallback={<div className="h-full w-full" />}>
+                <NotFound />
+              </Suspense>
+            }
+          />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

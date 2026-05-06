@@ -1,6 +1,7 @@
 import { Loader2, Menu, ScanLine, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
+import { useAuth } from "../../lib/auth-context";
 import { getMarinaNameCB } from "../../lib/marinas";
 import { cn } from "../../lib/utils";
 import { AdoptNodeModal } from "../AdoptNodeModal";
@@ -22,6 +23,8 @@ function Header({
 }: HeaderProps) {
   const { marinaSlug } = useParams<{ marinaSlug: string }>();
   const location = useLocation();
+  const { user } = useAuth();
+  const isHarbormaster = user?.role === "harbormaster";
 
   const marinaName = getMarinaNameCB(marinaSlug);
   const marinaPath = marinaSlug ? `/${marinaSlug}` : "/saltsjobaden";
@@ -166,6 +169,25 @@ function Header({
 
                 {isLoggedIn && (
                   <>
+                    {isHarbormaster && (
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => {
+                          closeMenus();
+                          setAdoptOpen(true);
+                        }}
+                        className="flex w-full items-center gap-2 rounded-xl px-3 py-3 text-left text-sm font-semibold text-brand-navy hover:bg-slate-100"
+                      >
+                        <ScanLine
+                          size={16}
+                          strokeWidth={3}
+                          aria-hidden="true"
+                        />
+                        Adopt Node
+                      </button>
+                    )}
+
                     <Link
                       to={settingsPath}
                       role="menuitem"
@@ -217,14 +239,6 @@ function Header({
           >
             Dashboard
           </Link>
-          <button
-            type="button"
-            onClick={() => setAdoptOpen(true)}
-            className="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/70 hover:bg-white text-brand-navy text-[10px] font-black uppercase tracking-widest border border-black/5 transition-all hover:scale-105"
-          >
-            <ScanLine size={14} strokeWidth={3} />
-            Adopt Node
-          </button>
         </nav>
 
         <div
@@ -249,6 +263,21 @@ function Header({
                   role="menu"
                   className="absolute right-0 top-12 w-40 rounded-xl border border-slate-200 bg-white p-2 shadow-lg"
                 >
+                  {isHarbormaster && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        closeMenus();
+                        setAdoptOpen(true);
+                      }}
+                      className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-semibold text-brand-navy hover:bg-slate-100"
+                    >
+                      <ScanLine size={14} strokeWidth={3} aria-hidden="true" />
+                      Adopt Node
+                    </button>
+                  )}
+
                   <Link
                     to={settingsPath}
                     role="menuitem"

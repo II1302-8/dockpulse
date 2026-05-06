@@ -38,7 +38,13 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      ...(sseMockUrl ? { "/api/berths/stream": sseMockUrl } : {}),
+      // mock server handles paths Prism can't (SSE, cookie-setting auth)
+      ...(sseMockUrl
+        ? {
+            "/api/berths/stream": sseMockUrl,
+            "/api/auth": sseMockUrl,
+          }
+        : {}),
       "/api": apiUrl,
     },
   },

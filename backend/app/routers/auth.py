@@ -21,7 +21,7 @@ from app.config import get_settings
 from app.dependencies import CurrentUserDep, SessionDep
 from app.models import RefreshToken, User
 from app.rate_limit import limiter
-from app.schemas import LoginIn, TokenOut, UserCreate, UserOut
+from app.schemas import LoginIn, UserCreate, UserOut
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -41,19 +41,16 @@ async def _issue_session(
     session: SessionDep,
     *,
     replaces_jti: str | None = None,
-) -> str:
+) -> None:
     refresh_token, _ = await create_refresh_token(
         user, session, replaces_jti=replaces_jti
     )
-    access_token = create_access_token(user)
-    csrf_token = generate_csrf_token()
     set_session_cookies(
         response,
-        access_token=access_token,
+        access_token=create_access_token(user),
         refresh_token=refresh_token,
-        csrf_token=csrf_token,
+        csrf_token=generate_csrf_token(),
     )
-    return access_token
 
 
 @router.post(
@@ -86,9 +83,9 @@ async def register(request: Request, body: UserCreate, session: SessionDep):
 
 @router.post(
     "/login",
-    response_model=TokenOut,
+    response_model=UserOut,
     operation_id="login",
-    summary="Log in and obtain an access token",
+    summary="Log in and set session cookies",
 )
 @limiter.limit(lambda: get_settings().rate_limit_login)
 async def login(
@@ -105,10 +102,9 @@ async def login(
     if user is None:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    access_token = await _issue_session(user, response, session)
+    await _issue_session(user, response, session)
     await session.commit()
-    # access_token in body is back-compat for header-based callers, drop in step 5
-    return TokenOut(access_token=access_token)
+    return user
 
 
 @router.get(

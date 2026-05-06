@@ -216,17 +216,20 @@ async def test_register_rejects_overlong_password(client: AsyncClient):
     assert r.status_code == 422
 
 
-async def test_login_returns_usable_token(client: AsyncClient, test_user: User):
+async def test_login_returns_user_and_session_works(
+    client: AsyncClient, test_user: User
+):
     r = await client.post(
         "/api/auth/login",
         json={"email": test_user.email, "password": "secretpassword"},
     )
     assert r.status_code == 200
     body = r.json()
-    assert body["token_type"] == "bearer"
-    token = body["access_token"]
+    assert body["user_id"] == test_user.user_id
+    assert body["email"] == test_user.email
+    assert "password_hash" not in body
 
-    me = await client.get("/api/users/me", cookies=_creds(token))
+    me = await client.get("/api/users/me")
     assert me.status_code == 200
     assert me.json()["user_id"] == test_user.user_id
 

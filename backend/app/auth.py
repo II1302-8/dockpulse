@@ -6,11 +6,7 @@ from typing import Annotated
 
 import jwt
 from fastapi import Depends, HTTPException, Request, Response
-from fastapi.security import (
-    APIKeyCookie,
-    HTTPAuthorizationCredentials,
-    HTTPBearer,
-)
+from fastapi.security import APIKeyCookie
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,8 +21,7 @@ REFRESH_COOKIE = "dockpulse_refresh"
 CSRF_COOKIE = "dockpulse_csrf"
 CSRF_HEADER = "X-CSRF-Token"
 
-# both auto_error=False so a request can authenticate by either transport
-_bearer = HTTPBearer(auto_error=False)
+# auto_error=False so we control the 401 message and detail uniformly
 _cookie_scheme = APIKeyCookie(name=ACCESS_COOKIE, auto_error=False)
 _logger = logging.getLogger(__name__)
 
@@ -157,15 +152,11 @@ def _decode_access(token: str) -> dict:
 
 async def get_current_user(
     session: Annotated[AsyncSession, Depends(get_session)],
-    credentials: Annotated[
-        HTTPAuthorizationCredentials | None, Depends(_bearer)
-    ] = None,
     cookie_token: Annotated[str | None, Depends(_cookie_scheme)] = None,
 ) -> User:
-    token = cookie_token or (credentials.credentials if credentials else None)
-    if not token:
+    if not cookie_token:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
-    payload = _decode_access(token)
+    payload = _decode_access(cookie_token)
     try:
         user_id: str = payload["sub"]
         token_version: int = payload["ver"]

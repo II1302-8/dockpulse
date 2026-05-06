@@ -700,20 +700,6 @@ components:
           title: Notify Departure
       title: NotificationPrefsPatch
       type: object
-    TokenOut:
-      properties:
-        access_token:
-          title: Access Token
-          type: string
-        token_type:
-          const: bearer
-          default: bearer
-          title: Token Type
-          type: string
-      required:
-      - access_token
-      title: TokenOut
-      type: object
     UserCreate:
       properties:
         boat_club:
@@ -938,9 +924,6 @@ components:
       in: cookie
       name: dockpulse_access
       type: apiKey
-    HTTPBearer:
-      scheme: bearer
-      type: http
 info:
   description: 'REST API for the DockPulse harbor berth availability system.
 
@@ -981,7 +964,6 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       security:
-      - HTTPBearer: []
       - APIKeyCookie: []
       summary: Create an adoption request for a scanned node
       tags:
@@ -1010,7 +992,6 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       security:
-      - HTTPBearer: []
       - APIKeyCookie: []
       summary: Get an adoption request by id
       tags:
@@ -1045,7 +1026,6 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       security:
-      - HTTPBearer: []
       - APIKeyCookie: []
       summary: Subscribe to adoption progress via Server-Sent Events
       tags:
@@ -1064,7 +1044,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TokenOut'
+                $ref: '#/components/schemas/UserOut'
           description: Successful Response
         '422':
           content:
@@ -1072,7 +1052,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
-      summary: Log in and obtain an access token
+      summary: Log in and set session cookies
       tags:
       - auth
   /api/auth/logout:
@@ -1082,7 +1062,6 @@ paths:
         '204':
           description: Successful Response
       security:
-      - HTTPBearer: []
       - APIKeyCookie: []
       summary: Invalidate all tokens for the current user
       tags:
@@ -1098,7 +1077,6 @@ paths:
                 $ref: '#/components/schemas/UserOut'
           description: Successful Response
       security:
-      - HTTPBearer: []
       - APIKeyCookie: []
       summary: Return the authenticated user
       tags:
@@ -1343,7 +1321,6 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       security:
-      - HTTPBearer: []
       - APIKeyCookie: []
       summary: Remove a berth assignment
       tags:
@@ -1377,7 +1354,6 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       security:
-      - HTTPBearer: []
       - APIKeyCookie: []
       summary: Assign a berth to a user
       tags:
@@ -1440,7 +1416,6 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       security:
-      - HTTPBearer: []
       - APIKeyCookie: []
       summary: Create an availability window for a berth
       tags:
@@ -1471,7 +1446,6 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       security:
-      - HTTPBearer: []
       - APIKeyCookie: []
       summary: Delete an availability window
       tags:
@@ -1512,7 +1486,6 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       security:
-      - HTTPBearer: []
       - APIKeyCookie: []
       summary: List events for a berth
       tags:
@@ -1628,7 +1601,6 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       security:
-      - HTTPBearer: []
       - APIKeyCookie: []
       summary: List gateways visible to the harbormaster
       tags:
@@ -1647,7 +1619,6 @@ paths:
                 type: array
           description: Successful Response
       security:
-      - HTTPBearer: []
       - APIKeyCookie: []
       summary: List all harbors
       tags:
@@ -1727,7 +1698,6 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       security:
-      - HTTPBearer: []
       - APIKeyCookie: []
       summary: List nodes with derived health
       tags:
@@ -1765,7 +1735,6 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       security:
-      - HTTPBearer: []
       - APIKeyCookie: []
       summary: Get node detail with recent telemetry
       tags:
@@ -1794,7 +1763,6 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       security:
-      - HTTPBearer: []
       - APIKeyCookie: []
       summary: Mark node as decommissioned
       tags:
@@ -1806,7 +1774,6 @@ paths:
         '204':
           description: Successful Response
       security:
-      - HTTPBearer: []
       - APIKeyCookie: []
       summary: Delete the current boat-owner account
       tags:
@@ -1821,7 +1788,6 @@ paths:
                 $ref: '#/components/schemas/UserOut'
           description: Successful Response
       security:
-      - HTTPBearer: []
       - APIKeyCookie: []
       summary: Get current user profile
       tags:
@@ -1848,7 +1814,6 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       security:
-      - HTTPBearer: []
       - APIKeyCookie: []
       summary: Update current user profile
       tags:
@@ -1864,7 +1829,6 @@ paths:
                 $ref: '#/components/schemas/NotificationPrefsOut'
           description: Successful Response
       security:
-      - HTTPBearer: []
       - APIKeyCookie: []
       summary: Get notification preferences for the current user
       tags:
@@ -1891,7 +1855,6 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       security:
-      - HTTPBearer: []
       - APIKeyCookie: []
       summary: Update notification preferences for the current user
       tags:

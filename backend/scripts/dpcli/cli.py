@@ -24,6 +24,7 @@ from app.models import (
     Event,
     Gateway,
     Harbor,
+    Node,
     User,
     UserHarborRole,
 )
@@ -240,6 +241,23 @@ def list_gateways():
 
 
 @app.command()
+def list_nodes():
+    """List all nodes."""
+    asyncio.run(_list_nodes())
+
+
+@app.command()
+def decommission_node(
+    node_id: Annotated[str, typer.Argument(help="Node ID to decommission")],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation")] = False,
+):
+    """Mark a node as decommissioned (no MQTT publish — DB-only fallback)."""
+    if not yes:
+        typer.confirm(f"Decommission node {node_id}?", abort=True)
+    asyncio.run(_decommission_node(node_id))
+
+
+@app.command()
 def create_event(
     berth_id: Annotated[str, typer.Argument(help="Berth ID")],
     event_type: Annotated[EventType, typer.Argument(help="Event type")],
@@ -379,6 +397,39 @@ async def _list_gateways() -> None:
             g.last_seen.isoformat() if g.last_seen else "",
         )
     _console.print(table)
+
+
+async def _list_nodes() -> None:
+    async with get_sessionmaker()() as session:
+        result = await session.execute(select(Node).order_by(Node.node_id))
+        nodes = result.scalars().all()
+    table = Table("ID", "Berth", "Gateway", "Status", "Adopted At")
+    for n in nodes:
+        table.add_row(
+            n.node_id,
+            n.berth_id,
+            n.gateway_id,
+            n.status,
+            n.adopted_at.isoformat() if n.adopted_at else "",
+        )
+    _console.print(table)
+
+
+async def _decommission_node(node_id: str) -> None:
+    async with get_sessionmaker()() as session:
+        node = await session.get(Node, node_id)
+        if node is None:
+            typer.echo(f"Error: no node with id {node_id}", err=True)
+            raise typer.Exit(1)
+        if node.status == "decommissioned":
+            typer.echo(f"{node_id} already decommissioned")
+            return
+        node.status = "decommissioned"
+        await session.commit()
+    typer.echo(
+        f"Marked {node_id} decommissioned in DB. "
+        "Gateway not notified — use API endpoint or republish from harbormaster UI"
+    )
 
 
 async def _grant_harbor(email: str, harbor_id: str) -> None:

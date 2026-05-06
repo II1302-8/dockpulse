@@ -12,6 +12,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from app import broadcaster
 from app.adoption.claims import ClaimError, FactoryClaim, verify_claim_jwt
+from app.adoption.finalize import complete_adoption_err
 from app.dependencies import (
     CurrentUserDep,
     SessionDep,
@@ -197,3 +198,22 @@ async def stream_adoption(request_id: str, request: Request, session: SessionDep
                     return
 
     return EventSourceResponse(event_gen(), ping=SSE_PING_SECONDS)
+
+
+@router.post(
+    "/{request_id}/cancel",
+    response_model=AdoptionRequestOut,
+    operation_id="cancelAdoption",
+    summary="Cancel a pending adoption request",
+    dependencies=[Depends(require_harbormaster_for_adoption_request)],
+)
+async def cancel_adoption(request_id: str, session: SessionDep):
+    request = await session.get(AdoptionRequest, request_id)
+    if request is None:
+        raise HTTPException(status_code=404, detail="Adoption request not found")
+    if request.status != "pending":
+        # already terminal, surface current state instead of erroring
+        return request
+    await complete_adoption_err(session, request_id=request_id, error_code="cancelled")
+    await session.refresh(request)
+    return request

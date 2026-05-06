@@ -413,3 +413,71 @@ async def test_adopt_publishes_provision_req(
     assert call["ttl_s"] == 180
     assert call["berth_id"] == r.json()["berth_id"]
     assert call["request_id"] == r.json()["request_id"]
+
+
+async def test_cancel_pending_request_marks_err_cancelled(
+    client: AsyncClient,
+    session: AsyncSession,
+    harbor_master: User,
+    harbor_world,
+    factory_pubkey,
+):
+    qr = _make_qr_payload(factory_pubkey)
+    create = await client.post(
+        "/api/adoptions",
+        json=_adopt_body(qr),
+        cookies=_creds(harbor_master.user_id),
+    )
+    request_id = create.json()["request_id"]
+
+    r = await client.post(
+        f"/api/adoptions/{request_id}/cancel",
+        cookies=_creds(harbor_master.user_id),
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["status"] == "err"
+    assert body["error_code"] == "cancelled"
+
+    stored = await session.get(AdoptionRequest, request_id)
+    assert stored.status == "err"
+    assert stored.error_code == "cancelled"
+    assert stored.completed_at is not None
+
+
+async def test_cancel_terminal_request_is_idempotent(
+    client: AsyncClient,
+    session: AsyncSession,
+    harbor_master: User,
+    harbor_world,
+    factory_pubkey,
+):
+    qr = _make_qr_payload(factory_pubkey)
+    create = await client.post(
+        "/api/adoptions",
+        json=_adopt_body(qr),
+        cookies=_creds(harbor_master.user_id),
+    )
+    request_id = create.json()["request_id"]
+    # mark terminal first via cancel
+    await client.post(
+        f"/api/adoptions/{request_id}/cancel",
+        cookies=_creds(harbor_master.user_id),
+    )
+    # second cancel returns the row, doesn't error
+    r = await client.post(
+        f"/api/adoptions/{request_id}/cancel",
+        cookies=_creds(harbor_master.user_id),
+    )
+    assert r.status_code == 200
+    assert r.json()["error_code"] == "cancelled"
+
+
+async def test_cancel_unknown_request_returns_404(
+    client: AsyncClient, harbor_master: User, harbor_world
+):
+    r = await client.post(
+        "/api/adoptions/does-not-exist/cancel",
+        cookies=_creds(harbor_master.user_id),
+    )
+    assert r.status_code == 404

@@ -996,6 +996,34 @@ paths:
       summary: Get an adoption request by id
       tags:
       - adoptions
+  /api/adoptions/{request_id}/cancel:
+    post:
+      operationId: cancelAdoption
+      parameters:
+      - in: path
+        name: request_id
+        required: true
+        schema:
+          title: Request Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdoptionRequestOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - APIKeyCookie: []
+      summary: Cancel a pending adoption request
+      tags:
+      - adoptions
   /api/adoptions/{request_id}/stream:
     get:
       description: Opens a long-lived `text/event-stream` for a single adoption request. The first frame

@@ -546,9 +546,26 @@ function ProgressStep({
   onClose: () => void;
 }) {
   const { request, state } = useAdoptionStream(requestId);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   const status = request?.status ?? "pending";
   const stale = state === "error";
+
+  async function handleCancel() {
+    setCancelling(true);
+    setCancelError(null);
+    try {
+      await apiJson(`/api/adoptions/${encodeURIComponent(requestId)}/cancel`, {
+        method: "POST",
+      });
+      // SSE will deliver the err:cancelled update and close the stream
+    } catch (err) {
+      setCancelError(err instanceof Error ? err.message : "Cancel failed");
+    } finally {
+      setCancelling(false);
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -603,15 +620,38 @@ function ProgressStep({
               Stream connection lost. Refresh to retry.
             </p>
           )}
+          {cancelError && (
+            <p className="text-[11px] text-red-600 mt-2">{cancelError}</p>
+          )}
         </div>
       </div>
-      <button
-        type="button"
-        onClick={onClose}
-        className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-brand-navy/5 hover:bg-brand-navy/10 text-brand-navy transition-all"
-      >
-        Done
-      </button>
+      {status === "pending" ? (
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleCancel}
+            disabled={cancelling}
+            className="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-red-500/5 hover:bg-red-500/10 text-red-600 transition-all disabled:opacity-50"
+          >
+            {cancelling ? "Cancelling" : "Cancel"}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-brand-navy/5 hover:bg-brand-navy/10 text-brand-navy transition-all"
+          >
+            Hide
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-brand-navy/5 hover:bg-brand-navy/10 text-brand-navy transition-all"
+        >
+          Done
+        </button>
+      )}
     </div>
   );
 }
@@ -713,13 +753,18 @@ function ErrorBlock({
 
 // codes mirror II1302-8/.github docs/mqtt-contract.yml provision/resp enum
 const ADOPT_ERROR_MESSAGES: Record<string, string> = {
-  busy: "Gateway is provisioning another node. Wait a moment and retry.",
+  busy: "Gateway is busy provisioning another node. Wait ~30s and retry.",
   "bad-uuid": "QR contained an invalid mesh UUID. Re-scan the node sticker.",
   "bad-oob":
     "QR contained an invalid out-of-band key. Re-scan the node sticker.",
+  "cfg-fail":
+    "BLE-mesh handshake failed. Power-cycle the node, confirm it's in unprovisioned mode, and retry.",
   "start-fail": "Gateway mesh stack refused to start. Power-cycle the gateway.",
   timeout:
-    "Node did not respond in time. Move it closer to the gateway and retry.",
+    "Node didn't broadcast an unprovisioned beacon within 180s. Most often it's already in another mesh — factory-reset the node, confirm range, then retry.",
+  "already-provisioned":
+    "Node is already part of a mesh. Decommission it first, or factory-reset the node, then retry.",
+  cancelled: "Adoption cancelled.",
   unknown:
     "Provisioning failed for an unknown reason. Retry, then check gateway logs.",
 };

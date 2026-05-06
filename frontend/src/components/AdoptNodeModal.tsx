@@ -626,10 +626,13 @@ function ErrorBlock({
 const ADOPT_ERROR_MESSAGES: Record<string, string> = {
   busy: "Gateway is provisioning another node. Wait a moment and retry.",
   "bad-uuid": "QR contained an invalid mesh UUID. Re-scan the node sticker.",
-  "bad-oob": "QR contained an invalid out-of-band key. Re-scan the node sticker.",
+  "bad-oob":
+    "QR contained an invalid out-of-band key. Re-scan the node sticker.",
   "start-fail": "Gateway mesh stack refused to start. Power-cycle the gateway.",
-  timeout: "Node did not respond in time. Move it closer to the gateway and retry.",
-  unknown: "Provisioning failed for an unknown reason. Retry, then check gateway logs.",
+  timeout:
+    "Node did not respond in time. Move it closer to the gateway and retry.",
+  unknown:
+    "Provisioning failed for an unknown reason. Retry, then check gateway logs.",
 };
 
 function humanizeAdoptError(

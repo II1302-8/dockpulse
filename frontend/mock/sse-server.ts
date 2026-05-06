@@ -147,7 +147,10 @@ type MockAdoptionRequest = {
 
 const mockAdoptions = new Map<string, MockAdoptionRequest>();
 
-function newAdoption(body: { gateway_id?: string; berth_id?: string }): MockAdoptionRequest {
+function newAdoption(body: {
+  gateway_id?: string;
+  berth_id?: string;
+}): MockAdoptionRequest {
   const now = new Date();
   return {
     request_id: crypto.randomUUID(),
@@ -165,7 +168,10 @@ function newAdoption(body: { gateway_id?: string; berth_id?: string }): MockAdop
   };
 }
 
-function adoptionStream(request: MockAdoptionRequest, signal: AbortSignal): Response {
+function adoptionStream(
+  request: MockAdoptionRequest,
+  signal: AbortSignal,
+): Response {
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
       // initial snapshot, mirrors backend's first frame
@@ -213,7 +219,10 @@ function adoptionStream(request: MockAdoptionRequest, signal: AbortSignal): Resp
   });
 }
 
-async function handleAdoptions(req: Request, url: URL): Promise<Response | null> {
+async function handleAdoptions(
+  req: Request,
+  url: URL,
+): Promise<Response | null> {
   const path = url.pathname;
   if (path === "/api/adoptions" && req.method === "POST") {
     if (!hasAccessCookie(req)) return unauthorized();
@@ -235,10 +244,13 @@ async function handleAdoptions(req: Request, url: URL): Promise<Response | null>
     const id = streamMatch[1];
     const request = mockAdoptions.get(id);
     if (!request) {
-      return new Response(JSON.stringify({ detail: "Adoption request not found" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ detail: "Adoption request not found" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
     }
     return adoptionStream(request, req.signal);
   }

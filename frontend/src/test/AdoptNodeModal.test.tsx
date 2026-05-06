@@ -21,6 +21,12 @@ const sampleGateway = {
   last_seen: null,
 };
 
+// minimal valid QR payload: base64url JSON containing a jwt field
+const validQrPayload = btoa(JSON.stringify({ jwt: "stub.jwt.token" }))
+  .replace(/\+/g, "-")
+  .replace(/\//g, "_")
+  .replace(/=+$/, "");
+
 const sampleBerth = {
   berth_id: "b1",
   dock_id: "d1",
@@ -102,7 +108,7 @@ describe("AdoptNodeModal", () => {
 
     await user.click(screen.getByRole("button", { name: /Paste/i }));
     const textarea = await screen.findByLabelText("QR payload");
-    await user.type(textarea, "fake-qr-payload");
+    await user.type(textarea, validQrPayload);
 
     await user.click(screen.getByRole("button", { name: /Adopt node/i }));
 
@@ -142,7 +148,7 @@ describe("AdoptNodeModal", () => {
     await user.click(await screen.findByText("Test Gateway"));
     await user.click(await screen.findByText("B-1"));
     await user.click(screen.getByRole("button", { name: /Paste/i }));
-    await user.type(await screen.findByLabelText("QR payload"), "x");
+    await user.type(await screen.findByLabelText("QR payload"), validQrPayload);
     await user.click(screen.getByRole("button", { name: /Adopt node/i }));
 
     expect(

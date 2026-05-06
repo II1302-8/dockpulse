@@ -26,6 +26,50 @@ interface Props {
   onClose: () => void;
 }
 
+// raw QR may be the bare base64url payload, or wrapped in a https://…?p=<payload> url
+function extractQrPayload(raw: string): string {
+  const trimmed = raw.trim();
+  if (!/^https?:\/\//i.test(trimmed)) return trimmed;
+  try {
+    const url = new URL(trimmed);
+    for (const key of ["p", "q", "payload", "data"]) {
+      const v = url.searchParams.get(key);
+      if (v) return v.trim();
+    }
+    // fallback: last non-empty path segment
+    const segs = url.pathname.split("/").filter(Boolean);
+    return segs.at(-1) ?? trimmed;
+  } catch {
+    return trimmed;
+  }
+}
+
+function validateQrPayload(
+  raw: string,
+): { ok: true } | { ok: false; reason: string } {
+  if (!raw) return { ok: false, reason: "Empty payload" };
+  // base64url alphabet: A-Z a-z 0-9 - _ (padding optional)
+  if (!/^[A-Za-z0-9_-]+={0,2}$/.test(raw)) {
+    return { ok: false, reason: "Not a base64url payload (try rescanning)" };
+  }
+  try {
+    const padded = raw + "=".repeat((4 - (raw.length % 4)) % 4);
+    const b64 = padded.replace(/-/g, "+").replace(/_/g, "/");
+    const decoded = atob(b64);
+    const parsed = JSON.parse(decoded);
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      typeof parsed.jwt !== "string"
+    ) {
+      return { ok: false, reason: "QR missing 'jwt' field" };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, reason: "QR content is not valid base64url JSON" };
+  }
+}
+
 export function AdoptNodeModal({ open, onClose }: Props) {
   const [step, setStep] = useState<Step>("gateway");
   const [gateway, setGateway] = useState<Gateway | null>(null);
@@ -322,6 +366,21 @@ function QrStep({
   error: string | null;
 }) {
   const [mode, setMode] = useState<"camera" | "paste">("camera");
+  const [scanError, setScanError] = useState<string | null>(null);
+  const validation = value ? validateQrPayload(value) : null;
+  const valid = validation?.ok === true;
+
+  function handleRawDecode(raw: string) {
+    const extracted = extractQrPayload(raw);
+    const v = validateQrPayload(extracted);
+    if (!v.ok) {
+      setScanError(v.reason);
+      // keep prior value so user can paste-edit if needed
+      return;
+    }
+    setScanError(null);
+    onChange(extracted);
+  }
 
   return (
     <div className="space-y-3">
@@ -331,35 +390,64 @@ function QrStep({
           icon={Camera}
           label="Camera"
           active={mode === "camera"}
-          onClick={() => setMode("camera")}
+          onClick={() => {
+            setMode("camera");
+            setScanError(null);
+          }}
         />
         <ModeTab
           icon={ClipboardPaste}
           label="Paste"
           active={mode === "paste"}
-          onClick={() => setMode("paste")}
+          onClick={() => {
+            setMode("paste");
+            setScanError(null);
+          }}
         />
       </div>
       {mode === "camera" ? (
-        <CameraScan onDecode={onChange} />
+        valid ? (
+          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-6 flex items-center gap-3">
+            <CheckCircle2 className="text-emerald-500 shrink-0" size={28} />
+            <div className="min-w-0">
+              <div className="text-sm font-black text-brand-navy">
+                QR captured
+              </div>
+              <div className="text-[10px] font-mono text-brand-navy/50 truncate">
+                {value.length} chars · {value.slice(0, 24)}…
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                onChange("");
+                setScanError(null);
+              }}
+              className="ml-auto text-[10px] font-black uppercase tracking-widest text-brand-navy/60 hover:text-brand-navy"
+            >
+              Rescan
+            </button>
+          </div>
+        ) : (
+          <CameraScan onDecode={handleRawDecode} />
+        )
       ) : (
         <textarea
           aria-label="QR payload"
           className="w-full h-32 p-3 font-mono text-xs rounded-2xl border border-black/10 bg-white focus:outline-none focus:border-brand-blue resize-none"
           placeholder="Paste base64url QR payload here"
           value={value}
-          onChange={(e) => onChange(e.target.value.trim())}
+          onChange={(e) => onChange(extractQrPayload(e.target.value))}
         />
       )}
-      {value && (
-        <div className="text-[10px] font-mono text-brand-navy/40 truncate">
-          payload, {value.length} chars · {value.slice(0, 24)}…
-        </div>
+      {scanError && <ErrorBlock message={scanError} />}
+      {value && !valid && validation && !scanError && (
+        <ErrorBlock message={validation.reason} />
       )}
       {error && <ErrorBlock message={error} />}
       <button
         type="button"
-        disabled={!value || submitting}
+        disabled={!valid || submitting}
         onClick={onSubmit}
         className={cn(
           "w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 transition-all",

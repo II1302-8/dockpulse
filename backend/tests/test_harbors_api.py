@@ -3,7 +3,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Harbor, User
-from tests._helpers import make_auth_token as _auth_token
+from tests._helpers import auth_cookies as _creds
 
 
 @pytest_asyncio.fixture
@@ -25,7 +25,7 @@ async def test_list_harbors_returns_all_for_boat_owner(
 ):
     r = await client.get(
         "/api/harbors",
-        headers={"Authorization": f"Bearer {_auth_token(boat_owner.user_id)}"},
+        cookies=_creds(boat_owner.user_id),
     )
     assert r.status_code == 200
     body = r.json()
@@ -39,7 +39,7 @@ async def test_list_harbors_returns_all_for_harbormaster(
 ):
     r = await client.get(
         "/api/harbors",
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 200
     assert [h["harbor_id"] for h in r.json()] == ["h1", "h2"]

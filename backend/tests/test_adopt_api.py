@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.adoption.claims import ALGORITHM
 from app.models import AdoptionRequest, Berth, Dock, Gateway, Harbor, Node, User
 from tests._helpers import (
-    make_auth_token as _auth_token,
+    auth_cookies as _creds,
 )
 from tests._helpers import (
     make_factory_keys,
@@ -38,7 +38,7 @@ async def test_adopt_happy_path_creates_pending_request(
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr),
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 202
     body = r.json()
@@ -71,7 +71,7 @@ async def test_adopt_rejects_boat_owner(
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr),
-        headers={"Authorization": f"Bearer {_auth_token(boat_owner.user_id)}"},
+        cookies=_creds(boat_owner.user_id),
     )
     assert r.status_code == 403
 
@@ -140,7 +140,7 @@ async def test_adopt_rejects_malformed_qr(
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr_factory(factory_pubkey)),
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 400
     rows = (await session.execute(select(AdoptionRequest))).scalars().all()
@@ -154,7 +154,7 @@ async def test_adopt_returns_404_for_unknown_gateway(
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr, gateway_id="nope"),
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 404
 
@@ -166,7 +166,7 @@ async def test_adopt_returns_404_for_unknown_berth(
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr, berth_id="nope"),
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 404
 
@@ -189,7 +189,7 @@ async def test_adopt_rejects_gateway_dock_mismatch(
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr, berth_id="b2"),
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 400
 
@@ -223,7 +223,7 @@ async def test_adopt_rejects_berth_with_active_node(
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr),
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 409
 
@@ -232,12 +232,12 @@ async def test_adopt_rejects_reused_jti(
     client: AsyncClient, harbor_master: User, harbor_world, factory_pubkey
 ):
     qr = _make_qr_payload(factory_pubkey, jti="reused-jti")
-    headers = {"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"}
+    creds = _creds(harbor_master.user_id)
 
-    first = await client.post("/api/adoptions", json=_adopt_body(qr), headers=headers)
+    first = await client.post("/api/adoptions", json=_adopt_body(qr), cookies=creds)
     assert first.status_code == 202
 
-    second = await client.post("/api/adoptions", json=_adopt_body(qr), headers=headers)
+    second = await client.post("/api/adoptions", json=_adopt_body(qr), cookies=creds)
     assert second.status_code == 409
 
 
@@ -252,7 +252,7 @@ async def test_adopt_persists_creator(
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr),
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 202
 
@@ -278,7 +278,7 @@ async def test_adopt_rejects_offline_gateway(
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr),
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 409
 
@@ -293,14 +293,14 @@ async def test_get_adoption_returns_request(
     create = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr),
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert create.status_code == 202
     request_id = create.json()["request_id"]
 
     r = await client.get(
         f"/api/adoptions/{request_id}",
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 200
     assert r.json()["request_id"] == request_id
@@ -312,7 +312,7 @@ async def test_get_adoption_404_unknown(
 ):
     r = await client.get(
         "/api/adoptions/missing",
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 404
 
@@ -344,7 +344,7 @@ async def test_get_adoption_requires_harbormaster(
     await session.commit()
     r = await client.get(
         "/api/adoptions/req-x",
-        headers={"Authorization": f"Bearer {_auth_token(boat_owner.user_id)}"},
+        cookies=_creds(boat_owner.user_id),
     )
     assert r.status_code == 403
 
@@ -385,7 +385,7 @@ async def test_adopt_rejects_foreign_harbor(
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr, berth_id="b-foreign", gateway_id="gw-foreign"),
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 403
     assert r.json()["detail"] == "Not authorized for this harbor"
@@ -402,7 +402,7 @@ async def test_adopt_publishes_provision_req(
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr),
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 202
     assert len(published_provision_reqs) == 1

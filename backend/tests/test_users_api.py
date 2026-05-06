@@ -14,6 +14,10 @@ from tests._helpers import (
 )
 
 
+def _creds(token: str) -> dict[str, str]:
+    return {"dockpulse_access": token, "dockpulse_csrf": "test-csrf"}
+
+
 @pytest_asyncio.fixture
 async def test_user(session: AsyncSession) -> User:
     user = User(
@@ -33,7 +37,7 @@ async def test_user(session: AsyncSession) -> User:
 
 async def test_get_me_returns_profile(client: AsyncClient, test_user: User):
     token = make_token(test_user.user_id)
-    r = await client.get("/api/users/me", headers={"Authorization": f"Bearer {token}"})
+    r = await client.get("/api/users/me", cookies=_creds(token))
     assert r.status_code == 200
     data = r.json()
     assert data["user_id"] == "u1"
@@ -55,7 +59,7 @@ async def test_patch_me_updates_fields(client: AsyncClient, test_user: User):
     r = await client.patch(
         "/api/users/me",
         json={"firstname": "Britta", "boat_club": "GKSS"},
-        headers={"Authorization": f"Bearer {token}"},
+        cookies=_creds(token),
     )
     assert r.status_code == 200
     data = r.json()
@@ -71,7 +75,7 @@ async def test_patch_me_updates_password(
     r = await client.patch(
         "/api/users/me",
         json={"password": "newpassword12", "current_password": "secretpassword"},
-        headers={"Authorization": f"Bearer {token}"},
+        cookies=_creds(token),
     )
     assert r.status_code == 200
     await session.refresh(test_user)
@@ -85,7 +89,7 @@ async def test_patch_me_password_requires_current_password(
     r = await client.patch(
         "/api/users/me",
         json={"password": "newpassword12"},
-        headers={"Authorization": f"Bearer {token}"},
+        cookies=_creds(token),
     )
     assert r.status_code == 422
 
@@ -98,7 +102,7 @@ async def test_patch_me_password_rejects_wrong_current_password(
     r = await client.patch(
         "/api/users/me",
         json={"password": "newpassword12", "current_password": "wrongpassword"},
-        headers={"Authorization": f"Bearer {token}"},
+        cookies=_creds(token),
     )
     assert r.status_code == 401
     await session.refresh(test_user)
@@ -124,7 +128,7 @@ async def test_patch_me_email_conflict(
     r = await client.patch(
         "/api/users/me",
         json={"email": "bo@example.com"},
-        headers={"Authorization": f"Bearer {token}"},
+        cookies=_creds(token),
     )
     assert r.status_code == 409
 
@@ -222,7 +226,7 @@ async def test_login_returns_usable_token(client: AsyncClient, test_user: User):
     assert body["token_type"] == "bearer"
     token = body["access_token"]
 
-    me = await client.get("/api/users/me", headers={"Authorization": f"Bearer {token}"})
+    me = await client.get("/api/users/me", cookies=_creds(token))
     assert me.status_code == 200
     assert me.json()["user_id"] == test_user.user_id
 
@@ -246,15 +250,15 @@ async def test_login_unknown_email_returns_401(client: AsyncClient):
 async def test_logout_returns_204(client: AsyncClient, test_user: User):
     token = make_token(test_user.user_id)
     r = await client.post(
-        "/api/auth/logout", headers={"Authorization": f"Bearer {token}"}
+        "/api/auth/logout", cookies=_creds(token)
     )
     assert r.status_code == 204
 
 
 async def test_logout_invalidates_token(client: AsyncClient, test_user: User):
     token = make_token(test_user.user_id)
-    await client.post("/api/auth/logout", headers={"Authorization": f"Bearer {token}"})
-    r = await client.get("/api/users/me", headers={"Authorization": f"Bearer {token}"})
+    await client.post("/api/auth/logout", cookies=_creds(token))
+    r = await client.get("/api/users/me", cookies=_creds(token))
     assert r.status_code == 401
 
 
@@ -268,7 +272,7 @@ async def test_get_notification_prefs_returns_defaults(
 ):
     token = make_token(test_user.user_id)
     r = await client.get(
-        "/api/users/me/notification-prefs", headers={"Authorization": f"Bearer {token}"}
+        "/api/users/me/notification-prefs", cookies=_creds(token)
     )
     assert r.status_code == 200
     data = r.json()
@@ -283,7 +287,7 @@ async def test_patch_notification_prefs_updates_fields(
     r = await client.patch(
         "/api/users/me/notification-prefs",
         json={"notify_arrival": False},
-        headers={"Authorization": f"Bearer {token}"},
+        cookies=_creds(token),
     )
     assert r.status_code == 200
     data = r.json()

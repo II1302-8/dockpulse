@@ -1,5 +1,5 @@
 from app.events import process_sensor_reading
-from tests._helpers import make_auth_token
+from tests._helpers import auth_cookies
 
 
 async def test_api_reflects_mqtt_reading(client, session, seeded_berth):
@@ -42,9 +42,8 @@ async def test_api_unknown_berth_404(client):
 
 
 async def test_list_berth_events_empty(client, seeded_berth, harbor_master):
-    token = make_auth_token(harbor_master.user_id)
     r = await client.get(
-        "/api/berths/b1/events", headers={"Authorization": f"Bearer {token}"}
+        "/api/berths/b1/events", cookies=auth_cookies(harbor_master.user_id)
     )
     assert r.status_code == 200
     assert r.json() == []
@@ -56,9 +55,8 @@ async def test_list_berth_events_returns_events(
     await process_sensor_reading(
         session, berth_id="b1", node_id="n1", occupied=True, sensor_raw=500
     )
-    token = make_auth_token(harbor_master.user_id)
     r = await client.get(
-        "/api/berths/b1/events", headers={"Authorization": f"Bearer {token}"}
+        "/api/berths/b1/events", cookies=auth_cookies(harbor_master.user_id)
     )
     assert r.status_code == 200
     data = r.json()
@@ -73,9 +71,8 @@ async def test_list_berth_events_requires_auth(client, seeded_berth):
 
 
 async def test_list_berth_events_unknown_berth(client, harbor_master):
-    token = make_auth_token(harbor_master.user_id)
     r = await client.get(
         "/api/berths/does-not-exist/events",
-        headers={"Authorization": f"Bearer {token}"},
+        cookies=auth_cookies(harbor_master.user_id),
     )
     assert r.status_code == 404

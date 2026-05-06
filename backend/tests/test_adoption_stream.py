@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app import broadcaster
 from app.adoption.finalize import complete_adoption_err, complete_adoption_ok
 from app.models import AdoptionRequest, User
-from tests._helpers import make_auth_token as _auth_token
+from tests._helpers import auth_cookies as _creds
 
 
 @pytest_asyncio.fixture
@@ -44,7 +44,7 @@ async def test_stream_404_for_unknown_request(
 ):
     r = await client.get(
         "/api/adoptions/nope/stream",
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 404
 
@@ -68,9 +68,9 @@ async def test_stream_emits_snapshot_when_already_terminal(
         dev_key_fp="9f3a8b2c4d1e7f60",
     )
 
-    headers = {"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"}
+    creds = _creds(harbor_master.user_id)
     async with client.stream(
-        "GET", "/api/adoptions/req-pending/stream", headers=headers
+        "GET", "/api/adoptions/req-pending/stream", cookies=creds
     ) as stream:
         assert stream.status_code == 200
         body = ""

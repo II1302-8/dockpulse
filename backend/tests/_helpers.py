@@ -40,6 +40,14 @@ def make_auth_token(user_id: str, token_version: int = 0) -> str:
     )
 
 
+def auth_cookies(user_id: str, token_version: int = 0) -> dict[str, str]:
+    # csrf value is arbitrary, conftest event hook echoes the cookie back as a header
+    return {
+        "dockpulse_access": make_auth_token(user_id, token_version),
+        "dockpulse_csrf": "test-csrf",
+    }
+
+
 def make_factory_keys() -> tuple[str, str]:
     priv = Ed25519PrivateKey.generate()
     priv_pem = priv.private_bytes(

@@ -3,11 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Assignment, Berth, Dock, Harbor, User
-from tests._helpers import hash_password, make_auth_token
-
-
-def _bearer(user_id: str) -> dict[str, str]:
-    return {"Authorization": f"Bearer {make_auth_token(user_id)}"}
+from tests._helpers import auth_cookies, hash_password
 
 
 @pytest_asyncio.fixture
@@ -31,7 +27,7 @@ async def test_assign_then_get_returns_assignment(
     r = await client.put(
         "/api/berths/b1/assignment",
         json={"user_id": boat_owner.user_id},
-        headers=_bearer(harbor_master.user_id),
+        cookies=auth_cookies(harbor_master.user_id),
     )
     assert r.status_code == 200, r.text
     body = r.json()
@@ -46,17 +42,17 @@ async def test_assign_then_get_returns_assignment(
 async def test_assign_replaces_previous_user(
     client, session, seeded_berth, harbor_master, boat_owner, second_owner
 ):
-    headers = _bearer(harbor_master.user_id)
+    creds = auth_cookies(harbor_master.user_id)
 
     await client.put(
         "/api/berths/b1/assignment",
         json={"user_id": boat_owner.user_id},
-        headers=headers,
+        cookies=creds,
     )
     r = await client.put(
         "/api/berths/b1/assignment",
         json={"user_id": second_owner.user_id},
-        headers=headers,
+        cookies=creds,
     )
     assert r.status_code == 200, r.text
     assert r.json()["assignment"]["user_id"] == second_owner.user_id
@@ -69,14 +65,14 @@ async def test_assign_replaces_previous_user(
 async def test_remove_assignment_clears_state(
     client, session, seeded_berth, harbor_master, boat_owner
 ):
-    headers = _bearer(harbor_master.user_id)
+    creds = auth_cookies(harbor_master.user_id)
     await client.put(
         "/api/berths/b1/assignment",
         json={"user_id": boat_owner.user_id},
-        headers=headers,
+        cookies=creds,
     )
 
-    r = await client.delete("/api/berths/b1/assignment", headers=headers)
+    r = await client.delete("/api/berths/b1/assignment", cookies=creds)
     assert r.status_code == 200, r.text
     body = r.json()
     assert body["status"] == "free"
@@ -90,7 +86,7 @@ async def test_assign_requires_harbormaster(client, seeded_berth, boat_owner):
     r = await client.put(
         "/api/berths/b1/assignment",
         json={"user_id": boat_owner.user_id},
-        headers=_bearer(boat_owner.user_id),
+        cookies=auth_cookies(boat_owner.user_id),
     )
     assert r.status_code == 403
 
@@ -99,7 +95,7 @@ async def test_assign_unknown_user_404(client, seeded_berth, harbor_master):
     r = await client.put(
         "/api/berths/b1/assignment",
         json={"user_id": "nope"},
-        headers=_bearer(harbor_master.user_id),
+        cookies=auth_cookies(harbor_master.user_id),
     )
     assert r.status_code == 404
 
@@ -108,7 +104,7 @@ async def test_assign_unknown_berth_404(client, harbor_master, boat_owner):
     r = await client.put(
         "/api/berths/nope/assignment",
         json={"user_id": boat_owner.user_id},
-        headers=_bearer(harbor_master.user_id),
+        cookies=auth_cookies(harbor_master.user_id),
     )
     assert r.status_code == 404
 
@@ -131,7 +127,7 @@ async def test_assign_foreign_harbor_returns_403(
     r = await client.put(
         "/api/berths/b2/assignment",
         json={"user_id": boat_owner.user_id},
-        headers=_bearer(harbor_master.user_id),
+        cookies=auth_cookies(harbor_master.user_id),
     )
     assert r.status_code == 403
     assert r.json()["detail"] == "Not authorized for this harbor"
@@ -142,7 +138,7 @@ async def test_remove_foreign_assignment_returns_403(
 ):
     r = await client.delete(
         "/api/berths/b2/assignment",
-        headers=_bearer(harbor_master.user_id),
+        cookies=auth_cookies(harbor_master.user_id),
     )
     assert r.status_code == 403
 
@@ -152,6 +148,6 @@ async def test_list_foreign_berth_events_returns_403(
 ):
     r = await client.get(
         "/api/berths/b2/events",
-        headers=_bearer(harbor_master.user_id),
+        cookies=auth_cookies(harbor_master.user_id),
     )
     assert r.status_code == 403

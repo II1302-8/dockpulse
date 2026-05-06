@@ -3,7 +3,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Dock, Gateway, Harbor, User, UserHarborRole
-from tests._helpers import make_auth_token as _auth_token
+from tests._helpers import auth_cookies as _creds
 
 
 @pytest_asyncio.fixture
@@ -39,7 +39,7 @@ async def test_list_gateways_rejects_boat_owner(
 ):
     r = await client.get(
         "/api/gateways",
-        headers={"Authorization": f"Bearer {_auth_token(boat_owner.user_id)}"},
+        cookies=_creds(boat_owner.user_id),
     )
     assert r.status_code == 403
 
@@ -49,7 +49,7 @@ async def test_list_gateways_excludes_unmanaged_harbor(
 ):
     r = await client.get(
         "/api/gateways",
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 200
     body = r.json()
@@ -67,7 +67,7 @@ async def test_list_gateways_includes_extra_managed_harbor(
     await session.commit()
     r = await client.get(
         "/api/gateways",
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 200
     assert [g["gateway_id"] for g in r.json()] == ["gw-a", "gw-b", "gw-c"]
@@ -78,7 +78,7 @@ async def test_list_gateways_unmanaged_harbor_filter_returns_empty(
 ):
     r = await client.get(
         "/api/gateways?harbor_id=h2",
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 200
     assert r.json() == []
@@ -89,7 +89,7 @@ async def test_list_gateways_filters_by_dock(
 ):
     r = await client.get(
         "/api/gateways?dock_id=d2",
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 200
     assert [g["gateway_id"] for g in r.json()] == ["gw-b"]
@@ -100,7 +100,7 @@ async def test_list_gateways_filters_by_status_within_scope(
 ):
     r = await client.get(
         "/api/gateways?status=online",
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 200
     # gw-c is online but in h2 so it stays excluded
@@ -112,6 +112,6 @@ async def test_list_gateways_rejects_bad_status(
 ):
     r = await client.get(
         "/api/gateways?status=bogus",
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 422

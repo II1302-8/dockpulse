@@ -5,7 +5,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Berth, Dock, Event, Gateway, Harbor, Node, User
-from tests._helpers import make_auth_token as _auth_token
+from tests._helpers import auth_cookies as _creds
 
 
 def _node(node_id: str, berth_id: str, gateway_id: str, *, user_id: str, **over):
@@ -104,7 +104,7 @@ async def test_list_nodes_rejects_boat_owner(
 ):
     r = await client.get(
         "/api/nodes",
-        headers={"Authorization": f"Bearer {_auth_token(boat_owner.user_id)}"},
+        cookies=_creds(boat_owner.user_id),
     )
     assert r.status_code == 403
 
@@ -114,7 +114,7 @@ async def test_list_nodes_returns_all_with_derived_health(
 ):
     r = await client.get(
         "/api/nodes",
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 200
     by_id = {row["node_id"]: row for row in r.json()}
@@ -133,7 +133,7 @@ async def test_list_nodes_filters_by_health(
 ):
     r = await client.get(
         "/api/nodes?health=offline",
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 200
     ids = sorted(row["node_id"] for row in r.json())
@@ -164,7 +164,7 @@ async def test_list_nodes_filters_by_gateway(
     await session.commit()
     r = await client.get(
         "/api/nodes?gateway_id=gw2",
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert [row["node_id"] for row in r.json()] == ["n-other"]
 
@@ -197,7 +197,7 @@ async def test_get_node_returns_detail_with_events(
 
     r = await client.get(
         "/api/nodes/n-online",
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 200
     body = r.json()
@@ -209,7 +209,7 @@ async def test_get_node_returns_detail_with_events(
 async def test_get_node_404_unknown(client: AsyncClient, harbor_master: User, fleet):
     r = await client.get(
         "/api/nodes/nope",
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 404
 
@@ -219,7 +219,7 @@ async def test_decommission_node_flips_status(
 ):
     r = await client.post(
         "/api/nodes/n-online/decommission",
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 200
     assert r.json()["health"] == "decommissioned"
@@ -231,9 +231,9 @@ async def test_decommission_node_flips_status(
 
 
 async def test_decommission_idempotent(client: AsyncClient, harbor_master: User, fleet):
-    headers = {"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"}
-    first = await client.post("/api/nodes/n-decom/decommission", headers=headers)
-    second = await client.post("/api/nodes/n-decom/decommission", headers=headers)
+    creds = _creds(harbor_master.user_id)
+    first = await client.post("/api/nodes/n-decom/decommission", cookies=creds)
+    second = await client.post("/api/nodes/n-decom/decommission", cookies=creds)
     assert first.status_code == 200
     assert second.status_code == 200
     assert second.json()["health"] == "decommissioned"
@@ -245,10 +245,10 @@ async def test_decommission_publishes_mqtt_once(
     fleet,
     published_decommission_reqs: list[dict],
 ):
-    headers = {"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"}
-    await client.post("/api/nodes/n-online/decommission", headers=headers)
+    creds = _creds(harbor_master.user_id)
+    await client.post("/api/nodes/n-online/decommission", cookies=creds)
     # second call is a no-op, must not republish
-    await client.post("/api/nodes/n-online/decommission", headers=headers)
+    await client.post("/api/nodes/n-online/decommission", cookies=creds)
 
     assert len(published_decommission_reqs) == 1
     call = published_decommission_reqs[0]
@@ -267,7 +267,7 @@ async def test_decommission_already_decommissioned_does_not_publish(
 ):
     r = await client.post(
         "/api/nodes/n-decom/decommission",
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 200
     assert published_decommission_reqs == []
@@ -278,7 +278,7 @@ async def test_decommission_404_unknown(
 ):
     r = await client.post(
         "/api/nodes/nope/decommission",
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 404
 
@@ -288,7 +288,7 @@ async def test_decommission_rejects_boat_owner(
 ):
     r = await client.post(
         "/api/nodes/n-online/decommission",
-        headers={"Authorization": f"Bearer {_auth_token(boat_owner.user_id)}"},
+        cookies=_creds(boat_owner.user_id),
     )
     assert r.status_code == 403
 
@@ -326,7 +326,7 @@ async def test_list_nodes_excludes_unmanaged_harbor(
 ):
     r = await client.get(
         "/api/nodes",
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 200
     ids = [n["node_id"] for n in r.json()]
@@ -338,7 +338,7 @@ async def test_get_foreign_node_returns_403(
 ):
     r = await client.get(
         "/api/nodes/n-foreign",
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 403
 
@@ -351,7 +351,7 @@ async def test_decommission_foreign_node_returns_403(
 ):
     r = await client.post(
         "/api/nodes/n-foreign/decommission",
-        headers={"Authorization": f"Bearer {_auth_token(harbor_master.user_id)}"},
+        cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 403
     assert published_decommission_reqs == []

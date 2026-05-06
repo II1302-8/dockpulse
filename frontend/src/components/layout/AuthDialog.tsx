@@ -2,13 +2,14 @@ import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { apiFetch } from "../../lib/api";
+import { useAuth } from "../../lib/auth-context";
 import { cn } from "../../lib/utils";
 import { Button } from "../shared/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "../shared/ui/dialog";
 import { Input } from "../shared/ui/input";
 import { Label } from "../shared/ui/label";
 import { PasswordInput } from "../shared/ui/password-input";
-import type { AuthUser } from "./MainLayout";
 
 type AuthTab = "login" | "signup";
 
@@ -66,14 +67,10 @@ async function getErrorMessage(
 interface AuthDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onAuthSuccess: (accessToken: string, optimisticUser: AuthUser) => void;
 }
 
-export function AuthDialog({
-  open,
-  onOpenChange,
-  onAuthSuccess,
-}: AuthDialogProps) {
+export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
+  const { refresh } = useAuth();
   const [authTab, setAuthTab] = useState<AuthTab>("login");
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -116,23 +113,16 @@ export function AuthDialog({
   }
 
   async function authenticate(email: string, password: string) {
-    const tokenRes = await fetch("/api/auth/login", {
+    const res = await apiFetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
+      skipAuthRefresh: true,
     });
 
-    if (!tokenRes.ok) {
-      throw new Error(
-        await getErrorMessage(tokenRes, "Wrong email or password."),
-      );
+    if (!res.ok) {
+      throw new Error(await getErrorMessage(res, "Wrong email or password."));
     }
-
-    const { access_token: accessToken } = await tokenRes.json();
-    if (!accessToken) {
-      throw new Error("Login succeeded, but no access token was returned.");
-    }
-    return accessToken as string;
   }
 
   async function handleLogin(e?: React.FormEvent) {
@@ -144,8 +134,9 @@ export function AuthDialog({
     const email = loginEmail.trim();
 
     try {
-      const accessToken = await authenticate(email, loginPassword);
-      onAuthSuccess(accessToken, { email });
+      await authenticate(email, loginPassword);
+      await refresh();
+      onOpenChange(false);
       resetForms();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not log in.");
@@ -169,10 +160,11 @@ export function AuthDialog({
     };
 
     try {
-      const res = await fetch("/api/auth/register", {
+      const res = await apiFetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
+        skipAuthRefresh: true,
       });
 
       if (!res.ok) {
@@ -181,16 +173,10 @@ export function AuthDialog({
         );
       }
 
-      // server accepted creds → reuse them to drop user into a logged-in state
-      const accessToken = await authenticate(
-        payload.email,
-        signupForm.password,
-      );
-      onAuthSuccess(accessToken, {
-        email: payload.email,
-        firstname: payload.firstname,
-        lastname: payload.lastname,
-      });
+      // server accepted creds, reuse them to drop user into a logged-in state
+      await authenticate(payload.email, signupForm.password);
+      await refresh();
+      onOpenChange(false);
       resetForms();
       toast.success(`Welcome, ${payload.firstname}!`);
     } catch (err) {

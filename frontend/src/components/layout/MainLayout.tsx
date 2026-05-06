@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
-import { Toaster, toast } from "sonner";
+import { Outlet, useNavigate, useSearchParams } from "react-router-dom";
+import { Toaster } from "sonner";
+import { type AuthUser, useAuth } from "../../lib/auth-context";
 import { cn } from "../../lib/utils";
 import { AuthDialog } from "./AuthDialog";
 import {
@@ -11,44 +12,25 @@ import { Footer } from "./Footer";
 import { Header } from "./Header";
 import { SideMenu } from "./SideMenu";
 
-export type AuthUser = {
-  user_id?: string;
-  email: string;
-  firstname?: string;
-  lastname?: string;
-  phone?: string;
-  boat_club?: string;
-  role?: string;
-  assigned_berth_id?: string | null;
-};
+export type { AuthUser } from "../../lib/auth-context";
 
 export type AuthOutletContext = {
   user: AuthUser | null;
-  setUser: React.Dispatch<React.SetStateAction<AuthUser | null>>;
-  token: string | null;
-  setToken: React.Dispatch<React.SetStateAction<string | null>>;
   isLoginOpen: boolean;
   setIsLoginOpen: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 interface MainLayoutContentProps {
-  user: AuthUser | null;
-  setUser: React.Dispatch<React.SetStateAction<AuthUser | null>>;
-  token: string | null;
-  setToken: React.Dispatch<React.SetStateAction<string | null>>;
   isLoginOpen: boolean;
   setIsLoginOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 function MainLayoutContent({
-  user,
-  setUser,
-  token,
-  setToken,
   isLoginOpen,
   setIsLoginOpen,
 }: MainLayoutContentProps) {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const {
@@ -63,46 +45,13 @@ function MainLayoutContent({
 
   const isHarborMaster = user?.role === "harbormaster";
 
-  function handleAuthSuccess(accessToken: string, optimisticUser: AuthUser) {
-    localStorage.setItem("token", accessToken);
-    setToken(accessToken);
-    // optimistic fill so avatar isn't blank during /me round-trip
-    setUser((prev) => prev ?? optimisticUser);
-    setIsLoginOpen(false);
-  }
-
   async function handleLogout() {
     if (isLoggingOut) return;
-
-    const logoutToken = token;
-
     setIsLoggingOut(true);
-    localStorage.removeItem("token");
-    setToken(null);
-    setUser(null);
-    setIsLoginOpen(false);
-    navigate("/", { replace: true });
-
-    if (!logoutToken) {
-      setIsLoggingOut(false);
-      return;
-    }
-
     try {
-      const res = await fetch("/api/auth/logout", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${logoutToken}` },
-      });
-      // local session already gone, but warn user the server still holds the token
-      if (!res.ok) {
-        toast.warning(
-          "Logged out locally, but the server didn't confirm. Token will expire on its own.",
-        );
-      }
-    } catch {
-      toast.warning(
-        "Logged out locally, but couldn't reach the server. Token will expire on its own.",
-      );
+      await logout();
+      setIsLoginOpen(false);
+      navigate("/", { replace: true });
     } finally {
       setIsLoggingOut(false);
     }
@@ -116,7 +65,7 @@ function MainLayoutContent({
   return (
     <div className="bg-transparent duration-1000 font-body min-h-screen overflow-x-hidden relative transition-colors w-screen">
       <Header
-        isLoggedIn={Boolean(token)}
+        isLoggedIn={Boolean(user)}
         isLoggingOut={isLoggingOut}
         userInitials={userInitials}
         onLoginClickCB={() => setIsLoginOpen(true)}
@@ -144,9 +93,6 @@ function MainLayoutContent({
           context={
             {
               user,
-              setUser,
-              token,
-              setToken,
               isLoginOpen,
               setIsLoginOpen,
             } satisfies AuthOutletContext
@@ -154,11 +100,7 @@ function MainLayoutContent({
         />
       </main>
 
-      <AuthDialog
-        open={isLoginOpen}
-        onOpenChange={setIsLoginOpen}
-        onAuthSuccess={handleAuthSuccess}
-      />
+      <AuthDialog open={isLoginOpen} onOpenChange={setIsLoginOpen} />
 
       {/* mobile harbormaster has bottom dock, footer would clash */}
       {!isDesktop && isHarborMaster ? null : <Footer />}
@@ -170,59 +112,22 @@ function MainLayoutContent({
 
 function MainLayout() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // localStorage simpler than httpOnly cookies but XSS-readable; revisit
-  const [token, setToken] = useState<string | null>(
-    localStorage.getItem("token"),
-  );
-
-  const navigate = useNavigate();
-
+  // route guard redirect lands here with ?login=1, open the dialog and consume the flag
   useEffect(() => {
-    if (!token) {
-      setUser(null);
-      return;
+    if (searchParams.get("login") === "1") {
+      setIsLoginOpen(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete("login");
+      setSearchParams(next, { replace: true });
     }
-
-    // abort stale /me requests if token changes again before this resolves
-    const ac = new AbortController();
-
-    fetch("/api/users/me", {
-      headers: { Authorization: `Bearer ${token}` },
-      signal: ac.signal,
-    })
-      .then((res) => {
-        // only 401 clears session, transient errors leave token alone
-        if (res.status === 401) {
-          localStorage.removeItem("token");
-          setToken(null);
-          setUser(null);
-          setIsLoginOpen(true);
-          navigate("/", { replace: true });
-          return null;
-        }
-        if (!res.ok) throw new Error(`/me ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        if (data) setUser(data);
-      })
-      .catch((err) => {
-        if (err.name === "AbortError") return;
-        console.error("failed to load user", err);
-      });
-
-    return () => ac.abort();
-  }, [token, navigate]);
+  }, [searchParams, setSearchParams]);
 
   return (
     <DashboardLayoutProvider userRole={user?.role}>
       <MainLayoutContent
-        user={user}
-        setUser={setUser}
-        token={token}
-        setToken={setToken}
         isLoginOpen={isLoginOpen}
         setIsLoginOpen={setIsLoginOpen}
       />

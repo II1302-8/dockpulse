@@ -1,5 +1,6 @@
 import { Bell, Check } from "lucide-react";
 import { useEffect, useState } from "react";
+import { apiFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 
 interface NotificationPrefs {
@@ -7,11 +8,7 @@ interface NotificationPrefs {
   notify_departure: boolean;
 }
 
-interface NotificationSettingsProps {
-  token: string;
-}
-
-export function NotificationSettings({ token }: NotificationSettingsProps) {
+export function NotificationSettings() {
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -23,9 +20,7 @@ export function NotificationSettings({ token }: NotificationSettingsProps) {
   useEffect(() => {
     async function fetchPrefs() {
       try {
-        const res = await fetch("/api/users/me/notification-prefs", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await apiFetch("/api/users/me/notification-prefs");
         if (res.ok) {
           const data = await res.json();
           setPrefs(data);
@@ -39,7 +34,7 @@ export function NotificationSettings({ token }: NotificationSettingsProps) {
       }
     }
     fetchPrefs();
-  }, [token]);
+  }, []);
 
   async function togglePref(key: keyof NotificationPrefs) {
     if (!prefs || isSaving) return;
@@ -49,12 +44,9 @@ export function NotificationSettings({ token }: NotificationSettingsProps) {
     setMessage(null);
 
     try {
-      const res = await fetch("/api/users/me/notification-prefs", {
+      const res = await apiFetch("/api/users/me/notification-prefs", {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(nextPrefs),
       });
 

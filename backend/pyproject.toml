@@ -50,6 +50,9 @@ asyncio_default_test_loop_scope = "session"
 pythonpath = ["."]
 testpaths = ["tests"]
 addopts = "--cov --cov-report=term-missing"
+filterwarnings = [
+  "ignore:Setting per-request cookies.*:DeprecationWarning",
+]
 
 [tool.coverage.run]
 source = ["app"]

@@ -46,6 +46,19 @@ class Settings(BaseSettings):
     rate_limit_register: str = "5/hour"
     # global kill-switch so tests don't have to override every endpoint
     rate_limit_enabled: bool = True
+    # short access ttl narrows xss / leaked-token blast radius
+    access_token_ttl_minutes: int = 15
+    # refresh ttl is rolling, rotation issues a fresh full-length token
+    refresh_token_ttl_days: int = 14
+    # None lets cookie_secure derive from app_env, override for tunnels in staging
+    cookie_secure: bool | None = None
+    cookie_domain: str | None = None
+
+    @property
+    def cookies_require_https(self) -> bool:
+        if self.cookie_secure is not None:
+            return self.cookie_secure
+        return self.app_env == "prod"
 
     @field_validator("secret_key")
     @classmethod

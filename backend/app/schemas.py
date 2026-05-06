@@ -256,11 +256,6 @@ class LoginIn(BaseModel):
     password: SecretStr
 
 
-class TokenOut(BaseModel):
-    access_token: str
-    token_type: Literal["bearer"] = "bearer"
-
-
 # --- system ---
 
 

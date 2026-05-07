@@ -17,6 +17,10 @@ import { useGateways } from "../hooks/useGateways";
 import { ApiError, apiJson } from "../lib/api";
 import { cn } from "../lib/utils";
 import { extractQrPayload, validateQrPayload } from "./adopt/lib/qr";
+import { ErrorBlock } from "./adopt/shared/ErrorBlock";
+import { ModeTab } from "./adopt/shared/ModeTab";
+import { SectionHead } from "./adopt/shared/SectionHead";
+import { Skeleton } from "./adopt/shared/Skeleton";
 
 type Berth = components["schemas"]["BerthOut"];
 type Gateway = components["schemas"]["GatewayOut"];
@@ -912,101 +916,6 @@ function TechnicalDetails({
         ))}
       </dl>
     </details>
-  );
-}
-
-function SectionHead({
-  title,
-  hint,
-  onBack,
-}: {
-  title: string;
-  hint?: string;
-  onBack?: () => void;
-}) {
-  return (
-    <div className="flex items-center justify-between">
-      <div>
-        <h3 className="text-sm font-black text-brand-navy">{title}</h3>
-        {hint && (
-          <p className="text-[10px] text-brand-navy/40 font-mono">{hint}</p>
-        )}
-      </div>
-      {onBack && (
-        <button
-          type="button"
-          onClick={onBack}
-          className="text-[10px] font-bold uppercase tracking-widest text-brand-navy/50 hover:text-brand-navy"
-        >
-          ← Back
-        </button>
-      )}
-    </div>
-  );
-}
-
-function ModeTab({
-  icon: Icon,
-  label,
-  active,
-  onClick,
-}: {
-  icon: typeof Camera;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "flex-1 px-4 py-3 rounded-xl flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest transition-all border",
-        active
-          ? "bg-brand-blue text-white border-brand-blue"
-          : "bg-white text-brand-navy/60 border-black/10 hover:border-brand-blue/40",
-      )}
-    >
-      <Icon size={14} strokeWidth={2.5} />
-      {label}
-    </button>
-  );
-}
-
-function Skeleton({ label }: { label: string }) {
-  return (
-    <div className="p-6 flex items-center gap-3 text-brand-navy/40 text-xs">
-      <Loader2 size={16} strokeWidth={3} className="animate-spin" />
-      {label}
-    </div>
-  );
-}
-
-function ErrorBlock({
-  message,
-  actionLabel,
-  onAction,
-}: {
-  message: string;
-  actionLabel?: string;
-  onAction?: () => void;
-}) {
-  return (
-    <div className="p-4 bg-red-500/5 border border-red-500/15 rounded-2xl text-red-600 text-xs flex items-start gap-2">
-      <AlertCircle size={16} strokeWidth={2.5} className="shrink-0 mt-0.5" />
-      <div className="flex-1">
-        <div className="font-bold">{message}</div>
-        {actionLabel && onAction && (
-          <button
-            type="button"
-            onClick={onAction}
-            className="mt-2 text-[10px] font-bold uppercase tracking-widest text-red-700 hover:underline"
-          >
-            {actionLabel}
-          </button>
-        )}
-      </div>
-    </div>
   );
 }
 

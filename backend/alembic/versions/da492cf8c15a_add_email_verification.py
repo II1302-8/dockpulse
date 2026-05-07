@@ -4,18 +4,21 @@ Revision ID: da492cf8c15a
 Revises: 6c273ed76aa2
 Create Date: 2026-05-07 15:33:12.486610
 
+Creates user_verifications table for single-use email verification tokens and
+adds email_verified to users. Backfills existing rows to True — pre-existing
+accounts are trusted and must not be locked out.
 """
-from typing import Sequence, Union
 
-from alembic import op
+from collections.abc import Sequence
+
 import sqlalchemy as sa
 
+from alembic import op
 
-# revision identifiers, used by Alembic.
-revision: str = 'da492cf8c15a'
-down_revision: Union[str, Sequence[str], None] = '6c273ed76aa2'
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+revision: str = "da492cf8c15a"
+down_revision: str | Sequence[str] | None = "6c273ed76aa2"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -43,7 +46,9 @@ def upgrade() -> None:
             server_default=sa.text("false"),
         ),
     )
-    op.create_index("ix_user_verifications_token", "user_verifications", ["token"])
+    op.create_index(
+        "ix_user_verifications_token", "user_verifications", ["token"], unique=True
+    )
     op.create_index(
         "ix_user_verifications_user_id", "user_verifications", ["user_id"]
     )

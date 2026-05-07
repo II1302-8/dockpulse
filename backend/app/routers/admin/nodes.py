@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 from app.dependencies import SessionDep
 from app.models import Node
-from app.mqtt import MqttNotConnected, publish_decommission_req
+from app.mqtt import MqttNotConnectedError, publish_decommission_req
 
 router = APIRouter()
 
@@ -39,7 +39,7 @@ async def decommission_node(node_id: str, session: SessionDep) -> dict:
             unicast_addr=node.mesh_unicast_addr,
             berth_id=node.berth_id,
         )
-    except (MqttNotConnected, aiomqtt.MqttError) as exc:
+    except (MqttNotConnectedError, aiomqtt.MqttError) as exc:
         raise HTTPException(
             status_code=503,
             detail=f"decommission/req not delivered to gateway: {exc}",

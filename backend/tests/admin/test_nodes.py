@@ -42,18 +42,16 @@ async def test_admin_decommission_503_when_mqtt_down_keeps_db(
     monkeypatch,
 ):
     from app.models import Node
-    from app.mqtt import MqttNotConnected
+    from app.mqtt import MqttNotConnectedError
 
     await _seed_node(session)
 
     async def _raise(**_):
-        raise MqttNotConnected("broker client down")
+        raise MqttNotConnectedError("broker client down")
 
     monkeypatch.setattr("app.routers.admin.nodes.publish_decommission_req", _raise)
 
-    r = await client.post(
-        "/api/admin/nodes/n-admin/decommission", headers=auth_headers
-    )
+    r = await client.post("/api/admin/nodes/n-admin/decommission", headers=auth_headers)
     assert r.status_code == 503
 
     persisted = await session.get(Node, "n-admin")

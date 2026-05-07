@@ -13,7 +13,7 @@ from app.dependencies import (
     user_managed_harbor_ids,
 )
 from app.models import Berth, Dock, Event, Node
-from app.mqtt import MqttNotConnected, publish_decommission_req
+from app.mqtt import MqttNotConnectedError, publish_decommission_req
 from app.schemas import NodeDetailOut, NodeHealthOut
 
 router = APIRouter(prefix="/api/nodes", tags=["nodes"])
@@ -163,7 +163,7 @@ async def decommission_node(
                 unicast_addr=node.mesh_unicast_addr,
                 berth_id=node.berth_id,
             )
-        except (MqttNotConnected, aiomqtt.MqttError) as exc:
+        except (MqttNotConnectedError, aiomqtt.MqttError) as exc:
             raise HTTPException(
                 status_code=503,
                 detail=f"decommission/req not delivered to gateway: {exc}",

@@ -284,10 +284,10 @@ async def test_decommission_503_when_mqtt_down_keeps_db(
 ):
     # broker outage must surface as 503 and leave node provisioned, otherwise
     # db says decommissioned while mesh still routes the unicast addr
-    from app.mqtt import MqttNotConnected
+    from app.mqtt import MqttNotConnectedError
 
     async def _raise(**_):
-        raise MqttNotConnected("broker client down")
+        raise MqttNotConnectedError("broker client down")
 
     monkeypatch.setattr("app.routers.nodes.publish_decommission_req", _raise)
 

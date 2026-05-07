@@ -31,7 +31,7 @@ RECONNECT_DELAY = 5
 PUBLISH_QOS = 1
 
 
-class MqttNotConnected(RuntimeError):
+class MqttNotConnectedError(RuntimeError):
     """raised when a publish is attempted while the broker client is down"""
 
 
@@ -276,11 +276,15 @@ async def publish_decommission_req(
     unicast_addr: str,
     berth_id: str,
 ) -> None:
-    """Tell a gateway to forget a node. Raises MqttNotConnected or aiomqtt.MqttError on failure"""
-    # caller must surface failures so DB stays in sync with mesh
+    """Tell a gateway to forget a node.
+
+    Raises MqttNotConnectedError or aiomqtt.MqttError on failure.
+    """
+    # caller must surface failures so db stays in sync with mesh
     if _client is None:
-        raise MqttNotConnected(
-            f"decommission/req for req_id={request_id} not published; broker client down"
+        raise MqttNotConnectedError(
+            f"decommission/req for req_id={request_id} not published;"
+            " broker client down"
         )
 
     topic = f"{GATEWAY_TOPIC_PREFIX}/{gateway_id}/decommission/req"

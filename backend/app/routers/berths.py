@@ -20,6 +20,7 @@ from app.schemas import (
     BerthAvailabilityWindowIn,
     BerthAvailabilityWindowOut,
     BerthOut,
+    BerthSnapshotEvent,
     BerthUpdateEvent,
     EventOut,
 )
@@ -56,29 +57,40 @@ async def list_berths(
     operation_id="streamBerths",
     summary="Subscribe to live berth updates via Server-Sent Events",
     description=(
-        "Opens a long-lived `text/event-stream` connection. Each message is a "
-        "JSON-encoded `BerthUpdateEvent`. Clients should first fetch a snapshot "
-        "via `GET /api/berths` and then merge streamed updates by `berth_id`. "
-        "Reconnects re-subscribe but do not replay missed events — re-fetch the "
-        "snapshot after an `open` that follows a disconnection."
+        "Opens a long-lived `text/event-stream` connection. The first frame "
+        "is a `BerthSnapshotEvent` carrying every berth; subsequent frames "
+        "are `BerthUpdateEvent` deltas merged by `berth_id`. Reconnects "
+        "yield a fresh snapshot, so clients do not need a separate "
+        "`GET /api/berths` call to bootstrap or recover."
     ),
     response_class=EventSourceResponse,
     responses={
         200: {
-            "model": BerthUpdateEvent,
-            "description": "Each frame is a JSON-encoded BerthUpdateEvent.",
+            "model": BerthSnapshotEvent | BerthUpdateEvent,
+            "description": (
+                "First frame is a `BerthSnapshotEvent`; subsequent frames "
+                "are `BerthUpdateEvent`."
+            ),
         }
     },
 )
-async def stream_berths(request: Request):
+async def stream_berths(request: Request, session: SessionDep):
     async def event_gen():
+        # subscribe before snapshot so updates between them aren't lost
         async with broadcaster.subscribe() as queue:
+            stmt = select(Berth).options(selectinload(Berth.assignment))
+            berths = list((await session.execute(stmt)).scalars().all())
+            snapshot = BerthSnapshotEvent(berths=berths).model_dump(mode="json")
+            yield {"event": snapshot["type"], "data": json.dumps(snapshot)}
             while True:
                 if await request.is_disconnected():
                     return
                 try:
                     event = await asyncio.wait_for(queue.get(), timeout=1.0)
                 except TimeoutError:
+                    continue
+                # broadcaster fans every event to every queue, drop non-berth
+                if event.get("type") != "berth.update":
                     continue
                 yield {"event": event["type"], "data": json.dumps(event)}
 

@@ -604,6 +604,22 @@ components:
       - status
       title: BerthResetOut
       type: object
+    BerthSnapshotEvent:
+      properties:
+        berths:
+          items:
+            $ref: '#/components/schemas/BerthOut'
+          title: Berths
+          type: array
+        type:
+          const: berth.snapshot
+          default: berth.snapshot
+          title: Type
+          type: string
+      required:
+      - berths
+      title: BerthSnapshotEvent
+      type: object
     BerthUpdateEvent:
       properties:
         berth:
@@ -3294,18 +3310,21 @@ paths:
       - berths
   /api/berths/stream:
     get:
-      description: Opens a long-lived `text/event-stream` connection. Each message is a JSON-encoded `BerthUpdateEvent`.
-        Clients should first fetch a snapshot via `GET /api/berths` and then merge streamed updates by
-        `berth_id`. Reconnects re-subscribe but do not replay missed events — re-fetch the snapshot after
-        an `open` that follows a disconnection.
+      description: Opens a long-lived `text/event-stream` connection. The first frame is a `BerthSnapshotEvent`
+        carrying every berth; subsequent frames are `BerthUpdateEvent` deltas merged by `berth_id`. Reconnects
+        yield a fresh snapshot, so clients do not need a separate `GET /api/berths` call to bootstrap
+        or recover.
       operationId: streamBerths
       responses:
         '200':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BerthUpdateEvent'
-          description: Each frame is a JSON-encoded BerthUpdateEvent.
+                anyOf:
+                - $ref: '#/components/schemas/BerthSnapshotEvent'
+                - $ref: '#/components/schemas/BerthUpdateEvent'
+                title: Response 200 Streamberths
+          description: First frame is a `BerthSnapshotEvent`; subsequent frames are `BerthUpdateEvent`.
       summary: Subscribe to live berth updates via Server-Sent Events
       tags:
       - berths

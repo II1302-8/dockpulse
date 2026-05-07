@@ -563,7 +563,7 @@ export interface paths {
         };
         /**
          * Subscribe to live berth updates via Server-Sent Events
-         * @description Opens a long-lived `text/event-stream` connection. Each message is a JSON-encoded `BerthUpdateEvent`. Clients should first fetch a snapshot via `GET /api/berths` and then merge streamed updates by `berth_id`. Reconnects re-subscribe but do not replay missed events — re-fetch the snapshot after an `open` that follows a disconnection.
+         * @description Opens a long-lived `text/event-stream` connection. The first frame is a `BerthSnapshotEvent` carrying every berth; subsequent frames are `BerthUpdateEvent` deltas merged by `berth_id`. Reconnects yield a fresh snapshot, so clients do not need a separate `GET /api/berths` call to bootstrap or recover.
          */
         get: operations["streamBerths"];
         put?: never;
@@ -1251,6 +1251,17 @@ export interface components {
             berth_id: string;
             /** Status */
             status: string;
+        };
+        /** BerthSnapshotEvent */
+        BerthSnapshotEvent: {
+            /** Berths */
+            berths: components["schemas"]["BerthOut"][];
+            /**
+             * Type
+             * @default berth.snapshot
+             * @constant
+             */
+            type: "berth.snapshot";
         };
         /** BerthUpdateEvent */
         BerthUpdateEvent: {
@@ -3391,13 +3402,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Each frame is a JSON-encoded BerthUpdateEvent. */
+            /** @description First frame is a `BerthSnapshotEvent`; subsequent frames are `BerthUpdateEvent`. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BerthUpdateEvent"];
+                    "application/json": components["schemas"]["BerthSnapshotEvent"] | components["schemas"]["BerthUpdateEvent"];
                 };
             };
         };

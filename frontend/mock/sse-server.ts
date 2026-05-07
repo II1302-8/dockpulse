@@ -363,6 +363,13 @@ Bun.serve({
 
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {
+        // mirrors backend first frame, dev hook bootstraps off this
+        controller.enqueue(
+          encodeFrame("berth.snapshot", {
+            type: "berth.snapshot",
+            berths: BERTHS,
+          }),
+        );
         let i = 0;
         const tick = () => {
           const berth = BERTHS[i % BERTHS.length];

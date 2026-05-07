@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import broadcaster
+from app.events import load_berth_with_assignment, publish_berth_update
 from app.models import AdoptionRequest, Node
 from app.schemas import AdoptionRequestOut
 
@@ -119,6 +120,10 @@ async def complete_adoption_ok(
         return
     await session.refresh(request)
     publish_adoption_update(request)
+    # map waits on berth.update so adoption refreshes without first reading
+    berth = await load_berth_with_assignment(session, request.berth_id)
+    if berth is not None:
+        publish_berth_update(berth)
     logger.info(
         "adoption ok: request=%s node=%s berth=%s",
         request_id,

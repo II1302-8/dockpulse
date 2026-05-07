@@ -3,46 +3,32 @@ import type { components } from "../api-types";
 
 type Berth = components["schemas"]["BerthOut"];
 type BerthEvent = components["schemas"]["BerthUpdateEvent"];
-
-// Suppress snapshot storms on flaky reconnects.
-const SNAPSHOT_THROTTLE_MS = 3000;
+type BerthSnapshot = components["schemas"]["BerthSnapshotEvent"];
 
 export function useBerthsStream() {
   const [berthsById, setBerthsById] = useState<Map<string, Berth>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const snapshotAbortRef = useRef<AbortController | null>(null);
-  const lastSnapshotAtRef = useRef<number>(0);
-
-  const loadSnapshotACB = useCallback(async () => {
-    snapshotAbortRef.current?.abort();
-    const ac = new AbortController();
-    snapshotAbortRef.current = ac;
-    try {
-      const response = await fetch("/api/berths", { signal: ac.signal });
-      if (!response.ok) {
-        throw new Error(`Failed to fetch berths: ${response.statusText}`);
-      }
-      const list = (await response.json()) as Berth[];
-      if (ac.signal.aborted) return;
-      setBerthsById(new Map(list.map((b) => [b.berth_id, b])));
-      setError(null);
-      lastSnapshotAtRef.current = Date.now();
-    } catch (err) {
-      if ((err as { name?: string })?.name === "AbortError") return;
-      setError(
-        err instanceof Error ? err.message : "An unknown error occurred",
-      );
-    } finally {
-      if (!ac.signal.aborted) setIsLoading(false);
-    }
-  }, []);
+  // bump to force the EventSource effect to tear down + reopen
+  const [generation, setGeneration] = useState(0);
+  const sourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
-    let hasOpenedOnce = false;
-    loadSnapshotACB();
-
+    // generation read so the dep array re-runs the effect on retry
+    void generation;
     const source = new EventSource("/api/berths/stream");
+    sourceRef.current = source;
+
+    source.addEventListener("berth.snapshot", (e) => {
+      try {
+        const msg = JSON.parse((e as MessageEvent).data) as BerthSnapshot;
+        setBerthsById(new Map(msg.berths.map((b) => [b.berth_id, b])));
+        setError(null);
+        setIsLoading(false);
+      } catch {
+        // ignore malformed frames
+      }
+    });
 
     source.addEventListener("berth.update", (e) => {
       try {
@@ -57,19 +43,25 @@ export function useBerthsStream() {
       }
     });
 
-    source.onopen = () => {
-      if (hasOpenedOnce) {
-        const sinceLast = Date.now() - lastSnapshotAtRef.current;
-        if (sinceLast >= SNAPSHOT_THROTTLE_MS) loadSnapshotACB();
+    source.onerror = () => {
+      // soft error for retry UI, snapshot on reconnect clears it
+      if (source.readyState === EventSource.CLOSED) {
+        setError("Stream connection closed");
+      } else if (source.readyState === EventSource.CONNECTING) {
+        setError("Stream reconnecting");
       }
-      hasOpenedOnce = true;
     };
 
     return () => {
       source.close();
-      snapshotAbortRef.current?.abort();
+      sourceRef.current = null;
     };
-  }, [loadSnapshotACB]);
+  }, [generation]);
+
+  const refetchACB = useCallback(() => {
+    setIsLoading(true);
+    setGeneration((g) => g + 1);
+  }, []);
 
   const berths = useMemo(() => Array.from(berthsById.values()), [berthsById]);
 
@@ -77,6 +69,6 @@ export function useBerthsStream() {
     berths,
     isLoading,
     error,
-    refetchACB: loadSnapshotACB,
+    refetchACB,
   };
 }

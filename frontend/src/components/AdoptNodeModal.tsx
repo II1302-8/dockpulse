@@ -501,12 +501,16 @@ function CameraScan({ onDecode }: { onDecode: (text: string) => void }) {
 
   useEffect(() => {
     let cancelled = false;
-    let lastSeen: string | null = null;
     stoppedRef.current = false;
     // defer so strict-mode cleanup runs before scanner allocates camera
     const t = window.setTimeout(() => {
       if (cancelled) return;
-      const scanner = new Html5Qrcode(containerId, false);
+      // disableFlip skips the mirrored-image retry that doubles per-frame
+      // decode cost. real qr stickers are never mirrored on a phone camera
+      const scanner = new Html5Qrcode(containerId, {
+        verbose: false,
+        useBarCodeDetectorIfSupported: true,
+      });
       scannerRef.current = scanner;
       const stopOnce = () => {
         if (stoppedRef.current) return Promise.resolve();
@@ -517,9 +521,10 @@ function CameraScan({ onDecode }: { onDecode: (text: string) => void }) {
         .start(
           { facingMode: "environment" },
           {
-            // 6fps balances responsiveness against false positives on motion
-            // blur; html5-qrcode defaults to 10
-            fps: 6,
+            // 15fps gives the decoder more frames to land on a clean read,
+            // worth it on phones, html5-qrcode defaults to 10
+            fps: 15,
+            disableFlip: true,
             // function form sizes the scan window relative to the actual
             // video frame so it stays centered on any device aspect ratio
             qrbox: (vw, vh) => {
@@ -530,17 +535,10 @@ function CameraScan({ onDecode }: { onDecode: (text: string) => void }) {
           },
           (text) => {
             if (cancelled || stoppedRef.current) return;
-            const trimmed = text.trim();
-            // require two identical reads before accepting to filter the
-            // jitter where one frame catches a partial / wrong code
-            if (lastSeen !== trimmed) {
-              lastSeen = trimmed;
-              return;
-            }
             // gate further callbacks before handing the decoded text up so
             // the unmount-driven stop() can't race a second decode
             stoppedRef.current = true;
-            onDecode(trimmed);
+            onDecode(text.trim());
             // fire-and-forget, parent's re-render will unmount us anyway
             scanner.stop().catch(() => undefined);
           },

@@ -33,6 +33,23 @@ async def send_email(
     await asyncio.to_thread(_send_sync, settings, to, subject, html, idempotency_key)
 
 
+def send_verification_email(email: str, token: str, firstname: str):
+    verify_url = f"https://yourdomain.com/verify?token={token}"
+
+    params = {
+        "from": "DockPulse <noreply@dockpulse.com>",
+        "to": [email],
+        "subject": "Verify your DockPulse Account",
+        "html": f"""
+            <h1>Welcome to the club, {firstname}!</h1>
+            <p>Please click the link below to verify your email address:</p>
+            <a href="{verify_url}">Verify Email</a>
+            <p>If you didn't create this account, you can safely ignore this email.</p>
+        """,
+    }
+
+    resend.Emails.send(params)
+
 def _send_sync(
     settings,
     to: str | list[str],

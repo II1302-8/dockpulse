@@ -24,6 +24,7 @@ async def _register_user(session: AsyncSession) -> User:
         email="cora@example.com",
         password_hash=hash_password("supersecret"),
         role="boat_owner",
+        email_verified=True,
     )
     session.add(user)
     await session.commit()

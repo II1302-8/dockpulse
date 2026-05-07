@@ -36,6 +36,15 @@ export function ActivityLogPanel({
   onCloseCB,
 }: ActivityLogPanelProps) {
   const { user } = useOutletContext<AuthOutletContext>();
+
+  function handleClose(event: React.MouseEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+    onCloseCB?.();
+  }
+
+  function handlePointerDown(event: React.PointerEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+  }
   const isLoaded = !!user && user.role !== undefined;
   const isFirstLoad = useRef(true);
   const historyFetchedRef = useRef(false);
@@ -207,8 +216,9 @@ export function ActivityLogPanel({
         <button
           type="button"
           aria-label="Close activity log"
-          onClick={onCloseCB}
-          className="grid place-items-center w-10 h-10 rounded-full bg-[#0A2540]/5 text-[#0A2540]/60 active:bg-[#0A2540]/15 transition-colors cursor-pointer"
+          onPointerDown={handlePointerDown}
+          onClick={handleClose}
+          className="pointer-events-auto relative z-[130] grid place-items-center w-10 h-10 rounded-full bg-[#0A2540]/5 text-[#0A2540]/60 active:bg-[#0A2540]/15 transition-colors cursor-pointer"
         >
           <X size={16} strokeWidth={3} />
         </button>

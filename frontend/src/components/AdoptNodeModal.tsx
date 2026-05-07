@@ -21,6 +21,7 @@ import { ErrorBlock } from "./adopt/shared/ErrorBlock";
 import { ModeTab } from "./adopt/shared/ModeTab";
 import { SectionHead } from "./adopt/shared/SectionHead";
 import { Skeleton } from "./adopt/shared/Skeleton";
+import { BerthStep } from "./adopt/steps/BerthStep";
 
 type Berth = components["schemas"]["BerthOut"];
 type Gateway = components["schemas"]["GatewayOut"];
@@ -251,85 +252,6 @@ function GatewayStep({
           </li>
         ))}
       </ul>
-    </div>
-  );
-}
-
-function BerthStep({
-  gateway,
-  selected,
-  onBack,
-  onPick,
-}: {
-  gateway: Gateway;
-  selected: Berth | null;
-  onBack: () => void;
-  onPick: (b: Berth) => void;
-}) {
-  const [berths, setBerths] = useState<Berth[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const ac = new AbortController();
-    setLoading(true);
-    setError(null);
-    apiJson<Berth[]>(
-      `/api/berths?dock_id=${encodeURIComponent(gateway.dock_id)}&status=free`,
-      { signal: ac.signal },
-    )
-      .then((data) => {
-        if (!ac.signal.aborted) setBerths(data);
-      })
-      .catch((err: unknown) => {
-        if (ac.signal.aborted) return;
-        setError(err instanceof Error ? err.message : "Failed to load berths");
-      })
-      .finally(() => {
-        if (!ac.signal.aborted) setLoading(false);
-      });
-    return () => ac.abort();
-  }, [gateway.dock_id]);
-
-  return (
-    <div className="space-y-3">
-      <SectionHead
-        title="Pick berth"
-        hint={`Free berths on dock ${gateway.dock_id}`}
-        onBack={onBack}
-      />
-      {loading ? (
-        <Skeleton label="Loading berths" />
-      ) : error ? (
-        <ErrorBlock message={error} />
-      ) : berths.length === 0 ? (
-        <ErrorBlock message="No free berths on this dock" />
-      ) : (
-        <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {berths.map((b) => (
-            <li key={b.berth_id}>
-              <button
-                type="button"
-                onClick={() => onPick(b)}
-                className={cn(
-                  "w-full p-3 rounded-2xl border transition-all text-center",
-                  "bg-white/80 hover:bg-brand-blue/5 border-black/10 hover:border-brand-blue/30",
-                  "active:scale-[0.98]",
-                  selected?.berth_id === b.berth_id &&
-                    "border-brand-blue bg-brand-blue/10",
-                )}
-              >
-                <div className="text-xs font-black text-brand-navy">
-                  {b.label || b.berth_id}
-                </div>
-                <div className="text-[9px] font-mono text-brand-navy/40 truncate">
-                  {b.berth_id}
-                </div>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
   );
 }

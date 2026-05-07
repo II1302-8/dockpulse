@@ -129,6 +129,20 @@ async def test_register_duplicate_unverified_resends_token(
     # second send should have a different token (old one invalidated)
     assert sent[0]["token"] != sent[1]["token"]
 
+    # verify old token is invalidated and new one is active
+    user = (
+        await session.execute(select(User).where(User.email == "alice@example.com"))
+    ).scalar_one()
+    all_tokens = (
+        await session.execute(
+            select(UserVerification).where(UserVerification.user_id == user.user_id)
+        )
+    ).scalars().all()
+    used_tokens = [t for t in all_tokens if t.used]
+    active_tokens = [t for t in all_tokens if not t.used]
+    assert len(used_tokens) == 1
+    assert len(active_tokens) == 1
+
 
 async def test_register_duplicate_verified_sends_account_exists(
     client: AsyncClient, session: AsyncSession, monkeypatch

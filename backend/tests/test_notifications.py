@@ -100,3 +100,31 @@ async def test_recipient_normalization(monkeypatch, to, expected):
     )
     await notifications.send_email(to, "s", "<p>h</p>")
     assert captured["to"] == expected
+
+
+async def test_send_verification_email_builds_correct_url(monkeypatch):
+    monkeypatch.setenv("APP_ENV", "prod")
+    monkeypatch.setenv("RESEND_API_KEY", "re_test")
+    monkeypatch.setenv("APP_BASE_URL", "https://app.example.com")
+    payloads: list[dict] = []
+    monkeypatch.setattr(
+        notifications.resend.Emails, "send", lambda p: payloads.append(p)
+    )
+    await notifications.send_verification_email("bob@example.com", "tok123", "Bob")
+    assert len(payloads) == 1
+    assert payloads[0]["to"] == ["bob@example.com"]
+    assert "https://app.example.com/verify-email?token=tok123" in payloads[0]["html"]
+    assert "Bob" in payloads[0]["html"]
+
+
+async def test_send_account_exists_email_sends_warning(monkeypatch):
+    monkeypatch.setenv("APP_ENV", "prod")
+    monkeypatch.setenv("RESEND_API_KEY", "re_test")
+    payloads: list[dict] = []
+    monkeypatch.setattr(
+        notifications.resend.Emails, "send", lambda p: payloads.append(p)
+    )
+    await notifications.send_account_exists_email("bob@example.com", "Bob")
+    assert len(payloads) == 1
+    assert payloads[0]["to"] == ["bob@example.com"]
+    assert "already exists" in payloads[0]["html"].lower()

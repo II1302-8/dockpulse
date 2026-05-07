@@ -16,7 +16,6 @@ async def send_email(
 ) -> None:
     settings = get_settings()
     if settings.app_env != "prod":
-        # only prod sends, avoids spamming real users from staging/dev data
         logger.info(
             "email suppressed (app_env=%s) | to=%s | subject=%s",
             settings.app_env,
@@ -29,26 +28,39 @@ async def send_email(
             "RESEND_API_KEY unset, email suppressed | to=%s | subject=%s", to, subject
         )
         return
-    # resend sdk sync, offload so handler doesnt block loop
     await asyncio.to_thread(_send_sync, settings, to, subject, html, idempotency_key)
 
 
-def send_verification_email(email: str, token: str, firstname: str):
-    verify_url = f"https://yourdomain.com/verify?token={token}"
+async def send_verification_email(email: str, token: str, firstname: str) -> None:
+    settings = get_settings()
+    verify_url = f"{settings.app_base_url}/verify-email?token={token}"
+    await send_email(
+        to=email,
+        subject="Verify your DockPulse account",
+        html=(
+            f"<h1>Welcome, {firstname}!</h1>"
+            f"<p>Please verify your email by clicking the link below:</p>"
+            f'<a href="{verify_url}">Verify Email</a>'
+            f"<p>This link expires in {settings.verification_token_ttl_hours} hours.</p>"
+            f"<p>If you didn't create this account, you can safely ignore this email.</p>"
+        ),
+    )
 
-    params = {
-        "from": "DockPulse <noreply@dockpulse.com>",
-        "to": [email],
-        "subject": "Verify your DockPulse Account",
-        "html": f"""
-            <h1>Welcome to the club, {firstname}!</h1>
-            <p>Please click the link below to verify your email address:</p>
-            <a href="{verify_url}">Verify Email</a>
-            <p>If you didn't create this account, you can safely ignore this email.</p>
-        """,
-    }
 
-    resend.Emails.send(params)
+async def send_account_exists_email(email: str, firstname: str) -> None:
+    await send_email(
+        to=email,
+        subject="Someone tried to register with your DockPulse account",
+        html=(
+            f"<h1>Hi {firstname},</h1>"
+            f"<p>Someone tried to register a DockPulse account using your email address, "
+            f"but an account already exists.</p>"
+            f"<p>If this was you, you can log in directly. "
+            f"If you've forgotten your password, use the password reset flow.</p>"
+            f"<p>If this wasn't you, you can safely ignore this email.</p>"
+        ),
+    )
+
 
 def _send_sync(
     settings,
@@ -74,7 +86,6 @@ def _send_sync(
 
 
 async def send_push(user_id: str, title: str, body: str) -> None:
-    # stub, resend has no push channel, needs fcm/apn
     logger.warning(
         "push not implemented | user_id=%s | title=%s | body=%s", user_id, title, body
     )

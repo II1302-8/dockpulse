@@ -144,6 +144,36 @@ async def register(
     return {"message": "Check your email to verify your account"}
 
 
+@router.get(
+    "/verify-email",
+    status_code=200,
+    operation_id="verifyEmail",
+    summary="Verify email address using token from email link",
+)
+@limiter.limit("10/hour")
+async def verify_email(
+    request: Request,
+    token: str,
+    session: SessionDep,
+):
+    result = await session.execute(
+        select(UserVerification).where(UserVerification.token == token)
+    )
+    record = result.scalar_one_or_none()
+
+    if record is None or record.used or record.expires_at <= datetime.now(UTC):
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+    user = await session.get(User, record.user_id)
+    if user is None:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+    record.used = True
+    user.email_verified = True
+    await session.commit()
+    return {"message": "Email verified. You can now log in."}
+
+
 @router.post(
     "/login",
     response_model=UserOut,

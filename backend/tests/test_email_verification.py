@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -176,3 +178,126 @@ async def test_register_duplicate_verified_sends_account_exists(
     assert r.status_code == 201
     assert len(account_exists_sent) == 1
     assert account_exists_sent[0]["email"] == "alice@example.com"
+
+
+async def test_register_duplicate_unverified_does_not_update_password(
+    client: AsyncClient, session: AsyncSession, monkeypatch
+):
+    async def _noop(**kw):
+        pass
+
+    monkeypatch.setattr("app.routers.auth.send_verification_email", _noop)
+
+    from argon2.exceptions import VerifyMismatchError
+
+    from app.routers.auth import _ph
+
+    await client.post("/api/auth/register", json=_REG)
+    new_pw = "differentpassword1"
+    await client.post("/api/auth/register", json={**_REG, "password": new_pw})
+
+    user = (
+        await session.execute(select(User).where(User.email == "alice@example.com"))
+    ).scalar_one()
+    try:
+        _ph.verify(user.password_hash, new_pw)
+        raise AssertionError("password should not have been updated")
+    except VerifyMismatchError:
+        pass
+
+
+# ── verify-email ─────────────────────────────────────────────────────────────
+
+
+async def _create_unverified_user_with_token(
+    session: AsyncSession,
+    user_id: str = "u-verify",
+    email: str = "verify@example.com",
+) -> tuple[User, str]:
+    from tests._helpers import hash_password
+
+    user = User(
+        user_id=user_id,
+        firstname="Vera",
+        lastname="Verify",
+        email=email,
+        password_hash=hash_password("password1234"),
+        email_verified=False,
+    )
+    session.add(user)
+    await session.flush()
+    token_value = "test-token-abc123"
+    session.add(
+        UserVerification(
+            user_id=user_id,
+            token=token_value,
+            expires_at=datetime.now(UTC) + timedelta(hours=24),
+        )
+    )
+    await session.commit()
+    return user, token_value
+
+
+async def test_verify_email_marks_user_verified(
+    client: AsyncClient, session: AsyncSession
+):
+    user, token = await _create_unverified_user_with_token(session)
+    r = await client.get(f"/api/auth/verify-email?token={token}")
+    assert r.status_code == 200
+    assert "verified" in r.json()["message"].lower()
+    await session.refresh(user)
+    assert user.email_verified is True
+
+
+async def test_verify_email_marks_token_used(
+    client: AsyncClient, session: AsyncSession
+):
+    user, token = await _create_unverified_user_with_token(session)
+    await client.get(f"/api/auth/verify-email?token={token}")
+    record = (
+        await session.execute(
+            select(UserVerification).where(UserVerification.token == token)
+        )
+    ).scalar_one()
+    assert record.used is True
+
+
+async def test_verify_email_unknown_token_returns_400(client: AsyncClient):
+    r = await client.get("/api/auth/verify-email?token=nonexistent")
+    assert r.status_code == 400
+
+
+async def test_verify_email_used_token_returns_400(
+    client: AsyncClient, session: AsyncSession
+):
+    user, token = await _create_unverified_user_with_token(session)
+    await client.get(f"/api/auth/verify-email?token={token}")
+    r = await client.get(f"/api/auth/verify-email?token={token}")
+    assert r.status_code == 400
+
+
+async def test_verify_email_expired_token_returns_400(
+    client: AsyncClient, session: AsyncSession
+):
+    from tests._helpers import hash_password
+
+    user = User(
+        user_id="u-expired",
+        firstname="Expo",
+        lastname="Red",
+        email="expired@example.com",
+        password_hash=hash_password("password1234"),
+        email_verified=False,
+    )
+    session.add(user)
+    await session.flush()
+    session.add(
+        UserVerification(
+            user_id="u-expired",
+            token="expired-token",
+            expires_at=datetime.now(UTC) - timedelta(hours=1),
+        )
+    )
+    await session.commit()
+    r = await client.get("/api/auth/verify-email?token=expired-token")
+    assert r.status_code == 400

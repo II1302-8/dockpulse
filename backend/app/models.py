@@ -39,6 +39,7 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String, nullable=False)
     boat_club: Mapped[str | None] = mapped_column(String)
     token_version: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    email_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     role: Mapped[str] = mapped_column(
         user_role_enum, nullable=False, default="boat_owner"
     )
@@ -299,3 +300,19 @@ class RefreshToken(Base):
     replaced_by_jti: Mapped[str | None] = mapped_column(
         ForeignKey("refresh_tokens.jti", ondelete="SET NULL")
     )
+
+class UserVerification(Base):
+    __tablename__ = "user_verifications"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    token: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
+    used: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)

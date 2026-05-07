@@ -15,6 +15,8 @@ import { useAdoptionStream } from "../hooks/useAdoptionStream";
 import { useGateways } from "../hooks/useGateways";
 import { ApiError, apiJson } from "../lib/api";
 import { cn } from "../lib/utils";
+import { humanizeAdoptError, mapAdoptError } from "./adopt/lib/errors";
+import { describePhase, humanizePhase, PHASE_ORDER } from "./adopt/lib/phases";
 import { extractQrPayload, validateQrPayload } from "./adopt/lib/qr";
 import { ErrorBlock } from "./adopt/shared/ErrorBlock";
 import { ModeTab } from "./adopt/shared/ModeTab";
@@ -555,18 +557,6 @@ function ProgressStep({
   );
 }
 
-// mirrors dp_mesh_provisioner.c emit_state ordering, "started" is
-// implicit before any state event arrives
-const PHASE_ORDER = [
-  "started",
-  "link-open",
-  "pb-adv-done",
-  "cfg-app-key",
-  "cfg-bind",
-  "cfg-pub-set",
-  "complete",
-] as const;
-
 // row pitch in px, must match the inline `height` on each <li> below
 const PHASE_ROW = 26;
 // rows kept visible above the focused one (sets the "scrolled" feel)
@@ -736,82 +726,4 @@ function TechnicalDetails({
       </dl>
     </details>
   );
-}
-
-// codes mirror II1302-8/.github docs/mqtt-contract.yml provision/resp enum
-const ADOPT_ERROR_MESSAGES: Record<string, string> = {
-  busy: "Gateway is busy provisioning another node. Wait ~30s and retry.",
-  "bad-uuid": "QR contained an invalid mesh UUID. Re-scan the node sticker.",
-  "bad-oob":
-    "QR contained an invalid out-of-band key. Re-scan the node sticker.",
-  "cfg-fail":
-    "BLE-mesh handshake failed. Hit retry — the node self-resets after 90s if cfg never completes, so retry should land cleanly.",
-  "appkey-send":
-    "Gateway couldn't send the app-key step. Check gateway logs and retry.",
-  "bind-send":
-    "Gateway couldn't send the model-bind step. Check gateway logs and retry.",
-  "pubset-send":
-    "Gateway couldn't send the publish-set step. Check gateway logs and retry.",
-  "link-close":
-    "BLE link closed before configuration finished. Confirm range and retry.",
-  "start-fail": "Gateway mesh stack refused to start. Power-cycle the gateway.",
-  timeout:
-    "Node didn't broadcast an unprovisioned beacon within 180s. Most often it's already in another mesh — factory-reset the node, confirm range, then retry.",
-  "already-provisioned":
-    "Node is already part of a mesh. Decommission it first, or factory-reset the node, then retry.",
-  cancelled: "Adoption cancelled.",
-  unknown:
-    "Provisioning failed for an unknown reason. Retry, then check gateway logs.",
-};
-
-// codes mirror the provisioner state machine in dp_mesh_provisioner.c.
-// labels are end-user facing and stay short so they fit one row; the
-// technical reality is exposed via PROV_PHASE_DETAIL on hover so support
-// staff can still see what's actually happening.
-const PROV_PHASES: Record<string, string> = {
-  started: "Searching",
-  "link-open": "Connecting",
-  "pb-adv-done": "Securing",
-  "cfg-app-key": "Sharing key",
-  "cfg-bind": "Linking",
-  "cfg-pub-set": "Routing",
-  complete: "Finishing",
-};
-
-const PROV_PHASE_DETAIL: Record<string, string> = {
-  started: "Gateway armed, listening for the sensor's pairing beacons",
-  "link-open": "Bluetooth link to the sensor is open",
-  "pb-adv-done": "Encryption keys exchanged with the sensor",
-  "cfg-app-key": "Sending the harbor key so the sensor can decrypt traffic",
-  "cfg-bind": "Binding the sensor's reading model to the harbor key",
-  "cfg-pub-set": "Pointing the sensor at the gateway for uplinks",
-  complete: "Configuration done, awaiting final acknowledgement",
-};
-
-function humanizePhase(state: string): string {
-  return PROV_PHASES[state] ?? state;
-}
-
-function describePhase(state: string): string {
-  return PROV_PHASE_DETAIL[state] ?? humanizePhase(state);
-}
-
-function humanizeAdoptError(
-  code: string | null | undefined,
-  msg: string | null | undefined,
-): string {
-  if (!code) return msg ?? "Provisioning failed.";
-  const friendly = ADOPT_ERROR_MESSAGES[code];
-  if (friendly) return msg ? `${friendly} (${msg})` : friendly;
-  // unknown code, surface raw values so support has something to grep
-  return msg ? `${code} — ${msg}` : code;
-}
-
-function mapAdoptError(err: ApiError): string {
-  if (err.status === 401) return "Sign in as harbormaster to adopt nodes";
-  if (err.status === 403) return "Harbormaster role required";
-  if (err.status === 404) return err.message;
-  if (err.status === 409) return err.message;
-  if (err.status === 400) return err.message;
-  return err.message;
 }

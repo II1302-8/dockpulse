@@ -24,7 +24,7 @@ from app.dependencies import CurrentUserDep, SessionDep
 from app.models import RefreshToken, User, UserVerification
 from app.notifications import send_account_exists_email, send_verification_email
 from app.rate_limit import limiter
-from app.schemas import LoginIn, UserCreate, UserOut
+from app.schemas import LoginIn, ResendVerificationIn, UserCreate, UserOut
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -172,6 +172,43 @@ async def verify_email(
     user.email_verified = True
     await session.commit()
     return {"message": "Email verified. You can now log in."}
+
+
+@router.post(
+    "/resend-verification",
+    status_code=200,
+    operation_id="resendVerification",
+    summary="Resend verification email",
+)
+@limiter.limit("5/hour")
+async def resend_verification(
+    request: Request,
+    body: ResendVerificationIn,
+    session: SessionDep,
+    background_tasks: BackgroundTasks,
+):
+    _msg = {
+        "message": (
+            "If that email is registered and unverified, a new link has been sent."
+        )
+    }
+    result = await session.execute(select(User).where(User.email == body.email))
+    user = result.scalar_one_or_none()
+
+    if user is None or user.email_verified:
+        return _msg
+
+    settings = get_settings()
+    await _invalidate_verification_tokens(user.user_id, session)
+    token = await _create_verification_token(user.user_id, session, settings)
+    await session.commit()
+    background_tasks.add_task(
+        send_verification_email,
+        email=user.email,
+        token=token,
+        firstname=user.firstname,
+    )
+    return _msg
 
 
 @router.post(

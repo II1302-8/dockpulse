@@ -301,3 +301,72 @@ async def test_verify_email_expired_token_returns_400(
     await session.commit()
     r = await client.get("/api/auth/verify-email?token=expired-token")
     assert r.status_code == 400
+
+
+# ── resend-verification ───────────────────────────────────────────────────────
+
+
+async def test_resend_returns_200_for_unverified(
+    client: AsyncClient, session: AsyncSession, monkeypatch
+):
+    sent: list[dict] = []
+
+    async def _capture(**kw):
+        sent.append(kw)
+
+    monkeypatch.setattr("app.routers.auth.send_verification_email", _capture)
+    await _create_unverified_user_with_token(session)
+    r = await client.post(
+        "/api/auth/resend-verification", json={"email": "verify@example.com"}
+    )
+    assert r.status_code == 200
+    assert "link" in r.json()["message"].lower()
+    assert len(sent) == 1
+
+
+async def test_resend_invalidates_old_token(
+    client: AsyncClient, session: AsyncSession, monkeypatch
+):
+    async def _noop(**kw):
+        pass
+
+    monkeypatch.setattr("app.routers.auth.send_verification_email", _noop)
+
+    user, old_token = await _create_unverified_user_with_token(session)
+    await client.post(
+        "/api/auth/resend-verification", json={"email": "verify@example.com"}
+    )
+    old = (
+        await session.execute(
+            select(UserVerification).where(UserVerification.token == old_token)
+        )
+    ).scalar_one()
+    assert old.used is True
+
+
+async def test_resend_returns_200_for_unknown_email(client: AsyncClient):
+    r = await client.post(
+        "/api/auth/resend-verification", json={"email": "nobody@example.com"}
+    )
+    assert r.status_code == 200
+
+
+async def test_resend_returns_200_for_already_verified(
+    client: AsyncClient, session: AsyncSession
+):
+    from tests._helpers import hash_password
+
+    user = User(
+        user_id="u-already-verified",
+        firstname="Vera",
+        lastname="Done",
+        email="done@example.com",
+        password_hash=hash_password("password1234"),
+        email_verified=True,
+    )
+    session.add(user)
+    await session.commit()
+    r = await client.post(
+        "/api/auth/resend-verification", json={"email": "done@example.com"}
+    )
+    assert r.status_code == 200

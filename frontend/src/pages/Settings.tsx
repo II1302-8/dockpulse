@@ -6,6 +6,15 @@ import type {
   AuthUser,
 } from "../components/layout/MainLayout";
 import { NotificationSettings } from "../components/NotificationSettings";
+import {
+  type AvailabilityForm,
+  type FieldErrors,
+  getErrorsFromResponse,
+  MIN_PASSWORD_LENGTH,
+  type SettingsForm,
+  validateAvailabilityForm,
+  validateForm,
+} from "../components/settings/lib/validation";
 import { Button } from "../components/shared/ui/button";
 import {
   Dialog,
@@ -21,21 +30,6 @@ import { PasswordInput } from "../components/shared/ui/password-input";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
 
-type SettingsForm = {
-  firstname: string;
-  lastname: string;
-  email: string;
-  phone: string;
-  boat_club: string;
-  current_password: string;
-  password: string;
-};
-
-type AvailabilityForm = {
-  from_date: string;
-  return_date: string;
-};
-
 type AvailabilityWindow = {
   window_id: string;
   berth_id: string;
@@ -44,11 +38,6 @@ type AvailabilityWindow = {
   return_date: string;
   created_at: string;
 };
-
-type FieldErrors = Partial<Record<keyof SettingsForm | "general", string>>;
-
-// mirror backend APP_ENV: prod build enforces the 12 char floor, dev/staging relaxed for testing
-const MIN_PASSWORD_LENGTH = import.meta.env.MODE === "production" ? 12 : 4;
 
 function getInitialForm(user: AuthUser | null): SettingsForm {
   return {
@@ -85,91 +74,6 @@ function formatDateLong(iso: string): string {
 
 function todayInputValue(): string {
   return new Date().toISOString().slice(0, 10);
-}
-
-function validateAvailabilityForm(form: AvailabilityForm): string | null {
-  if (!form.from_date) return "Start date is required.";
-  if (!form.return_date) return "Return date is required.";
-
-  if (form.return_date <= form.from_date) {
-    return "Return date must be after the start date.";
-  }
-
-  return null;
-}
-
-function isValidEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
-function validateForm(form: SettingsForm): FieldErrors {
-  const errors: FieldErrors = {};
-
-  if (!form.firstname.trim()) errors.firstname = "First name is required.";
-  if (!form.lastname.trim()) errors.lastname = "Last name is required.";
-
-  if (!form.email.trim()) {
-    errors.email = "Email is required.";
-  } else if (!isValidEmail(form.email.trim())) {
-    errors.email = "Enter a valid email address.";
-  }
-
-  if (form.password && form.password.length < MIN_PASSWORD_LENGTH) {
-    errors.password = `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
-  }
-
-  if (form.password && !form.current_password) {
-    errors.current_password =
-      "Current password is required to change password.";
-  }
-
-  return errors;
-}
-
-function isSettingsField(field: unknown): field is keyof SettingsForm {
-  return (
-    field === "firstname" ||
-    field === "lastname" ||
-    field === "email" ||
-    field === "phone" ||
-    field === "boat_club" ||
-    field === "current_password" ||
-    field === "password"
-  );
-}
-
-async function getErrorsFromResponse(
-  res: Response,
-  fallback: string,
-): Promise<FieldErrors> {
-  try {
-    const data = await res.json();
-
-    if (Array.isArray(data.detail)) {
-      const errors: FieldErrors = {};
-
-      for (const err of data.detail) {
-        const field = Array.isArray(err.loc) ? err.loc.at(-1) : null;
-        const message = err.msg ?? "Invalid value.";
-
-        if (isSettingsField(field)) {
-          errors[field] = message;
-        } else {
-          errors.general = message;
-        }
-      }
-
-      return errors;
-    }
-
-    if (typeof data.detail === "string") return { general: data.detail };
-    if (typeof data.message === "string") return { general: data.message };
-    if (typeof data.error === "string") return { general: data.error };
-
-    return { general: `${fallback} Status: ${res.status}` };
-  } catch {
-    return { general: `${fallback} Status: ${res.status}` };
-  }
 }
 
 const errorClass = "text-sm text-red-500";

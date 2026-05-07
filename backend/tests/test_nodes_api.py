@@ -275,6 +275,33 @@ async def test_decommission_already_decommissioned_does_not_publish(
     assert published_decommission_reqs == []
 
 
+async def test_decommission_503_when_mqtt_down_keeps_db(
+    client: AsyncClient,
+    session: AsyncSession,
+    harbor_master: User,
+    fleet,
+    monkeypatch,
+):
+    # broker outage must surface as 503 and leave node provisioned, otherwise
+    # db says decommissioned while mesh still routes the unicast addr
+    from app.mqtt import MqttNotConnected
+
+    async def _raise(**_):
+        raise MqttNotConnected("broker client down")
+
+    monkeypatch.setattr("app.routers.nodes.publish_decommission_req", _raise)
+
+    r = await client.post(
+        "/api/nodes/n-online/decommission",
+        cookies=_creds(harbor_master.user_id),
+    )
+    assert r.status_code == 503
+
+    persisted = await session.get(Node, "n-online")
+    await session.refresh(persisted)
+    assert persisted.status == "provisioned"
+
+
 async def test_decommission_404_unknown(
     client: AsyncClient, harbor_master: User, fleet
 ):

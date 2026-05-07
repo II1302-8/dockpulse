@@ -30,6 +30,11 @@ GATEWAY_STATUS_TOPIC = f"{GATEWAY_TOPIC_PREFIX}/+/status"
 RECONNECT_DELAY = 5
 PUBLISH_QOS = 1
 
+
+class MqttNotConnected(RuntimeError):
+    """raised when a publish is attempted while the broker client is down"""
+
+
 _connected: bool = False
 _client: aiomqtt.Client | None = None
 
@@ -271,12 +276,12 @@ async def publish_decommission_req(
     unicast_addr: str,
     berth_id: str,
 ) -> None:
-    """Tell a gateway to forget a node, fire-and-forget"""
+    """Tell a gateway to forget a node. Raises MqttNotConnected or aiomqtt.MqttError on failure"""
+    # caller must surface failures so DB stays in sync with mesh
     if _client is None:
-        logger.warning(
-            "MQTT not connected; decommission/req for %s dropped", request_id
+        raise MqttNotConnected(
+            f"decommission/req for req_id={request_id} not published; broker client down"
         )
-        return
 
     topic = f"{GATEWAY_TOPIC_PREFIX}/{gateway_id}/decommission/req"
     body = {
@@ -285,7 +290,13 @@ async def publish_decommission_req(
         "unicast_addr": unicast_addr,
         "berth_id": berth_id,
     }
-    await _client.publish(topic, payload=json.dumps(body), qos=PUBLISH_QOS)
+    payload = json.dumps(body)
+    logger.info("mqtt publish topic=%s payload=%s qos=%d", topic, payload, PUBLISH_QOS)
+    try:
+        await _client.publish(topic, payload=payload, qos=PUBLISH_QOS)
+    except aiomqtt.MqttError:
+        logger.exception("decommission/req publish failed topic=%s", topic)
+        raise
 
 
 async def mqtt_listener() -> None:

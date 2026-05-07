@@ -379,6 +379,7 @@ class RefreshToken(Base):
         ForeignKey("refresh_tokens.jti", ondelete="SET NULL")
     )
 
+
 class UserVerification(Base):
     __tablename__ = "user_verifications"
 

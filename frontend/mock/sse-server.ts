@@ -168,45 +168,134 @@ function newAdoption(body: {
   };
 }
 
+// matches dp_mesh_provisioner.c emit_state ordering, "started" is implicit
+const MOCK_PHASES = [
+  "link-open",
+  "pb-adv-done",
+  "cfg-app-key",
+  "cfg-bind",
+  "cfg-pub-set",
+  "complete",
+];
+const PHASE_INTERVAL_MS = 600;
+
+// cycle so a dev clicking Adopt repeatedly sees both happy + sad UI:
+//   1st  → ok
+//   2nd  → already-provisioned (fails before any phase emits, common path)
+//   3rd  → ok
+//   4th  → cfg-fail (fails mid-flow so the timeline shows a partial walk
+//          then the failed-at-step indicator)
+type MockOutcome =
+  | { kind: "ok" }
+  | { kind: "err"; failAfterPhase: number; code: string; msg: string };
+
+const OUTCOME_CYCLE: MockOutcome[] = [
+  { kind: "ok" },
+  {
+    kind: "err",
+    failAfterPhase: 0,
+    code: "already-provisioned",
+    msg: "node already in another mesh",
+  },
+  { kind: "ok" },
+  {
+    kind: "err",
+    failAfterPhase: 3,
+    code: "cfg-fail",
+    msg: "no AppKeyAdd ack within 5s",
+  },
+];
+
+let outcomeCounter = 0;
+function nextOutcome(): MockOutcome {
+  const o = OUTCOME_CYCLE[outcomeCounter % OUTCOME_CYCLE.length];
+  outcomeCounter++;
+  return o;
+}
+
 function adoptionStream(
   request: MockAdoptionRequest,
   signal: AbortSignal,
 ): Response {
+  const outcome = nextOutcome();
+  const phasesToEmit =
+    outcome.kind === "ok"
+      ? MOCK_PHASES
+      : MOCK_PHASES.slice(0, outcome.failAfterPhase);
+  const timers: ReturnType<typeof setTimeout>[] = [];
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
+      const safeEnqueue = (frame: Uint8Array) => {
+        if (signal.aborted) return;
+        try {
+          controller.enqueue(frame);
+        } catch {
+          /* already closed */
+        }
+      };
+      const safeClose = () => {
+        try {
+          controller.close();
+        } catch {
+          /* already closed */
+        }
+      };
       // initial snapshot, mirrors backend's first frame
-      controller.enqueue(
+      safeEnqueue(
         encodeFrame("adoption.update", { type: "adoption.update", request }),
       );
-      // resolve after a short delay so the modal shows the spinner state
-      const handle = setTimeout(() => {
-        if (signal.aborted) return;
-        const finalized: MockAdoptionRequest = {
-          ...request,
-          status: "ok",
-          mesh_unicast_addr: "0x0042",
-          completed_at: new Date().toISOString(),
-        };
-        mockAdoptions.set(request.request_id, finalized);
-        controller.enqueue(
-          encodeFrame("adoption.update", {
-            type: "adoption.update",
-            request: finalized,
-          }),
+      phasesToEmit.forEach((state, i) => {
+        timers.push(
+          setTimeout(
+            () => {
+              safeEnqueue(
+                encodeFrame("adoption.state", {
+                  type: "adoption.state",
+                  request_id: request.request_id,
+                  state,
+                }),
+              );
+            },
+            PHASE_INTERVAL_MS * (i + 1),
+          ),
         );
-        try {
-          controller.close();
-        } catch {
-          /* already closed */
-        }
-      }, 2500);
+      });
+      // finalize after the last phase emits
+      timers.push(
+        setTimeout(
+          () => {
+            if (signal.aborted) return;
+            const now = new Date().toISOString();
+            const finalized: MockAdoptionRequest =
+              outcome.kind === "ok"
+                ? {
+                    ...request,
+                    status: "ok",
+                    mesh_unicast_addr: "0x0042",
+                    completed_at: now,
+                  }
+                : {
+                    ...request,
+                    status: "err",
+                    error_code: outcome.code,
+                    error_msg: outcome.msg,
+                    completed_at: now,
+                  };
+            mockAdoptions.set(request.request_id, finalized);
+            safeEnqueue(
+              encodeFrame("adoption.update", {
+                type: "adoption.update",
+                request: finalized,
+              }),
+            );
+            safeClose();
+          },
+          PHASE_INTERVAL_MS * (phasesToEmit.length + 1),
+        ),
+      );
       signal.addEventListener("abort", () => {
-        clearTimeout(handle);
-        try {
-          controller.close();
-        } catch {
-          /* already closed */
-        }
+        for (const t of timers) clearTimeout(t);
+        safeClose();
       });
     },
   });

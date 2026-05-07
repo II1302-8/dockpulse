@@ -123,8 +123,17 @@
     @apply border-border;
   }
   body {
-    @apply antialiased font-body text-foreground overflow-hidden min-h-screen relative;
+    @apply antialiased font-body text-foreground overflow-hidden min-h-dvh relative;
     background-color: #f4f9ff;
+  }
+
+  /* kills safari's 300ms tap-delay + ios gray flash so press feedback
+    comes from our own active: classes, not the system overlay */
+  button,
+  a,
+  [role="button"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
 
   /* Marine Wave 1 */

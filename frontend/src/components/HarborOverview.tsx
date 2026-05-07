@@ -47,7 +47,7 @@ export function HarborOverview({
     <section
       className={cn(
         "fixed z-[110] flex flex-col overflow-hidden rounded-[32px] border border-white/60 bg-white/70 p-6 font-body shadow-deep backdrop-blur-2xl transition-all duration-500 ease-in-out",
-        "bottom-6 left-6 right-6 max-h-[60vh]",
+        "bottom-[calc(env(safe-area-inset-bottom)+1.5rem)] left-6 right-6 max-h-[60dvh]",
         "lg:bottom-auto lg:right-auto lg:left-8 lg:top-32 lg:w-72 lg:max-h-[calc(100vh-160px)]",
         "lg:pointer-events-auto lg:translate-x-0 lg:opacity-100",
         isOpen

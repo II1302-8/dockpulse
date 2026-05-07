@@ -1,4 +1,3 @@
-import { LayoutDashboard, X } from "lucide-react";
 import panzoom from "panzoom";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
@@ -74,10 +73,6 @@ export function HarborMap() {
     setSelectedBerthId(null);
   }, []);
 
-  const handleToggleOverview = useCallback(() => {
-    setIsOverviewOpen(!isOverviewOpen);
-  }, [isOverviewOpen, setIsOverviewOpen]);
-
   const handleCloseOverview = useCallback(() => {
     setIsOverviewOpen(false);
   }, [setIsOverviewOpen]);
@@ -123,20 +118,9 @@ export function HarborMap() {
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={handleToggleOverview}
-        aria-label={isOverviewOpen ? "Close Overview" : "Open Overview"}
-        className={`fixed left-5 top-24 z-[60] rounded-full bg-[#0A2540] p-4 text-white shadow-deep transition-all duration-300 hover:scale-110 active:scale-95 lg:hidden ${
-          isOverviewOpen ? "rotate-90 bg-[#0093E9]" : ""
-        }`}
-      >
-        {isOverviewOpen ? (
-          <X size={20} strokeWidth={3} />
-        ) : (
-          <LayoutDashboard size={20} strokeWidth={3} />
-        )}
-      </button>
+      {/* mobile overview toggle is now in the bottom dock (SideMenu mobile),
+          the legacy floating button overlapped content and duplicated the
+          dock action */}
 
       {isHarborMaster ? (
         <HarborMasterOverview

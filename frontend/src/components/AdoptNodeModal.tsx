@@ -132,19 +132,27 @@ export function AdoptNodeModal({ open, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] bg-brand-navy/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+      className={cn(
+        "fixed inset-0 z-[100] bg-brand-navy/40 backdrop-blur-sm flex animate-in fade-in duration-200",
+        // bottom-sheet on phones, centered card from sm+
+        "items-end justify-center sm:items-center sm:p-4",
+      )}
       role="dialog"
       aria-modal="true"
       aria-labelledby="adopt-title"
     >
       <div
         className={cn(
-          "relative bg-white rounded-[32px] shadow-deep w-full max-w-2xl",
-          "max-h-[90vh] flex flex-col overflow-hidden",
-          "animate-in zoom-in-95 slide-in-from-bottom-4 duration-300",
+          "relative bg-white shadow-deep w-full sm:max-w-2xl flex flex-col overflow-hidden",
+          // full-bleed sheet on phones, dvh handles ios safari toolbar
+          "rounded-t-[28px] sm:rounded-[32px]",
+          "max-h-[92dvh] sm:max-h-[90vh]",
+          // safe-area for the home indicator without affecting desktop
+          "pb-[env(safe-area-inset-bottom)] sm:pb-0",
+          "animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-4 sm:zoom-in-95 duration-300",
         )}
       >
-        <header className="flex items-center justify-between p-6 border-b border-black/5">
+        <header className="flex items-center justify-between p-4 sm:p-6 border-b border-black/5">
           <div>
             <h2
               id="adopt-title"
@@ -164,7 +172,7 @@ export function AdoptNodeModal({ open, onClose }: Props) {
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {step === "gateway" && (
             <GatewayStep
               selected={gateway}
@@ -200,6 +208,8 @@ export function AdoptNodeModal({ open, onClose }: Props) {
             <ProgressStep
               key={`${requestId}-${attempt}`}
               requestId={requestId}
+              gateway={gateway}
+              berth={berth}
               onClose={onClose}
               onRetry={handleSubmit}
               retrying={submitting}
@@ -485,24 +495,53 @@ function CameraScan({ onDecode }: { onDecode: (text: string) => void }) {
   // dom id must be plain string for html5-qrcode
   const containerId = `qr-region-${id.replace(/[^\w-]/g, "")}`;
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const stoppedRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    let started = false;
+    let lastSeen: string | null = null;
+    stoppedRef.current = false;
     // defer so strict-mode cleanup runs before scanner allocates camera
     const t = window.setTimeout(() => {
       if (cancelled) return;
       const scanner = new Html5Qrcode(containerId, false);
       scannerRef.current = scanner;
+      const stopOnce = () => {
+        if (stoppedRef.current) return Promise.resolve();
+        stoppedRef.current = true;
+        return scanner.stop().catch(() => undefined);
+      };
       scanner
         .start(
           { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 240, height: 240 } },
+          {
+            // 6fps balances responsiveness against false positives on motion
+            // blur; html5-qrcode defaults to 10
+            fps: 6,
+            // function form sizes the scan window relative to the actual
+            // video frame so it stays centered on any device aspect ratio
+            qrbox: (vw, vh) => {
+              const min = Math.min(vw, vh);
+              const size = Math.floor(min * 0.7);
+              return { width: size, height: size };
+            },
+          },
           (text) => {
-            if (cancelled) return;
-            onDecode(text.trim());
+            if (cancelled || stoppedRef.current) return;
+            const trimmed = text.trim();
+            // require two identical reads before accepting to filter the
+            // jitter where one frame catches a partial / wrong code
+            if (lastSeen !== trimmed) {
+              lastSeen = trimmed;
+              return;
+            }
+            // gate further callbacks before handing the decoded text up so
+            // the unmount-driven stop() can't race a second decode
+            stoppedRef.current = true;
+            onDecode(trimmed);
+            // fire-and-forget, parent's re-render will unmount us anyway
             scanner.stop().catch(() => undefined);
           },
           () => {
@@ -511,10 +550,9 @@ function CameraScan({ onDecode }: { onDecode: (text: string) => void }) {
         )
         .then(() => {
           if (cancelled) {
-            scanner.stop().catch(() => undefined);
+            stopOnce();
             return;
           }
-          started = true;
           setRunning(true);
         })
         .catch((err: unknown) => {
@@ -529,16 +567,22 @@ function CameraScan({ onDecode }: { onDecode: (text: string) => void }) {
     return () => {
       cancelled = true;
       window.clearTimeout(t);
-      if (started) scannerRef.current?.stop().catch(() => undefined);
+      const s = scannerRef.current;
+      if (s && !stoppedRef.current) {
+        stoppedRef.current = true;
+        s.stop().catch(() => undefined);
+      }
     };
   }, [containerId, onDecode]);
 
   return (
     <div className="space-y-2">
-      <div className="relative w-full max-w-sm mx-auto aspect-square rounded-2xl overflow-hidden bg-brand-navy/5">
+      {/* aspect-[3/4] matches a typical phone portrait camera so the live
+          preview isn't cropped, which kept the qrbox visually off-center */}
+      <div className="relative w-full max-w-sm mx-auto aspect-[3/4] rounded-2xl overflow-hidden bg-brand-navy/5">
         <div
           id={containerId}
-          className="absolute inset-0 [&_video]:!w-full [&_video]:!h-full [&_video]:object-cover"
+          className="absolute inset-0 [&_video]:!w-full [&_video]:!h-full [&_video]:object-contain [&_video]:bg-brand-navy/5"
         />
         {!running && !error && (
           <div className="absolute inset-0 flex items-center justify-center text-brand-navy/40 pointer-events-none">
@@ -553,11 +597,15 @@ function CameraScan({ onDecode }: { onDecode: (text: string) => void }) {
 
 function ProgressStep({
   requestId,
+  gateway,
+  berth,
   onClose,
   onRetry,
   retrying,
 }: {
   requestId: string;
+  gateway: Gateway | null;
+  berth: Berth | null;
   onClose: () => void;
   onRetry: () => void;
   retrying: boolean;
@@ -584,13 +632,33 @@ function ProgressStep({
     }
   }
 
+  const friendlyLocation = (() => {
+    const berthLabel = berth?.label ?? request?.berth_id;
+    const gatewayName = gateway?.name ?? request?.gateway_id;
+    if (!berthLabel && !gatewayName) return null;
+    if (berthLabel && gatewayName)
+      return `Berth ${berthLabel} · ${gatewayName}`;
+    return berthLabel ?? gatewayName;
+  })();
+
   return (
     <div className="space-y-4">
-      <SectionHead title="Adoption progress" hint={`request ${requestId}`} />
+      <div>
+        <h3 className="text-sm font-black text-brand-navy">
+          Adoption progress
+        </h3>
+        <p className="text-[11px] text-brand-navy/50">
+          {status === "ok"
+            ? "Sensor connected and ready."
+            : status === "err"
+              ? "Provisioning didn't complete."
+              : "This usually takes about 30 seconds."}
+        </p>
+      </div>
       <PhaseSteps phase={phase} status={status} />
       <div
         className={cn(
-          "p-6 rounded-2xl border flex items-start gap-4",
+          "p-4 sm:p-6 rounded-2xl border flex items-start gap-3 sm:gap-4",
           status === "ok" && "bg-emerald-500/5 border-emerald-500/20",
           status === "err" && "bg-red-500/5 border-red-500/20",
           status === "pending" && "bg-brand-blue/5 border-brand-blue/20",
@@ -619,15 +687,9 @@ function ProgressStep({
                   ? humanizePhase(phase)
                   : "Awaiting gateway"}
           </div>
-          {request && (
-            <p className="text-[10px] font-mono text-brand-navy/50 mt-1 break-all">
-              berth {request.berth_id} · gateway {request.gateway_id}
-            </p>
-          )}
-          {status === "ok" && request?.mesh_unicast_addr && (
-            <p className="text-[11px] text-brand-navy/70 mt-2">
-              Mesh unicast addr{" "}
-              <span className="font-mono">{request.mesh_unicast_addr}</span>
+          {friendlyLocation && (
+            <p className="text-[11px] text-brand-navy/70 mt-1">
+              {friendlyLocation}
             </p>
           )}
           {status === "err" && (
@@ -650,6 +712,12 @@ function ProgressStep({
           )}
         </div>
       </div>
+      <TechnicalDetails
+        requestId={requestId}
+        request={request}
+        gateway={gateway}
+        berth={berth}
+      />
       {status === "pending" ? (
         <div className="flex gap-2">
           <button
@@ -721,6 +789,13 @@ const PHASE_ORDER = [
   "complete",
 ] as const;
 
+// row pitch in px, must match the inline `height` on each <li> below
+const PHASE_ROW = 26;
+// rows kept visible above the focused one (sets the "scrolled" feel)
+const PHASE_HEAD_ROOM = 1;
+// total visible rows in the window (focused + head room + 1 lookahead)
+const PHASE_VISIBLE_ROWS = PHASE_HEAD_ROOM + 2;
+
 function PhaseSteps({
   phase,
   status,
@@ -729,41 +804,159 @@ function PhaseSteps({
   status: "pending" | "ok" | "err";
 }) {
   const currentIdx = phase ? PHASE_ORDER.indexOf(phase as never) : -1;
+  // peg window to the last phase once finalized so the "complete" row settles
+  // at the focused position instead of the list snapping back
+  const focusIdx =
+    status === "ok" ? PHASE_ORDER.length - 1 : Math.max(currentIdx, 0);
+  const offsetPx = Math.max(0, focusIdx - PHASE_HEAD_ROOM) * PHASE_ROW;
+
   return (
-    <ol className="flex items-center gap-1 overflow-x-auto py-1">
-      {PHASE_ORDER.map((p, i) => {
-        const done = status === "ok" || i < currentIdx;
-        const active = status === "pending" && i === currentIdx;
-        const failed = status === "err" && i === currentIdx;
-        return (
-          <li
-            key={p}
-            className={cn(
-              "flex items-center gap-1.5 px-2 py-1 rounded-full text-[9px] font-bold uppercase tracking-widest shrink-0",
-              done && "text-emerald-600 bg-emerald-500/10",
-              active && "text-brand-blue bg-brand-blue/10",
-              failed && "text-red-600 bg-red-500/10",
-              !done &&
-                !active &&
-                !failed &&
-                "text-brand-navy/30 bg-brand-navy/5",
-            )}
-            aria-current={active ? "step" : undefined}
-          >
-            {done ? (
-              <CheckCircle2 size={10} strokeWidth={3} />
-            ) : active ? (
-              <Loader2 size={10} strokeWidth={3} className="animate-spin" />
-            ) : failed ? (
-              <AlertCircle size={10} strokeWidth={3} />
-            ) : (
-              <Circle size={10} strokeWidth={3} />
-            )}
-            {humanizePhase(p)}
-          </li>
-        );
-      })}
-    </ol>
+    <div
+      className="relative overflow-hidden"
+      style={{
+        height: PHASE_ROW * PHASE_VISIBLE_ROWS,
+        // older rows fade out at the top so the list reads as scrolling
+        maskImage:
+          "linear-gradient(to bottom, transparent 0, black 28%, black 100%)",
+        WebkitMaskImage:
+          "linear-gradient(to bottom, transparent 0, black 28%, black 100%)",
+      }}
+    >
+      {/* timeline rail behind the icons, fades with the row mask above */}
+      <div
+        aria-hidden
+        className="absolute left-[11px] top-0 bottom-0 w-px bg-brand-navy/10"
+      />
+      <ol
+        aria-label="provisioning phases"
+        className="flex flex-col transition-transform duration-500 ease-out"
+        style={{ transform: `translateY(-${offsetPx}px)` }}
+      >
+        {PHASE_ORDER.map((p, i) => {
+          const done = status === "ok" || i < currentIdx;
+          const active = status === "pending" && i === currentIdx;
+          const failed = status === "err" && i === currentIdx;
+          // distance from the focused row drives the secondary fade so rows
+          // ahead/behind dim further the more they recede
+          const distance = Math.abs(i - focusIdx);
+          const distanceOpacity =
+            distance === 0 ? 1 : distance === 1 ? 0.55 : 0.2;
+          const detail = describePhase(p);
+          return (
+            <li
+              key={p}
+              aria-current={active ? "step" : undefined}
+              title={detail}
+              className="group relative flex items-center gap-3 transition-opacity duration-500 ease-out pl-1 cursor-help"
+              style={{ height: PHASE_ROW, opacity: distanceOpacity }}
+            >
+              <span
+                className={cn(
+                  "relative z-10 grid place-items-center w-5 h-5 rounded-full bg-white",
+                  "transition-transform duration-300 ease-out",
+                  active && "scale-110",
+                )}
+              >
+                {done ? (
+                  <CheckCircle2
+                    size={16}
+                    strokeWidth={2.5}
+                    className="text-emerald-600"
+                  />
+                ) : active ? (
+                  <Loader2
+                    size={16}
+                    strokeWidth={2.5}
+                    className="text-brand-blue animate-spin"
+                  />
+                ) : failed ? (
+                  <AlertCircle
+                    size={16}
+                    strokeWidth={2.5}
+                    className="text-red-600"
+                  />
+                ) : (
+                  <Circle
+                    size={14}
+                    strokeWidth={2.5}
+                    className="text-brand-navy/40"
+                  />
+                )}
+              </span>
+              <span
+                className={cn(
+                  "text-[10px] font-bold uppercase tracking-widest transition-colors",
+                  done && "text-emerald-700",
+                  active && "text-brand-blue text-[11px]",
+                  failed && "text-red-700",
+                  !done && !active && !failed && "text-brand-navy/60",
+                )}
+              >
+                {humanizePhase(p)}
+              </span>
+              {/* hover detail, positioned over the row so it never reflows.
+                  z-30 sits above the mask gradient so older rows can still
+                  reveal their detail on hover */}
+              <span
+                role="tooltip"
+                className={cn(
+                  "pointer-events-none absolute left-9 top-1/2 -translate-y-1/2 z-30",
+                  "px-2.5 py-1 rounded-md bg-brand-navy text-white",
+                  "text-[10px] normal-case tracking-normal font-medium leading-tight",
+                  "max-w-[260px] whitespace-normal shadow-lg",
+                  "opacity-0 -translate-x-1 transition-all duration-150 delay-100 ease-out",
+                  "group-hover:opacity-100 group-hover:translate-x-0 group-focus-visible:opacity-100",
+                )}
+              >
+                {detail}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  );
+}
+
+function TechnicalDetails({
+  requestId,
+  request,
+  gateway,
+  berth,
+}: {
+  requestId: string;
+  request: components["schemas"]["AdoptionRequestOut"] | null;
+  gateway: Gateway | null;
+  berth: Berth | null;
+}) {
+  const rows: Array<[string, string | null | undefined]> = [
+    ["Request ID", requestId],
+    ["Mesh UUID", request?.mesh_uuid],
+    ["Mesh unicast addr", request?.mesh_unicast_addr],
+    ["Berth", berth?.berth_id ?? request?.berth_id],
+    ["Gateway", gateway?.gateway_id ?? request?.gateway_id],
+    ["Serial number", request?.serial_number],
+  ].filter(([, v]) => Boolean(v));
+  if (rows.length === 0) return null;
+  return (
+    <details className="group rounded-xl border border-brand-navy/10 bg-brand-navy/[0.02] open:bg-brand-navy/[0.04]">
+      <summary className="cursor-pointer list-none px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-brand-navy/50 hover:text-brand-navy/80 select-none flex items-center justify-between">
+        <span>Technical details</span>
+        <span className="text-brand-navy/30 group-open:rotate-180 transition-transform">
+          ▾
+        </span>
+      </summary>
+      <dl className="px-4 pb-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[10px]">
+        {rows.map(([label, value]) => (
+          <div key={label} className="contents">
+            <dt className="text-brand-navy/50 font-bold uppercase tracking-widest whitespace-nowrap">
+              {label}
+            </dt>
+            <dd className="text-brand-navy/80 font-mono break-all">{value}</dd>
+          </div>
+        ))}
+      </dl>
+    </details>
   );
 }
 
@@ -813,7 +1006,7 @@ function ModeTab({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex-1 px-4 py-2 rounded-xl flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest transition-all border",
+        "flex-1 px-4 py-3 rounded-xl flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest transition-all border",
         active
           ? "bg-brand-blue text-white border-brand-blue"
           : "bg-white text-brand-navy/60 border-black/10 hover:border-brand-blue/40",
@@ -888,19 +1081,36 @@ const ADOPT_ERROR_MESSAGES: Record<string, string> = {
     "Provisioning failed for an unknown reason. Retry, then check gateway logs.",
 };
 
-// codes mirror the provisioner state machine in dp_mesh_provisioner.c
+// codes mirror the provisioner state machine in dp_mesh_provisioner.c.
+// labels are end-user facing and stay short so they fit one row; the
+// technical reality is exposed via PROV_PHASE_DETAIL on hover so support
+// staff can still see what's actually happening.
 const PROV_PHASES: Record<string, string> = {
-  started: "Scanning for node",
-  "link-open": "BLE link open",
-  "pb-adv-done": "Key exchange done",
-  "cfg-app-key": "Configuring app key",
-  "cfg-bind": "Binding model",
-  "cfg-pub-set": "Setting publish address",
-  complete: "Finalizing",
+  started: "Searching",
+  "link-open": "Connecting",
+  "pb-adv-done": "Securing",
+  "cfg-app-key": "Sharing key",
+  "cfg-bind": "Linking",
+  "cfg-pub-set": "Routing",
+  complete: "Finishing",
+};
+
+const PROV_PHASE_DETAIL: Record<string, string> = {
+  started: "Gateway armed, listening for the sensor's pairing beacons",
+  "link-open": "Bluetooth link to the sensor is open",
+  "pb-adv-done": "Encryption keys exchanged with the sensor",
+  "cfg-app-key": "Sending the harbor key so the sensor can decrypt traffic",
+  "cfg-bind": "Binding the sensor's reading model to the harbor key",
+  "cfg-pub-set": "Pointing the sensor at the gateway for uplinks",
+  complete: "Configuration done, awaiting final acknowledgement",
 };
 
 function humanizePhase(state: string): string {
   return PROV_PHASES[state] ?? state;
+}
+
+function describePhase(state: string): string {
+  return PROV_PHASE_DETAIL[state] ?? humanizePhase(state);
 }
 
 function humanizeAdoptError(

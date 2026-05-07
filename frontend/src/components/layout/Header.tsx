@@ -111,7 +111,8 @@ function Header({
           "fixed z-[var(--z-nav)] flex h-16 items-center justify-between transition-all duration-500",
           "bg-white/40 backdrop-blur-xl border border-white/40 shadow-deep",
           "rounded-[32px] px-3 md:px-10",
-          "top-4 left-4 right-4 md:top-6 md:left-6 md:right-6",
+          // safe-area-inset-top clears the dynamic island / notch on ios
+          "top-[calc(env(safe-area-inset-top)+1rem)] left-4 right-4 md:top-6 md:left-6 md:right-6",
           "animate-in fade-in slide-in-from-top-6 duration-700",
         )}
       >

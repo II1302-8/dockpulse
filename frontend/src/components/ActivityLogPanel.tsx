@@ -187,7 +187,7 @@ export function ActivityLogPanel({
     <section
       className={cn(
         "fixed bg-white/70 backdrop-blur-2xl border border-white/60 shadow-deep",
-        "bottom-28 left-6 right-6 max-h-[55vh]",
+        "bottom-[calc(env(safe-area-inset-bottom)+7rem)] left-6 right-6 max-h-[55dvh]",
         "lg:bottom-auto lg:right-auto lg:top-32 lg:w-80 lg:max-h-[calc(100vh-160px)] lg:left-[var(--sidebar-total-offset,32px)]",
         "flex flex-col z-[var(--z-panel)] p-6 font-body rounded-[32px] overflow-hidden transition-all duration-500 ease-in-out",
         (!isLoaded || isFirstLoad.current) &&
@@ -206,10 +206,11 @@ export function ActivityLogPanel({
         </div>
         <button
           type="button"
-          className="p-2 rounded-full bg-[#0A2540]/5 text-[#0A2540]/60 hover:bg-[#0A2540]/10 transition-colors"
+          aria-label="Close activity log"
           onClick={onCloseCB}
+          className="grid place-items-center w-10 h-10 rounded-full bg-[#0A2540]/5 text-[#0A2540]/60 active:bg-[#0A2540]/15 transition-colors cursor-pointer"
         >
-          <X size={14} strokeWidth={3} />
+          <X size={16} strokeWidth={3} />
         </button>
       </header>
 

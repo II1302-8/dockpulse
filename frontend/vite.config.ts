@@ -37,6 +37,10 @@ export default defineConfig({
     },
   },
   server: {
+    // leading dot = wildcard subdomain. cloudflared tunnel for phone testing
+    // hands out a fresh hostname each session, this lets it through dns
+    // rebinding protection without disabling allowedHosts entirely
+    allowedHosts: [".trycloudflare.com"],
     proxy: {
       // mock server handles paths Prism can't (SSE, cookie-setting auth, adoption flow)
       ...(sseMockUrl

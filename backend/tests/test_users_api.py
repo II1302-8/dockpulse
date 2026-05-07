@@ -153,7 +153,9 @@ _REGISTER_PAYLOAD = {
 async def test_register_creates_user(
     client: AsyncClient, session: AsyncSession, monkeypatch
 ):
-    async def _noop(**kw): pass
+    async def _noop(**kw):
+        pass
+
     monkeypatch.setattr("app.routers.auth.send_verification_email", _noop)
 
     r = await client.post("/api/auth/register", json=_REGISTER_PAYLOAD)
@@ -162,9 +164,7 @@ async def test_register_creates_user(
     assert "email" in data["message"].lower()
 
     stored = (
-        await session.execute(
-            select(User).where(User.email == "cecilia@example.com")
-        )
+        await session.execute(select(User).where(User.email == "cecilia@example.com"))
     ).scalar_one()
     assert stored is not None
     assert stored.email_verified is False
@@ -174,7 +174,9 @@ async def test_register_creates_user(
 async def test_register_duplicate_email_no_enumeration(
     client: AsyncClient, test_user: User, monkeypatch
 ):
-    async def _noop(**kw): pass
+    async def _noop(**kw):
+        pass
+
     monkeypatch.setattr("app.routers.auth.send_account_exists_email", _noop)
 
     payload = {**_REGISTER_PAYLOAD, "email": test_user.email}
@@ -195,7 +197,9 @@ async def test_register_rejects_invalid_email(client: AsyncClient):
 
 
 async def test_register_accepts_unicode_names(client: AsyncClient, monkeypatch):
-    async def _noop(**kw): pass
+    async def _noop(**kw):
+        pass
+
     monkeypatch.setattr("app.routers.auth.send_verification_email", _noop)
 
     payload = {

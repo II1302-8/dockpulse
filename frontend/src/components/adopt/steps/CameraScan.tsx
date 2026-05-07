@@ -9,9 +9,13 @@ export function CameraScan({ onDecode }: { onDecode: (text: string) => void }) {
   const containerId = `qr-region-${id.replace(/[^\w-]/g, "")}`;
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const stoppedRef = useRef(false);
+  // ref so parent re-renders don't tear down the camera via effect dep
+  const onDecodeRef = useRef(onDecode);
+  onDecodeRef.current = onDecode;
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: containerId stable via useId, onDecode read via ref
   useEffect(() => {
     let cancelled = false;
     stoppedRef.current = false;
@@ -51,7 +55,7 @@ export function CameraScan({ onDecode }: { onDecode: (text: string) => void }) {
             // gate further callbacks before handing the decoded text up so
             // the unmount-driven stop() can't race a second decode
             stoppedRef.current = true;
-            onDecode(text.trim());
+            onDecodeRef.current(text.trim());
             // fire-and-forget, parent's re-render will unmount us anyway
             scanner.stop().catch(() => undefined);
           },
@@ -84,7 +88,7 @@ export function CameraScan({ onDecode }: { onDecode: (text: string) => void }) {
         s.stop().catch(() => undefined);
       }
     };
-  }, [containerId, onDecode]);
+  }, []);
 
   return (
     <div className="space-y-2">

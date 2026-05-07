@@ -67,11 +67,38 @@ export function NodesPage() {
     }
   }
 
+  async function resendDecommission(nodeId: string) {
+    if (
+      !window.confirm(
+        `Resend decommission/req for ${nodeId}? Use when the node is flagged decommissioned in DB but still attached to the mesh.`,
+      )
+    ) {
+      return;
+    }
+    setBusyId(nodeId);
+    try {
+      await adminPost(
+        `/nodes/${encodeURIComponent(nodeId)}/decommission/resend`,
+      );
+      setError(null);
+    } catch (err) {
+      setError(
+        err instanceof AdminApiError
+          ? `${err.status} — ${err.message}`
+          : err instanceof Error
+            ? err.message
+            : "Resend failed",
+      );
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   return (
     <div>
       <PageHeader
         title="Nodes"
-        hint="Adopted sensors per berth. Decommission flips status and publishes decommission/req over MQTT so the gateway drops the unicast mapping."
+        hint="Adopted sensors per berth. Decommission flips status and publishes decommission/req over MQTT so the gateway drops the unicast mapping. Resend re-fires the publish without changing DB, for nodes still attached to the mesh after a failed first attempt."
         actions={
           <Button
             onClick={refresh}
@@ -103,23 +130,27 @@ export function NodesPage() {
               n.gateway_id,
               n.status,
               fmtRelative(n.adopted_at),
-              <Button
-                key="action"
-                variant="danger"
-                disabled={busyId === n.node_id || n.status === "decommissioned"}
-                onClick={() => decommission(n.node_id)}
-                tooltip={
-                  n.status === "decommissioned"
-                    ? "Already decommissioned"
-                    : "Set status=decommissioned and publish decommission/req over MQTT"
-                }
-              >
-                {busyId === n.node_id
-                  ? "Working"
-                  : n.status === "decommissioned"
-                    ? "Decommissioned"
-                    : "Decommission"}
-              </Button>,
+              n.status === "decommissioned" ? (
+                <Button
+                  key="action"
+                  variant="secondary"
+                  disabled={busyId === n.node_id}
+                  onClick={() => resendDecommission(n.node_id)}
+                  tooltip="Republish decommission/req over MQTT without touching DB. Use if the node is still on the mesh despite being flagged decommissioned."
+                >
+                  {busyId === n.node_id ? "Working" : "Resend"}
+                </Button>
+              ) : (
+                <Button
+                  key="action"
+                  variant="danger"
+                  disabled={busyId === n.node_id}
+                  onClick={() => decommission(n.node_id)}
+                  tooltip="Set status=decommissioned and publish decommission/req over MQTT"
+                >
+                  {busyId === n.node_id ? "Working" : "Decommission"}
+                </Button>
+              ),
             ],
           }))}
         />

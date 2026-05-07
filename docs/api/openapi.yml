@@ -1339,6 +1339,19 @@ components:
       - attempts
       title: PendingGatewayOut
       type: object
+    ResendDecommissionOut:
+      properties:
+        node_id:
+          title: Node Id
+          type: string
+        request_id:
+          title: Request Id
+          type: string
+      required:
+      - node_id
+      - request_id
+      title: ResendDecommissionOut
+      type: object
     SnapshotAdoption:
       properties:
         err_last_15min:
@@ -2592,6 +2605,46 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       summary: Decommission Node
+      tags:
+      - admin
+  /api/admin/nodes/{node_id}/decommission/resend:
+    post:
+      description: 're-fire decommission/req for a node that''s already flagged in db.
+
+
+        use when db says decommissioned but the mesh still has the node, eg the
+
+        original publish dropped or the gateway was offline. no db write.'
+      operationId: adminResendDecommission
+      parameters:
+      - in: path
+        name: node_id
+        required: true
+        schema:
+          title: Node Id
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResendDecommissionOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Resend Decommission
       tags:
       - admin
   /api/admin/snapshot:

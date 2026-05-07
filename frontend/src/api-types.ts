@@ -236,6 +236,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/nodes/{node_id}/decommission/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Resend Decommission
+         * @description re-fire decommission/req for a node that's already flagged in db.
+         *
+         *     use when db says decommissioned but the mesh still has the node, eg the
+         *     original publish dropped or the gateway was offline. no db write.
+         */
+        post: operations["adminResendDecommission"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/snapshot": {
         parameters: {
             query?: never;
@@ -1691,6 +1714,13 @@ export interface components {
              */
             last_seen_at: string;
         };
+        /** ResendDecommissionOut */
+        ResendDecommissionOut: {
+            /** Node Id */
+            node_id: string;
+            /** Request Id */
+            request_id: string;
+        };
         /** SnapshotAdoption */
         SnapshotAdoption: {
             /** Err Last 15Min */
@@ -2669,6 +2699,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DecommissionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminResendDecommission: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                node_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResendDecommissionOut"];
                 };
             };
             /** @description Validation Error */

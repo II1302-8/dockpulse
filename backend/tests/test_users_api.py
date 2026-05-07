@@ -29,6 +29,7 @@ async def test_user(session: AsyncSession) -> User:
         password_hash=_hash("secretpassword"),
         boat_club="Göteborgs Segelsällskap",
         token_version=0,
+        email_verified=True,
     )
     session.add(user)
     await session.commit()
@@ -148,25 +149,33 @@ _REGISTER_PAYLOAD = {
 }
 
 
-async def test_register_creates_user(client: AsyncClient, session: AsyncSession):
+async def test_register_creates_user(client: AsyncClient, session: AsyncSession, monkeypatch):
+    async def _noop(**kw): pass
+    monkeypatch.setattr("app.routers.auth.send_verification_email", _noop)
+
     r = await client.post("/api/auth/register", json=_REGISTER_PAYLOAD)
     assert r.status_code == 201
     data = r.json()
-    assert data["email"] == "cecilia@example.com"
-    assert data["firstname"] == "Cecilia"
-    assert "password" not in data
-    assert "password_hash" not in data
-    assert data["user_id"]
+    assert "email" in data["message"].lower()
 
-    stored = await session.get(User, data["user_id"])
+    from sqlalchemy import select
+    stored = (
+        await session.execute(
+            select(User).where(User.email == "cecilia@example.com")
+        )
+    ).scalar_one()
     assert stored is not None
+    assert stored.email_verified is False
     assert verify_password(stored.password_hash, "hunter2hunter2")
 
 
-async def test_register_duplicate_email_conflict(client: AsyncClient, test_user: User):
+async def test_register_duplicate_email_no_enumeration(client: AsyncClient, test_user: User, monkeypatch):
+    async def _noop(**kw): pass
+    monkeypatch.setattr("app.routers.auth.send_account_exists_email", _noop)
+
     payload = {**_REGISTER_PAYLOAD, "email": test_user.email}
     r = await client.post("/api/auth/register", json=payload)
-    assert r.status_code == 409
+    assert r.status_code == 201
 
 
 async def test_register_rejects_short_password(client: AsyncClient):

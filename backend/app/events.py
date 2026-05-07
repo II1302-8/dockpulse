@@ -17,12 +17,14 @@ logger = logging.getLogger(__name__)
 # todo harbor-scope once User has harbor_id pages every hm right now
 
 
-def _publish_berth_update(berth: Berth) -> None:
+def publish_berth_update(berth: Berth) -> None:
     event = BerthUpdateEvent(berth=berth)
     broadcaster.publish(event.model_dump(mode="json"))
 
 
-async def _load_berth(session: AsyncSession, berth_id: str) -> Berth | None:
+async def load_berth_with_assignment(
+    session: AsyncSession, berth_id: str
+) -> Berth | None:
     # eager-load assignment so BerthOut serialization never lazy-loads in async
     stmt = (
         select(Berth)
@@ -82,7 +84,7 @@ async def process_sensor_reading(
     battery_pct: int | None = None,
 ) -> Event | None:
     """Persist a berth status reading. Return a new Event on state change."""
-    berth = await _load_berth(session, berth_id)
+    berth = await load_berth_with_assignment(session, berth_id)
     if berth is None:
         raise ValueError(f"Unknown berth: {berth_id}")
 
@@ -111,7 +113,7 @@ async def process_sensor_reading(
     if new_status == prev_status or berth.is_reserved:
         await session.commit()
         if berth.battery_pct != prev_battery:
-            _publish_berth_update(berth)
+            publish_berth_update(berth)
         return None
 
     event = Event(
@@ -126,7 +128,7 @@ async def process_sensor_reading(
     berth.status = new_status
     session.add(event)
     await session.commit()
-    _publish_berth_update(berth)
+    publish_berth_update(berth)
     await _notify_harbormasters(session, berth, new_status, event.event_id)
     return event
 
@@ -138,11 +140,11 @@ async def process_heartbeat(
     battery_pct: int | None = None,
 ) -> None:
     """Touch berth liveness from a heartbeat; no Event row written."""
-    berth = await _load_berth(session, berth_id)
+    berth = await load_berth_with_assignment(session, berth_id)
     if berth is None:
         raise ValueError(f"Unknown berth: {berth_id}")
     berth.last_updated = datetime.now(UTC)
     if battery_pct is not None:
         berth.battery_pct = battery_pct
     await session.commit()
-    _publish_berth_update(berth)
+    publish_berth_update(berth)

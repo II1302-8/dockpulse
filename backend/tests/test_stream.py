@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 import pytest
 
@@ -106,3 +107,57 @@ async def test_unsubscribe_after_context_exit(session, seeded_berth):
     async with broadcaster.subscribe():
         assert broadcaster.subscriber_count() == 1
     assert broadcaster.subscriber_count() == 0
+
+
+async def test_berth_stream_first_frame_is_snapshot(session, seeded_berth):
+    from app.routers.berths import stream_berths
+
+    class _Req:
+        async def is_disconnected(self):
+            return False
+
+    response = await stream_berths(_Req(), session)  # type: ignore[arg-type]
+    gen = response.body_iterator
+    try:
+        frame = await asyncio.wait_for(gen.__anext__(), timeout=1.0)
+        assert frame["event"] == "berth.snapshot"
+        payload = json.loads(frame["data"])
+        assert payload["type"] == "berth.snapshot"
+        assert "b1" in [b["berth_id"] for b in payload["berths"]]
+    finally:
+        await gen.aclose()
+
+
+async def test_berth_stream_loop_drops_non_berth_events(session, seeded_berth):
+    # broadcaster fans every event to every queue, route must drop non-berth
+    from app.routers.berths import stream_berths
+
+    class _Req:
+        async def is_disconnected(self):
+            return False
+
+    response = await stream_berths(_Req(), session)  # type: ignore[arg-type]
+    gen = response.body_iterator
+
+    snapshot = await asyncio.wait_for(gen.__anext__(), timeout=1.0)
+    assert snapshot["event"] == "berth.snapshot"
+
+    broadcaster.publish({"type": "adoption.update", "request": {"r": 1}})
+    broadcaster.publish(
+        {
+            "type": "berth.update",
+            "berth": {
+                "berth_id": "b1",
+                "dock_id": "d1",
+                "status": "free",
+                "is_reserved": False,
+            },
+        }
+    )
+
+    next_frame = await asyncio.wait_for(gen.__anext__(), timeout=2.0)
+    payload = json.loads(next_frame["data"])
+    assert payload["type"] == "berth.update"
+    assert payload["berth"]["berth_id"] == "b1"
+
+    await gen.aclose()

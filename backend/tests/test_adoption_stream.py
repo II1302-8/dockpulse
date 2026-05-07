@@ -117,6 +117,29 @@ async def test_finalize_ok_publishes_event_matching_stream_filter(
     assert event["request"]["mesh_unicast_addr"] == "0x0042"
 
 
+async def test_finalize_ok_also_publishes_berth_update(
+    session: AsyncSession,
+    pending_request: AdoptionRequest,
+):
+    # map waits on berth.update so adoption refreshes without first reading
+    async with broadcaster.subscribe() as queue:
+        await complete_adoption_ok(
+            session,
+            request_id="req-pending",
+            mesh_unicast_addr="0x0042",
+            dev_key_fp="9f3a8b2c4d1e7f60",
+        )
+        events = [
+            await asyncio.wait_for(queue.get(), timeout=1.0),
+            await asyncio.wait_for(queue.get(), timeout=1.0),
+        ]
+
+    types = {e["type"] for e in events}
+    assert types == {"adoption.update", "berth.update"}
+    berth_evt = next(e for e in events if e["type"] == "berth.update")
+    assert berth_evt["berth"]["berth_id"] == "b1"
+
+
 async def test_finalize_err_publishes_event_matching_stream_filter(
     session: AsyncSession,
     pending_request: AdoptionRequest,

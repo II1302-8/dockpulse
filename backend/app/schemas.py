@@ -300,6 +300,11 @@ class BerthUpdateEvent(BaseModel):
     berth: BerthOut
 
 
+class BerthSnapshotEvent(BaseModel):
+    type: Literal["berth.snapshot"] = "berth.snapshot"
+    berths: list[BerthOut]
+
+
 class AdoptionUpdateEvent(BaseModel):
     type: Literal["adoption.update"] = "adoption.update"
     request: AdoptionRequestOut

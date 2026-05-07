@@ -39,10 +39,11 @@ async def send_verification_email(email: str, token: str, firstname: str) -> Non
         subject="Verify your DockPulse account",
         html=(
             f"<h1>Welcome, {firstname}!</h1>"
-            f"<p>Please verify your email by clicking the link below:</p>"
+            "<p>Please verify your email by clicking the link below:</p>"
             f'<a href="{verify_url}">Verify Email</a>'
-            f"<p>This link expires in {settings.verification_token_ttl_hours} hours.</p>"
-            f"<p>If you didn't create this account, you can safely ignore this email.</p>"
+            f"<p>This link expires in"
+            f" {settings.verification_token_ttl_hours} hours.</p>"
+            "<p>If you didn't create this account, you can safely ignore this email.</p>"
         ),
     )
 
@@ -53,8 +54,8 @@ async def send_account_exists_email(email: str, firstname: str) -> None:
         subject="Someone tried to register with your DockPulse account",
         html=(
             f"<h1>Hi {firstname},</h1>"
-            f"<p>Someone tried to register a DockPulse account using your email address, "
-            f"but an account already exists.</p>"
+            "<p>Someone tried to register a DockPulse account using your email"
+            " address, but an account already exists.</p>"
             f"<p>If this was you, you can log in directly. "
             f"If you've forgotten your password, use the password reset flow.</p>"
             f"<p>If this wasn't you, you can safely ignore this email.</p>"

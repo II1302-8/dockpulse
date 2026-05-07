@@ -1,12 +1,14 @@
+import secrets
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
-from fastapi import APIRouter, Cookie, HTTPException, Request, Response
+from fastapi import APIRouter, BackgroundTasks, Cookie, HTTPException, Request, Response
 from sqlalchemy import select, update
+from sqlalchemy.exc import IntegrityError
 
 from app.auth import (
     ALGORITHM,
@@ -19,15 +21,15 @@ from app.auth import (
 )
 from app.config import get_settings
 from app.dependencies import CurrentUserDep, SessionDep
-from app.models import RefreshToken, User
+from app.models import RefreshToken, User, UserVerification
+from app.notifications import send_account_exists_email, send_verification_email
 from app.rate_limit import limiter
 from app.schemas import LoginIn, UserCreate, UserOut
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 _ph = PasswordHasher()
-# dummy hash so unknown email still pays verify cost
-# blocks user enum via response timing
+# dummy hash so unknown email still pays verify cost — blocks user enum via timing
 _DUMMY_HASH = _ph.hash("dummy-password-for-timing-equalization")
 
 
@@ -53,18 +55,62 @@ async def _issue_session(
     )
 
 
+async def _invalidate_verification_tokens(user_id: str, session: SessionDep) -> None:
+    await session.execute(
+        update(UserVerification)
+        .where(UserVerification.user_id == user_id, UserVerification.used.is_(False))
+        .values(used=True)
+    )
+
+
+def _create_verification_token(user_id: str, session: SessionDep, settings) -> str:
+    token = secrets.token_urlsafe(32)
+    session.add(
+        UserVerification(
+            user_id=user_id,
+            token=token,
+            expires_at=datetime.now(UTC)
+            + timedelta(hours=settings.verification_token_ttl_hours),
+        )
+    )
+    return token
+
+
 @router.post(
     "/register",
-    response_model=UserOut,
     status_code=201,
     operation_id="registerUser",
     summary="Register a new user",
 )
 @limiter.limit(lambda: get_settings().rate_limit_register)
-async def register(request: Request, body: UserCreate, session: SessionDep):
-    existing = await session.execute(select(User).where(User.email == body.email))
-    if existing.scalar_one_or_none() is not None:
-        raise HTTPException(status_code=409, detail="Email already in use")
+async def register(
+    request: Request,
+    body: UserCreate,
+    session: SessionDep,
+    background_tasks: BackgroundTasks,
+):
+    settings = get_settings()
+    result = await session.execute(select(User).where(User.email == body.email))
+    existing = result.scalar_one_or_none()
+
+    if existing is not None:
+        if not existing.email_verified:
+            await _invalidate_verification_tokens(existing.user_id, session)
+            token = _create_verification_token(existing.user_id, session, settings)
+            await session.commit()
+            background_tasks.add_task(
+                send_verification_email,
+                email=existing.email,
+                token=token,
+                firstname=existing.firstname,
+            )
+        else:
+            background_tasks.add_task(
+                send_account_exists_email,
+                email=existing.email,
+                firstname=existing.firstname,
+            )
+        return {"message": "Check your email to verify your account"}
 
     user = User(
         user_id=str(uuid.uuid4()),
@@ -74,11 +120,24 @@ async def register(request: Request, body: UserCreate, session: SessionDep):
         phone=body.phone,
         boat_club=body.boat_club,
         password_hash=_hash_password(body.password.get_secret_value()),
+        email_verified=False,
     )
     session.add(user)
+    try:
+        await session.flush()
+    except IntegrityError:
+        await session.rollback()
+        return {"message": "Check your email to verify your account"}
+
+    token = _create_verification_token(user.user_id, session, settings)
     await session.commit()
-    await session.refresh(user)
-    return user
+    background_tasks.add_task(
+        send_verification_email,
+        email=user.email,
+        token=token,
+        firstname=user.firstname,
+    )
+    return {"message": "Check your email to verify your account"}
 
 
 @router.post(
@@ -148,7 +207,6 @@ async def refresh_session(
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
     if row.revoked_at is not None:
-        # reuse of a rotated token, treat as theft and burn the family
         await _revoke_all_refresh_tokens_for(user_id, session)
         await session.execute(
             update(User)

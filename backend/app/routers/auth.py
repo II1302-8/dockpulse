@@ -63,7 +63,9 @@ async def _invalidate_verification_tokens(user_id: str, session: SessionDep) -> 
     )
 
 
-def _create_verification_token(user_id: str, session: SessionDep, settings) -> str:
+async def _create_verification_token(
+    user_id: str, session: SessionDep, settings
+) -> str:
     token = secrets.token_urlsafe(32)
     session.add(
         UserVerification(
@@ -96,7 +98,9 @@ async def register(
     if existing is not None:
         if not existing.email_verified:
             await _invalidate_verification_tokens(existing.user_id, session)
-            token = _create_verification_token(existing.user_id, session, settings)
+            token = await _create_verification_token(
+                existing.user_id, session, settings
+            )
             await session.commit()
             background_tasks.add_task(
                 send_verification_email,
@@ -129,7 +133,7 @@ async def register(
         await session.rollback()
         return {"message": "Check your email to verify your account"}
 
-    token = _create_verification_token(user.user_id, session, settings)
+    token = await _create_verification_token(user.user_id, session, settings)
     await session.commit()
     background_tasks.add_task(
         send_verification_email,

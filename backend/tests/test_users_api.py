@@ -150,7 +150,9 @@ _REGISTER_PAYLOAD = {
 }
 
 
-async def test_register_creates_user(client: AsyncClient, session: AsyncSession, monkeypatch):
+async def test_register_creates_user(
+    client: AsyncClient, session: AsyncSession, monkeypatch
+):
     async def _noop(**kw): pass
     monkeypatch.setattr("app.routers.auth.send_verification_email", _noop)
 
@@ -169,7 +171,9 @@ async def test_register_creates_user(client: AsyncClient, session: AsyncSession,
     assert verify_password(stored.password_hash, "hunter2hunter2")
 
 
-async def test_register_duplicate_email_no_enumeration(client: AsyncClient, test_user: User, monkeypatch):
+async def test_register_duplicate_email_no_enumeration(
+    client: AsyncClient, test_user: User, monkeypatch
+):
     async def _noop(**kw): pass
     monkeypatch.setattr("app.routers.auth.send_account_exists_email", _noop)
 

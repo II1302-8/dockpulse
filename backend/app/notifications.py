@@ -43,7 +43,8 @@ async def send_verification_email(email: str, token: str, firstname: str) -> Non
             f'<a href="{verify_url}">Verify Email</a>'
             f"<p>This link expires in"
             f" {settings.verification_token_ttl_hours} hours.</p>"
-            "<p>If you didn't create this account, you can safely ignore this email.</p>"
+            "<p>If you didn't create this account, you can safely"
+            " ignore this email.</p>"
         ),
     )
 

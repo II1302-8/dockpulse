@@ -232,6 +232,11 @@ async def login(
     if user is None:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
+    if not user.email_verified:
+        raise HTTPException(
+            status_code=403, detail="Email not verified. Check your inbox."
+        )
+
     await _issue_session(user, response, session)
     await session.commit()
     return user

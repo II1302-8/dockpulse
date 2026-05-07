@@ -370,3 +370,73 @@ async def test_resend_returns_200_for_already_verified(
         "/api/auth/resend-verification", json={"email": "done@example.com"}
     )
     assert r.status_code == 200
+
+
+# ── login gate ────────────────────────────────────────────────────────────────
+
+
+async def test_login_blocked_for_unverified_user(
+    client: AsyncClient, session: AsyncSession
+):
+    from tests._helpers import hash_password
+
+    user = User(
+        user_id="u-unverified-login",
+        firstname="Unver",
+        lastname="Ified",
+        email="unverified@example.com",
+        password_hash=hash_password("password1234"),
+        email_verified=False,
+    )
+    session.add(user)
+    await session.commit()
+    r = await client.post(
+        "/api/auth/login",
+        json={"email": "unverified@example.com", "password": "password1234"},
+    )
+    assert r.status_code == 403
+    assert "verified" in r.json()["detail"].lower()
+
+
+async def test_login_succeeds_for_verified_user(
+    client: AsyncClient, session: AsyncSession
+):
+    from tests._helpers import hash_password
+
+    user = User(
+        user_id="u-verified-login",
+        firstname="Ver",
+        lastname="Ified",
+        email="verified-login@example.com",
+        password_hash=hash_password("password1234"),
+        email_verified=True,
+    )
+    session.add(user)
+    await session.commit()
+    r = await client.post(
+        "/api/auth/login",
+        json={"email": "verified-login@example.com", "password": "password1234"},
+    )
+    assert r.status_code == 200
+
+
+async def test_login_wrong_password_still_401_not_403(
+    client: AsyncClient, session: AsyncSession
+):
+    from tests._helpers import hash_password
+
+    user = User(
+        user_id="u-wrong-pw",
+        firstname="Wrong",
+        lastname="Pass",
+        email="wrongpass@example.com",
+        password_hash=hash_password("correctpassword1234"),
+        email_verified=False,
+    )
+    session.add(user)
+    await session.commit()
+    r = await client.post(
+        "/api/auth/login",
+        json={"email": "wrongpass@example.com", "password": "wrongpassword"},
+    )
+    assert r.status_code == 401

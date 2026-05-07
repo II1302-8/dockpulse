@@ -12,7 +12,7 @@ from app.adoption.finalize import complete_adoption_err, complete_adoption_ok
 from app.config import get_settings
 from app.db import get_sessionmaker
 from app.events import process_heartbeat, process_sensor_reading
-from app.models import Gateway, PendingGateway
+from app.models import Gateway, Node, PendingGateway
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +25,7 @@ HEARTBEAT_TOPIC = "harbor/+/+/+/heartbeat"
 GATEWAY_TOPIC_PREFIX = "dockpulse/v1/gw"
 PROVISION_RESP_TOPIC = f"{GATEWAY_TOPIC_PREFIX}/+/provision/resp"
 PROVISION_STATE_TOPIC = f"{GATEWAY_TOPIC_PREFIX}/+/provision/state"
+DECOMMISSION_RESP_TOPIC = f"{GATEWAY_TOPIC_PREFIX}/+/decommission/resp"
 GATEWAY_STATUS_TOPIC = f"{GATEWAY_TOPIC_PREFIX}/+/status"
 
 RECONNECT_DELAY = 5
@@ -167,6 +168,61 @@ async def _handle_provision_resp(session: AsyncSession, payload: dict) -> None:
         logger.exception("provision/resp finalize crashed: req=%s", request_id)
 
 
+async def _handle_decommission_resp(
+    session: AsyncSession, gateway_id: str, payload: dict
+) -> None:
+    request_id = payload.get("req_id")
+    status = payload.get("status")
+    node_id = payload.get("node_id")
+    if not isinstance(request_id, str) or status not in ("ok", "err"):
+        logger.warning("invalid decommission/resp payload: %s", payload)
+        return
+
+    if status == "ok":
+        logger.info(
+            "decommission/resp ok req=%s node=%s gw=%s",
+            request_id,
+            node_id,
+            gateway_id,
+        )
+        return
+
+    code = payload.get("code", "unknown")
+    msg = payload.get("msg")
+    logger.warning(
+        "decommission/resp err req=%s node=%s gw=%s code=%s msg=%s",
+        request_id,
+        node_id,
+        gateway_id,
+        code,
+        msg,
+    )
+    # without node_id from old firmware we can't safely revert
+    if not isinstance(node_id, str):
+        return
+    node = await session.get(Node, node_id)
+    if node is None:
+        logger.warning("decommission/resp err for unknown node %s", node_id)
+        return
+    # ignore resps from a gateway that doesn't own this node
+    if node.gateway_id != gateway_id:
+        logger.warning(
+            "decommission/resp gateway mismatch: payload gw=%s node.gateway=%s node=%s",
+            gateway_id,
+            node.gateway_id,
+            node_id,
+        )
+        return
+    if node.status == "decommissioned":
+        node.status = "provisioned"
+        await session.commit()
+        logger.warning(
+            "reverted node %s to provisioned after decom err code=%s",
+            node_id,
+            code,
+        )
+
+
 async def _handle_gateway_status(
     session: AsyncSession, gateway_id: str, payload: dict
 ) -> None:
@@ -226,6 +282,8 @@ async def _handle_message(message: aiomqtt.Message) -> None:
         async with get_sessionmaker()() as session:
             if kind == "provision/resp":
                 await _handle_provision_resp(session, payload)
+            elif kind == "decommission/resp":
+                await _handle_decommission_resp(session, gateway_id, payload)
             elif kind == "status":
                 await _handle_gateway_status(session, gateway_id, payload)
         return
@@ -325,6 +383,7 @@ async def mqtt_listener() -> None:
                 await client.subscribe(HEARTBEAT_TOPIC)
                 await client.subscribe(PROVISION_RESP_TOPIC)
                 await client.subscribe(PROVISION_STATE_TOPIC)
+                await client.subscribe(DECOMMISSION_RESP_TOPIC)
                 await client.subscribe(GATEWAY_STATUS_TOPIC)
                 async for message in client.messages:
                     await _handle_message(message)

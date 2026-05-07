@@ -88,17 +88,19 @@ async def test_register_creates_verification_token(
         await session.execute(select(User).where(User.email == "alice@example.com"))
     ).scalar_one()
     tokens = (
-        await session.execute(
-            select(UserVerification).where(UserVerification.user_id == user.user_id)
+        (
+            await session.execute(
+                select(UserVerification).where(UserVerification.user_id == user.user_id)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     assert len(tokens) == 1
     assert tokens[0].used is False
 
 
-async def test_register_fires_verification_email(
-    client: AsyncClient, monkeypatch
-):
+async def test_register_fires_verification_email(client: AsyncClient, monkeypatch):
     sent: list[dict] = []
 
     async def _capture(**kw):
@@ -136,10 +138,14 @@ async def test_register_duplicate_unverified_resends_token(
         await session.execute(select(User).where(User.email == "alice@example.com"))
     ).scalar_one()
     all_tokens = (
-        await session.execute(
-            select(UserVerification).where(UserVerification.user_id == user.user_id)
+        (
+            await session.execute(
+                select(UserVerification).where(UserVerification.user_id == user.user_id)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     used_tokens = [t for t in all_tokens if t.used]
     active_tokens = [t for t in all_tokens if not t.used]
     assert len(used_tokens) == 1

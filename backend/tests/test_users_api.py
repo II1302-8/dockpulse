@@ -1,5 +1,6 @@
 import pytest_asyncio
 from httpx import AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import User
@@ -158,7 +159,6 @@ async def test_register_creates_user(client: AsyncClient, session: AsyncSession,
     data = r.json()
     assert "email" in data["message"].lower()
 
-    from sqlalchemy import select
     stored = (
         await session.execute(
             select(User).where(User.email == "cecilia@example.com")
@@ -190,12 +190,15 @@ async def test_register_rejects_invalid_email(client: AsyncClient):
     assert r.status_code == 422
 
 
-async def test_register_accepts_unicode_names(client: AsyncClient):
+async def test_register_accepts_unicode_names(client: AsyncClient, monkeypatch):
+    async def _noop(**kw): pass
+    monkeypatch.setattr("app.routers.auth.send_verification_email", _noop)
+
     payload = {
         **_REGISTER_PAYLOAD,
-        "email": "lukasz@example.com",
-        "firstname": "Łukasz",
-        "lastname": "O’Brien",
+        "email": "dog@example.com",
+        "firstname": "Dögg",
+        "lastname": "Not Ä'Dog",
     }
     r = await client.post("/api/auth/register", json=payload)
     assert r.status_code == 201

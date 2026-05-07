@@ -297,3 +297,62 @@ async def test_patch_notification_prefs_updates_fields(
 async def test_notification_prefs_requires_auth(client: AsyncClient):
     r = await client.get("/api/users/me/notification-prefs")
     assert r.status_code == 401
+
+
+async def test_get_user_by_berth_returns_assigned_user(
+    client: AsyncClient, seeded_berth, harbor_master, boat_owner
+):
+    creds = _creds(make_token(harbor_master.user_id))
+    await client.put(
+        "/api/berths/b1/assignment",
+        json={"user_id": boat_owner.user_id},
+        cookies=creds,
+    )
+
+    r = await client.get("/api/users", params={"berth_id": "b1"}, cookies=creds)
+    assert r.status_code == 200, r.text
+    data = r.json()
+    assert data["user_id"] == boat_owner.user_id
+    assert data["firstname"] == boat_owner.firstname
+    assert data["lastname"] == boat_owner.lastname
+    assert data["email"] == boat_owner.email
+    assert data["assigned_berth_id"] == "b1"
+    assert "password_hash" not in data
+
+
+async def test_get_user_by_berth_unassigned_returns_404(
+    client: AsyncClient, seeded_berth, harbor_master
+):
+    r = await client.get(
+        "/api/users",
+        params={"berth_id": "b1"},
+        cookies=_creds(make_token(harbor_master.user_id)),
+    )
+    assert r.status_code == 404
+
+
+async def test_get_user_by_berth_unknown_berth_returns_404(
+    client: AsyncClient, harbor_master
+):
+    r = await client.get(
+        "/api/users",
+        params={"berth_id": "nope"},
+        cookies=_creds(make_token(harbor_master.user_id)),
+    )
+    assert r.status_code == 404
+
+
+async def test_get_user_by_berth_requires_harbormaster(
+    client: AsyncClient, seeded_berth, boat_owner
+):
+    r = await client.get(
+        "/api/users",
+        params={"berth_id": "b1"},
+        cookies=_creds(make_token(boat_owner.user_id)),
+    )
+    assert r.status_code == 403
+
+
+async def test_get_user_by_berth_requires_auth(client: AsyncClient):
+    r = await client.get("/api/users", params={"berth_id": "b1"})
+    assert r.status_code == 401

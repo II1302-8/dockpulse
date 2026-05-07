@@ -3866,6 +3866,34 @@ paths:
       summary: Mark node as decommissioned
       tags:
       - nodes
+  /api/users:
+    get:
+      operationId: getUserByBerth
+      parameters:
+      - in: query
+        name: berth_id
+        required: true
+        schema:
+          title: Berth Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - APIKeyCookie: []
+      summary: Get the user assigned to a berth
+      tags:
+      - users
   /api/users/me:
     delete:
       operationId: deleteMe

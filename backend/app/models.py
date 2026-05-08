@@ -13,9 +13,23 @@ from sqlalchemy import (
     func,
     text,
 )
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, declarative_mixin, mapped_column, relationship
 
 from app.db import Base
+
+
+@declarative_mixin
+class AuditTimestampsMixin:
+    # trigger set_updated_at() is the source of truth, onupdate keeps orm consistent
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
 
 berth_status_enum = Enum("free", "occupied", name="berth_status")
 event_type_enum = Enum(
@@ -77,7 +91,7 @@ class BerthAvailabilityWindow(Base):
     )
 
 
-class Harbor(Base):
+class Harbor(AuditTimestampsMixin, Base):
     __tablename__ = "harbors"
 
     harbor_id: Mapped[str] = mapped_column(String, primary_key=True)
@@ -88,7 +102,7 @@ class Harbor(Base):
     docks: Mapped[list["Dock"]] = relationship(back_populates="harbor")
 
 
-class Dock(Base):
+class Dock(AuditTimestampsMixin, Base):
     __tablename__ = "docks"
 
     dock_id: Mapped[str] = mapped_column(String, primary_key=True)
@@ -101,7 +115,7 @@ class Dock(Base):
     berths: Mapped[list["Berth"]] = relationship(back_populates="dock")
 
 
-class Berth(Base):
+class Berth(AuditTimestampsMixin, Base):
     __tablename__ = "berths"
     __table_args__ = (
         Index(
@@ -153,7 +167,7 @@ class Event(Base):
     berth: Mapped["Berth"] = relationship(back_populates="events")
 
 
-class Alert(Base):
+class Alert(AuditTimestampsMixin, Base):
     __tablename__ = "alerts"
     __table_args__ = (
         Index(
@@ -207,7 +221,7 @@ class PendingGateway(Base):
     attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
 
-class Node(Base):
+class Node(AuditTimestampsMixin, Base):
     __tablename__ = "nodes"
     __table_args__ = (
         # at most one live node per berth, decommissioned rows kept for history
@@ -230,7 +244,7 @@ class Node(Base):
     dev_key_fp: Mapped[str] = mapped_column(String, nullable=False)
     status: Mapped[str] = mapped_column(node_status_enum, nullable=False)
     adopted_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     adopted_by_user_id: Mapped[str | None] = mapped_column(
         ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True, index=True

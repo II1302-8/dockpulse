@@ -7,13 +7,30 @@ from sqlalchemy import (
     Double,
     Enum,
     ForeignKey,
+    Index,
     Integer,
     String,
     func,
+    text,
 )
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, declarative_mixin, mapped_column, relationship
 
 from app.db import Base
+
+
+@declarative_mixin
+class AuditTimestampsMixin:
+    # trigger set_updated_at() is the source of truth, onupdate keeps orm consistent
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
 
 berth_status_enum = Enum("free", "occupied", name="berth_status")
 event_type_enum = Enum(
@@ -22,7 +39,6 @@ event_type_enum = Enum(
 alert_type_enum = Enum(
     "unauthorized_mooring", "sensor_offline", "low_battery", name="alert_type"
 )
-user_role_enum = Enum("harbormaster", "boat_owner", name="user_role")
 gateway_status_enum = Enum("online", "offline", name="gateway_status")
 node_status_enum = Enum("provisioned", "offline", "decommissioned", name="node_status")
 adoption_status_enum = Enum("pending", "ok", "err", name="adoption_status")
@@ -39,9 +55,6 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String, nullable=False)
     boat_club: Mapped[str | None] = mapped_column(String)
     token_version: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    role: Mapped[str] = mapped_column(
-        user_role_enum, nullable=False, default="boat_owner"
-    )
     assignments: Mapped[list["Assignment"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
@@ -52,6 +65,12 @@ class User(Base):
 
 class BerthAvailabilityWindow(Base):
     __tablename__ = "berth_availability_windows"
+    __table_args__ = (
+        CheckConstraint(
+            "return_date > from_date",
+            name="ck_berth_availability_windows_dates",
+        ),
+    )
 
     window_id: Mapped[str] = mapped_column(String, primary_key=True)
     berth_id: Mapped[str] = mapped_column(
@@ -73,7 +92,7 @@ class BerthAvailabilityWindow(Base):
     )
 
 
-class Harbor(Base):
+class Harbor(AuditTimestampsMixin, Base):
     __tablename__ = "harbors"
 
     harbor_id: Mapped[str] = mapped_column(String, primary_key=True)
@@ -84,12 +103,12 @@ class Harbor(Base):
     docks: Mapped[list["Dock"]] = relationship(back_populates="harbor")
 
 
-class Dock(Base):
+class Dock(AuditTimestampsMixin, Base):
     __tablename__ = "docks"
 
     dock_id: Mapped[str] = mapped_column(String, primary_key=True)
     harbor_id: Mapped[str] = mapped_column(
-        ForeignKey("harbors.harbor_id"), nullable=False
+        ForeignKey("harbors.harbor_id"), nullable=False, index=True
     )
     name: Mapped[str] = mapped_column(String, nullable=False)
 
@@ -97,11 +116,23 @@ class Dock(Base):
     berths: Mapped[list["Berth"]] = relationship(back_populates="dock")
 
 
-class Berth(Base):
+class Berth(AuditTimestampsMixin, Base):
     __tablename__ = "berths"
+    __table_args__ = (
+        Index(
+            "uq_berths_dock_id_label",
+            "dock_id",
+            "label",
+            unique=True,
+            postgresql_where=text("label IS NOT NULL"),
+        ),
+        Index("ix_berths_status", "status"),
+    )
 
     berth_id: Mapped[str] = mapped_column(String, primary_key=True)
-    dock_id: Mapped[str] = mapped_column(ForeignKey("docks.dock_id"), nullable=False)
+    dock_id: Mapped[str] = mapped_column(
+        ForeignKey("docks.dock_id"), nullable=False, index=True
+    )
     label: Mapped[str | None] = mapped_column(String)
     length_m: Mapped[float | None] = mapped_column(Double)
     width_m: Mapped[float | None] = mapped_column(Double)
@@ -122,23 +153,37 @@ class Berth(Base):
 
 class Event(Base):
     __tablename__ = "events"
+    __table_args__ = (
+        Index("ix_events_berth_id_timestamp", "berth_id", text("timestamp DESC")),
+    )
 
     event_id: Mapped[str] = mapped_column(String, primary_key=True)
     berth_id: Mapped[str] = mapped_column(ForeignKey("berths.berth_id"), nullable=False)
+    # loose by design: events can predate the Node row during adoption
     node_id: Mapped[str] = mapped_column(String, nullable=False)
     event_type: Mapped[str] = mapped_column(event_type_enum, nullable=False)
     sensor_raw: Mapped[int] = mapped_column(Integer, nullable=False)
+    # mesh layer reassigns this on rejoin, kept as a per-event snapshot
     mesh_unicast_addr: Mapped[str] = mapped_column(String, nullable=False)
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     berth: Mapped["Berth"] = relationship(back_populates="events")
 
 
-class Alert(Base):
+class Alert(AuditTimestampsMixin, Base):
     __tablename__ = "alerts"
+    __table_args__ = (
+        Index(
+            "ix_alerts_acknowledged_timestamp",
+            "acknowledged",
+            text("timestamp DESC"),
+        ),
+    )
 
     alert_id: Mapped[str] = mapped_column(String, primary_key=True)
-    berth_id: Mapped[str] = mapped_column(ForeignKey("berths.berth_id"), nullable=False)
+    berth_id: Mapped[str] = mapped_column(
+        ForeignKey("berths.berth_id"), nullable=False, index=True
+    )
     type: Mapped[str] = mapped_column(alert_type_enum, nullable=False)
     message: Mapped[str] = mapped_column(String, nullable=False)
     acknowledged: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -179,38 +224,64 @@ class PendingGateway(Base):
     attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
 
-class Node(Base):
+class Node(AuditTimestampsMixin, Base):
     __tablename__ = "nodes"
+    __table_args__ = (
+        # at most one live node per berth, decommissioned rows kept for history
+        Index(
+            "ix_nodes_berth_active",
+            "berth_id",
+            unique=True,
+            postgresql_where=text("status <> 'decommissioned'"),
+        ),
+    )
 
     node_id: Mapped[str] = mapped_column(String, primary_key=True)
     mesh_uuid: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     serial_number: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     berth_id: Mapped[str] = mapped_column(ForeignKey("berths.berth_id"), nullable=False)
     gateway_id: Mapped[str] = mapped_column(
-        ForeignKey("gateways.gateway_id"), nullable=False
+        ForeignKey("gateways.gateway_id"), nullable=False, index=True
     )
     mesh_unicast_addr: Mapped[str] = mapped_column(String, nullable=False)
     dev_key_fp: Mapped[str] = mapped_column(String, nullable=False)
     status: Mapped[str] = mapped_column(node_status_enum, nullable=False)
     adopted_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
+        DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     adopted_by_user_id: Mapped[str | None] = mapped_column(
-        ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True
+        ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True, index=True
     )
 
 
 class AdoptionRequest(Base):
     __tablename__ = "adoption_requests"
+    __table_args__ = (
+        Index(
+            "uq_adoption_requests_pending_mesh_gateway",
+            "mesh_uuid",
+            "gateway_id",
+            unique=True,
+            postgresql_where=text("status = 'pending'"),
+        ),
+        # sweeper hot path filters on pending only
+        Index(
+            "ix_adoption_requests_pending_expires_at",
+            "expires_at",
+            postgresql_where=text("status = 'pending'"),
+        ),
+    )
 
     request_id: Mapped[str] = mapped_column(String, primary_key=True)
     mesh_uuid: Mapped[str] = mapped_column(String, nullable=False)
     serial_number: Mapped[str] = mapped_column(String, nullable=False)
     claim_jti: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     gateway_id: Mapped[str] = mapped_column(
-        ForeignKey("gateways.gateway_id"), nullable=False
+        ForeignKey("gateways.gateway_id"), nullable=False, index=True
     )
-    berth_id: Mapped[str] = mapped_column(ForeignKey("berths.berth_id"), nullable=False)
+    berth_id: Mapped[str] = mapped_column(
+        ForeignKey("berths.berth_id"), nullable=False, index=True
+    )
     expires_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )
@@ -222,7 +293,7 @@ class AdoptionRequest(Base):
     mesh_unicast_addr: Mapped[str | None] = mapped_column(String)
     dev_key_fp: Mapped[str | None] = mapped_column(String)
     created_by_user_id: Mapped[str | None] = mapped_column(
-        ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True
+        ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True, index=True
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
@@ -282,6 +353,13 @@ class UserHarborRole(Base):
 
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
+    __table_args__ = (
+        Index(
+            "ix_refresh_tokens_user_active",
+            "user_id",
+            postgresql_where=text("revoked_at IS NULL"),
+        ),
+    )
 
     jti: Mapped[str] = mapped_column(String, primary_key=True)
     user_id: Mapped[str] = mapped_column(

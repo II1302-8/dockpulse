@@ -5,7 +5,12 @@ from argon2.exceptions import VerifyMismatchError
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select
 
-from app.dependencies import CurrentUserDep, HarbormasterForBerthDep, SessionDep
+from app.dependencies import (
+    CurrentUserDep,
+    HarbormasterForBerthDep,
+    SessionDep,
+    user_is_harbormaster,
+)
 from app.models import Assignment, User, UserNotificationPrefs
 from app.schemas import (
     NotificationPrefsOut,
@@ -13,6 +18,8 @@ from app.schemas import (
     UserOut,
     UserPatch,
 )
+from app.serializers import assigned_berth_id as _assigned_berth_id
+from app.serializers import to_user_out
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -21,32 +28,6 @@ _ph = PasswordHasher()
 
 def _hash_password(password: str) -> str:
     return _ph.hash(password)
-
-
-async def _assigned_berth_id(session, user_id: str) -> str | None:
-    # boat owner has at most one assignment in v1; pick first deterministically
-    result = await session.execute(
-        select(Assignment.berth_id)
-        .where(Assignment.user_id == user_id)
-        .order_by(Assignment.berth_id)
-        .limit(1)
-    )
-    return result.scalar_one_or_none()
-
-
-def _to_user_out(user: User, assigned_berth_id: str | None) -> UserOut:
-    return UserOut.model_validate(
-        {
-            "user_id": user.user_id,
-            "firstname": user.firstname,
-            "lastname": user.lastname,
-            "email": user.email,
-            "phone": user.phone,
-            "boat_club": user.boat_club,
-            "role": user.role,
-            "assigned_berth_id": assigned_berth_id,
-        }
-    )
 
 
 @router.get(
@@ -70,7 +51,7 @@ async def get_user_by_berth(
     user = await session.get(User, user_id)
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    return _to_user_out(user, berth_id)
+    return await to_user_out(session, user, berth_id)
 
 
 @router.get(
@@ -81,7 +62,7 @@ async def get_user_by_berth(
 )
 async def get_me(current_user: CurrentUserDep, session: SessionDep):
     berth_id = await _assigned_berth_id(session, current_user.user_id)
-    return _to_user_out(current_user, berth_id)
+    return await to_user_out(session, current_user, berth_id)
 
 
 @router.patch(
@@ -122,7 +103,7 @@ async def update_me(body: UserPatch, current_user: CurrentUserDep, session: Sess
     await session.commit()
     await session.refresh(current_user)
     berth_id = await _assigned_berth_id(session, current_user.user_id)
-    return _to_user_out(current_user, berth_id)
+    return await to_user_out(session, current_user, berth_id)
 
 
 @router.delete(
@@ -132,9 +113,8 @@ async def update_me(body: UserPatch, current_user: CurrentUserDep, session: Sess
     summary="Delete the current boat-owner account",
 )
 async def delete_me(current_user: CurrentUserDep, session: SessionDep):
-    # harbormasters own hardware adoption records; offboarding them is a
-    # separate admin flow, not self-service
-    if current_user.role != "boat_owner":
+    # harbormasters own hardware adoption records, offboarding is admin-only
+    if await user_is_harbormaster(current_user, session):
         raise HTTPException(
             status_code=403,
             detail="Harbormaster accounts cannot be self-deleted",

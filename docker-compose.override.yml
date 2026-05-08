@@ -14,8 +14,13 @@ services:
       - ./mosquitto-acl.conf:/mosquitto/config/acl.conf:ro
       - mqtt-pki:/mosquitto/certs:ro
 
+  db-migrate:
+    # picks up new revisions without rebuild
+    volumes:
+      - ./backend/alembic:/app/alembic
+
   backend:
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-DEBUG}
       LOG_FORMAT: ${LOG_FORMAT:-text}

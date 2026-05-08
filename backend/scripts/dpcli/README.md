@@ -20,16 +20,14 @@ Override via env var if needed.
 ### Users
 
 ```bash
-dpcli create-user --email admin@harbor.se --role harbormaster
-# prompts for password; firstname/lastname default to "Harbor"/"Master" for
-# harbormasters (press enter to accept). boat_owner role still requires names.
-dpcli grant-harbor admin@harbor.se h1      # scope harbormaster authority to a harbor
-dpcli revoke-harbor admin@harbor.se h1
-dpcli promote-user admin@harbor.se
-dpcli demote-user admin@harbor.se
-dpcli list-users
-dpcli delete-user admin@harbor.se          # asks for confirmation; skip with --yes
+dpcli create-user --email admin@harbor.se   # prompts for password, firstname, lastname
+dpcli grant-harbor admin@harbor.se h1       # promotes to harbormaster scoped to harbor h1
+dpcli revoke-harbor admin@harbor.se h1      # remove harbormaster authority
+dpcli list-users                             # role column derived from harbor grants
+dpcli delete-user admin@harbor.se           # asks for confirmation; skip with --yes
 ```
+
+A user is a harbormaster iff they have at least one row in `user_harbor_roles`. There are no global promote/demote commands — grant or revoke a harbor instead.
 
 ### Harbor / Dock / Berths
 
@@ -80,6 +78,6 @@ dpcli ack-alert <alert-id>
 
 ```bash
 dpcli seed-db
-dpcli create-user --email admin@harbor.se --role harbormaster
+dpcli create-user --email admin@harbor.se
 dpcli grant-harbor admin@harbor.se h1
 ```

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select
 
-from app.dependencies import CurrentUserDep, SessionDep, user_managed_harbor_ids
+from app.dependencies import AnyHarbormasterDep, SessionDep, user_managed_harbor_ids
 from app.models import Dock, Gateway, PendingGateway
 from app.schemas import GatewayOut, PendingGatewayOut
 
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/api/gateways", tags=["gateways"])
     summary="List gateways visible to the harbormaster",
 )
 async def list_gateways(
-    user: CurrentUserDep,
+    user: AnyHarbormasterDep,
     session: SessionDep,
     harbor_id: str | None = Query(None, description="Filter by harbor"),
     dock_id: str | None = Query(None, description="Filter by dock"),
@@ -25,8 +25,6 @@ async def list_gateways(
         pattern="^(online|offline)$",
     ),
 ) -> list[GatewayOut]:
-    if user.role != "harbormaster":
-        raise HTTPException(status_code=403, detail="Harbormaster role required")
     managed = await user_managed_harbor_ids(user, session)
     if not managed:
         return []
@@ -53,12 +51,9 @@ async def list_gateways(
     summary="List unknown gateway ids seen on MQTT",
 )
 async def list_pending_gateways(
-    user: CurrentUserDep, session: SessionDep
+    user: AnyHarbormasterDep, session: SessionDep
 ) -> list[PendingGatewayOut]:
-    # any harbormaster sees the global list — there's no harbor mapping yet
-    # because pending rows precede dock association
-    if user.role != "harbormaster":
-        raise HTTPException(status_code=403, detail="Harbormaster role required")
+    # global list, pending rows precede dock association
     result = await session.execute(
         select(PendingGateway).order_by(PendingGateway.last_seen_at.desc())
     )
@@ -72,10 +67,8 @@ async def list_pending_gateways(
     summary="Dismiss a pending gateway entry",
 )
 async def dismiss_pending_gateway(
-    gateway_id: str, user: CurrentUserDep, session: SessionDep
+    gateway_id: str, user: AnyHarbormasterDep, session: SessionDep
 ) -> None:
-    if user.role != "harbormaster":
-        raise HTTPException(status_code=403, detail="Harbormaster role required")
     row = await session.get(PendingGateway, gateway_id)
     if row is None:
         raise HTTPException(status_code=404, detail="Pending gateway not found")

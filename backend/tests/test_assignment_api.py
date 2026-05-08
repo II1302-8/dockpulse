@@ -14,7 +14,6 @@ async def second_owner(session: AsyncSession) -> User:
         lastname="Owner",
         email="olga@example.com",
         password_hash=hash_password("secret"),
-        role="boat_owner",
     )
     session.add(user)
     await session.commit()

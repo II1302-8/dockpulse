@@ -8,13 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from app import broadcaster
-from app.models import Berth, Event, Node, User
+from app.models import Berth, Dock, Event, Node, User, UserHarborRole
 from app.notifications import send_email
 from app.schemas import BerthUpdateEvent
 
 logger = logging.getLogger(__name__)
-
-# todo harbor-scope once User has harbor_id pages every hm right now
 
 
 def publish_berth_update(berth: Berth) -> None:
@@ -40,9 +38,15 @@ async def _notify_harbormasters(
     new_status: str,
     event_id: str,
 ) -> None:
+    # only harbormasters of the harbor that owns this berth
     result = await session.execute(
         select(User)
-        .where(User.role == "harbormaster")
+        .join(UserHarborRole, UserHarborRole.user_id == User.user_id)
+        .join(Dock, Dock.harbor_id == UserHarborRole.harbor_id)
+        .where(
+            Dock.dock_id == berth.dock_id,
+            UserHarborRole.role == "harbormaster",
+        )
         .options(joinedload(User.notification_prefs))
     )
     harbormasters = result.unique().scalars().all()

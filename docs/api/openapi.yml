@@ -1699,13 +1699,6 @@ components:
             type: string
           - type: 'null'
           title: Phone
-        role:
-          default: boat_owner
-          enum:
-          - harbormaster
-          - boat_owner
-          title: Role
-          type: string
       required:
       - email
       - password
@@ -1741,14 +1734,6 @@ components:
             type: string
           - type: 'null'
           title: Phone
-        role:
-          anyOf:
-          - enum:
-            - harbormaster
-            - boat_owner
-            type: string
-          - type: 'null'
-          title: Role
       title: UserPatch
       type: object
     app__schemas__UserCreate:

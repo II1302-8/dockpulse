@@ -35,10 +35,11 @@ async def test_require_harbor_authority_403_for_non_member(
 async def test_require_harbor_authority_403_for_boat_owner(
     session: AsyncSession, boat_owner: User, harbor_h1
 ):
+    # boat_owner has no UserHarborRole grant, same 403 as a non-member harbormaster
     with pytest.raises(HTTPException) as exc:
         await require_harbor_authority(boat_owner, "h1", session)
     assert exc.value.status_code == 403
-    assert exc.value.detail == "Harbormaster role required"
+    assert exc.value.detail == "Not authorized for this harbor"
 
 
 async def test_user_managed_harbor_ids_returns_membership_set(

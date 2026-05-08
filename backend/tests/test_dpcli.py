@@ -11,7 +11,6 @@ def test_help_lists_commands():
     # spot-check a few commands so import + registration regressions surface
     for cmd in (
         "create-user",
-        "promote-user",
         "grant-harbor",
         "revoke-harbor",
         "seed-db",

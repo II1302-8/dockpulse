@@ -22,6 +22,7 @@ from app.dependencies import CurrentUserDep, SessionDep
 from app.models import RefreshToken, User
 from app.rate_limit import limiter
 from app.schemas import LoginIn, UserCreate, UserOut
+from app.serializers import to_user_out
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -78,7 +79,7 @@ async def register(request: Request, body: UserCreate, session: SessionDep):
     session.add(user)
     await session.commit()
     await session.refresh(user)
-    return user
+    return await to_user_out(session, user)
 
 
 @router.post(
@@ -104,7 +105,7 @@ async def login(
 
     await _issue_session(user, response, session)
     await session.commit()
-    return user
+    return await to_user_out(session, user)
 
 
 @router.get(
@@ -113,8 +114,8 @@ async def login(
     operation_id="getCurrentUser",
     summary="Return the authenticated user",
 )
-async def me(current_user: CurrentUserDep) -> User:
-    return current_user
+async def me(current_user: CurrentUserDep, session: SessionDep) -> UserOut:
+    return await to_user_out(session, current_user)
 
 
 @router.post(

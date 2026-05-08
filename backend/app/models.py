@@ -7,9 +7,11 @@ from sqlalchemy import (
     Double,
     Enum,
     ForeignKey,
+    Index,
     Integer,
     String,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -52,6 +54,12 @@ class User(Base):
 
 class BerthAvailabilityWindow(Base):
     __tablename__ = "berth_availability_windows"
+    __table_args__ = (
+        CheckConstraint(
+            "return_date > from_date",
+            name="ck_berth_availability_windows_dates",
+        ),
+    )
 
     window_id: Mapped[str] = mapped_column(String, primary_key=True)
     berth_id: Mapped[str] = mapped_column(
@@ -99,6 +107,16 @@ class Dock(Base):
 
 class Berth(Base):
     __tablename__ = "berths"
+    __table_args__ = (
+        Index(
+            "uq_berths_dock_id_label",
+            "dock_id",
+            "label",
+            unique=True,
+            postgresql_where=text("label IS NOT NULL"),
+        ),
+        Index("ix_berths_status", "status"),
+    )
 
     berth_id: Mapped[str] = mapped_column(String, primary_key=True)
     dock_id: Mapped[str] = mapped_column(ForeignKey("docks.dock_id"), nullable=False)
@@ -122,6 +140,9 @@ class Berth(Base):
 
 class Event(Base):
     __tablename__ = "events"
+    __table_args__ = (
+        Index("ix_events_berth_id_timestamp", "berth_id", text("timestamp DESC")),
+    )
 
     event_id: Mapped[str] = mapped_column(String, primary_key=True)
     berth_id: Mapped[str] = mapped_column(ForeignKey("berths.berth_id"), nullable=False)
@@ -136,6 +157,13 @@ class Event(Base):
 
 class Alert(Base):
     __tablename__ = "alerts"
+    __table_args__ = (
+        Index(
+            "ix_alerts_acknowledged_timestamp",
+            "acknowledged",
+            text("timestamp DESC"),
+        ),
+    )
 
     alert_id: Mapped[str] = mapped_column(String, primary_key=True)
     berth_id: Mapped[str] = mapped_column(ForeignKey("berths.berth_id"), nullable=False)
@@ -202,6 +230,15 @@ class Node(Base):
 
 class AdoptionRequest(Base):
     __tablename__ = "adoption_requests"
+    __table_args__ = (
+        Index(
+            "uq_adoption_requests_pending_mesh_gateway",
+            "mesh_uuid",
+            "gateway_id",
+            unique=True,
+            postgresql_where=text("status = 'pending'"),
+        ),
+    )
 
     request_id: Mapped[str] = mapped_column(String, primary_key=True)
     mesh_uuid: Mapped[str] = mapped_column(String, nullable=False)
@@ -282,6 +319,13 @@ class UserHarborRole(Base):
 
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
+    __table_args__ = (
+        Index(
+            "ix_refresh_tokens_user_active",
+            "user_id",
+            postgresql_where=text("revoked_at IS NULL"),
+        ),
+    )
 
     jti: Mapped[str] = mapped_column(String, primary_key=True)
     user_id: Mapped[str] = mapped_column(

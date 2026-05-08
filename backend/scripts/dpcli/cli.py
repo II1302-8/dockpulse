@@ -480,9 +480,7 @@ async def _list_users() -> None:
         users = result.scalars().all()
         # one query for all harbormaster ids, no n+1 across the user list
         hm_rows = await session.execute(
-            select(UserHarborRole.user_id).where(
-                UserHarborRole.role == "harbormaster"
-            )
+            select(UserHarborRole.user_id).where(UserHarborRole.role == "harbormaster")
         )
         harbormaster_ids = set(hm_rows.scalars().all())
 

@@ -31,6 +31,7 @@ class AuditTimestampsMixin:
         onupdate=func.now(),
     )
 
+
 berth_status_enum = Enum("free", "occupied", name="berth_status")
 event_type_enum = Enum(
     "occupied", "freed", "alert_unauthorized", "heartbeat", name="event_type"

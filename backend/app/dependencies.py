@@ -35,9 +35,7 @@ async def require_harbor_authority(
     return user
 
 
-async def require_any_harbormaster(
-    user: CurrentUserDep, session: SessionDep
-) -> User:
+async def require_any_harbormaster(user: CurrentUserDep, session: SessionDep) -> User:
     # 403 unless user has at least one harbormaster grant anywhere
     row = await session.execute(
         select(UserHarborRole.user_id)

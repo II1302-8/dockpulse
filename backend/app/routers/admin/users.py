@@ -81,12 +81,16 @@ async def list_users(session: SessionDep) -> list[dict]:
     rows = (await session.execute(select(User).order_by(User.email))).scalars().all()
     # one query for all harbormasters, avoids n+1 across user list
     hm_rows = (
-        await session.execute(
-            select(UserHarborRole.user_id).where(
-                UserHarborRole.role == "harbormaster"
+        (
+            await session.execute(
+                select(UserHarborRole.user_id).where(
+                    UserHarborRole.role == "harbormaster"
+                )
             )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     harbormaster_ids = set(hm_rows)
     return [
         {

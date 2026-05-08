@@ -37,11 +37,6 @@ _ph = PasswordHasher()
 _console = Console()
 
 
-class Role(StrEnum):
-    boat_owner = "boat_owner"
-    harbormaster = "harbormaster"
-
-
 # mirror DB enums in app/models.py so bad input fails before hitting Postgres
 class EventType(StrEnum):
     occupied = "occupied"
@@ -62,38 +57,17 @@ def create_user(
     password: Annotated[
         str, typer.Option(prompt=True, hide_input=True, confirmation_prompt=True)
     ],
-    role: Annotated[Role, typer.Option(help="User role")] = Role.boat_owner,
     firstname: Annotated[str | None, typer.Option()] = None,
     lastname: Annotated[str | None, typer.Option()] = None,
     phone: Annotated[str | None, typer.Option()] = None,
     boat_club: Annotated[str | None, typer.Option()] = None,
 ):
-    """Register a new user directly in the database."""
-    # harbormasters represent the harbor not a person, so accept generic defaults
-    is_hm = role == Role.harbormaster
+    """Register a new user. Use grant-harbor to make them a harbormaster."""
     if firstname is None:
-        firstname = typer.prompt("Firstname", default="Harbor" if is_hm else None)
+        firstname = typer.prompt("Firstname")
     if lastname is None:
-        lastname = typer.prompt("Lastname", default="Master" if is_hm else None)
-    asyncio.run(
-        _create_user(firstname, lastname, email, password, role, phone, boat_club)
-    )
-
-
-@app.command()
-def promote_user(
-    email: Annotated[str, typer.Argument(help="Email of the user to promote")],
-):
-    """Set a user's role to harbormaster."""
-    asyncio.run(_set_role(email, Role.harbormaster))
-
-
-@app.command()
-def demote_user(
-    email: Annotated[str, typer.Argument(help="Email of the user to demote")],
-):
-    """Set a user's role to boat_owner."""
-    asyncio.run(_set_role(email, Role.boat_owner))
+        lastname = typer.prompt("Lastname")
+    asyncio.run(_create_user(firstname, lastname, email, password, phone, boat_club))
 
 
 @app.command()
@@ -296,7 +270,6 @@ async def _create_user(
     lastname: str,
     email: str,
     password: str,
-    role: Role,
     phone: str | None,
     boat_club: str | None,
 ) -> None:
@@ -314,27 +287,11 @@ async def _create_user(
             phone=phone,
             boat_club=boat_club,
             password_hash=_ph.hash(password),
-            role=role.value,
         )
         session.add(user)
         await session.commit()
 
-    typer.echo(f"Created {role.value} {email}  (id: {user.user_id})")
-
-
-async def _set_role(email: str, role: Role) -> None:
-    async with get_sessionmaker()() as session:
-        result = await session.execute(select(User).where(User.email == email))
-        user = result.scalar_one_or_none()
-        if user is None:
-            typer.echo(f"Error: no user with email {email}", err=True)
-            raise typer.Exit(1)
-        if user.role == role.value:
-            typer.echo(f"{email} is already {role.value}")
-            return
-        user.role = role.value
-        await session.commit()
-    typer.echo(f"Set {email} to {role.value}")
+    typer.echo(f"Created user {email}  (id: {user.user_id})")
 
 
 async def _create_harbor(
@@ -468,13 +425,6 @@ async def _grant_harbor(email: str, harbor_id: str) -> None:
         if user is None:
             typer.echo(f"Error: no user with email {email}", err=True)
             raise typer.Exit(1)
-        if user.role != "harbormaster":
-            typer.echo(
-                f"Error: {email} has role {user.role!r}, must be harbormaster "
-                f"(use `dpcli promote-user {email}` first)",
-                err=True,
-            )
-            raise typer.Exit(1)
         if await session.get(Harbor, harbor_id) is None:
             typer.echo(f"Error: no harbor with id {harbor_id}", err=True)
             raise typer.Exit(1)
@@ -528,14 +478,22 @@ async def _list_users() -> None:
     async with get_sessionmaker()() as session:
         result = await session.execute(select(User).order_by(User.email))
         users = result.scalars().all()
+        # one query for all harbormaster ids, no n+1 across the user list
+        hm_rows = await session.execute(
+            select(UserHarborRole.user_id).where(
+                UserHarborRole.role == "harbormaster"
+            )
+        )
+        harbormaster_ids = set(hm_rows.scalars().all())
 
     table = Table("ID", "Email", "Name", "Role", "Phone", "Boat Club")
     for u in users:
+        role = "harbormaster" if u.user_id in harbormaster_ids else "boat_owner"
         table.add_row(
             u.user_id,
             u.email,
             f"{u.firstname} {u.lastname}",
-            u.role,
+            role,
             u.phone or "",
             u.boat_club or "",
         )

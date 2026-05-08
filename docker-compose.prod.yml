@@ -18,6 +18,10 @@ services:
     container_name: dockpulse-prod-db
     logging: *loki-logging
 
+  db-migrate:
+    container_name: dockpulse-prod-db-migrate
+    logging: *loki-logging
+
   mosquitto:
     container_name: dockpulse-prod-mosquitto
     volumes: !override

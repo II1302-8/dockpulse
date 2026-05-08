@@ -1,9 +1,11 @@
+from typing import Annotated
+
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select
 
-from app.dependencies import CurrentUserDep, SessionDep
+from app.dependencies import CurrentUserDep, HarbormasterForBerthDep, SessionDep
 from app.models import Assignment, User, UserNotificationPrefs
 from app.schemas import (
     NotificationPrefsOut,
@@ -45,6 +47,30 @@ def _to_user_out(user: User, assigned_berth_id: str | None) -> UserOut:
             "assigned_berth_id": assigned_berth_id,
         }
     )
+
+
+@router.get(
+    "",
+    response_model=UserOut,
+    operation_id="getUserByBerth",
+    summary="Get the user assigned to a berth",
+)
+async def get_user_by_berth(
+    session: SessionDep,
+    _: HarbormasterForBerthDep,
+    berth_id: Annotated[str, Query(description="berth to look up assigned user for")],
+):
+    user_id = (
+        await session.execute(
+            select(Assignment.user_id).where(Assignment.berth_id == berth_id)
+        )
+    ).scalar_one_or_none()
+    if user_id is None:
+        raise HTTPException(status_code=404, detail="No user assigned to this berth")
+    user = await session.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return _to_user_out(user, berth_id)
 
 
 @router.get(

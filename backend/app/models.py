@@ -97,7 +97,7 @@ class Dock(Base):
 
     dock_id: Mapped[str] = mapped_column(String, primary_key=True)
     harbor_id: Mapped[str] = mapped_column(
-        ForeignKey("harbors.harbor_id"), nullable=False
+        ForeignKey("harbors.harbor_id"), nullable=False, index=True
     )
     name: Mapped[str] = mapped_column(String, nullable=False)
 
@@ -119,7 +119,9 @@ class Berth(Base):
     )
 
     berth_id: Mapped[str] = mapped_column(String, primary_key=True)
-    dock_id: Mapped[str] = mapped_column(ForeignKey("docks.dock_id"), nullable=False)
+    dock_id: Mapped[str] = mapped_column(
+        ForeignKey("docks.dock_id"), nullable=False, index=True
+    )
     label: Mapped[str | None] = mapped_column(String)
     length_m: Mapped[float | None] = mapped_column(Double)
     width_m: Mapped[float | None] = mapped_column(Double)
@@ -166,7 +168,9 @@ class Alert(Base):
     )
 
     alert_id: Mapped[str] = mapped_column(String, primary_key=True)
-    berth_id: Mapped[str] = mapped_column(ForeignKey("berths.berth_id"), nullable=False)
+    berth_id: Mapped[str] = mapped_column(
+        ForeignKey("berths.berth_id"), nullable=False, index=True
+    )
     type: Mapped[str] = mapped_column(alert_type_enum, nullable=False)
     message: Mapped[str] = mapped_column(String, nullable=False)
     acknowledged: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -209,13 +213,22 @@ class PendingGateway(Base):
 
 class Node(Base):
     __tablename__ = "nodes"
+    __table_args__ = (
+        # at most one live node per berth, decommissioned rows kept for history
+        Index(
+            "ix_nodes_berth_active",
+            "berth_id",
+            unique=True,
+            postgresql_where=text("status <> 'decommissioned'"),
+        ),
+    )
 
     node_id: Mapped[str] = mapped_column(String, primary_key=True)
     mesh_uuid: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     serial_number: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     berth_id: Mapped[str] = mapped_column(ForeignKey("berths.berth_id"), nullable=False)
     gateway_id: Mapped[str] = mapped_column(
-        ForeignKey("gateways.gateway_id"), nullable=False
+        ForeignKey("gateways.gateway_id"), nullable=False, index=True
     )
     mesh_unicast_addr: Mapped[str] = mapped_column(String, nullable=False)
     dev_key_fp: Mapped[str] = mapped_column(String, nullable=False)
@@ -224,7 +237,7 @@ class Node(Base):
         DateTime(timezone=True), nullable=False
     )
     adopted_by_user_id: Mapped[str | None] = mapped_column(
-        ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True
+        ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True, index=True
     )
 
 
@@ -238,6 +251,12 @@ class AdoptionRequest(Base):
             unique=True,
             postgresql_where=text("status = 'pending'"),
         ),
+        # sweeper hot path filters on pending only
+        Index(
+            "ix_adoption_requests_pending_expires_at",
+            "expires_at",
+            postgresql_where=text("status = 'pending'"),
+        ),
     )
 
     request_id: Mapped[str] = mapped_column(String, primary_key=True)
@@ -245,9 +264,11 @@ class AdoptionRequest(Base):
     serial_number: Mapped[str] = mapped_column(String, nullable=False)
     claim_jti: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     gateway_id: Mapped[str] = mapped_column(
-        ForeignKey("gateways.gateway_id"), nullable=False
+        ForeignKey("gateways.gateway_id"), nullable=False, index=True
     )
-    berth_id: Mapped[str] = mapped_column(ForeignKey("berths.berth_id"), nullable=False)
+    berth_id: Mapped[str] = mapped_column(
+        ForeignKey("berths.berth_id"), nullable=False, index=True
+    )
     expires_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False
     )
@@ -259,7 +280,7 @@ class AdoptionRequest(Base):
     mesh_unicast_addr: Mapped[str | None] = mapped_column(String)
     dev_key_fp: Mapped[str | None] = mapped_column(String)
     created_by_user_id: Mapped[str | None] = mapped_column(
-        ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True
+        ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True, index=True
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False

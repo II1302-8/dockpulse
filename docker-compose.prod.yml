@@ -22,6 +22,26 @@ services:
     container_name: dockpulse-prod-db-migrate
     logging: *loki-logging
 
+  db-backup:
+    container_name: dockpulse-prod-db-backup
+    image: postgres:16-alpine
+    restart: unless-stopped
+    entrypoint: ["sh", "/scripts/pg-backup.sh"]
+    environment:
+      PGHOST: db
+      PGUSER: ${POSTGRES_USER:?POSTGRES_USER must be set}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+      PGDATABASE: ${POSTGRES_DB:?POSTGRES_DB must be set}
+      RETENTION_DAYS: ${PG_BACKUP_RETENTION_DAYS:-14}
+    volumes:
+      - ./tools/pg-backup.sh:/scripts/pg-backup.sh:ro
+      - pg-backups:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [internal]
+    logging: *loki-logging
+
   mosquitto:
     container_name: dockpulse-prod-mosquitto
     volumes: !override
@@ -132,3 +152,4 @@ networks:
 
 volumes:
   mqtt-certs:
+  pg-backups:

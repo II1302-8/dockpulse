@@ -91,6 +91,6 @@ firstname: Annotated[str, typer.Option(prompt=True)]
 password: Annotated[str, typer.Option(prompt=True, hide_input=True, confirmation_prompt=True)]
 
 # Enum — only accepts declared values, renders as [value1|value2] in --help
-# Usage: dpcli my-cmd --role harbormaster
-role: Annotated[Role, typer.Option(help="User role")] = Role.boat_owner
+# Usage: dpcli my-cmd --event-type occupied
+event_type: Annotated[EventType, typer.Option(help="Event type")] = EventType.occupied
 ```

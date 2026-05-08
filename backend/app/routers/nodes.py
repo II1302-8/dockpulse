@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select
 
 from app.dependencies import (
-    CurrentUserDep,
+    AnyHarbormasterDep,
     HarbormasterForNodeDep,
     SessionDep,
     user_managed_harbor_ids,
@@ -65,7 +65,7 @@ def _to_health_out(node: Node, berth: Berth | None, now: datetime) -> dict:
     summary="List nodes with derived health",
 )
 async def list_nodes(
-    user: CurrentUserDep,
+    user: AnyHarbormasterDep,
     session: SessionDep,
     gateway_id: Annotated[str | None, Query(description="Filter by gateway")] = None,
     berth_id: Annotated[str | None, Query(description="Filter by berth")] = None,
@@ -73,8 +73,6 @@ async def list_nodes(
         HealthLiteral | None, Query(description="Filter by health")
     ] = None,
 ) -> list[dict]:
-    if user.role != "harbormaster":
-        raise HTTPException(status_code=403, detail="Harbormaster role required")
     managed = await user_managed_harbor_ids(user, session)
     if not managed:
         return []

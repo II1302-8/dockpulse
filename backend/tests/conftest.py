@@ -160,7 +160,6 @@ async def harbor_master(session: AsyncSession, harbor_h1) -> User:
         lastname="Master",
         email="hilda@example.com",
         password_hash=hash_password("secret"),
-        role="harbormaster",
     )
     session.add(user)
     await session.flush()
@@ -177,7 +176,6 @@ async def boat_owner(session: AsyncSession) -> User:
         lastname="Owner",
         email="olle@example.com",
         password_hash=hash_password("secret"),
-        role="boat_owner",
     )
     session.add(user)
     await session.commit()

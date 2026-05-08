@@ -14,14 +14,16 @@ def _make_request(
     expires_in: timedelta,
     status: str = "pending",
     completed_at: datetime | None = None,
+    mesh_uuid: str = "aaaa" * 8,
+    gateway_id: str = "gw1",
 ):
     now = datetime.now(UTC)
     return AdoptionRequest(
         request_id=request_id,
-        mesh_uuid="aaaa" * 8,
+        mesh_uuid=mesh_uuid,
         serial_number=f"sn-{request_id}",
         claim_jti=f"jti-{request_id}",
-        gateway_id="gw1",
+        gateway_id=gateway_id,
         berth_id="b1",
         expires_at=now + expires_in,
         status=status,
@@ -75,11 +77,18 @@ async def test_sweep_skips_already_completed_requests(
 async def test_sweep_handles_multiple_expired_requests(
     session: AsyncSession, harbor_world, harbor_master
 ):
+    # partial unique forbids dup pending per (mesh_uuid, gateway_id)
     session.add_all(
         [
-            _make_request("e1", expires_in=timedelta(seconds=-60)),
-            _make_request("e2", expires_in=timedelta(seconds=-30)),
-            _make_request("fresh", expires_in=timedelta(seconds=120)),
+            _make_request(
+                "e1", expires_in=timedelta(seconds=-60), mesh_uuid="aaaa" * 8
+            ),
+            _make_request(
+                "e2", expires_in=timedelta(seconds=-30), mesh_uuid="bbbb" * 8
+            ),
+            _make_request(
+                "fresh", expires_in=timedelta(seconds=120), mesh_uuid="cccc" * 8
+            ),
         ]
     )
     await session.commit()

@@ -23,8 +23,6 @@ CurrentUserDep = Annotated[User, Depends(get_current_user)]
 async def require_harbor_authority(
     user: CurrentUserDep, harbor_id: str, session: SessionDep
 ) -> User:
-    if user.role != "harbormaster":
-        raise HTTPException(status_code=403, detail="Harbormaster role required")
     row = await session.execute(
         select(UserHarborRole.user_id).where(
             UserHarborRole.user_id == user.user_id,
@@ -37,6 +35,21 @@ async def require_harbor_authority(
     return user
 
 
+async def require_any_harbormaster(user: CurrentUserDep, session: SessionDep) -> User:
+    # 403 unless user has at least one harbormaster grant anywhere
+    row = await session.execute(
+        select(UserHarborRole.user_id)
+        .where(
+            UserHarborRole.user_id == user.user_id,
+            UserHarborRole.role == "harbormaster",
+        )
+        .limit(1)
+    )
+    if row.scalar_one_or_none() is None:
+        raise HTTPException(status_code=403, detail="Harbormaster role required")
+    return user
+
+
 async def user_managed_harbor_ids(user: User, session: AsyncSession) -> set[str]:
     result = await session.execute(
         select(UserHarborRole.harbor_id).where(
@@ -45,6 +58,15 @@ async def user_managed_harbor_ids(user: User, session: AsyncSession) -> set[str]
         )
     )
     return set(result.scalars().all())
+
+
+async def user_is_harbormaster(user: User, session: AsyncSession) -> bool:
+    row = await session.execute(
+        select(UserHarborRole.user_id)
+        .where(UserHarborRole.user_id == user.user_id)
+        .limit(1)
+    )
+    return row.scalar_one_or_none() is not None
 
 
 async def harbor_id_from_berth(berth_id: str, session: SessionDep) -> str:
@@ -152,3 +174,4 @@ HarbormasterForNodeDep = Annotated[User, Depends(require_harbormaster_for_node)]
 HarbormasterForAdoptionRequestDep = Annotated[
     User, Depends(require_harbormaster_for_adoption_request)
 ]
+AnyHarbormasterDep = Annotated[User, Depends(require_any_harbormaster)]

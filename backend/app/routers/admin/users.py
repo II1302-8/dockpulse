@@ -1,7 +1,7 @@
 """user crud + harbormaster harbor-grants"""
 
 import uuid
-from typing import Annotated, Literal
+from typing import Annotated
 
 from argon2 import PasswordHasher
 from fastapi import APIRouter, Depends, HTTPException
@@ -19,17 +19,16 @@ router = APIRouter()
 
 
 class UserCreate(BaseModel):
+    # role derived from user_harbor_roles, grant via grant_harbor after creation
     email: EmailStr
     password: SecretStr = Field(min_length=8, max_length=128)
     firstname: str = Field(min_length=1, max_length=64)
     lastname: str = Field(min_length=1, max_length=64)
-    role: Literal["harbormaster", "boat_owner"] = "boat_owner"
     phone: str | None = Field(default=None, max_length=32)
     boat_club: str | None = Field(default=None, max_length=128)
 
 
 class UserPatch(BaseModel):
-    role: Literal["harbormaster", "boat_owner"] | None = None
     firstname: str | None = Field(default=None, min_length=1, max_length=64)
     lastname: str | None = Field(default=None, min_length=1, max_length=64)
     phone: str | None = Field(default=None, max_length=32)
@@ -80,13 +79,26 @@ class GrantResultOut(BaseModel):
 )
 async def list_users(session: SessionDep) -> list[dict]:
     rows = (await session.execute(select(User).order_by(User.email))).scalars().all()
+    # one query for all harbormasters, avoids n+1 across user list
+    hm_rows = (
+        (
+            await session.execute(
+                select(UserHarborRole.user_id).where(
+                    UserHarborRole.role == "harbormaster"
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
+    harbormaster_ids = set(hm_rows)
     return [
         {
             "user_id": u.user_id,
             "email": u.email,
             "firstname": u.firstname,
             "lastname": u.lastname,
-            "role": u.role,
+            "role": "harbormaster" if u.user_id in harbormaster_ids else "boat_owner",
             "phone": u.phone,
             "boat_club": u.boat_club,
         }
@@ -118,13 +130,13 @@ async def create_user(
         firstname=body.firstname,
         lastname=body.lastname,
         password_hash=ph.hash(body.password.get_secret_value()),
-        role=body.role,
         phone=body.phone,
         boat_club=body.boat_club,
     )
     session.add(u)
     await session.commit()
-    return {"user_id": u.user_id, "email": u.email, "role": u.role}
+    # newly created user has no grants, always boat_owner until grant_harbor
+    return {"user_id": u.user_id, "email": u.email, "role": "boat_owner"}
 
 
 @router.patch(
@@ -136,12 +148,20 @@ async def patch_user(user_id: str, body: UserPatch, session: SessionDep) -> dict
     u = await session.get(User, user_id)
     if u is None:
         raise HTTPException(status_code=404, detail="User not found")
-    for field in ("role", "firstname", "lastname", "phone", "boat_club"):
+    for field in ("firstname", "lastname", "phone", "boat_club"):
         v = getattr(body, field)
         if v is not None:
             setattr(u, field, v)
     await session.commit()
-    return {"user_id": u.user_id, "email": u.email, "role": u.role}
+    has_grant = (
+        await session.execute(
+            select(UserHarborRole.user_id)
+            .where(UserHarborRole.user_id == user_id)
+            .limit(1)
+        )
+    ).scalar_one_or_none() is not None
+    role = "harbormaster" if has_grant else "boat_owner"
+    return {"user_id": u.user_id, "email": u.email, "role": role}
 
 
 @router.delete("/users/{user_id}", operation_id="adminDeleteUser", status_code=204)
@@ -190,14 +210,8 @@ async def list_user_grants(user_id: str, session: SessionDep) -> list[dict]:
     status_code=201,
 )
 async def grant_harbor(user_id: str, body: HarborGrant, session: SessionDep) -> dict:
-    user = await session.get(User, user_id)
-    if user is None:
+    if await session.get(User, user_id) is None:
         raise HTTPException(status_code=404, detail="User not found")
-    if user.role != "harbormaster":
-        raise HTTPException(
-            status_code=409,
-            detail=f"User has role {user.role!r}; promote to harbormaster first",
-        )
     if await session.get(Harbor, body.harbor_id) is None:
         raise HTTPException(
             status_code=404, detail=f"Harbor {body.harbor_id} not found"

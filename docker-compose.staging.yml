@@ -21,6 +21,10 @@ services:
       - /var/lib/postgresql/data
     logging: *loki-logging
 
+  db-migrate:
+    container_name: dockpulse-staging-db-migrate
+    logging: *loki-logging
+
   mosquitto:
     container_name: dockpulse-staging-mosquitto
     logging: *loki-logging

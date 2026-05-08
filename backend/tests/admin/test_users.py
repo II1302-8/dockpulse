@@ -3,7 +3,8 @@
 from httpx import AsyncClient
 
 
-async def test_create_harbormaster(client: AsyncClient, auth_headers):
+async def test_create_user_starts_as_boat_owner(client: AsyncClient, auth_headers):
+    # role derived from user_harbor_roles, no grant yet
     r = await client.post(
         "/api/admin/users",
         headers=auth_headers,
@@ -12,11 +13,10 @@ async def test_create_harbormaster(client: AsyncClient, auth_headers):
             "password": "supersecret123",
             "firstname": "Harbor",
             "lastname": "Master",
-            "role": "harbormaster",
         },
     )
     assert r.status_code == 201
-    assert r.json()["role"] == "harbormaster"
+    assert r.json()["role"] == "boat_owner"
 
 
 async def test_create_user_rejects_duplicate_email(
@@ -55,15 +55,16 @@ async def test_grant_harbor_to_harbormaster(
     assert r2.json()["noop"] is True
 
 
-async def test_grant_harbor_rejects_non_harbormaster(
+async def test_grant_harbor_promotes_boat_owner(
     client: AsyncClient, auth_headers, boat_owner, harbor_h1
 ):
+    # granting any user a harbor role makes them a harbormaster
     r = await client.post(
         f"/api/admin/users/{boat_owner.user_id}/harbor-grants",
         headers=auth_headers,
         json={"harbor_id": "h1"},
     )
-    assert r.status_code == 409
+    assert r.status_code == 201
 
 
 async def test_revoke_harbor(

@@ -92,7 +92,9 @@ async def confirm_password_reset(body: PasswordResetConfirm, session: SessionDep
             body.token, get_settings().secret_key, algorithms=[ALGORITHM]
         )
     except jwt.PyJWTError:
-        raise HTTPException(status_code=403, detail="Invalid or expired reset token")
+        raise HTTPException(
+            status_code=403, detail="Invalid or expired reset token"
+        ) from None
     if payload.get("type") != "password_reset":
         raise HTTPException(status_code=403, detail="Invalid or expired reset token")
     user_id = payload.get("sub")

@@ -76,6 +76,7 @@ async def request_password_reset(
             f"The link expires in 60 minutes.</p>"
             f'<p><a href="{reset_url}">{reset_url}</a></p>'
         ),
+        idempotency_key=f"password-reset-{user.user_id}-{int(now.timestamp()) // 3600}",
     )
 
 

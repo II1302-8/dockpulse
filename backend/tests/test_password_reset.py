@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import ALGORITHM
 from app.config import get_settings
 from app.models import User
+# auth_cookies and verify_password used by /resetpassword tests (added in next task)
 from tests._helpers import auth_cookies, hash_password, verify_password
 
 
@@ -27,6 +28,7 @@ async def reset_user(session: AsyncSession) -> User:
     return user
 
 
+# used by /resetpassword tests added in the next task
 def _make_reset_token(
     user: User,
     *,

@@ -1324,6 +1324,58 @@ components:
           title: Notify Departure
       title: NotificationPrefsPatch
       type: object
+    PasswordResetConfirm:
+      properties:
+        invite_token:
+          anyOf:
+          - maxLength: 512
+            type: string
+          - type: 'null'
+          title: Invite Token
+        password:
+          examples:
+          - correct horse battery staple
+          format: password
+          maxLength: 128
+          minLength: 12
+          title: Password
+          type: string
+          writeOnly: true
+        token:
+          title: Token
+          type: string
+      required:
+      - token
+      - password
+      title: PasswordResetConfirm
+      type: object
+    PasswordResetOut:
+      properties:
+        invite_token:
+          anyOf:
+          - maxLength: 512
+            type: string
+          - type: 'null'
+          title: Invite Token
+        message:
+          title: Message
+          type: string
+      required:
+      - message
+      title: PasswordResetOut
+      type: object
+    PasswordResetRequest:
+      properties:
+        email:
+          examples:
+          - alex@example.com
+          format: email
+          title: Email
+          type: string
+      required:
+      - email
+      title: PasswordResetRequest
+      type: object
     PendingGatewayOut:
       properties:
         attempts:
@@ -4035,6 +4087,52 @@ paths:
       security:
       - APIKeyCookie: []
       summary: Update notification preferences for the current user
+      tags:
+      - users
+  /api/users/reset:
+    post:
+      operationId: requestPasswordReset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Send a password reset email if the address is registered
+      tags:
+      - users
+  /api/users/resetpassword:
+    post:
+      operationId: confirmPasswordReset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirm'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordResetOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Apply a new password using a reset token
       tags:
       - users
 servers:

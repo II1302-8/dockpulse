@@ -5,7 +5,7 @@ import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from fastapi import APIRouter, HTTPException, Query, Request
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from app import notifications
 from app.auth import ALGORITHM
@@ -104,9 +104,14 @@ async def confirm_password_reset(body: PasswordResetConfirm, session: SessionDep
         raise HTTPException(status_code=403, detail="Invalid or expired reset token")
     if user.email != token_email:
         raise HTTPException(status_code=403, detail="Invalid or expired reset token")
-    user.password_hash = _hash_password(body.password.get_secret_value())
-    user.token_version += 1
-    session.add(user)
+    await session.execute(
+        update(User)
+        .where(User.user_id == user_id)
+        .values(
+            password_hash=_hash_password(body.password.get_secret_value()),
+            token_version=User.token_version + 1,
+        )
+    )
     await session.commit()
     return PasswordResetOut(
         message="Password reset successful", invite_token=body.invite_token

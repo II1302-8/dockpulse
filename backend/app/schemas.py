@@ -348,9 +348,9 @@ class PasswordResetRequest(_BaseSchema):
 class PasswordResetConfirm(_BaseSchema):
     token: str
     password: Password
-    invite_token: str | None = None
+    invite_token: str | None = Field(default=None, max_length=512)
 
 
 class PasswordResetOut(_BaseSchema):
     message: str
-    invite_token: str | None = None
+    invite_token: str | None = Field(default=None, max_length=512)

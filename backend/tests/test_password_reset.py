@@ -135,6 +135,11 @@ async def test_confirm_reset_invalidates_old_session(
     r = await client.get("/api/users/me", cookies=old_cookies)
     assert r.status_code == 401
 
+    # a cookie with the bumped version must succeed
+    new_cookies = auth_cookies(reset_user.user_id, token_version=1)
+    r2 = await client.get("/api/users/me", cookies=new_cookies)
+    assert r2.status_code == 200
+
 
 async def test_confirm_reset_expired_token_returns_403(
     client: AsyncClient, reset_user: User
@@ -203,3 +208,16 @@ async def test_confirm_reset_no_invite_token_is_null(
     )
     assert r.status_code == 200
     assert r.json()["invite_token"] is None
+
+
+async def test_confirm_reset_deleted_user_returns_403(
+    client: AsyncClient, reset_user: User, session: AsyncSession
+):
+    token = _make_reset_token(reset_user)
+    await session.delete(reset_user)
+    await session.commit()
+    r = await client.post(
+        "/api/users/resetpassword",
+        json={"token": token, "password": "newpassword5678"},
+    )
+    assert r.status_code == 403

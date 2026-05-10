@@ -57,7 +57,7 @@ def _make_reset_token(
 def captured_emails(monkeypatch) -> list[dict]:
     calls: list[dict] = []
 
-    async def _fake(to, subject, html, idempotency_key=None):  # noqa: ARG001
+    async def _fake(to, subject, html, **_kwargs):
         calls.append({"to": to, "subject": subject, "html": html})
 
     monkeypatch.setattr("app.notifications.send_email", _fake)

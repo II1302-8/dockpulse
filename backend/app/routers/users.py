@@ -80,6 +80,39 @@ async def request_password_reset(
     )
 
 
+@router.post(
+    "/resetpassword",
+    response_model=PasswordResetOut,
+    operation_id="confirmPasswordReset",
+    summary="Apply a new password using a reset token",
+)
+async def confirm_password_reset(body: PasswordResetConfirm, session: SessionDep):
+    try:
+        payload = jwt.decode(
+            body.token, get_settings().secret_key, algorithms=[ALGORITHM]
+        )
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=403, detail="Invalid or expired reset token")
+    if payload.get("type") != "password_reset":
+        raise HTTPException(status_code=403, detail="Invalid or expired reset token")
+    user_id = payload.get("sub")
+    token_email = payload.get("email")
+    if not isinstance(user_id, str) or not isinstance(token_email, str):
+        raise HTTPException(status_code=403, detail="Invalid or expired reset token")
+    user = await session.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=403, detail="Invalid or expired reset token")
+    if user.email != token_email:
+        raise HTTPException(status_code=403, detail="Invalid or expired reset token")
+    user.password_hash = _hash_password(body.password.get_secret_value())
+    user.token_version += 1
+    session.add(user)
+    await session.commit()
+    return PasswordResetOut(
+        message="Password reset successful", invite_token=body.invite_token
+    )
+
+
 @router.get(
     "",
     response_model=UserOut,

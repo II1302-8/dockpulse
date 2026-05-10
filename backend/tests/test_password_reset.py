@@ -85,3 +85,118 @@ async def test_reset_email_contains_reset_url(
 ):
     await client.post("/api/users/reset", json={"email": reset_user.email})
     assert "/resetpassword/" in captured_emails[0]["html"]
+
+
+# --- /resetpassword ---
+
+async def test_confirm_reset_updates_password_and_returns_200(
+    client: AsyncClient, reset_user: User, session: AsyncSession
+):
+    token = _make_reset_token(reset_user)
+    r = await client.post(
+        "/api/users/resetpassword",
+        json={"token": token, "password": "newpassword5678"},
+    )
+    assert r.status_code == 200
+    assert r.json()["message"] == "Password reset successful"
+    await session.refresh(reset_user)
+    assert verify_password(reset_user.password_hash, "newpassword5678")
+
+
+async def test_confirm_reset_bumps_token_version(
+    client: AsyncClient, reset_user: User, session: AsyncSession
+):
+    old_ver = reset_user.token_version
+    token = _make_reset_token(reset_user)
+    await client.post(
+        "/api/users/resetpassword",
+        json={"token": token, "password": "newpassword5678"},
+    )
+    await session.refresh(reset_user)
+    assert reset_user.token_version == old_ver + 1
+
+
+async def test_confirm_reset_invalidates_old_session(
+    client: AsyncClient, reset_user: User
+):
+    # auth_cookies builds a cookie dict with the current token_version (0)
+    old_cookies = auth_cookies(reset_user.user_id, token_version=0)
+    token = _make_reset_token(reset_user)
+    await client.post(
+        "/api/users/resetpassword",
+        json={"token": token, "password": "newpassword5678"},
+    )
+    # token_version is now 1. old cookie with ver=0 must be rejected
+    r = await client.get("/api/users/me", cookies=old_cookies)
+    assert r.status_code == 401
+
+
+async def test_confirm_reset_expired_token_returns_403(
+    client: AsyncClient, reset_user: User
+):
+    token = _make_reset_token(reset_user, expired=True)
+    r = await client.post(
+        "/api/users/resetpassword",
+        json={"token": token, "password": "newpassword5678"},
+    )
+    assert r.status_code == 403
+
+
+async def test_confirm_reset_wrong_type_returns_403(
+    client: AsyncClient, reset_user: User
+):
+    token = _make_reset_token(reset_user, wrong_type=True)
+    r = await client.post(
+        "/api/users/resetpassword",
+        json={"token": token, "password": "newpassword5678"},
+    )
+    assert r.status_code == 403
+
+
+async def test_confirm_reset_tampered_token_returns_403(
+    client: AsyncClient, reset_user: User
+):
+    r = await client.post(
+        "/api/users/resetpassword",
+        json={"token": "totally.invalid.jwt", "password": "newpassword5678"},
+    )
+    assert r.status_code == 403
+
+
+async def test_confirm_reset_email_mismatch_returns_403(
+    client: AsyncClient, reset_user: User
+):
+    token = _make_reset_token(reset_user, wrong_email=True)
+    r = await client.post(
+        "/api/users/resetpassword",
+        json={"token": token, "password": "newpassword5678"},
+    )
+    assert r.status_code == 403
+
+
+async def test_confirm_reset_invite_token_echoed(
+    client: AsyncClient, reset_user: User
+):
+    token = _make_reset_token(reset_user)
+    r = await client.post(
+        "/api/users/resetpassword",
+        json={
+            "token": token,
+            "password": "newpassword5678",
+            "invite_token": "berth-invite-xyz",
+        },
+    )
+    assert r.status_code == 200
+    assert r.json()["invite_token"] == "berth-invite-xyz"
+
+
+async def test_confirm_reset_no_invite_token_is_null(
+    client: AsyncClient, reset_user: User
+):
+    token = _make_reset_token(reset_user)
+    r = await client.post(
+        "/api/users/resetpassword",
+        json={"token": token, "password": "newpassword5678"},
+    )
+    assert r.status_code == 200
+    assert r.json()["invite_token"] is None

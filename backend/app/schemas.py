@@ -336,3 +336,21 @@ class NotificationPrefsOut(_BaseSchema):
 class NotificationPrefsPatch(BaseModel):
     notify_arrival: bool | None = None
     notify_departure: bool | None = None
+
+
+# --- password reset ---
+
+
+class PasswordResetRequest(_BaseSchema):
+    email: EmailField
+
+
+class PasswordResetConfirm(_BaseSchema):
+    token: str
+    password: Password
+    invite_token: str | None = None
+
+
+class PasswordResetOut(_BaseSchema):
+    message: str
+    invite_token: str | None = None

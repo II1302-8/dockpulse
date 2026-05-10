@@ -1,14 +1,15 @@
-import pytest
-import pytest_asyncio
 from datetime import UTC, datetime, timedelta
 
 import jwt
+import pytest
+import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import ALGORITHM
 from app.config import get_settings
 from app.models import User
+
 # auth_cookies and verify_password used by /resetpassword tests (added in next task)
 from tests._helpers import auth_cookies, hash_password, verify_password
 
@@ -43,7 +44,9 @@ def _make_reset_token(
             "sub": user.user_id,
             "email": "other@example.com" if wrong_email else user.email,
             "iat": now,
-            "exp": (now - timedelta(hours=2)) if expired else (now + timedelta(hours=1)),
+            "exp": (now - timedelta(hours=2))
+            if expired
+            else (now + timedelta(hours=1)),
         },
         get_settings().secret_key,
         algorithm=ALGORITHM,
@@ -54,7 +57,7 @@ def _make_reset_token(
 def captured_emails(monkeypatch) -> list[dict]:
     calls: list[dict] = []
 
-    async def _fake(to, subject, html, idempotency_key=None):
+    async def _fake(to, subject, html, idempotency_key=None):  # noqa: ARG001
         calls.append({"to": to, "subject": subject, "html": html})
 
     monkeypatch.setattr("app.notifications.send_email", _fake)
@@ -62,6 +65,7 @@ def captured_emails(monkeypatch) -> list[dict]:
 
 
 # --- /reset ---
+
 
 async def test_reset_unknown_email_returns_204_no_email(
     client: AsyncClient, captured_emails: list
@@ -88,6 +92,7 @@ async def test_reset_email_contains_reset_url(
 
 
 # --- /resetpassword ---
+
 
 async def test_confirm_reset_updates_password_and_returns_200(
     client: AsyncClient, reset_user: User, session: AsyncSession
@@ -174,9 +179,7 @@ async def test_confirm_reset_email_mismatch_returns_403(
     assert r.status_code == 403
 
 
-async def test_confirm_reset_invite_token_echoed(
-    client: AsyncClient, reset_user: User
-):
+async def test_confirm_reset_invite_token_echoed(client: AsyncClient, reset_user: User):
     token = _make_reset_token(reset_user)
     r = await client.post(
         "/api/users/resetpassword",

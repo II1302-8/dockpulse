@@ -1,10 +1,15 @@
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
+import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from sqlalchemy import select
 
+from app import notifications
+from app.auth import ALGORITHM
+from app.config import get_settings
 from app.dependencies import (
     CurrentUserDep,
     HarbormasterForBerthDep,
@@ -12,9 +17,13 @@ from app.dependencies import (
     user_is_harbormaster,
 )
 from app.models import Assignment, User, UserNotificationPrefs
+from app.rate_limit import limiter
 from app.schemas import (
     NotificationPrefsOut,
     NotificationPrefsPatch,
+    PasswordResetConfirm,
+    PasswordResetOut,
+    PasswordResetRequest,
     UserOut,
     UserPatch,
 )
@@ -28,6 +37,46 @@ _ph = PasswordHasher()
 
 def _hash_password(password: str) -> str:
     return _ph.hash(password)
+
+
+@router.post(
+    "/reset",
+    status_code=204,
+    operation_id="requestPasswordReset",
+    summary="Send a password reset email if the address is registered",
+)
+@limiter.limit(lambda: get_settings().rate_limit_password_reset)
+async def request_password_reset(
+    request: Request, body: PasswordResetRequest, session: SessionDep
+):
+    user = (
+        await session.execute(select(User).where(User.email == body.email))
+    ).scalar_one_or_none()
+    if user is None:
+        return
+    settings = get_settings()
+    now = datetime.now(UTC)
+    token = jwt.encode(
+        {
+            "type": "password_reset",
+            "sub": user.user_id,
+            "email": user.email,
+            "iat": now,
+            "exp": now + timedelta(hours=1),
+        },
+        settings.secret_key,
+        algorithm=ALGORITHM,
+    )
+    reset_url = f"{settings.app_base_url}/resetpassword/{token}"
+    await notifications.send_email(
+        to=user.email,
+        subject="Reset your DockPulse password",
+        html=(
+            f"<p>Click the link below to reset your DockPulse password. "
+            f"The link expires in 60 minutes.</p>"
+            f'<p><a href="{reset_url}">{reset_url}</a></p>'
+        ),
+    )
 
 
 @router.get(

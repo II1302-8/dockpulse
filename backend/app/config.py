@@ -40,6 +40,8 @@ class Settings(BaseSettings):
     email_from: str = "DockPulse <noreply@dockpulse.xyz>"
     app_base_url: str = "http://localhost:5173"
     verification_token_ttl_hours: int = 24
+    # per-ip throttle for the unauthenticated reset-request endpoint
+    rate_limit_password_reset: str = "5/hour"
     # csv origins, empty disables CORS middleware (vite proxy makes dev same-origin)
     cors_allowed_origins: Annotated[list[str], NoDecode] = []
     # per-ip throttle for credential brute-force

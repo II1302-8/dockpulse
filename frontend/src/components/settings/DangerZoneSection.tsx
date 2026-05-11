@@ -68,17 +68,22 @@ export function DangerZoneSection({ user, onAfterDelete }: Props) {
         );
         return;
       }
-
-      // logout to clear cookies + provider state, account is already gone server-side
-      await logout();
-      setIsOpen(false);
-      navigate("/");
-      onAfterDelete();
     } catch {
       setError("Could not delete account. Please try again.");
-    } finally {
       setIsDeleting(false);
+      return;
     }
+
+    // account is gone server-side, redirect regardless of logout outcome
+    try {
+      await logout();
+    } catch {
+      // ignore, cookies expire on their own
+    }
+    setIsOpen(false);
+    setIsDeleting(false);
+    navigate("/");
+    onAfterDelete();
   }
 
   return (

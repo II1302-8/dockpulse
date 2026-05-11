@@ -140,7 +140,9 @@ export function AvailabilitySection({
         <>
           <div className="mt-4 rounded-2xl bg-slate-50 p-4 text-sm text-brand-navy">
             <p className="font-semibold">Assigned berth</p>
-            <p className="mt-1 text-brand-navy/70">{berthLabel}</p>
+            <p className="mt-1 text-brand-navy/70">
+              {berthLabel ?? `Berth ${berthId}`}
+            </p>
           </div>
 
           {isLoading ? (

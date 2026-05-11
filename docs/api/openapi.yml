@@ -1368,6 +1368,18 @@ components:
       - request_id
       title: ResendDecommissionOut
       type: object
+    ResendVerificationIn:
+      properties:
+        email:
+          examples:
+          - alex@example.com
+          format: email
+          title: Email
+          type: string
+      required:
+      - email
+      title: ResendVerificationIn
+      type: object
     SnapshotAdoption:
       properties:
         err_last_15min:
@@ -3085,6 +3097,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserOut'
           description: Successful Response
+        '401':
+          description: Invalid credentials
+        '403':
+          description: Email not verified
         '422':
           content:
             application/json:
@@ -3157,8 +3173,7 @@ paths:
         '201':
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/UserOut'
+              schema: {}
           description: Successful Response
         '422':
           content:
@@ -3167,6 +3182,57 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       summary: Register a new user
+      tags:
+      - auth
+  /api/auth/resend-verification:
+    post:
+      operationId: resendVerification
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResendVerificationIn'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Resend verification email
+      tags:
+      - auth
+  /api/auth/verify-email:
+    get:
+      operationId: verifyEmail
+      parameters:
+      - in: query
+        name: token
+        required: true
+        schema:
+          title: Token
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema: {}
+          description: Successful Response
+        '400':
+          description: Invalid or expired token
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Verify email address using token from email link
       tags:
       - auth
   /api/berths:

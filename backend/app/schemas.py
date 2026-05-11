@@ -272,6 +272,12 @@ class LoginIn(BaseModel):
     password: SecretStr
 
 
+class ResendVerificationIn(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    email: EmailField
+
+
 # --- system ---
 
 

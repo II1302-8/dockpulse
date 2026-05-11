@@ -9,9 +9,10 @@ import {
   verticalPier,
 } from "./svg";
 
-const stroke = "rgba(10, 37, 64, 0.2)";
+const stroke = "rgba(10, 37, 64, 0.28)";
 const selectedStroke = "#0093E9";
 const pierFill = "#ffffff";
+const dockOutlineStroke = "#0A2540";
 
 const greenFill = "rgba(16, 185, 129, 0.15)";
 const redFill = "rgba(239, 68, 68, 0.15)";
@@ -50,6 +51,10 @@ type BerthSlot = {
 
 function getLineKey(prefix: string, line: DividerLine): string {
   return `${prefix}-${line.x1}-${line.y1}-${line.x2}-${line.y2}`;
+}
+
+function getRectPath(x: number, y: number, width: number, height: number) {
+  return `M ${x} ${y} H ${x + width} V ${y + height} H ${x} Z`;
 }
 
 function getTopBerthSlots(lines: DividerLine[]): BerthSlot[] {
@@ -183,6 +188,7 @@ export function SvgMap({
           fill={fill}
           stroke={isSelected ? selectedStroke : "none"}
           strokeWidth={isSelected ? 4 : 0}
+          vectorEffect="non-scaling-stroke"
           className="berth-rect transition-all duration-300"
           style={{ pointerEvents: "none" }}
         />
@@ -195,6 +201,7 @@ export function SvgMap({
             fill="none"
             stroke={symbolColor}
             strokeWidth={symbolStrokeWidth}
+            vectorEffect="non-scaling-stroke"
             style={{ pointerEvents: "none" }}
           />
         )}
@@ -203,6 +210,7 @@ export function SvgMap({
           <g
             stroke={symbolColor}
             strokeWidth={symbolStrokeWidth}
+            vectorEffect="non-scaling-stroke"
             style={{ pointerEvents: "none" }}
           >
             <line
@@ -254,8 +262,7 @@ export function SvgMap({
         width={horizontalPier.width}
         height={horizontalPier.height}
         fill={pierFill}
-        stroke={stroke}
-        strokeWidth="3"
+        stroke="none"
       />
 
       <rect
@@ -264,52 +271,83 @@ export function SvgMap({
         width={verticalPier.width}
         height={verticalPier.height}
         fill={pierFill}
-        stroke={stroke}
-        strokeWidth="3"
+        stroke="none"
       />
+
+      <g id="dock-outlines" pointerEvents="none" aria-label="Dock outlines">
+        <path
+          d={getRectPath(
+            horizontalPier.x,
+            horizontalPier.y,
+            horizontalPier.width,
+            horizontalPier.height,
+          )}
+          fill="none"
+          stroke={dockOutlineStroke}
+          strokeWidth="4"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+
+        <path
+          d={getRectPath(
+            verticalPier.x,
+            verticalPier.y,
+            verticalPier.width,
+            verticalPier.height,
+          )}
+          fill="none"
+          stroke={dockOutlineStroke}
+          strokeWidth="4"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      </g>
 
       {topSlots.map(renderBerthCB)}
       {leftSlots.map(renderBerthCB)}
       {rightSlots.map(renderBerthCB)}
 
-      {topBerths.map((berth) => (
-        <line
-          key={getLineKey("top-line", berth)}
-          x1={berth.x1}
-          y1={berth.y1}
-          x2={berth.x2}
-          y2={berth.y2}
-          stroke={stroke}
-          strokeWidth="3"
-          style={{ pointerEvents: "none" }}
-        />
-      ))}
+      <g id="berth-divider-lines" pointerEvents="none">
+        {topBerths.map((berth) => (
+          <line
+            key={getLineKey("top-line", berth)}
+            x1={berth.x1}
+            y1={berth.y1}
+            x2={berth.x2}
+            y2={berth.y2}
+            stroke={stroke}
+            strokeWidth="3"
+            vectorEffect="non-scaling-stroke"
+          />
+        ))}
 
-      {leftSideBerths.map((berth) => (
-        <line
-          key={getLineKey("left-line", berth)}
-          x1={berth.x1}
-          y1={berth.y1}
-          x2={berth.x2}
-          y2={berth.y2}
-          stroke={stroke}
-          strokeWidth="3"
-          style={{ pointerEvents: "none" }}
-        />
-      ))}
+        {leftSideBerths.map((berth) => (
+          <line
+            key={getLineKey("left-line", berth)}
+            x1={berth.x1}
+            y1={berth.y1}
+            x2={berth.x2}
+            y2={berth.y2}
+            stroke={stroke}
+            strokeWidth="3"
+            vectorEffect="non-scaling-stroke"
+          />
+        ))}
 
-      {rightSideBerths.map((berth) => (
-        <line
-          key={getLineKey("right-line", berth)}
-          x1={berth.x1}
-          y1={berth.y1}
-          x2={berth.x2}
-          y2={berth.y2}
-          stroke={stroke}
-          strokeWidth="3"
-          style={{ pointerEvents: "none" }}
-        />
-      ))}
+        {rightSideBerths.map((berth) => (
+          <line
+            key={getLineKey("right-line", berth)}
+            x1={berth.x1}
+            y1={berth.y1}
+            x2={berth.x2}
+            y2={berth.y2}
+            stroke={stroke}
+            strokeWidth="3"
+            vectorEffect="non-scaling-stroke"
+          />
+        ))}
+      </g>
     </svg>
   );
 }

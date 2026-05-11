@@ -4,29 +4,45 @@ import { useState } from "react";
 export function MapLegend() {
   const [isOpen, setIsOpen] = useState(false);
 
+  function openLegend(event: React.PointerEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsOpen(true);
+  }
+
+  function closeLegend(event: React.PointerEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    setIsOpen(false);
+  }
+
   return (
-    <div className="fixed top-32 left-8 lg:left-[21rem] z-[var(--z-map-content)] flex flex-col items-start gap-2 pointer-events-none opacity-40 hover:opacity-100 transition-opacity duration-300">
-      {/* Desktop / Expanded Legend */}
+    <div className="pointer-events-none fixed left-5 top-28 z-[120] flex flex-col items-start gap-2 opacity-70 transition-opacity duration-300 hover:opacity-100 lg:left-[21rem] lg:top-32 lg:opacity-60">
+      {/* Legend Content */}
       <div
-        className={`p-2 transition-all duration-500 ease-in-out pointer-events-auto ${
+        className={`pointer-events-auto rounded-2xl bg-transparent p-2 transition-all duration-300 ease-in-out ${
           isOpen
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 -translate-y-4 lg:opacity-100 lg:translate-y-0"
+            ? "translate-y-0 opacity-100"
+            : "pointer-events-none -translate-y-3 opacity-0 lg:pointer-events-auto lg:translate-y-0 lg:opacity-100"
         }`}
       >
-        <div className="flex items-center justify-between mb-2 lg:hidden">
+        {/* Mobile Close */}
+        <div className="mb-2 flex items-center justify-end lg:hidden">
           <button
             type="button"
-            onClick={() => setIsOpen(false)}
-            className="p-1 rounded-full text-[#0A2540]/40 hover:text-[#0A2540]/80"
+            onPointerUp={closeLegend}
+            className="rounded-full p-1 text-[#0A2540]/40 transition-colors hover:text-[#0A2540]/80 active:scale-95"
+            aria-label="Hide legend"
           >
             <CloseIcon size={12} strokeWidth={3} />
           </button>
         </div>
 
+        {/* Legend Items */}
         <div className="space-y-2">
+          {/* Available */}
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 flex items-center justify-center">
+            <div className="flex h-4 w-4 items-center justify-center">
               <svg
                 width="12"
                 height="12"
@@ -43,13 +59,15 @@ export function MapLegend() {
                 />
               </svg>
             </div>
-            <span className="text-[10px] font-bold text-[#0A2540]/40 uppercase tracking-wider">
+
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#0A2540]/40">
               Available
             </span>
           </div>
 
+          {/* Occupied */}
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 flex items-center justify-center">
+            <div className="flex h-4 w-4 items-center justify-center">
               <svg
                 width="12"
                 height="12"
@@ -62,13 +80,15 @@ export function MapLegend() {
                 </g>
               </svg>
             </div>
-            <span className="text-[10px] font-bold text-[#0A2540]/40 uppercase tracking-wider">
+
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#0A2540]/40">
               Occupied
             </span>
           </div>
 
+          {/* Offline */}
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 flex items-center justify-center">
+            <div className="flex h-4 w-4 items-center justify-center">
               <svg
                 width="12"
                 height="12"
@@ -78,7 +98,8 @@ export function MapLegend() {
                 <circle cx="8" cy="8" r="3" fill="rgba(10, 37, 64, 0.2)" />
               </svg>
             </div>
-            <span className="text-[10px] font-bold text-[#0A2540]/40 uppercase tracking-wider">
+
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[#0A2540]/40">
               Offline
             </span>
           </div>
@@ -89,9 +110,9 @@ export function MapLegend() {
       {!isOpen && (
         <button
           type="button"
-          onClick={() => setIsOpen(true)}
-          className="lg:hidden p-2 text-[#0A2540]/40 pointer-events-auto active:scale-95 transition-transform"
-          aria-label="Show Legend"
+          onPointerUp={openLegend}
+          className="pointer-events-auto rounded-full p-2 text-[#0A2540]/40 transition-transform active:scale-95 lg:hidden"
+          aria-label="Show legend"
         >
           <Info size={16} strokeWidth={3} />
         </button>

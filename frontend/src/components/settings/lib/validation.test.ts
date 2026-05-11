@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
   type AvailabilityForm,
+  getErrorsFromResponse,
   isSettingsField,
   isValidEmail,
   MIN_PASSWORD_LENGTH,
@@ -46,6 +47,18 @@ describe("validateForm", () => {
   test("trims-only firstname is rejected", () => {
     expect(validateForm({ ...baseForm, firstname: "   " })).toMatchObject({
       firstname: "First name is required.",
+    });
+  });
+
+  test("empty lastname is rejected", () => {
+    expect(validateForm({ ...baseForm, lastname: "" })).toMatchObject({
+      lastname: "Last name is required.",
+    });
+  });
+
+  test("trims-only lastname is rejected", () => {
+    expect(validateForm({ ...baseForm, lastname: "   " })).toMatchObject({
+      lastname: "Last name is required.",
     });
   });
 
@@ -107,6 +120,16 @@ describe("validateAvailabilityForm", () => {
     );
   });
 
+  test("return before start", () => {
+    const form: AvailabilityForm = {
+      from_date: "2026-06-08",
+      return_date: "2026-06-01",
+    };
+    expect(validateAvailabilityForm(form)).toBe(
+      "Return date must be after the start date.",
+    );
+  });
+
   test("valid window", () => {
     const form: AvailabilityForm = {
       from_date: "2026-06-01",
@@ -131,5 +154,74 @@ describe("isSettingsField", () => {
 
   test.each(["general", "unknown", null, undefined, 42])("rejects %s", (f) => {
     expect(isSettingsField(f)).toBe(false);
+  });
+});
+
+function makeJsonResponse(body: unknown, status = 400): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+describe("getErrorsFromResponse", () => {
+  test("FastAPI detail array maps field errors", async () => {
+    const res = makeJsonResponse({
+      detail: [
+        { loc: ["body", "email"], msg: "Enter a valid email address." },
+        { loc: ["body", "lastname"], msg: "Last name is required." },
+      ],
+    });
+    const errors = await getErrorsFromResponse(res, "Could not save.");
+    expect(errors).toEqual({
+      email: "Enter a valid email address.",
+      lastname: "Last name is required.",
+    });
+  });
+
+  test("unknown loc field falls into general", async () => {
+    const res = makeJsonResponse({
+      detail: [{ loc: ["body", "mystery"], msg: "Bad value." }],
+    });
+    const errors = await getErrorsFromResponse(res, "Could not save.");
+    expect(errors).toEqual({ general: "Bad value." });
+  });
+
+  test("string detail goes to general", async () => {
+    const res = makeJsonResponse({ detail: "Forbidden" }, 403);
+    expect(await getErrorsFromResponse(res, "fallback")).toEqual({
+      general: "Forbidden",
+    });
+  });
+
+  test("message string goes to general", async () => {
+    const res = makeJsonResponse({ message: "Service unavailable" }, 503);
+    expect(await getErrorsFromResponse(res, "fallback")).toEqual({
+      general: "Service unavailable",
+    });
+  });
+
+  test("error string goes to general", async () => {
+    const res = makeJsonResponse({ error: "Bad request" });
+    expect(await getErrorsFromResponse(res, "fallback")).toEqual({
+      general: "Bad request",
+    });
+  });
+
+  test("unknown shape falls back to status message", async () => {
+    const res = makeJsonResponse({ what: "ever" }, 418);
+    expect(await getErrorsFromResponse(res, "Could not save.")).toEqual({
+      general: "Could not save. Status: 418",
+    });
+  });
+
+  test("invalid JSON falls back to status message", async () => {
+    const res = new Response("not json", {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+    expect(await getErrorsFromResponse(res, "Could not save.")).toEqual({
+      general: "Could not save. Status: 500",
+    });
   });
 });

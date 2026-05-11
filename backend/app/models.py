@@ -71,7 +71,6 @@ class BerthAvailabilityWindow(Base):
             name="ck_berth_availability_windows_dates",
         ),
     )
-
     window_id: Mapped[str] = mapped_column(String, primary_key=True)
     berth_id: Mapped[str] = mapped_column(
         ForeignKey("berths.berth_id", ondelete="CASCADE"),

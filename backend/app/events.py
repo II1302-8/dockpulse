@@ -8,7 +8,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from app import broadcaster
-from app.models import Berth, Dock, Event, Node, User, UserHarborRole
+from app.models import (
+    Berth,
+    BerthAvailabilityWindow,
+    Dock,
+    Event,
+    Node,
+    User,
+    UserHarborRole,
+)
 from app.notifications import send_email
 from app.schemas import BerthUpdateEvent
 
@@ -56,25 +64,32 @@ async def _notify_harbormasters(
         subject = f"Berth {label} is now occupied"
         html = f"<p>Berth <strong>{label}</strong> has been occupied.</p>"
     else:
-        subject = f"Berth {label} is now free"
-        html = f"<p>Berth <strong>{label}</strong> has been freed.</p>"
+        return
+    #    subject = f"Berth {label} is now free"
+    #    html = f"<p>Berth <strong>{label}</strong> has been freed.</p>"
+    stmt = select(BerthAvailabilityWindow).where(
+        BerthAvailabilityWindow.from_date < datetime.now(),
+        BerthAvailabilityWindow.return_date > datetime.now(),
+    )
+    result = await session.execute(stmt)
+    berth_available = result.scalars().first()
+    if not berth_available:
+        coros = []
+        for hm in harbormasters:
+            prefs = hm.notification_prefs
+            if prefs is not None:
+                if new_status == "occupied" and not prefs.notify_arrival:
+                    continue
+                if new_status == "free" and not prefs.notify_departure:
+                    continue
 
-    coros = []
-    for hm in harbormasters:
-        prefs = hm.notification_prefs
-        if prefs is not None:
-            if new_status == "occupied" and not prefs.notify_arrival:
-                continue
-            if new_status == "free" and not prefs.notify_departure:
-                continue
+            idem_key = f"berth-status/{event_id}/{hm.user_id}"
+            coros.append(send_email(hm.email, subject, html, idem_key))
 
-        idem_key = f"berth-status/{event_id}/{hm.user_id}"
-        coros.append(send_email(hm.email, subject, html, idem_key))
-
-    results = await asyncio.gather(*coros, return_exceptions=True)
-    for exc in results:
-        if isinstance(exc, BaseException):
-            logger.warning("Failed to send notification email: %s", exc)
+        results = await asyncio.gather(*coros, return_exceptions=True)
+        for exc in results:
+            if isinstance(exc, BaseException):
+                logger.warning("Failed to send notification email: %s", exc)
 
 
 async def process_sensor_reading(

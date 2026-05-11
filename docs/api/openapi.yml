@@ -3097,6 +3097,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserOut'
           description: Successful Response
+        '401':
+          description: Invalid credentials
+        '403':
+          description: Email not verified
         '422':
           content:
             application/json:
@@ -3220,6 +3224,8 @@ paths:
             application/json:
               schema: {}
           description: Successful Response
+        '400':
+          description: Invalid or expired token
         '422':
           content:
             application/json:

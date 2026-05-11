@@ -64,9 +64,7 @@ async def _invalidate_verification_tokens(user_id: str, session: SessionDep) -> 
     )
 
 
-async def _create_verification_token(
-    user_id: str, session: SessionDep, settings
-) -> str:
+def _create_verification_token(user_id: str, session: SessionDep, settings) -> str:
     token = secrets.token_urlsafe(32)
     session.add(
         UserVerification(
@@ -93,15 +91,15 @@ async def register(
     background_tasks: BackgroundTasks,
 ):
     settings = get_settings()
+    # pay argon2 cost up front so duplicate-email paths don't leak timing
+    password_hash = _hash_password(body.password.get_secret_value())
     result = await session.execute(select(User).where(User.email == body.email))
     existing = result.scalar_one_or_none()
 
     if existing is not None:
         if not existing.email_verified:
             await _invalidate_verification_tokens(existing.user_id, session)
-            token = await _create_verification_token(
-                existing.user_id, session, settings
-            )
+            token = _create_verification_token(existing.user_id, session, settings)
             await session.commit()
             background_tasks.add_task(
                 send_verification_email,
@@ -124,7 +122,7 @@ async def register(
         email=body.email,
         phone=body.phone,
         boat_club=body.boat_club,
-        password_hash=_hash_password(body.password.get_secret_value()),
+        password_hash=password_hash,
         email_verified=False,
     )
     session.add(user)
@@ -134,7 +132,7 @@ async def register(
         await session.rollback()
         return {"message": "Check your email to verify your account"}
 
-    token = await _create_verification_token(user.user_id, session, settings)
+    token = _create_verification_token(user.user_id, session, settings)
     await session.commit()
     background_tasks.add_task(
         send_verification_email,
@@ -150,6 +148,7 @@ async def register(
     status_code=200,
     operation_id="verifyEmail",
     summary="Verify email address using token from email link",
+    responses={400: {"description": "Invalid or expired token"}},
 )
 @limiter.limit("10/hour")
 async def verify_email(
@@ -188,7 +187,7 @@ async def resend_verification(
     session: SessionDep,
     background_tasks: BackgroundTasks,
 ):
-    _msg = {
+    msg = {
         "message": (
             "If that email is registered and unverified, a new link has been sent."
         )
@@ -197,11 +196,11 @@ async def resend_verification(
     user = result.scalar_one_or_none()
 
     if user is None or user.email_verified:
-        return _msg
+        return msg
 
     settings = get_settings()
     await _invalidate_verification_tokens(user.user_id, session)
-    token = await _create_verification_token(user.user_id, session, settings)
+    token = _create_verification_token(user.user_id, session, settings)
     await session.commit()
     background_tasks.add_task(
         send_verification_email,
@@ -209,7 +208,7 @@ async def resend_verification(
         token=token,
         firstname=user.firstname,
     )
-    return _msg
+    return msg
 
 
 @router.post(
@@ -217,6 +216,10 @@ async def resend_verification(
     response_model=UserOut,
     operation_id="login",
     summary="Log in and set session cookies",
+    responses={
+        401: {"description": "Invalid credentials"},
+        403: {"description": "Email not verified"},
+    },
 )
 @limiter.limit(lambda: get_settings().rate_limit_login)
 async def login(

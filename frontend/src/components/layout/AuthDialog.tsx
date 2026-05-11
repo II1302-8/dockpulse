@@ -10,8 +10,9 @@ import { Dialog, DialogContent, DialogTitle } from "../shared/ui/dialog";
 import { Input } from "../shared/ui/input";
 import { Label } from "../shared/ui/label";
 import { PasswordInput } from "../shared/ui/password-input";
+import { ForgotPasswordForm } from "./ForgotPasswordForm";
 
-type AuthTab = "login" | "signup";
+type AuthTab = "login" | "signup" | "forgot";
 
 type SignupForm = {
   email: string;
@@ -29,7 +30,6 @@ const emptySignupForm: SignupForm = {
   lastname: "",
 };
 
-// mirror backend APP_ENV: prod build enforces the 12 char floor, dev/staging relaxed for testing
 const PASSWORD_MIN = import.meta.env.MODE === "production" ? 12 : 4;
 const PASSWORD_MAX = 128;
 
@@ -71,6 +71,7 @@ interface AuthDialogProps {
 
 export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
   const { refresh } = useAuth();
+
   const [authTab, setAuthTab] = useState<AuthTab>("login");
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -79,6 +80,8 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isLogin = authTab === "login";
+  const isForgot = authTab === "forgot";
+
   const loginReady = loginEmail.trim().length > 0 && loginPassword.length > 0;
 
   const passwordLength = signupForm.password.length;
@@ -127,7 +130,9 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
 
   async function handleLogin(e?: React.FormEvent) {
     e?.preventDefault();
+
     if (isSubmitting || !loginReady) return;
+
     setError(null);
     setIsSubmitting(true);
 
@@ -147,7 +152,9 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
 
   async function handleSignup(e?: React.FormEvent) {
     e?.preventDefault();
+
     if (isSubmitting || !signupReady) return;
+
     setError(null);
     setIsSubmitting(true);
 
@@ -173,7 +180,6 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
         );
       }
 
-      // server accepted creds, reuse them to drop user into a logged-in state
       await authenticate(payload.email, signupForm.password);
       await refresh();
       onOpenChange(false);
@@ -193,53 +199,75 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
       open={open}
       onOpenChange={(next) => {
         onOpenChange(next);
-        if (!next) resetForms();
+
+        if (!next) {
+          resetForms();
+        }
       }}
     >
       <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md max-h-[90vh] overflow-y-auto bg-white/90 backdrop-blur-xl border-white/40 rounded-[32px] p-5 sm:p-8 shadow-deep animate-in zoom-in-95 duration-300">
         <VisuallyHidden.Root>
-          <DialogTitle>Log in or sign up</DialogTitle>
+          <DialogTitle>
+            {isForgot ? "Reset password" : "Log in or sign up"}
+          </DialogTitle>
         </VisuallyHidden.Root>
+
         <div className="space-y-6">
           <div className="text-center space-y-2">
             <h2 className="text-2xl font-black text-brand-navy tracking-tight uppercase">
-              {isLogin ? "Welcome Back" : "Create Account"}
+              {isForgot
+                ? "Reset Password"
+                : isLogin
+                  ? "Welcome Back"
+                  : "Create Account"}
             </h2>
+
             <p className="text-xs font-bold text-brand-navy/40 uppercase tracking-widest">
-              {isLogin
-                ? "Enter your credentials to continue"
-                : "Join your marina community"}
+              {isForgot
+                ? "Enter your email to receive a reset link"
+                : isLogin
+                  ? "Enter your credentials to continue"
+                  : "Join your marina community"}
             </p>
           </div>
 
-          <div
-            role="tablist"
-            aria-label="Authentication mode"
-            className="flex p-1 bg-brand-navy/5 rounded-full"
-          >
-            {(["login", "signup"] as const).map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                role="tab"
-                aria-selected={authTab === tab}
-                onClick={() => {
-                  setAuthTab(tab);
-                  setError(null);
-                }}
-                className={cn(
-                  "flex-1 h-10 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
-                  authTab === tab
-                    ? "bg-white shadow-sm text-brand-navy"
-                    : "text-brand-navy/40 hover:text-brand-navy/70",
-                )}
-              >
-                {tab === "login" ? "Log In" : "Sign Up"}
-              </button>
-            ))}
-          </div>
+          {!isForgot && (
+            <div
+              role="tablist"
+              aria-label="Authentication mode"
+              className="flex p-1 bg-brand-navy/5 rounded-full"
+            >
+              {(["login", "signup"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  role="tab"
+                  aria-selected={authTab === tab}
+                  onClick={() => {
+                    setAuthTab(tab);
+                    setError(null);
+                  }}
+                  className={cn(
+                    "flex-1 h-10 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
+                    authTab === tab
+                      ? "bg-white shadow-sm text-brand-navy"
+                      : "text-brand-navy/40 hover:text-brand-navy/70",
+                  )}
+                >
+                  {tab === "login" ? "Log In" : "Sign Up"}
+                </button>
+              ))}
+            </div>
+          )}
 
-          {isLogin ? (
+          {isForgot ? (
+            <ForgotPasswordForm
+              onBackToLogin={() => {
+                setAuthTab("login");
+                setError(null);
+              }}
+            />
+          ) : isLogin ? (
             <form onSubmit={handleLogin} className="space-y-4">
               <fieldset
                 disabled={isSubmitting}
@@ -249,6 +277,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                   <Label htmlFor="login-email" className={fieldLabelClass}>
                     Email
                   </Label>
+
                   <Input
                     id="login-email"
                     type="email"
@@ -256,7 +285,10 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                     placeholder="name@marina.com"
                     required
                     value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
+                    onChange={(e) => {
+                      setLoginEmail(e.target.value);
+                      setError(null);
+                    }}
                     className={fieldInputClass}
                   />
                 </div>
@@ -265,16 +297,31 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                   <Label htmlFor="login-password" className={fieldLabelClass}>
                     Password
                   </Label>
+
                   <PasswordInput
                     id="login-password"
                     autoComplete="current-password"
                     required
                     value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
+                    onChange={(e) => {
+                      setLoginPassword(e.target.value);
+                      setError(null);
+                    }}
                     className={fieldInputClass}
                   />
                 </div>
               </fieldset>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthTab("forgot");
+                  setError(null);
+                }}
+                className="block ml-auto text-[10px] font-black uppercase tracking-widest text-brand-blue hover:text-brand-navy transition-colors"
+              >
+                Forgot password?
+              </button>
 
               <p
                 role="alert"
@@ -309,6 +356,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                   <Label htmlFor="signup-email" className={fieldLabelClass}>
                     Email
                   </Label>
+
                   <Input
                     id="signup-email"
                     type="email"
@@ -329,6 +377,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                     >
                       First Name
                     </Label>
+
                     <Input
                       id="signup-firstname"
                       autoComplete="given-name"
@@ -340,6 +389,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                       className={fieldInputClass}
                     />
                   </div>
+
                   <div className="space-y-2">
                     <Label
                       htmlFor="signup-lastname"
@@ -347,6 +397,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                     >
                       Last Name
                     </Label>
+
                     <Input
                       id="signup-lastname"
                       autoComplete="family-name"
@@ -364,6 +415,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                   <Label htmlFor="signup-password" className={fieldLabelClass}>
                     Password
                   </Label>
+
                   <PasswordInput
                     id="signup-password"
                     autoComplete="new-password"
@@ -378,6 +430,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                     }
                     className={fieldInputClass}
                   />
+
                   <p
                     id="signup-password-hint"
                     aria-live="polite"
@@ -403,6 +456,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                   >
                     Confirm Password
                   </Label>
+
                   <PasswordInput
                     id="signup-confirm-password"
                     autoComplete="new-password"
@@ -415,6 +469,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                     }
                     className={fieldInputClass}
                   />
+
                   <p
                     id="signup-confirm-hint"
                     aria-live="polite"

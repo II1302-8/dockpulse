@@ -446,3 +446,68 @@ async def test_login_wrong_password_still_401_not_403(
         json={"email": "wrongpass@example.com", "password": "wrongpassword"},
     )
     assert r.status_code == 401
+
+
+# ── non-prod bypass ──────────────────────────────────────────────────────────
+
+
+async def test_register_in_dev_marks_user_verified_immediately(
+    client: AsyncClient, session: AsyncSession, monkeypatch
+):
+    monkeypatch.setenv("APP_ENV", "dev")
+    from app.config import get_settings
+
+    get_settings.cache_clear()
+
+    sent: list = []
+
+    async def _capture(**kw):
+        sent.append(kw)
+
+    monkeypatch.setattr("app.routers.auth.send_verification_email", _capture)
+
+    r = await client.post("/api/auth/register", json=_REG)
+    assert r.status_code == 201
+    user = (
+        await session.execute(select(User).where(User.email == "alice@example.com"))
+    ).scalar_one()
+    assert user.email_verified is True
+    # no token created, no email queued
+    tokens = (
+        (
+            await session.execute(
+                select(UserVerification).where(UserVerification.user_id == user.user_id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert tokens == []
+    assert sent == []
+
+
+async def test_login_in_dev_allows_unverified_user(
+    client: AsyncClient, session: AsyncSession, monkeypatch
+):
+    monkeypatch.setenv("APP_ENV", "dev")
+    from app.config import get_settings
+
+    get_settings.cache_clear()
+
+    from tests._helpers import hash_password
+
+    user = User(
+        user_id="u-dev-unverified",
+        firstname="Dev",
+        lastname="Unver",
+        email="dev-unver@example.com",
+        password_hash=hash_password("password1234"),
+        email_verified=False,
+    )
+    session.add(user)
+    await session.commit()
+    r = await client.post(
+        "/api/auth/login",
+        json={"email": "dev-unver@example.com", "password": "password1234"},
+    )
+    assert r.status_code == 200

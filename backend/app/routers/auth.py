@@ -91,13 +91,15 @@ async def register(
     background_tasks: BackgroundTasks,
 ):
     settings = get_settings()
+    # email verification only enforced in prod, dev/staging skip the loop
+    require_verification = settings.app_env == "prod"
     # pay argon2 cost up front so duplicate-email paths don't leak timing
     password_hash = _hash_password(body.password.get_secret_value())
     result = await session.execute(select(User).where(User.email == body.email))
     existing = result.scalar_one_or_none()
 
     if existing is not None:
-        if not existing.email_verified:
+        if require_verification and not existing.email_verified:
             await _invalidate_verification_tokens(existing.user_id, session)
             token = _create_verification_token(existing.user_id, session, settings)
             await session.commit()
@@ -108,6 +110,10 @@ async def register(
                 firstname=existing.firstname,
             )
         else:
+            if not existing.email_verified:
+                # auto-promote stale unverified row in non-prod
+                existing.email_verified = True
+                await session.commit()
             background_tasks.add_task(
                 send_account_exists_email,
                 email=existing.email,
@@ -123,13 +129,17 @@ async def register(
         phone=body.phone,
         boat_club=body.boat_club,
         password_hash=password_hash,
-        email_verified=False,
+        email_verified=not require_verification,
     )
     session.add(user)
     try:
         await session.flush()
     except IntegrityError:
         await session.rollback()
+        return {"message": "Check your email to verify your account"}
+
+    if not require_verification:
+        await session.commit()
         return {"message": "Check your email to verify your account"}
 
     token = _create_verification_token(user.user_id, session, settings)
@@ -236,7 +246,7 @@ async def login(
     if user is None:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    if not user.email_verified:
+    if get_settings().app_env == "prod" and not user.email_verified:
         raise HTTPException(
             status_code=403, detail="Email not verified. Check your inbox."
         )

@@ -94,14 +94,14 @@ export function ProfileSection({ user }: Props) {
       }
 
       const updatedUser = (await res.json()) as AuthUser;
-
-      await refresh();
       setForm({
         ...getInitialForm(updatedUser),
         current_password: "",
         password: "",
       });
       setSuccessMessage("Profile updated successfully.");
+      // refresh failure is non-fatal, save already succeeded
+      refresh().catch(() => {});
     } catch {
       setErrors({ general: "Could not save profile. Please try again." });
     } finally {

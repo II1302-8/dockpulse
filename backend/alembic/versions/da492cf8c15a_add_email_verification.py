@@ -1,7 +1,7 @@
 """add_email_verification
 
 Revision ID: da492cf8c15a
-Revises: 6c273ed76aa2
+Revises: e7c93a1f8420
 Create Date: 2026-05-07 15:33:12.486610
 
 Creates user_verifications table for single-use email verification tokens and
@@ -16,7 +16,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "da492cf8c15a"
-down_revision: str | Sequence[str] | None = "6c273ed76aa2"
+down_revision: str | Sequence[str] | None = "e7c93a1f8420"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 

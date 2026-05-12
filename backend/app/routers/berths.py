@@ -14,7 +14,16 @@ from app.dependencies import (
     HarbormasterForBerthDep,
     SessionDep,
 )
-from app.models import Assignment, Berth, BerthAvailabilityWindow, Dock, Event, User
+from app.models import (
+    Assignment,
+    Berth,
+    BerthAvailabilityWindow,
+    Dock,
+    Event,
+    User,
+    UserHarborRole,
+)
+from app.notifications import send_email
 from app.schemas import (
     AssignBerthIn,
     BerthAvailabilityWindowIn,
@@ -184,11 +193,40 @@ async def remove_berth_assignment(
     if not berth:
         raise HTTPException(status_code=404, detail="Berth not found")
 
+    stmt = select(Assignment).where(Assignment.berth_id == berth_id)
+    result = await session.execute(stmt)
+    assignment = result.scalars().first()
+    if not assignment:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    user_id = assignment.user_id
     await session.execute(delete(Assignment).where(Assignment.berth_id == berth_id))
     berth.status = "free"
     berth.is_reserved = False
     await session.commit()
 
+    stmt = select(UserHarborRole).where(
+        UserHarborRole.user_id == user_id, UserHarborRole.role == "spot_owner"
+    )
+    result = await session.execute(stmt)
+    spot_owner = result.scalars().first()
+    if not spot_owner:
+        spot_owner.role = "visitor"
+
+        await session.commit()
+        await session.refresh(spot_owner)
+
+    stmt = select(User).where(User.user_id == user_id)
+    result = await session.execute(stmt)
+    user = result.scalars().first()
+    user_email = user.email
+    subject = f"You've been removed from a berth - {berth_id}"
+    html = f"""
+    <p>
+        You have been removed as a tenant from the berth
+        <strong>{berth_id}</strong>.
+    </p>
+    """
+    send_email(user_email, subject, html)
     return await _load_berth_with_assignment(session, berth_id)
 
 

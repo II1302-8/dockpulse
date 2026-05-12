@@ -1,3 +1,4 @@
+import { LayoutDashboard } from "lucide-react";
 import panzoom from "panzoom";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
@@ -29,6 +30,8 @@ export function HarborMap() {
     setIsActivityLogOpen,
     isNodeHealthOpen,
     setIsNodeHealthOpen,
+    toggleOverview,
+    toggleNodeHealth,
   } = useDashboardLayout();
 
   const [selectedBerthId, setSelectedBerthId] = useState<string | null>(null);
@@ -178,12 +181,25 @@ export function HarborMap() {
         </div>
       )}
 
+      {!isHarborMaster && !isOverviewOpen && (
+        <button
+          type="button"
+          onClick={toggleOverview}
+          data-map-control
+          className="pointer-events-auto fixed left-8 top-48 z-[var(--z-map-content)] flex h-12 w-12 items-center justify-center rounded-full border border-white/40 bg-white/40 text-brand-blue shadow-deep backdrop-blur-xl transition-all hover:scale-110 hover:bg-white/60 active:scale-95 lg:left-[var(--sidebar-total-offset,32px)]"
+          aria-label="Open harbor overview"
+        >
+          <LayoutDashboard size={20} strokeWidth={2.5} />
+        </button>
+      )}
+
       {isHarborMaster ? (
         <HarborMasterOverview
           key="master-overview"
           berths={berths}
           isOpen={overviewIsVisible}
           onCloseCB={handleCloseOverview}
+          onOpenNodeHealth={toggleNodeHealth}
         />
       ) : (
         <HarborOverview

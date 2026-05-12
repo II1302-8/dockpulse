@@ -127,6 +127,9 @@ export function BerthDetailPanel({
     if (!isHarborMaster) return;
 
     const controller = new AbortController();
+    // track status changes to trigger re-fetch
+    void berth?.status;
+    void berth?.last_updated;
 
     async function fetchEvents() {
       setIsEventsLoading(true);
@@ -154,7 +157,7 @@ export function BerthDetailPanel({
     fetchEvents();
 
     return () => controller.abort();
-  }, [berthId, isHarborMaster]);
+  }, [berthId, isHarborMaster, berth?.status, berth?.last_updated]);
 
   useEffect(() => {
     return () => {
@@ -472,7 +475,7 @@ export function BerthDetailPanel({
                 </div>
               )}
 
-              {berth.battery_pct != null && (
+              {berth.battery_pct != null && isOnline(berth.last_updated, now) && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-600 fill-mode-both">
                   <div className="mb-3 flex items-center justify-between">
                     <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-brand-navy/50">

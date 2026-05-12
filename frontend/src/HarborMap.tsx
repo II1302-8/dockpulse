@@ -39,10 +39,20 @@ export function HarborMap() {
 
   const isHarborMaster = user?.role?.toLowerCase().trim() === "harbormaster";
 
-  const berths = useMemo(
-    () => apiBerths.filter((berth) => mapBerthIds.has(berth.berth_id)),
-    [apiBerths],
-  );
+  const berths = useMemo(() => {
+    const filtered = apiBerths.filter((berth) => mapBerthIds.has(berth.berth_id));
+    const rejected = apiBerths.filter((berth) => !mapBerthIds.has(berth.berth_id));
+    
+    console.log("[DEBUG] HarborMap Filter Results:", {
+      totalFromApi: apiBerths.length,
+      filteredCount: filtered.length,
+      rejectedCount: rejected.length,
+      rejectedIds: rejected.map(b => b.berth_id),
+      mapBerthIdsSize: mapBerthIds.size,
+    });
+    
+    return filtered;
+  }, [apiBerths]);
 
   const selectedBerth = useMemo(
     () => berths.find((berth) => berth.berth_id === selectedBerthId),

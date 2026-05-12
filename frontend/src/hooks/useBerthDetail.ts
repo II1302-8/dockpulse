@@ -3,7 +3,7 @@ import type { components } from "../api-types";
 
 type Berth = components["schemas"]["BerthOut"];
 
-const POLL_INTERVAL_MS = 15 * 60 * 1000;
+const POLL_INTERVAL_MS = 60 * 1000;
 
 export function useBerthDetail(berthId: string | null) {
   const [berth, setBerth] = useState<Berth | null>(null);

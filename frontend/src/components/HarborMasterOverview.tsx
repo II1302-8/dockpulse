@@ -31,18 +31,30 @@ export function HarborMasterOverview({
     return () => clearTimeout(timer);
   }, []);
 
+  const onlineBerths = berths.filter((b) => isOnline(b.last_updated, now));
   const totalBerths = berths.length;
+  const totalOnline = onlineBerths.length;
+
   // reserved berths count as unavailable even though sensor reports free
-  const unavailableBerths = berths.filter(
+  const unavailableBerths = onlineBerths.filter(
     (b) => b.status === "occupied" || b.is_reserved,
   ).length;
-  const availableBerths = totalBerths - unavailableBerths;
+
+  const availableBerths = totalOnline - unavailableBerths;
   const occupancyRate =
-    totalBerths > 0 ? Math.round((unavailableBerths / totalBerths) * 100) : 0;
+    totalOnline > 0 ? Math.round((unavailableBerths / totalOnline) * 100) : 0;
 
   const activeNodes = berths.filter((b) =>
     isOnline(b.last_updated, now),
   ).length;
+
+  console.log("[DEBUG] HarborMasterOverview Props:", {
+    berthsCount: berths.length,
+    berthIds: berths.map((b) => b.berth_id),
+    availableBerths,
+    unavailableBerths,
+    totalBerths,
+  });
 
   function closePanel() {
     onCloseCB?.();

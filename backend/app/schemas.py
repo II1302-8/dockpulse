@@ -107,6 +107,27 @@ class AssignBerthIn(BaseModel):
     user_id: str = Field(min_length=1, examples=["user-001"])
 
 
+class BerthInviteCreate(BaseModel):
+    berth_id: str = Field(min_length=1, examples=["berth-001"])
+    email: EmailField
+
+
+class BerthInviteOut(_BaseSchema):
+    invite_id: str = Field(examples=["inv-001"])
+    berth_id: str = Field(examples=["berth-001"])
+    berth_label: str | None = Field(default=None, examples=["A-12"])
+    harbor_id: str = Field(examples=["harbor-001"])
+    harbor_name: str | None = Field(default=None, examples=["Saltsjöbaden"])
+    email: EmailField
+    status: str = Field(examples=["pending"])
+    expires_at: datetime = Field()
+
+
+class BerthInviteList(_BaseSchema):
+    items: list[BerthInviteOut]
+    total: int = Field(examples=[42])
+
+
 class DockOut(_BaseSchema):
     dock_id: str = Field(examples=["dock-a"])
     harbor_id: str = Field(examples=["harbor-saltsjobaden"])

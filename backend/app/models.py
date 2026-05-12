@@ -9,10 +9,12 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     String,
     func,
     text,
 )
+from sqlalchemy.dialects.postgresql import CITEXT
 from sqlalchemy.orm import Mapped, declarative_mixin, mapped_column, relationship
 
 from app.db import Base
@@ -33,6 +35,9 @@ class AuditTimestampsMixin:
 
 
 berth_status_enum = Enum("free", "occupied", name="berth_status")
+berth_invite_status_enum = Enum(
+    "pending", "accepted", "expired", "revoked", "rejected", name="berth_invite_status"
+)
 event_type_enum = Enum(
     "occupied", "freed", "alert_unauthorized", "heartbeat", name="event_type"
 )
@@ -62,6 +67,15 @@ class User(Base):
     notification_prefs: Mapped["UserNotificationPrefs | None"] = relationship(
         back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
+    created_invites: Mapped[list["BerthInvite"]] = relationship(
+        back_populates="creator",
+        cascade="all, delete-orphan",
+        foreign_keys="[BerthInvite.created_by]",
+    )
+    accepted_invites: Mapped[list["BerthInvite"]] = relationship(
+        back_populates="acceptor",
+        foreign_keys="[BerthInvite.accepted_by]",
+    )
 
 
 class BerthAvailabilityWindow(Base):
@@ -90,6 +104,58 @@ class BerthAvailabilityWindow(Base):
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class BerthInvite(Base):
+    __tablename__ = "berth_invites"
+    __table_args__ = (
+        # one pending invite per berth, prevents the app-level race window
+        Index(
+            "uq_berth_invites_berth_pending",
+            "berth_id",
+            unique=True,
+            postgresql_where=text("status = 'pending'"),
+        ),
+    )
+
+    invite_id: Mapped[str] = mapped_column(String, primary_key=True)
+    berth_id: Mapped[str] = mapped_column(
+        ForeignKey("berths.berth_id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    harbor_id: Mapped[str] = mapped_column(
+        ForeignKey("harbors.harbor_id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    # citext lets the partial-unique-pending check hit case-insensitively
+    # without explicit lower() on every query
+    email: Mapped[str] = mapped_column(CITEXT, nullable=False)
+    # raw 32-byte sha256 digest; plaintext token only ever lives in the email
+    token_hash: Mapped[bytes] = mapped_column(LargeBinary, nullable=False, unique=True)
+    created_by: Mapped[str] = mapped_column(
+        ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    status: Mapped[str] = mapped_column(
+        berth_invite_status_enum, nullable=False, default="pending"
+    )
+    accepted_by: Mapped[str | None] = mapped_column(
+        ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True
+    )
+    accepted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    berth: Mapped["Berth"] = relationship(back_populates="berth_invites")
+    creator: Mapped["User"] = relationship(
+        back_populates="created_invites", foreign_keys=[created_by]
+    )
+    acceptor: Mapped["User | None"] = relationship(
+        back_populates="accepted_invites", foreign_keys=[accepted_by]
     )
 
 
@@ -149,6 +215,9 @@ class Berth(AuditTimestampsMixin, Base):
     alerts: Mapped[list["Alert"]] = relationship(back_populates="berth")
     assignment: Mapped["Assignment | None"] = relationship(
         back_populates="berth", uselist=False
+    )
+    berth_invites: Mapped[list["BerthInvite"]] = relationship(
+        back_populates="berth", cascade="all, delete-orphan"
     )
 
 
@@ -349,7 +418,9 @@ class UserHarborRole(Base):
         primary_key=True,
         index=True,
     )
-    role: Mapped[str] = mapped_column(String, primary_key=True)
+    role: Mapped[str] = mapped_column(
+        String, primary_key=True
+    )  # mapped_column(berth_role_enum, primary_key=True)
 
 
 class RefreshToken(Base):

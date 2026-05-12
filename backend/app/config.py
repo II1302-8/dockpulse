@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     verification_token_ttl_hours: int = 24
     # per-ip throttle for the unauthenticated reset-request endpoint
     rate_limit_password_reset: str = "5/hour"
+    invitation_token_ttl_hours: int = 336
     # csv origins, empty disables CORS middleware (vite proxy makes dev same-origin)
     cors_allowed_origins: Annotated[list[str], NoDecode] = []
     # per-ip throttle for credential brute-force

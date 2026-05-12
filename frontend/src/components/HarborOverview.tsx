@@ -1,4 +1,4 @@
-import { Activity, BatteryLow, X } from "lucide-react";
+import { Activity, X } from "lucide-react";
 import type { components } from "../api-types";
 import { useNow } from "../hooks/useNow";
 import { isOnline } from "../lib/freshness";
@@ -28,16 +28,9 @@ export function HarborOverview({
     (berth) => berth.status === "free" && !berth.is_reserved,
   ).length;
 
-  const offlineCount = berths.length - onlineBerths.length;
 
   const availabilityRate =
     onlineBerths.length > 0 ? (availableBerths / onlineBerths.length) * 100 : 0;
-
-  const lowBatteryNodes = onlineBerths.filter(
-    (berth) => berth.battery_pct != null && berth.battery_pct < 20,
-  );
-
-  const allClear = lowBatteryNodes.length === 0 && offlineCount === 0;
 
   function closePanel() {
     onCloseCB?.();
@@ -125,55 +118,6 @@ export function HarborOverview({
               }}
             />
           </div>
-
-          {offlineCount > 0 && (
-            <div className="mt-3 text-[10px] font-bold text-[#0A2540]/50">
-              {offlineCount} sensor{offlineCount === 1 ? "" : "s"} offline
-            </div>
-          )}
-        </article>
-
-        <article className="rounded-[24px] border border-white/30 bg-white/40 p-4 shadow-subtle backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both">
-          <div className="mb-3 flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-[#0A2540]/50">
-            <BatteryLow size={12} strokeWidth={3} />
-            Node Alerts
-          </div>
-
-          {allClear ? (
-            <div className="flex items-center gap-2 rounded-xl border border-emerald-500/10 bg-emerald-500/5 p-2">
-              <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-              <span className="text-[10px] font-bold text-emerald-600/80">
-                All Systems Online
-              </span>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {offlineCount > 0 && (
-                <div className="flex items-center justify-between rounded-xl border border-[#0A2540]/10 bg-[#0A2540]/5 p-2">
-                  <span className="text-[10px] font-bold text-[#0A2540]">
-                    Offline sensors
-                  </span>
-                  <span className="text-[10px] font-black text-[#0A2540]/70">
-                    {offlineCount}
-                  </span>
-                </div>
-              )}
-
-              {lowBatteryNodes.map((node) => (
-                <div
-                  key={node.berth_id}
-                  className="flex items-center justify-between rounded-xl border border-red-500/10 bg-red-500/5 p-2"
-                >
-                  <span className="text-[10px] font-bold text-[#0A2540]">
-                    B-{node.label || node.berth_id}
-                  </span>
-                  <span className="text-[10px] font-black text-red-500">
-                    {node.battery_pct}%
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
         </article>
       </div>
     </section>

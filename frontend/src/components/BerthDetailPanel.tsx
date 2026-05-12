@@ -422,18 +422,20 @@ export function BerthDetailPanel({
                 ))}
               </div>
 
-              <div className="animate-in fade-in slide-in-from-bottom-4 rounded-[24px] border border-brand-blue/10 bg-brand-blue/5 p-5 duration-500 delay-500 fill-mode-both">
-                <div className="mb-3 flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-brand-blue/60">
-                  <Clock size={12} strokeWidth={3} />
-                  Node Check-in
-                </div>
+              {isHarborMaster && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 rounded-[24px] border border-brand-blue/10 bg-brand-blue/5 p-5 duration-500 delay-500 fill-mode-both">
+                  <div className="mb-3 flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-brand-blue/60">
+                    <Clock size={12} strokeWidth={3} />
+                    Node Check-in
+                  </div>
 
-                <span className="block w-fit rounded-xl border border-brand-blue/10 bg-white/60 px-3 py-1.5 font-mono text-[10px] font-bold text-brand-navy shadow-sm">
-                  {berth.last_updated
-                    ? new Date(berth.last_updated).toLocaleString()
-                    : "Never"}
-                </span>
-              </div>
+                  <span className="block w-fit rounded-xl border border-brand-blue/10 bg-white/60 px-3 py-1.5 font-mono text-[10px] font-bold text-brand-navy shadow-sm">
+                    {berth.last_updated
+                      ? new Date(berth.last_updated).toLocaleString()
+                      : "Never"}
+                  </span>
+                </div>
+              )}
 
               {isHarborMaster && berth.assignment && marinaSlug && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 mt-6 border-t border-black/5 pt-6 duration-500 delay-550 fill-mode-both">
@@ -475,32 +477,34 @@ export function BerthDetailPanel({
                 </div>
               )}
 
-              {berth.battery_pct != null && isOnline(berth.last_updated, now) && (
-                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-600 fill-mode-both">
-                  <div className="mb-3 flex items-center justify-between">
-                    <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-brand-navy/50">
-                      <Battery size={12} strokeWidth={3} />
-                      Node Battery
-                    </span>
+              {isHarborMaster &&
+                berth.battery_pct != null &&
+                isOnline(berth.last_updated, now) && (
+                  <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-600 fill-mode-both">
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-brand-navy/50">
+                        <Battery size={12} strokeWidth={3} />
+                        Node Battery
+                      </span>
 
-                    <span className="text-[10px] font-black tracking-tighter text-brand-navy">
-                      {berth.battery_pct}%
-                    </span>
-                  </div>
+                      <span className="text-[10px] font-black tracking-tighter text-brand-navy">
+                        {berth.battery_pct}%
+                      </span>
+                    </div>
 
-                  <div className="h-3 overflow-hidden rounded-full border border-black/5 bg-slate-100 p-0.5">
-                    <div
-                      className={cn(
-                        "h-full rounded-full transition-all duration-1000 ease-out",
-                        berth.battery_pct < 20
-                          ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]"
-                          : "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]",
-                      )}
-                      style={{ width: `${berth.battery_pct}%` }}
-                    />
+                    <div className="h-3 overflow-hidden rounded-full border border-black/5 bg-slate-100 p-0.5">
+                      <div
+                        className={cn(
+                          "h-full rounded-full transition-all duration-1000 ease-out",
+                          berth.battery_pct < 20
+                            ? "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]"
+                            : "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]",
+                        )}
+                        style={{ width: `${berth.battery_pct}%` }}
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {isHarborMaster && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 mt-6 border-t border-black/5 pt-6 duration-500 delay-750 fill-mode-both">

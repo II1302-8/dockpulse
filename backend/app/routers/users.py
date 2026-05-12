@@ -1,10 +1,15 @@
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
+import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
-from fastapi import APIRouter, HTTPException, Query
-from sqlalchemy import select
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request
+from sqlalchemy import select, update
 
+from app import notifications
+from app.auth import ALGORITHM
+from app.config import get_settings
 from app.dependencies import (
     CurrentUserDep,
     HarbormasterForBerthDep,
@@ -12,9 +17,13 @@ from app.dependencies import (
     user_is_harbormaster,
 )
 from app.models import Assignment, User, UserNotificationPrefs
+from app.rate_limit import limiter
 from app.schemas import (
     NotificationPrefsOut,
     NotificationPrefsPatch,
+    PasswordResetConfirm,
+    PasswordResetOut,
+    PasswordResetRequest,
     UserOut,
     UserPatch,
 )
@@ -28,6 +37,98 @@ _ph = PasswordHasher()
 
 def _hash_password(password: str) -> str:
     return _ph.hash(password)
+
+
+@router.post(
+    "/reset",
+    status_code=204,
+    operation_id="requestPasswordReset",
+    summary="Send a password reset email if the address is registered",
+)
+@limiter.limit(lambda: get_settings().rate_limit_password_reset)
+async def request_password_reset(
+    request: Request,
+    body: PasswordResetRequest,
+    session: SessionDep,
+    background_tasks: BackgroundTasks,
+):
+    user = (
+        await session.execute(select(User).where(User.email == body.email))
+    ).scalar_one_or_none()
+    if user is None:
+        return
+    settings = get_settings()
+    now = datetime.now(UTC)
+    # tv binds token to current session version so a confirm invalidates
+    # all other in-flight reset tokens for the same user
+    token = jwt.encode(
+        {
+            "type": "password_reset",
+            "sub": user.user_id,
+            "email": user.email,
+            "tv": user.token_version,
+            "iat": now,
+            "exp": now + timedelta(hours=1),
+        },
+        settings.secret_key,
+        algorithm=ALGORITHM,
+    )
+    reset_url = f"{settings.app_base_url}/resetpassword/{token}"
+    # background task keeps unknown/known email paths timing-equivalent
+    background_tasks.add_task(
+        notifications.send_email,
+        to=user.email,
+        subject="Reset your DockPulse password",
+        html=(
+            f"<p>Click the link below to reset your DockPulse password. "
+            f"The link expires in 60 minutes.</p>"
+            f'<p><a href="{reset_url}">{reset_url}</a></p>'
+        ),
+    )
+
+
+@router.post(
+    "/resetpassword",
+    response_model=PasswordResetOut,
+    operation_id="confirmPasswordReset",
+    summary="Apply a new password using a reset token",
+)
+async def confirm_password_reset(body: PasswordResetConfirm, session: SessionDep):
+    try:
+        payload = jwt.decode(
+            body.token, get_settings().secret_key, algorithms=[ALGORITHM]
+        )
+    except jwt.PyJWTError:
+        raise HTTPException(
+            status_code=403, detail="Invalid or expired reset token"
+        ) from None
+    if payload.get("type") != "password_reset":
+        raise HTTPException(status_code=403, detail="Invalid or expired reset token")
+    user_id = payload.get("sub")
+    token_email = payload.get("email")
+    if not isinstance(user_id, str) or not isinstance(token_email, str):
+        raise HTTPException(status_code=403, detail="Invalid or expired reset token")
+    user = await session.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=403, detail="Invalid or expired reset token")
+    if user.email != token_email:
+        raise HTTPException(status_code=403, detail="Invalid or expired reset token")
+    # tv mismatch means user.token_version moved on (prior reset / logout-all)
+    # rejecting here makes a successful reset invalidate all other live tokens
+    if payload.get("tv") != user.token_version:
+        raise HTTPException(status_code=403, detail="Invalid or expired reset token")
+    await session.execute(
+        update(User)
+        .where(User.user_id == user_id)
+        .values(
+            password_hash=_hash_password(body.password.get_secret_value()),
+            token_version=User.token_version + 1,
+        )
+    )
+    await session.commit()
+    return PasswordResetOut(
+        message="Password reset successful", invite_token=body.invite_token
+    )
 
 
 @router.get(

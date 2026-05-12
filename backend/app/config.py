@@ -38,8 +38,11 @@ class Settings(BaseSettings):
     app_env: Literal["dev", "staging", "prod"] = "dev"
     resend_api_key: str | None = None
     email_from: str = "DockPulse <noreply@dockpulse.xyz>"
+    # base URL for email links (verification, password reset)
     app_base_url: str = "http://localhost:5173"
     verification_token_ttl_hours: int = 24
+    # per-ip throttle for the unauthenticated reset-request endpoint
+    rate_limit_password_reset: str = "5/hour"
     # csv origins, empty disables CORS middleware (vite proxy makes dev same-origin)
     cors_allowed_origins: Annotated[list[str], NoDecode] = []
     # per-ip throttle for credential brute-force
@@ -88,6 +91,13 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             return [o.strip() for o in v.split(",") if o.strip()]
         return v
+
+    @field_validator("app_base_url")
+    @classmethod
+    def _validate_app_base_url(cls, v: str) -> str:
+        if not v.startswith(("http://", "https://")):
+            raise ValueError("APP_BASE_URL must start with http:// or https://")
+        return v.rstrip("/")
 
     @field_validator("factory_pubkey", mode="before")
     @classmethod

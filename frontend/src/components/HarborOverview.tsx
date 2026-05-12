@@ -22,25 +22,43 @@ export function HarborOverview({
   const onlineBerths = berths.filter((berth) =>
     isOnline(berth.last_updated, now),
   );
+
   const freeBerths = onlineBerths.filter(
     (berth) => berth.status === "free",
   ).length;
+
   const offlineCount = berths.length - onlineBerths.length;
+
   const availabilityRate =
     onlineBerths.length > 0 ? (freeBerths / onlineBerths.length) * 100 : 0;
 
   const lowBatteryNodes = onlineBerths.filter(
     (berth) => berth.battery_pct != null && berth.battery_pct < 20,
   );
+
   const allClear = lowBatteryNodes.length === 0 && offlineCount === 0;
 
-  function handleClose(event: React.MouseEvent<HTMLButtonElement>) {
-    event.stopPropagation();
+  function closePanel() {
     onCloseCB?.();
   }
 
-  function handlePointerDown(event: React.PointerEvent<HTMLButtonElement>) {
+  function handleCloseClick(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
     event.stopPropagation();
+    closePanel();
+  }
+
+  function handleClosePointerDown(
+    event: React.PointerEvent<HTMLButtonElement>,
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  function handleClosePointerUp(event: React.PointerEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    closePanel();
   }
 
   return (
@@ -62,9 +80,10 @@ export function HarborOverview({
 
         <button
           type="button"
-          onPointerDown={handlePointerDown}
-          onClick={handleClose}
-          className="pointer-events-auto relative z-[130] rounded-full bg-[#0A2540]/5 p-2 text-[#0A2540]/60 transition-colors hover:bg-[#0A2540]/10 lg:hidden"
+          onPointerDown={handleClosePointerDown}
+          onPointerUp={handleClosePointerUp}
+          onClick={handleCloseClick}
+          className="pointer-events-auto relative z-[130] touch-manipulation rounded-full bg-[#0A2540]/5 p-2 text-[#0A2540]/60 transition-colors hover:bg-[#0A2540]/10 active:scale-95 lg:hidden"
           aria-label="Close harbor overview"
         >
           <X size={14} strokeWidth={3} />

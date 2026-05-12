@@ -44,11 +44,12 @@ export function ActivityLogPanel({
   const [filterType, setFilterType] = useState<string>("all");
   const prevBerthsRef = useRef<Map<string, Berth>>(new Map());
 
-  // hydrate from per-user key once user is known
   useEffect(() => {
     if (!user?.user_id) return;
+
     const saved = localStorage.getItem(storageKeyFor(user.user_id));
     if (!saved) return;
+
     try {
       const parsed = JSON.parse(saved);
       setEvents(
@@ -67,32 +68,36 @@ export function ActivityLogPanel({
     localStorage.setItem(storageKeyFor(user.user_id), JSON.stringify(events));
   }, [events, user?.user_id]);
 
-  // first-paint flicker guard, panel uses isFirstLoad to skip transition on mount
   useEffect(() => {
     if (isLoaded) {
       const timer = setTimeout(() => {
         isFirstLoad.current = false;
       }, 100);
+
       return () => clearTimeout(timer);
     }
   }, [isLoaded]);
 
-  // fetch a small sample of berth history once per session, not on every event
   useEffect(() => {
     if (!isLoaded || historyFetchedRef.current) return;
     if (berths.length === 0) return;
+
     historyFetchedRef.current = true;
 
     async function fetchInitialHistory() {
       const sampleBerths = berths.slice(0, 10);
+
       const results = await Promise.all(
         sampleBerths.map(async (berth) => {
           try {
             const res = await apiFetch(
               `/api/berths/${berth.berth_id}/events?limit=5`,
             );
+
             if (!res.ok) return [] as ActivityEvent[];
+
             const data = await res.json();
+
             return data.map(
               (ev: {
                 event_id: string;
@@ -120,6 +125,7 @@ export function ActivityLogPanel({
 
       setEvents((prev) => {
         const seen = new Set<string>();
+
         return [...prev, ...historyEvents]
           .filter((e) => {
             if (seen.has(e.id)) return false;
@@ -134,16 +140,15 @@ export function ActivityLogPanel({
     fetchInitialHistory();
   }, [isLoaded, berths]);
 
-  // diff live berth stream into synthetic events
   useEffect(() => {
     const newEvents: ActivityEvent[] = [];
     const currentBerths = new Map(berths.map((b) => [b.berth_id, b]));
 
-    // skip first run, baseline only
     if (prevBerthsRef.current.size > 0) {
       for (const [id, berth] of currentBerths.entries()) {
         const prev = prevBerthsRef.current.get(id);
         if (!prev) continue;
+
         if (prev.status !== berth.status) {
           newEvents.push({
             id: crypto.randomUUID(),
@@ -155,6 +160,7 @@ export function ActivityLogPanel({
             status: berth.status,
           });
         }
+
         if (
           prev.assignment?.user_id !== berth.assignment?.user_id &&
           berth.assignment?.user_id
@@ -165,7 +171,7 @@ export function ActivityLogPanel({
             type: "owner_assignment",
             berthId: id,
             berthLabel: berth.label || id,
-            details: `New owner assigned to berth`,
+            details: "New owner assigned to berth",
           });
         }
       }
@@ -174,10 +180,12 @@ export function ActivityLogPanel({
     if (newEvents.length > 0) {
       setEvents((prev) => [...newEvents, ...prev].slice(0, 100));
     }
+
     prevBerthsRef.current = currentBerths;
   }, [berths]);
 
   const activeOpen = isOpen && isLoaded;
+
   const filteredEvents = events.filter((e) => {
     if (filterType === "all") return true;
     return e.type === filterType;
@@ -186,35 +194,35 @@ export function ActivityLogPanel({
   return (
     <section
       className={cn(
-        "fixed bg-white/70 backdrop-blur-2xl border border-white/60 shadow-deep",
+        "fixed z-[var(--z-panel)] flex flex-col overflow-hidden rounded-[32px] border border-white/60 bg-white/70 p-6 font-body shadow-deep backdrop-blur-2xl transition-all duration-500 ease-in-out",
         "bottom-[calc(env(safe-area-inset-bottom)+7rem)] left-6 right-6 max-h-[55dvh]",
-        "lg:bottom-auto lg:right-auto lg:top-32 lg:w-80 lg:max-h-[calc(100vh-160px)] lg:left-[var(--sidebar-total-offset,32px)]",
-        "flex flex-col z-[var(--z-panel)] p-6 font-body rounded-[32px] overflow-hidden transition-all duration-500 ease-in-out",
+        "lg:bottom-auto lg:right-auto lg:left-[var(--sidebar-total-offset,32px)] lg:top-32 lg:w-80 lg:max-h-[calc(100vh-160px)]",
         (!isLoaded || isFirstLoad.current) &&
-          "opacity-0 pointer-events-none transition-none",
+          "pointer-events-none opacity-0 transition-none",
         activeOpen
-          ? "translate-y-0 opacity-100 pointer-events-auto lg:translate-x-0"
-          : "translate-y-[150%] opacity-0 pointer-events-none lg:-translate-x-[150%] lg:translate-y-0",
+          ? "pointer-events-auto translate-y-0 opacity-100 lg:translate-x-0"
+          : "pointer-events-none translate-y-[150%] opacity-0 lg:-translate-x-[150%] lg:translate-y-0",
       )}
     >
       <header className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Activity size={16} className="text-brand-blue" strokeWidth={2.5} />
-          <h2 className="text-xs font-black text-[#0A2540]/40 uppercase tracking-[0.2em]">
+          <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[#0A2540]/40">
             Activity Log
           </h2>
         </div>
+
         <button
           type="button"
           aria-label="Close activity log"
           onClick={onCloseCB}
-          className="grid place-items-center w-10 h-10 rounded-full bg-[#0A2540]/5 text-[#0A2540]/60 active:bg-[#0A2540]/15 transition-colors cursor-pointer"
+          className="grid h-10 w-10 cursor-pointer place-items-center rounded-full bg-[#0A2540]/5 text-[#0A2540]/60 transition-colors active:bg-[#0A2540]/15"
         >
           <X size={16} strokeWidth={3} />
         </button>
       </header>
 
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2 custom-scrollbar no-scrollbar">
+      <div className="mb-6 grid grid-cols-3 gap-2">
         {[
           { id: "all", label: "All" },
           { id: "status_change", label: "Status" },
@@ -225,22 +233,22 @@ export function ActivityLogPanel({
             type="button"
             onClick={() => setFilterType(btn.id)}
             className={cn(
-              "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+              "min-w-0 rounded-full px-2 py-2 text-[9px] font-black uppercase tracking-wider transition-all sm:text-[10px]",
               filterType === btn.id
                 ? "bg-brand-blue text-white shadow-lg shadow-brand-blue/20"
                 : "bg-white/50 text-brand-navy/40 hover:bg-white/80",
             )}
           >
-            {btn.label}
+            <span className="block truncate">{btn.label}</span>
           </button>
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar no-scrollbar">
+      <div className="custom-scrollbar no-scrollbar flex-1 space-y-3 overflow-y-auto pr-2">
         {filteredEvents.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Clock size={32} className="text-brand-navy/10 mb-2" />
-            <p className="text-[10px] font-bold text-brand-navy/30 uppercase tracking-widest">
+            <Clock size={32} className="mb-2 text-brand-navy/10" />
+            <p className="text-[10px] font-bold uppercase tracking-widest text-brand-navy/30">
               Waiting for activity...
             </p>
           </div>
@@ -248,12 +256,13 @@ export function ActivityLogPanel({
           filteredEvents.map((event) => (
             <article
               key={event.id}
-              className="bg-white/80 border border-white/50 p-4 rounded-2xl shadow-subtle hover:shadow-md transition-all duration-300 animate-in fade-in slide-in-from-bottom-2"
+              className="rounded-2xl border border-white/50 bg-white/80 p-4 shadow-subtle transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 hover:shadow-md"
             >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-black text-brand-blue uppercase tracking-widest">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-widest text-brand-blue">
                   Berth {event.berthLabel}
                 </span>
+
                 <span className="text-[8px] font-bold text-brand-navy/30">
                   {event.timestamp.toLocaleTimeString([], {
                     hour: "2-digit",
@@ -262,19 +271,22 @@ export function ActivityLogPanel({
                   })}
                 </span>
               </div>
-              <p className="text-[11px] font-bold text-brand-navy/70 leading-relaxed">
+
+              <p className="text-[11px] font-bold leading-relaxed text-brand-navy/70">
                 {event.details}
               </p>
+
               {event.status && (
                 <div className="mt-2 flex items-center gap-2">
                   <div
                     className={cn(
-                      "w-1.5 h-1.5 rounded-full",
+                      "h-1.5 w-1.5 rounded-full",
                       event.status === "occupied"
-                        ? "bg-red-500 animate-pulse"
+                        ? "animate-pulse bg-red-500"
                         : "bg-emerald-500",
                     )}
                   />
+
                   <span className="text-[9px] font-black uppercase tracking-wider text-brand-navy/40">
                     {event.status}
                   </span>

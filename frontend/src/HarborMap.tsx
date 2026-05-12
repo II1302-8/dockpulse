@@ -10,11 +10,14 @@ import type { AuthOutletContext } from "./components/layout/MainLayout";
 import { MapLegend } from "./components/MapLegend";
 import { NorthArrow } from "./components/NorthArrow";
 import { useBerthsStream } from "./hooks/useBerthsStream";
+import { cn } from "./lib/utils";
 import { mapBerthIds } from "./svg";
 import { SvgMap } from "./svgMap";
 
 export function HarborMap() {
   const contentRef = useRef<HTMLDivElement>(null);
+  const panzoomRef = useRef<ReturnType<typeof panzoom> | null>(null);
+
   const { user } = useOutletContext<AuthOutletContext>();
   const { berths: apiBerths, isLoading, error, refetchACB } = useBerthsStream();
 
@@ -40,6 +43,9 @@ export function HarborMap() {
     [berths, selectedBerthId],
   );
 
+  const shouldShowMapLegend =
+    !selectedBerthId && !isOverviewOpen && !isActivityLogOpen;
+
   useEffect(() => {
     const contentElement = contentRef.current;
     if (!contentElement) return;
@@ -53,13 +59,38 @@ export function HarborMap() {
       boundsPadding: 0.15,
       beforeMouseDown: (event) => {
         const target = event.target as HTMLElement | null;
+
+        if (
+          target?.closest(
+            "button, a, [role='button'], input, select, textarea, [data-map-control]",
+          )
+        ) {
+          return true;
+        }
+
         return Boolean(target?.closest("[data-berth-id]"));
       },
       filterKey: () => true,
     });
 
-    return () => instance.dispose();
+    panzoomRef.current = instance;
+
+    return () => {
+      instance.dispose();
+      panzoomRef.current = null;
+    };
   }, []);
+
+  useEffect(() => {
+    const instance = panzoomRef.current;
+    if (!instance) return;
+
+    if (selectedBerthId || isOverviewOpen || isActivityLogOpen) {
+      instance.pause();
+    } else {
+      instance.resume();
+    }
+  }, [selectedBerthId, isOverviewOpen, isActivityLogOpen]);
 
   useEffect(() => {
     if (!isLoading) setShowInitialSpinner(false);
@@ -82,7 +113,12 @@ export function HarborMap() {
       <section
         ref={contentRef}
         aria-label="Harbor interactive map"
-        className="absolute inset-0 z-10 h-full w-full touch-none cursor-grab active:cursor-grabbing"
+        className={cn(
+          "absolute inset-0 z-10 h-full w-full cursor-grab active:cursor-grabbing",
+          "md:touch-none",
+          (selectedBerthId || isOverviewOpen || isActivityLogOpen) &&
+            "pointer-events-none",
+        )}
       >
         <SvgMap
           berths={berths}
@@ -118,10 +154,6 @@ export function HarborMap() {
         </div>
       )}
 
-      {/* mobile overview toggle is now in the bottom dock (SideMenu mobile),
-          the legacy floating button overlapped content and duplicated the
-          dock action */}
-
       {isHarborMaster ? (
         <HarborMasterOverview
           key="master-overview"
@@ -145,7 +177,7 @@ export function HarborMap() {
         onCloseCB={() => setIsActivityLogOpen(false)}
       />
 
-      <MapLegend />
+      {shouldShowMapLegend && <MapLegend />}
       <NorthArrow />
 
       {selectedBerthId && (

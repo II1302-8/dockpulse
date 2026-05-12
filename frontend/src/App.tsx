@@ -19,6 +19,10 @@ const Settings = lazy(() =>
   import("./pages/Settings").then((m) => ({ default: m.Settings })),
 );
 
+const ResetPassword = lazy(() =>
+  import("./pages/ResetPassword").then((m) => ({ default: m.ResetPassword })),
+);
+
 const NotFound = lazy(() =>
   import("./pages/NotFound").then((m) => ({ default: m.NotFound })),
 );
@@ -27,6 +31,7 @@ const NotFound = lazy(() =>
 // instead of rendering a generic dashboard for "marina admin" etc
 function MarinaGuard() {
   const { marinaSlug } = useParams<{ marinaSlug: string }>();
+
   if (!marinaSlug || !(marinaSlug in MARINAS)) {
     return (
       <Suspense fallback={<div className="h-full w-full" />}>
@@ -34,6 +39,7 @@ function MarinaGuard() {
       </Suspense>
     );
   }
+
   return <MainLayout />;
 }
 
@@ -78,6 +84,15 @@ export function App() {
           )}
 
           <Route path="/" element={<Navigate to="/saltsjobaden" replace />} />
+
+          <Route
+            path="/resetpassword/:token"
+            element={
+              <Suspense fallback={<div className="h-full w-full" />}>
+                <ResetPassword />
+              </Suspense>
+            }
+          />
 
           <Route path="/:marinaSlug" element={<MarinaGuard />}>
             <Route

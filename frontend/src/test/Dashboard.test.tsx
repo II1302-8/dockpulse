@@ -11,6 +11,7 @@ const anonymousOutletContext: AuthOutletContext = {
   user: null,
   isLoginOpen: false,
   setIsLoginOpen: () => {},
+  openAuthDialog: () => {},
 };
 
 function OutletShell() {

@@ -520,6 +520,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/resend-verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resend verification email */
+        post: operations["resendVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/verify-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Verify email address using token from email link */
+        get: operations["verifyEmail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/berth-invites/by-token/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Look up an invite by its token (public) */
+        get: operations["getBerthInviteByToken"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/berth-invites/by-token/{token}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept an invite (authed, must match invite email) */
+        post: operations["acceptBerthInvite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/berth-invites/by-token/{token}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject an invite (authed, must match invite email) */
+        post: operations["rejectBerthInvite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/berths": {
         parameters: {
             query?: never;
@@ -763,6 +848,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/harbors/{harbor_id}/berth-invites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List invites for a harbor, paginated (harbormaster only) */
+        get: operations["listBerthInvites"];
+        put?: never;
+        /** Create a berth invite (harbormaster only) */
+        post: operations["createBerthInvite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/harbors/{harbor_id}/berth-invites/{invite_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke a pending invite (harbormaster only) */
+        delete: operations["deleteBerthInvite"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/harbors/{harbor_id}/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search users known to this harbor (harbormaster only) */
+        get: operations["searchHarborUsers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -883,6 +1020,40 @@ export interface paths {
         head?: never;
         /** Update notification preferences for the current user */
         patch: operations["updateNotificationPrefs"];
+        trace?: never;
+    };
+    "/api/users/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a password reset email if the address is registered */
+        post: operations["requestPasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/resetpassword": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply a new password using a reset token */
+        post: operations["confirmPasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
 }
@@ -1175,6 +1346,74 @@ export interface components {
             /** Label */
             label?: string | null;
         };
+        /** BerthInviteCreate */
+        BerthInviteCreate: {
+            /**
+             * Berth Id
+             * @example berth-001
+             */
+            berth_id: string;
+            /**
+             * Email
+             * Format: email
+             * @example alex@example.com
+             */
+            email: string;
+        };
+        /** BerthInviteList */
+        BerthInviteList: {
+            /** Items */
+            items: components["schemas"]["BerthInviteOut"][];
+            /**
+             * Total
+             * @example 42
+             */
+            total: number;
+        };
+        /** BerthInviteOut */
+        BerthInviteOut: {
+            /**
+             * Berth Id
+             * @example berth-001
+             */
+            berth_id: string;
+            /**
+             * Berth Label
+             * @example A-12
+             */
+            berth_label?: string | null;
+            /**
+             * Email
+             * Format: email
+             * @example alex@example.com
+             */
+            email: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Harbor Id
+             * @example harbor-001
+             */
+            harbor_id: string;
+            /**
+             * Harbor Name
+             * @example Saltsjöbaden
+             */
+            harbor_name?: string | null;
+            /**
+             * Invite Id
+             * @example inv-001
+             */
+            invite_id: string;
+            /**
+             * Status
+             * @example pending
+             */
+            status: string;
+        };
         /** BerthOut */
         BerthOut: {
             assignment?: components["schemas"]["AssignmentOut"] | null;
@@ -1388,7 +1627,7 @@ export interface components {
              * Event Type
              * @enum {string}
              */
-            event_type: "occupied" | "freed" | "alert_unauthorized" | "heartbeat";
+            event_type: "occupied" | "freed" | "alert_unauthorized" | "heartbeat" | "assignment_removed";
             /**
              * Node Id
              * @example node-012
@@ -1717,6 +1956,35 @@ export interface components {
             /** Notify Departure */
             notify_departure?: boolean | null;
         };
+        /** PasswordResetConfirm */
+        PasswordResetConfirm: {
+            /** Invite Token */
+            invite_token?: string | null;
+            /**
+             * Password
+             * Format: password
+             * @example correct horse battery staple
+             */
+            password: string;
+            /** Token */
+            token: string;
+        };
+        /** PasswordResetOut */
+        PasswordResetOut: {
+            /** Invite Token */
+            invite_token?: string | null;
+            /** Message */
+            message: string;
+        };
+        /** PasswordResetRequest */
+        PasswordResetRequest: {
+            /**
+             * Email
+             * Format: email
+             * @example alex@example.com
+             */
+            email: string;
+        };
         /** PendingGatewayOut */
         PendingGatewayOut: {
             /**
@@ -1748,6 +2016,15 @@ export interface components {
             node_id: string;
             /** Request Id */
             request_id: string;
+        };
+        /** ResendVerificationIn */
+        ResendVerificationIn: {
+            /**
+             * Email
+             * Format: email
+             * @example alex@example.com
+             */
+            email: string;
         };
         /** SnapshotAdoption */
         SnapshotAdoption: {
@@ -1906,6 +2183,30 @@ export interface components {
             /** User Id */
             user_id: string;
         };
+        /** UserSearchOut */
+        UserSearchOut: {
+            /**
+             * Email
+             * Format: email
+             * @example alex@example.com
+             */
+            email: string;
+            /**
+             * Firstname
+             * @example Alex
+             */
+            firstname: string;
+            /**
+             * Lastname
+             * @example Lindgren
+             */
+            lastname: string;
+            /**
+             * User Id
+             * @example user-001
+             */
+            user_id: string;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -1939,12 +2240,6 @@ export interface components {
             password: string;
             /** Phone */
             phone?: string | null;
-            /**
-             * Role
-             * @default boat_owner
-             * @enum {string}
-             */
-            role: "harbormaster" | "boat_owner";
         };
         /** UserPatch */
         app__routers__admin__users__UserPatch: {
@@ -1956,8 +2251,6 @@ export interface components {
             lastname?: string | null;
             /** Phone */
             phone?: string | null;
-            /** Role */
-            role?: ("harbormaster" | "boat_owner") | null;
         };
         /** UserCreate */
         app__schemas__UserCreate: {
@@ -3226,6 +3519,20 @@ export interface operations {
                     "application/json": components["schemas"]["UserOut"];
                 };
             };
+            /** @description Invalid credentials */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Email not verified */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -3323,7 +3630,171 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserOut"];
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resendVerification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResendVerificationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verifyEmail: {
+        parameters: {
+            query: {
+                token: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Invalid or expired token */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getBerthInviteByToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BerthInviteOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    acceptBerthInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BerthInviteOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rejectBerthInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BerthInviteOut"];
                 };
             };
             /** @description Validation Error */
@@ -3824,6 +4295,141 @@ export interface operations {
             };
         };
     };
+    listBerthInvites: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                harbor_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BerthInviteList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createBerthInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                harbor_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BerthInviteCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BerthInviteOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deleteBerthInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                harbor_id: string;
+                invite_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    searchHarborUsers: {
+        parameters: {
+            query?: {
+                /** @description email or name prefix, case-insensitive */
+                q?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                harbor_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserSearchOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     getHealth: {
         parameters: {
             query?: never;
@@ -4095,6 +4701,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotificationPrefsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    requestPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirmPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetConfirm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasswordResetOut"];
                 };
             };
             /** @description Validation Error */

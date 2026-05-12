@@ -1796,6 +1796,36 @@ components:
       - role
       title: UserPatchOut
       type: object
+    UserSearchOut:
+      properties:
+        email:
+          examples:
+          - alex@example.com
+          format: email
+          title: Email
+          type: string
+        firstname:
+          examples:
+          - Alex
+          title: Firstname
+          type: string
+        lastname:
+          examples:
+          - Lindgren
+          title: Lastname
+          type: string
+        user_id:
+          examples:
+          - user-001
+          title: User Id
+          type: string
+      required:
+      - user_id
+      - firstname
+      - lastname
+      - email
+      title: UserSearchOut
+      type: object
     ValidationError:
       properties:
         ctx:
@@ -4117,6 +4147,57 @@ paths:
       summary: Revoke a pending invite (harbormaster only)
       tags:
       - berth-invites
+  /api/harbors/{harbor_id}/users:
+    get:
+      operationId: searchHarborUsers
+      parameters:
+      - in: path
+        name: harbor_id
+        required: true
+        schema:
+          title: Harbor Id
+          type: string
+      - description: email or name prefix, case-insensitive
+        in: query
+        name: q
+        required: false
+        schema:
+          anyOf:
+          - maxLength: 120
+            type: string
+          - type: 'null'
+          description: email or name prefix, case-insensitive
+          title: Q
+      - in: query
+        name: limit
+        required: false
+        schema:
+          default: 20
+          maximum: 50
+          minimum: 1
+          title: Limit
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/UserSearchOut'
+                title: Response Searchharborusers
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - APIKeyCookie: []
+      summary: Search users known to this harbor (harbormaster only)
+      tags:
+      - harbors
   /api/health:
     get:
       operationId: getHealth

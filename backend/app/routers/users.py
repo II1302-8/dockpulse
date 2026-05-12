@@ -4,7 +4,7 @@ from typing import Annotated
 import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request
 from sqlalchemy import select, update
 
 from app import notifications
@@ -47,7 +47,10 @@ def _hash_password(password: str) -> str:
 )
 @limiter.limit(lambda: get_settings().rate_limit_password_reset)
 async def request_password_reset(
-    request: Request, body: PasswordResetRequest, session: SessionDep
+    request: Request,
+    body: PasswordResetRequest,
+    session: SessionDep,
+    background_tasks: BackgroundTasks,
 ):
     user = (
         await session.execute(select(User).where(User.email == body.email))
@@ -56,11 +59,14 @@ async def request_password_reset(
         return
     settings = get_settings()
     now = datetime.now(UTC)
+    # tv binds token to current session version so a confirm invalidates
+    # all other in-flight reset tokens for the same user
     token = jwt.encode(
         {
             "type": "password_reset",
             "sub": user.user_id,
             "email": user.email,
+            "tv": user.token_version,
             "iat": now,
             "exp": now + timedelta(hours=1),
         },
@@ -68,7 +74,9 @@ async def request_password_reset(
         algorithm=ALGORITHM,
     )
     reset_url = f"{settings.app_base_url}/resetpassword/{token}"
-    await notifications.send_email(
+    # background task keeps unknown/known email paths timing-equivalent
+    background_tasks.add_task(
+        notifications.send_email,
         to=user.email,
         subject="Reset your DockPulse password",
         html=(
@@ -76,7 +84,6 @@ async def request_password_reset(
             f"The link expires in 60 minutes.</p>"
             f'<p><a href="{reset_url}">{reset_url}</a></p>'
         ),
-        idempotency_key=f"password-reset-{user.user_id}-{int(now.timestamp()) // 3600}",
     )
 
 
@@ -105,6 +112,10 @@ async def confirm_password_reset(body: PasswordResetConfirm, session: SessionDep
     if user is None:
         raise HTTPException(status_code=403, detail="Invalid or expired reset token")
     if user.email != token_email:
+        raise HTTPException(status_code=403, detail="Invalid or expired reset token")
+    # tv mismatch means user.token_version moved on (prior reset / logout-all)
+    # rejecting here makes a successful reset invalidate all other live tokens
+    if payload.get("tv") != user.token_version:
         raise HTTPException(status_code=403, detail="Invalid or expired reset token")
     await session.execute(
         update(User)

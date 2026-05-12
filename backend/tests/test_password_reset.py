@@ -3,14 +3,13 @@ from datetime import UTC, datetime, timedelta
 import jwt
 import pytest
 import pytest_asyncio
+from argon2.exceptions import VerifyMismatchError
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import ALGORITHM
 from app.config import get_settings
 from app.models import User
-
-# auth_cookies and verify_password used by /resetpassword tests (added in next task)
 from tests._helpers import auth_cookies, hash_password, verify_password
 
 
@@ -29,13 +28,13 @@ async def reset_user(session: AsyncSession) -> User:
     return user
 
 
-# used by /resetpassword tests added in the next task
 def _make_reset_token(
     user: User,
     *,
     expired: bool = False,
     wrong_type: bool = False,
     wrong_email: bool = False,
+    tv: int | None = None,
 ) -> str:
     now = datetime.now(UTC)
     return jwt.encode(
@@ -43,6 +42,7 @@ def _make_reset_token(
             "type": "wrong_type" if wrong_type else "password_reset",
             "sub": user.user_id,
             "email": "other@example.com" if wrong_email else user.email,
+            "tv": user.token_version if tv is None else tv,
             "iat": now,
             "exp": (now - timedelta(hours=2))
             if expired
@@ -106,6 +106,8 @@ async def test_confirm_reset_updates_password_and_returns_200(
     assert r.json()["message"] == "Password reset successful"
     await session.refresh(reset_user)
     assert verify_password(reset_user.password_hash, "newpassword5678")
+    with pytest.raises(VerifyMismatchError):
+        verify_password(reset_user.password_hash, "oldpassword1234")
 
 
 async def test_confirm_reset_bumps_token_version(
@@ -208,6 +210,37 @@ async def test_confirm_reset_no_invite_token_is_null(
     )
     assert r.status_code == 200
     assert r.json()["invite_token"] is None
+
+
+async def test_confirm_reset_stale_tv_returns_403(
+    client: AsyncClient, reset_user: User
+):
+    # token issued at tv=0, simulate a prior reset that already bumped tv
+    token = _make_reset_token(reset_user, tv=99)
+    r = await client.post(
+        "/api/users/resetpassword",
+        json={"token": token, "password": "newpassword5678"},
+    )
+    assert r.status_code == 403
+
+
+async def test_confirm_reset_replay_after_successful_reset_rejected(
+    client: AsyncClient, reset_user: User
+):
+    # two tokens issued during the same 60-min window
+    token_a = _make_reset_token(reset_user)
+    token_b = _make_reset_token(reset_user)
+    r1 = await client.post(
+        "/api/users/resetpassword",
+        json={"token": token_a, "password": "newpassword5678"},
+    )
+    assert r1.status_code == 200
+    # token_b still inside its exp but tv is now stale, must be rejected
+    r2 = await client.post(
+        "/api/users/resetpassword",
+        json={"token": token_b, "password": "attackerpassword"},
+    )
+    assert r2.status_code == 403
 
 
 async def test_confirm_reset_deleted_user_returns_403(

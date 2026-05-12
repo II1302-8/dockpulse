@@ -884,6 +884,7 @@ components:
           - freed
           - alert_unauthorized
           - heartbeat
+          - assignment_removed
           title: Event Type
           type: string
         node_id:

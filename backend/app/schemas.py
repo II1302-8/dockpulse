@@ -29,7 +29,9 @@ NodeStatus = Literal["provisioned", "offline", "decommissioned"]
 # computed liveness view derived from heartbeat freshness, distinct from NodeStatus
 NodeHealth = Literal["online", "stale", "offline", "decommissioned"]
 AdoptionStatus = Literal["pending", "ok", "err"]
-EventType = Literal["occupied", "freed", "alert_unauthorized", "heartbeat"]
+EventType = Literal[
+    "occupied", "freed", "alert_unauthorized", "heartbeat", "assignment_removed"
+]
 
 
 # --- shared input field annotations ---

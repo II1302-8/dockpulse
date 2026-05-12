@@ -1,9 +1,28 @@
+import pytest
 import pytest_asyncio
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Assignment, Berth, Dock, Harbor, User
+from app.models import Assignment, Berth, Dock, Event, Harbor, User
 from tests._helpers import auth_cookies, hash_password
+
+
+@pytest.fixture
+def captured_emails(monkeypatch) -> list[dict]:
+    calls: list[dict] = []
+
+    async def _fake(to, subject, html, **kwargs):
+        calls.append(
+            {
+                "to": to,
+                "subject": subject,
+                "html": html,
+                "idempotency_key": kwargs.get("idempotency_key"),
+            }
+        )
+
+    monkeypatch.setattr("app.notifications.send_email", _fake)
+    return calls
 
 
 @pytest_asyncio.fixture
@@ -150,3 +169,91 @@ async def test_list_foreign_berth_events_returns_403(
         cookies=auth_cookies(harbor_master.user_id),
     )
     assert r.status_code == 403
+
+
+# --- issue #175 acceptance criteria ---
+
+
+async def test_remove_assignment_sends_notification(
+    client, session, seeded_berth, harbor_master, boat_owner, captured_emails
+):
+    creds = auth_cookies(harbor_master.user_id)
+    await client.put(
+        "/api/berths/b1/assignment",
+        json={"user_id": boat_owner.user_id},
+        cookies=creds,
+    )
+    r = await client.delete("/api/berths/b1/assignment", cookies=creds)
+    assert r.status_code == 200
+    assert len(captured_emails) == 1
+    msg = captured_emails[0]
+    assert msg["to"] == boat_owner.email
+    assert "ended" in msg["subject"].lower()
+    assert msg["idempotency_key"].startswith(
+        f"assignment-removed:b1:{boat_owner.user_id}:"
+    )
+
+
+async def test_remove_assignment_writes_audit_event(
+    client, session, seeded_berth, harbor_master, boat_owner, captured_emails
+):
+    creds = auth_cookies(harbor_master.user_id)
+    await client.put(
+        "/api/berths/b1/assignment",
+        json={"user_id": boat_owner.user_id},
+        cookies=creds,
+    )
+    await client.delete("/api/berths/b1/assignment", cookies=creds)
+    event = (
+        await session.execute(
+            select(Event).where(Event.event_type == "assignment_removed")
+        )
+    ).scalar_one()
+    assert event.berth_id == "b1"
+    assert event.actor_user_id == harbor_master.user_id
+    assert event.subject_user_id == boat_owner.user_id
+    assert event.timestamp is not None
+
+
+async def test_remove_assignment_missing_returns_404(
+    client, seeded_berth, harbor_master, captured_emails
+):
+    r = await client.delete(
+        "/api/berths/b1/assignment", cookies=auth_cookies(harbor_master.user_id)
+    )
+    assert r.status_code == 404
+    assert captured_emails == []
+
+
+async def test_remove_one_berth_leaves_other_assignment_intact(
+    client, session, seeded_berth, harbor_master, boat_owner, captured_emails
+):
+    # boat_owner holds b1 and b2 simultaneously
+    session.add(Berth(berth_id="b2", dock_id="d1", status="occupied", is_reserved=True))
+    await session.commit()
+    creds = auth_cookies(harbor_master.user_id)
+    await client.put(
+        "/api/berths/b1/assignment",
+        json={"user_id": boat_owner.user_id},
+        cookies=creds,
+    )
+    await client.put(
+        "/api/berths/b2/assignment",
+        json={"user_id": boat_owner.user_id},
+        cookies=creds,
+    )
+
+    r = await client.delete("/api/berths/b1/assignment", cookies=creds)
+    assert r.status_code == 200
+
+    assignments = (
+        (
+            await session.execute(
+                select(Assignment).where(Assignment.user_id == boat_owner.user_id)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    assert [a.berth_id for a in assignments] == ["b2"]
+    assert len(captured_emails) == 1

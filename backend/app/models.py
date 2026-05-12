@@ -39,7 +39,12 @@ berth_invite_status_enum = Enum(
     "pending", "accepted", "expired", "revoked", "rejected", name="berth_invite_status"
 )
 event_type_enum = Enum(
-    "occupied", "freed", "alert_unauthorized", "heartbeat", name="event_type"
+    "occupied",
+    "freed",
+    "alert_unauthorized",
+    "heartbeat",
+    "assignment_removed",
+    name="event_type",
 )
 alert_type_enum = Enum(
     "unauthorized_mooring", "sensor_offline", "low_battery", name="alert_type"
@@ -230,12 +235,21 @@ class Event(Base):
     event_id: Mapped[str] = mapped_column(String, primary_key=True)
     berth_id: Mapped[str] = mapped_column(ForeignKey("berths.berth_id"), nullable=False)
     # loose by design: events can predate the Node row during adoption
-    node_id: Mapped[str] = mapped_column(String, nullable=False)
+    # nullable to support audit event types that have no originating node
+    node_id: Mapped[str | None] = mapped_column(String)
     event_type: Mapped[str] = mapped_column(event_type_enum, nullable=False)
-    sensor_raw: Mapped[int] = mapped_column(Integer, nullable=False)
+    sensor_raw: Mapped[int | None] = mapped_column(Integer)
     # mesh layer reassigns this on rejoin, kept as a per-event snapshot
-    mesh_unicast_addr: Mapped[str] = mapped_column(String, nullable=False)
+    mesh_unicast_addr: Mapped[str | None] = mapped_column(String)
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # actor + subject capture who did what to whom on audit events
+    # (e.g. assignment_removed: actor=harbormaster, subject=tenant)
+    actor_user_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.user_id", ondelete="SET NULL")
+    )
+    subject_user_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.user_id", ondelete="SET NULL")
+    )
 
     berth: Mapped["Berth"] = relationship(back_populates="events")
 

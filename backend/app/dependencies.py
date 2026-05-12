@@ -127,6 +127,14 @@ async def harbor_id_from_adoption_request(request_id: str, session: SessionDep) 
     return harbor_id
 
 
+async def require_harbormaster_for_harbor(
+    user: CurrentUserDep,
+    session: SessionDep,
+    harbor_id: str,
+) -> User:
+    return await require_harbor_authority(user, harbor_id, session)
+
+
 async def require_harbormaster_for_berth(
     user: CurrentUserDep,
     session: SessionDep,
@@ -167,6 +175,7 @@ async def require_harbormaster_for_adoption_request(
     return await require_harbor_authority(user, harbor_id, session)
 
 
+HarbormasterForHarborDep = Annotated[User, Depends(require_harbormaster_for_harbor)]
 HarbormasterForBerthDep = Annotated[User, Depends(require_harbormaster_for_berth)]
 HarbormasterForDockDep = Annotated[User, Depends(require_harbormaster_for_dock)]
 HarbormasterForGatewayDep = Annotated[User, Depends(require_harbormaster_for_gateway)]

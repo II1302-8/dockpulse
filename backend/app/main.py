@@ -33,6 +33,7 @@ from app.routers import (
     docks,
     gateways,
     harbors,
+    invites,
     nodes,
     users,
 )
@@ -191,6 +192,7 @@ app.include_router(berths.router)
 app.include_router(docks.router)
 app.include_router(harbors.router)
 app.include_router(gateways.router)
+app.include_router(invites.router)
 app.include_router(nodes.router)
 app.include_router(users.router)
 

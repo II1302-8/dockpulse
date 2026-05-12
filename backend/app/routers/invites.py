@@ -4,262 +4,268 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 
-from fastapi import APIRouter, HTTPException
-from sqlalchemy import select
+from fastapi import APIRouter, BackgroundTasks, HTTPException
+from sqlalchemy import select, update
 
+from app import notifications
 from app.config import get_settings
-from app.dependencies import CurrentUserDep, SessionDep
-from app.models import Assignment, BerthInvite, UserHarborRole
-from app.notifications import send_email
-from app.schemas import AssignmentInvitationOut
+from app.dependencies import (
+    CurrentUserDep,
+    HarbormasterForHarborDep,
+    SessionDep,
+)
+from app.models import Assignment, BerthInvite
+from app.schemas import BerthInviteCreate, BerthInviteOut
 
 router = APIRouter(prefix="/api", tags=["berth-invites"])
 
 
-def create_invite_token() -> str:
-    """Create invitation token"""
-    token = secrets.token_urlsafe(32)
-    return token
+def _create_invite_token() -> str:
+    return secrets.token_urlsafe(32)
 
 
-def hash_invite_token(token: str) -> str:
-    """Hash invitation token"""
-    token_hash = sha256(token.encode("utf-8")).hexdigest()
-    return token_hash
+def _hash_invite_token(token: str) -> str:
+    return sha256(token.encode("utf-8")).hexdigest()
 
 
-def verify_invite_token(token: str, token_hash: str) -> bool:
-    """Verify invitaiton token"""
-    new_token_hash = hash_invite_token(token)
-    return hmac.compare_digest(new_token_hash, token_hash)
+def _verify_invite_token(token: str, token_hash: str) -> bool:
+    return hmac.compare_digest(_hash_invite_token(token), token_hash)
+
+
+def _is_active(invite: BerthInvite, now: datetime) -> bool:
+    return invite.status == "pending" and invite.expires_at > now
+
+
+def _to_out(invite: BerthInvite) -> BerthInviteOut:
+    return BerthInviteOut(
+        invite_id=invite.invite_id,
+        berth_id=invite.berth_id,
+        harbor_id=invite.harbor_id,
+        email=invite.email,
+        status=invite.status,
+        expires_at=invite.expires_at,
+    )
 
 
 @router.post(
-    "/harbors/{harbor_id}/berth-invites", response_model=AssignmentInvitationOut
+    "/harbors/{harbor_id}/berth-invites",
+    response_model=BerthInviteOut,
+    status_code=201,
+    operation_id="createBerthInvite",
+    summary="Create a berth invite (harbormaster only)",
 )
 async def create_berth_invite(
     harbor_id: str,
-    berth_id: str,
-    email: str,
+    body: BerthInviteCreate,
     session: SessionDep,
-    current_user: CurrentUserDep,
+    hm: HarbormasterForHarborDep,
+    background_tasks: BackgroundTasks,
 ):
-    """
-    POST   /api/harbors/{harbor_id}/berth-invites — harbormaster only.
-    Body {berth_id, email}. 409 if a pending invite already exists for the berth.
-    """
-    stmt = select(UserHarborRole).where(
-        UserHarborRole.role == "harbor_master",
-        UserHarborRole.harbor_id == harbor_id,
-        UserHarborRole.user_id == current_user.user_id,
+    # berth must belong to this harbor; the partial unique index then
+    # guarantees at most one pending invite per berth
+    existing = await session.execute(
+        select(BerthInvite).where(
+            BerthInvite.berth_id == body.berth_id,
+            BerthInvite.status == "pending",
+        )
     )
-    result = await session.execute(stmt)
-    harbor_master = result.scalars().first()
-    if not harbor_master:
-        raise HTTPException(status_code=403, detail="Not authorized")
-
-    stmt = select(BerthInvite).where()
-    result = await session.execute(stmt)
-    previous_invitation = result.scalars().first()
-    if previous_invitation:
+    if existing.scalar_one_or_none() is not None:
         raise HTTPException(
-            status_code=409, detail="Invitation on chosen berth already pending"
+            status_code=409, detail="Berth already has a pending invite"
         )
 
-    token = create_invite_token()
-    token_hash = hash_invite_token(token)
     settings = get_settings()
-    subject = f"You've been assigned a berth - {berth_id}"
-    html = f"""
-    <p>
-        You have been invited as a tenant of the berth
-        <strong>{berth_id}</strong>.
-    </p>
-    <p>
-        Make your choice by pressing the correct link below:
-    <br>
-    <a href='https://www.dockpulse.xyz/accept?token={token}' style='color:green;'>
-        Accept the berth
-    </a>
-    <a href='https://www.dockpulse.xyz/reject?token={token}' style='color:red;'>
-        Rejectt the berth
-    </a>
-    </p>
-    """
-    send_email(email, subject, html)
-    session.add(
-        BerthInvite(
-            invite_id=str(uuid.uuid4()),
-            berth_id=berth_id,
-            harbor_id=harbor_id,
-            email=email,
-            token_hash=token_hash,
-            created_by=current_user.user_id,
-            created_at=datetime.now(),
-            expires_at=datetime.now(UTC)
-            + timedelta(hours=settings.invitation_token_ttl_hours),
-            status="pending",
-        )
+    now = datetime.now(UTC)
+    token = _create_invite_token()
+    invite = BerthInvite(
+        invite_id=str(uuid.uuid4()),
+        berth_id=body.berth_id,
+        harbor_id=harbor_id,
+        email=body.email,
+        token_hash=_hash_invite_token(token),
+        created_by=hm.user_id,
+        created_at=now,
+        expires_at=now + timedelta(hours=settings.invitation_token_ttl_hours),
+        status="pending",
     )
+    session.add(invite)
+    await session.commit()
+    await session.refresh(invite)
 
-    return AssignmentInvitationOut(berth_id=berth_id, email=email)
+    accept_url = f"{settings.app_base_url}/accept?token={token}"
+    reject_url = f"{settings.app_base_url}/reject?token={token}"
+    html = (
+        f"<p>You have been invited to claim berth <strong>{body.berth_id}</strong>."
+        f"</p><p>"
+        f'<a href="{accept_url}">Accept</a> &middot; '
+        f'<a href="{reject_url}">Reject</a></p>'
+    )
+    background_tasks.add_task(
+        notifications.send_email,
+        to=body.email,
+        subject=f"You've been invited to berth {body.berth_id}",
+        html=html,
+    )
+    return _to_out(invite)
 
 
-@router.get("/berth-invites/by-token/{token}", response_model=AssignmentInvitationOut)
-async def berth_invite_token_info(token: str, session: SessionDep):
-    """
-    GET    /api/berth-invites/by-token/{token} — public.
-    Returns berth label, harbor name, email, status, expires_at. 410 on terminal state.
-    404 on unknown token.
-    """
-    new_token_hash = hash_invite_token(token)
-
-    stmt = select(BerthInvite).where(BerthInvite.token_hash == new_token_hash)
-    result = await session.execute(stmt)
-    matching_token_row = result.scalar_or_none()
-
-    if matching_token_row:
-        return AssignmentInvitationOut(
-            berth_id=matching_token_row.berth_id,
-            email=matching_token_row.email,
-            harbor_id=matching_token_row.harbor_id,
-            status=matching_token_row.status,
-            expires_at=matching_token_row.expires_at,
-        )
-
-    raise HTTPException(status_code=404, detail="Token not found")
-    #   410 ???
+@router.get(
+    "/berth-invites/by-token/{token}",
+    response_model=BerthInviteOut,
+    operation_id="getBerthInviteByToken",
+    summary="Look up an invite by its token (public)",
+)
+async def get_berth_invite_by_token(token: str, session: SessionDep):
+    token_hash = _hash_invite_token(token)
+    result = await session.execute(
+        select(BerthInvite).where(BerthInvite.token_hash == token_hash)
+    )
+    invite = result.scalar_one_or_none()
+    if invite is None:
+        raise HTTPException(status_code=404, detail="Invite not found")
+    if not _is_active(invite, datetime.now(UTC)):
+        raise HTTPException(status_code=410, detail="Invite is no longer valid")
+    return _to_out(invite)
 
 
 @router.post(
-    "/berth-invites/by-token/{token}/accept", response_model=AssignmentInvitationOut
+    "/berth-invites/by-token/{token}/accept",
+    response_model=BerthInviteOut,
+    operation_id="acceptBerthInvite",
+    summary="Accept an invite (authed, must match invite email)",
 )
 async def accept_berth_invite(
     token: str, session: SessionDep, current_user: CurrentUserDep
 ):
-    """
-    POST   /api/berth-invites/by-token/{token}/accept
-    Authed, user.email must match invite.email (case-insensitive).
-    Atomic: assigns berth + transitions role + releases prior berth.
-    """
-    new_token_hash = hash_invite_token(token)
+    token_hash = _hash_invite_token(token)
+    now = datetime.now(UTC)
 
-    stmt = select(BerthInvite).where(BerthInvite.token_hash == new_token_hash)
-    result = await session.execute(stmt)
-    matching_token_row = result.scalar_or_none()
-
-    if matching_token_row:
-        if current_user.email.lower() != matching_token_row.email.lower():
-            raise HTTPException(status_code=403, detail="Incorrect email")
-        if (
-            matching_token_row.status != "pending"
-            or matching_token_row.expires_at < datetime.now()
-        ):
-            raise HTTPException(
-                status_code=400,
-                detail="Token is not valid anymore",
-            )
-        matching_token_row.status = "accepted"
-        matching_token_row.accepted_by = current_user.user_id
-        matching_token_row.accepted_at = datetime.now(UTC)
-
-        await session.commit()
-        await session.refresh(matching_token_row)
-
-        berth_id = matching_token_row.berth_id
-
-        stmt = select(Assignment).where(Assignment.berth_id == berth_id)
-        result = await session.execute(stmt)
-        old_assignment = result.scalars().first()
-        await session.delete(old_assignment)
-
-        new_assignment = Assignment(
-            user_id=current_user.user_id,
-            berth_id=berth_id,
-            harbor_id=matching_token_row.harbor_id,
-            email=matching_token_row.email,
-            status=matching_token_row.status,
-            expires_at=matching_token_row.expires_at,
+    # atomic claim, only the row still in 'pending' transitions to 'accepted'
+    claim = await session.execute(
+        update(BerthInvite)
+        .where(
+            BerthInvite.token_hash == token_hash,
+            BerthInvite.status == "pending",
+            BerthInvite.expires_at > now,
         )
-        session.add(new_assignment)
+        .values(
+            status="accepted",
+            accepted_by=current_user.user_id,
+            accepted_at=now,
+        )
+        .returning(BerthInvite)
+    )
+    invite = claim.scalar_one_or_none()
+    if invite is None:
+        # distinguish wrong-email from gone/expired, look up by hash to decide
+        existing = (
+            await session.execute(
+                select(BerthInvite).where(BerthInvite.token_hash == token_hash)
+            )
+        ).scalar_one_or_none()
+        if existing is None:
+            raise HTTPException(status_code=404, detail="Invite not found")
+        raise HTTPException(status_code=410, detail="Invite is no longer valid")
 
-        return {"Success": "invitation accepted"}
-    raise HTTPException(status_code=404, detail="Token not found")
+    if current_user.email.lower() != invite.email.lower():
+        # invite is now claimed by this user but their email did not match,
+        # roll back so the invite stays pending for the rightful recipient
+        await session.rollback()
+        raise HTTPException(status_code=403, detail="Invite is for a different email")
+
+    # replace any existing assignment on the berth in the same tx
+    await session.execute(
+        Assignment.__table__.delete().where(
+            Assignment.berth_id == invite.berth_id
+        )
+    )
+    session.add(Assignment(berth_id=invite.berth_id, user_id=current_user.user_id))
+    await session.commit()
+    await session.refresh(invite)
+    return _to_out(invite)
 
 
-@router.post("/berth-invites/by-token/{token}/reject")
+@router.post(
+    "/berth-invites/by-token/{token}/reject",
+    response_model=BerthInviteOut,
+    operation_id="rejectBerthInvite",
+    summary="Reject an invite (authed, must match invite email)",
+)
 async def reject_berth_invite(
     token: str, session: SessionDep, current_user: CurrentUserDep
 ):
-    """
-    POST   /api/berth-invites/by-token/{token}/reject — authed.
-    """
-    new_token_hash = hash_invite_token(token)
+    token_hash = _hash_invite_token(token)
+    now = datetime.now(UTC)
 
-    stmt = select(BerthInvite).where(BerthInvite.token_hash == new_token_hash)
-    result = await session.execute(stmt)
-    matching_token_row = result.scalar_or_none()
-
-    if matching_token_row:
-        if current_user.email.lower() != matching_token_row.email.lower():
-            raise HTTPException(status_code=403, detail="Incorrect email")
-        if (
-            matching_token_row.status != "pending"
-            or matching_token_row.expires_at < datetime.now()
-        ):
-            raise HTTPException(
-                status_code=400,
-                detail="Token is not valid anymore",
-            )
-        matching_token_row.status = "rejected"
-        matching_token_row.accepted_by = current_user.user_id
-        matching_token_row.accepted_at = datetime.now(UTC)
-
-        await session.commit()
-        await session.refresh(matching_token_row)
-        return
-    raise HTTPException()
-
-
-@router.delete("/harbors/{harbor_id}/berth-invites/{id}", status_code=204)
-async def delete_berth_invite(
-    harbor_id: str, id: str, current_user: CurrentUserDep, session: SessionDep
-):
-    """
-    DELETE /api/harbors/{harbor_id}/berth-invites/{id} — harbormaster.
-    """
-    stmt = select(BerthInvite).where(
-        BerthInvite.invite_id == id, BerthInvite.harbor_id == harbor_id
-    )
-    result = await session.execute(stmt)
-    invitation = result.scalar_or_none()
-    if not invitation:
-        raise HTTPException(status_code=404, detail="Invitation not found")
-    stmt = select(UserHarborRole).where(
-        UserHarborRole.user_id == current_user.user_id,
-        UserHarborRole.harbor_id == harbor_id,
-        UserHarborRole.role == "harbor_master",
-    )
-    result = await session.execute(stmt)
-    correct_harbor_master = result.scalars().first()
-    if not correct_harbor_master:
-        raise HTTPException(
-            status_code=403, detail="Not authorized to delete invitation"
+    invite = (
+        await session.execute(
+            select(BerthInvite).where(BerthInvite.token_hash == token_hash)
         )
-    await session.delete(invitation)
+    ).scalar_one_or_none()
+    if invite is None:
+        raise HTTPException(status_code=404, detail="Invite not found")
+    if current_user.email.lower() != invite.email.lower():
+        raise HTTPException(status_code=403, detail="Invite is for a different email")
+    if not _is_active(invite, now):
+        raise HTTPException(status_code=410, detail="Invite is no longer valid")
+
+    result = await session.execute(
+        update(BerthInvite)
+        .where(
+            BerthInvite.invite_id == invite.invite_id,
+            BerthInvite.status == "pending",
+        )
+        .values(status="rejected", accepted_by=current_user.user_id, accepted_at=now)
+        .returning(BerthInvite)
+    )
+    rejected = result.scalar_one_or_none()
+    if rejected is None:
+        raise HTTPException(status_code=410, detail="Invite is no longer valid")
+    await session.commit()
+    await session.refresh(rejected)
+    return _to_out(rejected)
+
+
+@router.delete(
+    "/harbors/{harbor_id}/berth-invites/{invite_id}",
+    status_code=204,
+    operation_id="deleteBerthInvite",
+    summary="Revoke a pending invite (harbormaster only)",
+)
+async def delete_berth_invite(
+    harbor_id: str,
+    invite_id: str,
+    session: SessionDep,
+    hm: HarbormasterForHarborDep,
+):
+    invite = (
+        await session.execute(
+            select(BerthInvite).where(
+                BerthInvite.invite_id == invite_id,
+                BerthInvite.harbor_id == harbor_id,
+            )
+        )
+    ).scalar_one_or_none()
+    if invite is None:
+        raise HTTPException(status_code=404, detail="Invite not found")
+    await session.delete(invite)
     await session.commit()
 
 
-@router.get("/harbors/{harbor_id}/berth-invites", response_model=list[BerthInvite])
-async def get_pending_invites_for_harbor(
-    harbor_id: str, status: str, session: SessionDep
+@router.get(
+    "/harbors/{harbor_id}/berth-invites",
+    response_model=list[BerthInviteOut],
+    operation_id="listBerthInvites",
+    summary="List invites for a harbor (harbormaster only)",
+)
+async def list_berth_invites(
+    harbor_id: str,
+    session: SessionDep,
+    hm: HarbormasterForHarborDep,
+    status: str | None = None,
 ):
-    """
-    GET /api/harbors/{harbor_id}/berth-invites?status=pending
-    """
-    stmt = select(BerthInvite).where(BerthInvite.status == status, BerthInvite.harbor_id == harbor_id)
-    result = await session.execute(stmt)
-    invitations = result.scalars().all()
-    if not invitations:
-        raise HTTPException(status_code=404, detail="No invitations found")
-    return invitations
+    stmt = select(BerthInvite).where(BerthInvite.harbor_id == harbor_id)
+    if status is not None:
+        stmt = stmt.where(BerthInvite.status == status)
+    rows = (await session.execute(stmt)).scalars().all()
+    return [_to_out(inv) for inv in rows]

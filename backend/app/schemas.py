@@ -107,10 +107,16 @@ class AssignBerthIn(BaseModel):
     user_id: str = Field(min_length=1, examples=["user-001"])
 
 
-class AssignmentInvitationOut(_BaseSchema):
+class BerthInviteCreate(BaseModel):
+    berth_id: str = Field(min_length=1, examples=["berth-001"])
+    email: EmailField
+
+
+class BerthInviteOut(_BaseSchema):
+    invite_id: str = Field(examples=["inv-001"])
     berth_id: str = Field(examples=["berth-001"])
-    email: str = Field(examples=["john.doe@example.com"])
     harbor_id: str = Field(examples=["harbor-001"])
+    email: EmailField
     status: str = Field(examples=["pending"])
     expires_at: datetime = Field()
 

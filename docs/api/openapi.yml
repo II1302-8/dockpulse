@@ -436,6 +436,66 @@ components:
       - dock_id
       title: BerthCreatedOut
       type: object
+    BerthInviteCreate:
+      properties:
+        berth_id:
+          examples:
+          - berth-001
+          minLength: 1
+          title: Berth Id
+          type: string
+        email:
+          examples:
+          - alex@example.com
+          format: email
+          title: Email
+          type: string
+      required:
+      - berth_id
+      - email
+      title: BerthInviteCreate
+      type: object
+    BerthInviteOut:
+      properties:
+        berth_id:
+          examples:
+          - berth-001
+          title: Berth Id
+          type: string
+        email:
+          examples:
+          - alex@example.com
+          format: email
+          title: Email
+          type: string
+        expires_at:
+          format: date-time
+          title: Expires At
+          type: string
+        harbor_id:
+          examples:
+          - harbor-001
+          title: Harbor Id
+          type: string
+        invite_id:
+          examples:
+          - inv-001
+          title: Invite Id
+          type: string
+        status:
+          examples:
+          - pending
+          title: Status
+          type: string
+      required:
+      - invite_id
+      - berth_id
+      - harbor_id
+      - email
+      - status
+      - expires_at
+      title: BerthInviteOut
+      type: object
     BerthOut:
       properties:
         assignment:
@@ -3287,6 +3347,88 @@ paths:
       summary: Verify email address using token from email link
       tags:
       - auth
+  /api/berth-invites/by-token/{token}:
+    get:
+      operationId: getBerthInviteByToken
+      parameters:
+      - in: path
+        name: token
+        required: true
+        schema:
+          title: Token
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BerthInviteOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Look up an invite by its token (public)
+      tags:
+      - berth-invites
+  /api/berth-invites/by-token/{token}/accept:
+    post:
+      operationId: acceptBerthInvite
+      parameters:
+      - in: path
+        name: token
+        required: true
+        schema:
+          title: Token
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BerthInviteOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - APIKeyCookie: []
+      summary: Accept an invite (authed, must match invite email)
+      tags:
+      - berth-invites
+  /api/berth-invites/by-token/{token}/reject:
+    post:
+      operationId: rejectBerthInvite
+      parameters:
+      - in: path
+        name: token
+        required: true
+        schema:
+          title: Token
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BerthInviteOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - APIKeyCookie: []
+      summary: Reject an invite (authed, must match invite email)
+      tags:
+      - berth-invites
   /api/berths:
     get:
       operationId: listBerths
@@ -3825,6 +3967,108 @@ paths:
       summary: List all harbors
       tags:
       - harbors
+  /api/harbors/{harbor_id}/berth-invites:
+    get:
+      operationId: listBerthInvites
+      parameters:
+      - in: path
+        name: harbor_id
+        required: true
+        schema:
+          title: Harbor Id
+          type: string
+      - in: query
+        name: status
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/BerthInviteOut'
+                title: Response Listberthinvites
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - APIKeyCookie: []
+      summary: List invites for a harbor (harbormaster only)
+      tags:
+      - berth-invites
+    post:
+      operationId: createBerthInvite
+      parameters:
+      - in: path
+        name: harbor_id
+        required: true
+        schema:
+          title: Harbor Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BerthInviteCreate'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BerthInviteOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - APIKeyCookie: []
+      summary: Create a berth invite (harbormaster only)
+      tags:
+      - berth-invites
+  /api/harbors/{harbor_id}/berth-invites/{invite_id}:
+    delete:
+      operationId: deleteBerthInvite
+      parameters:
+      - in: path
+        name: harbor_id
+        required: true
+        schema:
+          title: Harbor Id
+          type: string
+      - in: path
+        name: invite_id
+        required: true
+        schema:
+          title: Invite Id
+          type: string
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - APIKeyCookie: []
+      summary: Revoke a pending invite (harbormaster only)
+      tags:
+      - berth-invites
   /api/health:
     get:
       operationId: getHealth

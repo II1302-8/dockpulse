@@ -27,9 +27,7 @@ async def list_alerts(
     acknowledged: Annotated[
         bool | None,
         Query(
-            description=(
-                "filter by acknowledged flag; omit to return both states"
-            ),
+            description=("filter by acknowledged flag; omit to return both states"),
         ),
     ] = None,
     limit: Annotated[int, Query(ge=1, le=500)] = 100,

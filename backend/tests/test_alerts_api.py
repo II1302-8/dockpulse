@@ -61,9 +61,7 @@ async def test_list_alerts_requires_harbormaster_anywhere(
     assert r.status_code == 403
 
 
-async def test_list_alerts_unauth_returns_401(
-    client: AsyncClient, alerts_in_h1
-):
+async def test_list_alerts_unauth_returns_401(client: AsyncClient, alerts_in_h1):
     r = await client.get("/api/alerts")
     assert r.status_code == 401
 
@@ -92,9 +90,7 @@ async def test_acknowledge_flips_flag(
     assert fresh.acknowledged is True
 
 
-async def test_acknowledge_idempotent(
-    client: AsyncClient, alerts_in_h1, harbor_master
-):
+async def test_acknowledge_idempotent(client: AsyncClient, alerts_in_h1, harbor_master):
     r1 = await client.post(
         "/api/alerts/alrt-2/acknowledge",
         cookies=_creds(harbor_master.user_id),

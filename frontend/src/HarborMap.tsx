@@ -8,6 +8,7 @@ import { HarborOverview } from "./components/HarborOverview";
 import { useDashboardLayout } from "./components/layout/DashboardLayoutContext";
 import type { AuthOutletContext } from "./components/layout/MainLayout";
 import { MapLegend } from "./components/MapLegend";
+import { NodeHealthPanel } from "./components/NodeHealthPanel";
 import { NorthArrow } from "./components/NorthArrow";
 import { useBerthsStream } from "./hooks/useBerthsStream";
 import { cn } from "./lib/utils";
@@ -26,6 +27,8 @@ export function HarborMap() {
     setIsOverviewOpen,
     isActivityLogOpen,
     setIsActivityLogOpen,
+    isNodeHealthOpen,
+    setIsNodeHealthOpen,
   } = useDashboardLayout();
 
   const [selectedBerthId, setSelectedBerthId] = useState<string | null>(null);
@@ -45,10 +48,12 @@ export function HarborMap() {
 
   const overviewIsVisible = isOverviewOpen;
   const activityLogIsVisible = isActivityLogOpen;
+  const nodeHealthIsVisible = isNodeHealthOpen;
 
   // berth detail sits in the gutter so the map stays interactive behind it.
-  // only overview/activity occupy enough surface to warrant blocking map drag
-  const isMapBlocked = overviewIsVisible || activityLogIsVisible;
+  // only overview/activity/node-health occupy the gutter side and block drag
+  const isMapBlocked =
+    overviewIsVisible || activityLogIsVisible || nodeHealthIsVisible;
 
   const shouldShowMapLegend = !isMapBlocked && !selectedBerthId;
 
@@ -106,9 +111,10 @@ export function HarborMap() {
     (berthId: string) => {
       setIsOverviewOpen(false);
       setIsActivityLogOpen(false);
+      setIsNodeHealthOpen(false);
       setSelectedBerthId(berthId);
     },
-    [setIsOverviewOpen, setIsActivityLogOpen],
+    [setIsOverviewOpen, setIsActivityLogOpen, setIsNodeHealthOpen],
   );
 
   const handleCloseBerthPanel = useCallback(() => {
@@ -122,6 +128,10 @@ export function HarborMap() {
   const handleCloseActivityLog = useCallback(() => {
     setIsActivityLogOpen(false);
   }, [setIsActivityLogOpen]);
+
+  const handleCloseNodeHealth = useCallback(() => {
+    setIsNodeHealthOpen(false);
+  }, [setIsNodeHealthOpen]);
 
   return (
     <div className="relative h-full w-full overflow-hidden border-4 border-white/70 bg-sky-50/20 font-body shadow-inner">
@@ -190,6 +200,14 @@ export function HarborMap() {
         isOpen={activityLogIsVisible}
         onCloseCB={handleCloseActivityLog}
       />
+
+      {isHarborMaster && (
+        <NodeHealthPanel
+          key="node-health"
+          isOpen={nodeHealthIsVisible}
+          onCloseCB={handleCloseNodeHealth}
+        />
+      )}
 
       {shouldShowMapLegend && <MapLegend />}
       <NorthArrow />

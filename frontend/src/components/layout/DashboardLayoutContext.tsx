@@ -13,6 +13,8 @@ interface DashboardLayoutContextType {
   setIsOverviewOpen: (open: boolean) => void;
   isActivityLogOpen: boolean;
   setIsActivityLogOpen: (open: boolean) => void;
+  isNodeHealthOpen: boolean;
+  setIsNodeHealthOpen: (open: boolean) => void;
 
   // Sidebar States
   isMenuExpanded: boolean;
@@ -25,6 +27,7 @@ interface DashboardLayoutContextType {
   // Actions
   toggleOverview: () => void;
   toggleActivityLog: () => void;
+  toggleNodeHealth: () => void;
   closeAllPanels: () => void;
 }
 
@@ -41,6 +44,7 @@ export function DashboardLayoutProvider({
 }) {
   const [isOverviewOpen, setIsOverviewOpen] = useState(false);
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
+  const [isNodeHealthOpen, setIsNodeHealthOpen] = useState(false);
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const [windowWidth, setWindowWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1200,
@@ -62,6 +66,7 @@ export function DashboardLayoutProvider({
   useEffect(() => {
     setIsOverviewOpen(false);
     setIsActivityLogOpen(false);
+    setIsNodeHealthOpen(false);
   }, [location.pathname]);
 
   // Calculate Offset
@@ -78,16 +83,25 @@ export function DashboardLayoutProvider({
   const toggleOverview = () => {
     setIsOverviewOpen(!isOverviewOpen);
     setIsActivityLogOpen(false);
+    setIsNodeHealthOpen(false);
   };
 
   const toggleActivityLog = () => {
     setIsActivityLogOpen(!isActivityLogOpen);
     setIsOverviewOpen(false);
+    setIsNodeHealthOpen(false);
+  };
+
+  const toggleNodeHealth = () => {
+    setIsNodeHealthOpen(!isNodeHealthOpen);
+    setIsOverviewOpen(false);
+    setIsActivityLogOpen(false);
   };
 
   const closeAllPanels = () => {
     setIsOverviewOpen(false);
     setIsActivityLogOpen(false);
+    setIsNodeHealthOpen(false);
   };
 
   return (
@@ -97,12 +111,15 @@ export function DashboardLayoutProvider({
         setIsOverviewOpen,
         isActivityLogOpen,
         setIsActivityLogOpen,
+        isNodeHealthOpen,
+        setIsNodeHealthOpen,
         isMenuExpanded,
         setIsMenuExpanded,
         sidebarOffset,
         isDesktop,
         toggleOverview,
         toggleActivityLog,
+        toggleNodeHealth,
         closeAllPanels,
       }}
     >

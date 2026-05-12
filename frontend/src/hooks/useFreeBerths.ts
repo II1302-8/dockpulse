@@ -28,7 +28,9 @@ export function useFreeBerths(dockId: string): UseFreeBerthsResult {
     )
       .then((data) => {
         if (ac.signal.aborted) return;
-        setBerths(data);
+        // backend filters by status=free but reserved berths shouldn't be
+        // offered for adoption either
+        setBerths(data.filter((b) => !b.is_reserved));
       })
       .catch((err: unknown) => {
         if (ac.signal.aborted) return;

@@ -149,14 +149,19 @@ export function ActivityLogPanel({
         const prev = prevBerthsRef.current.get(id);
         if (!prev) continue;
 
-        if (prev.status !== berth.status) {
+        const prevUnavailable = prev.status === "occupied" || prev.is_reserved;
+        const nextUnavailable =
+          berth.status === "occupied" || berth.is_reserved;
+        if (prevUnavailable !== nextUnavailable) {
+          const fromLabel = prevUnavailable ? "Unavailable" : "Available";
+          const toLabel = nextUnavailable ? "Unavailable" : "Available";
           newEvents.push({
             id: crypto.randomUUID(),
             timestamp: new Date(),
             type: "status_change",
             berthId: id,
             berthLabel: berth.label || id,
-            details: `Status changed from ${prev.status} to ${berth.status}`,
+            details: `Status changed from ${fromLabel} to ${toLabel}`,
             status: berth.status,
           });
         }

@@ -30,10 +30,13 @@ export function HarborMasterOverview({
   }, []);
 
   const totalBerths = berths.length;
-  const occupiedBerths = berths.filter((b) => b.status === "occupied").length;
-  const availableBerths = totalBerths - occupiedBerths;
+  // reserved berths count as unavailable even though sensor reports free
+  const unavailableBerths = berths.filter(
+    (b) => b.status === "occupied" || b.is_reserved,
+  ).length;
+  const availableBerths = totalBerths - unavailableBerths;
   const occupancyRate =
-    totalBerths > 0 ? Math.round((occupiedBerths / totalBerths) * 100) : 0;
+    totalBerths > 0 ? Math.round((unavailableBerths / totalBerths) * 100) : 0;
 
   const activeNodes = berths.filter((b) =>
     isOnline(b.last_updated, now),
@@ -123,7 +126,7 @@ export function HarborMasterOverview({
             <div className="mb-2 flex items-center gap-2 text-emerald-500">
               <Anchor size={14} strokeWidth={2.5} />
               <span className="text-[9px] font-black uppercase tracking-widest opacity-60">
-                Free
+                Available
               </span>
             </div>
 

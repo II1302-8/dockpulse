@@ -65,7 +65,7 @@ export function MapLegend() {
             </span>
           </div>
 
-          {/* Occupied */}
+          {/* Unavailable */}
           <div className="flex items-center gap-2">
             <div className="flex h-4 w-4 items-center justify-center">
               <svg
@@ -82,7 +82,7 @@ export function MapLegend() {
             </div>
 
             <span className="text-[10px] font-bold uppercase tracking-wider text-[#0A2540]/40">
-              Occupied
+              Unavailable
             </span>
           </div>
 

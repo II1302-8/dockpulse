@@ -23,14 +23,15 @@ export function HarborOverview({
     isOnline(berth.last_updated, now),
   );
 
-  const freeBerths = onlineBerths.filter(
-    (berth) => berth.status === "free",
+  // reserved berths are not available even when sensor reports free
+  const availableBerths = onlineBerths.filter(
+    (berth) => berth.status === "free" && !berth.is_reserved,
   ).length;
 
   const offlineCount = berths.length - onlineBerths.length;
 
   const availabilityRate =
-    onlineBerths.length > 0 ? (freeBerths / onlineBerths.length) * 100 : 0;
+    onlineBerths.length > 0 ? (availableBerths / onlineBerths.length) * 100 : 0;
 
   const lowBatteryNodes = onlineBerths.filter(
     (berth) => berth.battery_pct != null && berth.battery_pct < 20,
@@ -105,7 +106,7 @@ export function HarborOverview({
 
           <div className="mb-3 flex items-baseline gap-2">
             <span className="text-3xl font-black tracking-tighter text-[#0A2540]">
-              {freeBerths}
+              {availableBerths}
               <span className="mx-1 text-lg text-[#0A2540]/20">/</span>
               {onlineBerths.length}
             </span>

@@ -44,9 +44,7 @@ def _to_out(
     harbor_name: str | None = None,
 ) -> BerthInviteOut:
     loaded_label = (
-        invite.berth.label
-        if "berth" in invite.__dict__ and invite.berth
-        else None
+        invite.berth.label if "berth" in invite.__dict__ and invite.berth else None
     )
     return BerthInviteOut(
         invite_id=invite.invite_id,
@@ -212,15 +210,11 @@ async def accept_berth_invite(
 
     # release any prior assignment this user held (one boat-owner = one berth)
     await session.execute(
-        Assignment.__table__.delete().where(
-            Assignment.user_id == current_user.user_id
-        )
+        Assignment.__table__.delete().where(Assignment.user_id == current_user.user_id)
     )
     # clear whoever previously held the target berth
     await session.execute(
-        Assignment.__table__.delete().where(
-            Assignment.berth_id == claimed.berth_id
-        )
+        Assignment.__table__.delete().where(Assignment.berth_id == claimed.berth_id)
     )
     session.add(Assignment(berth_id=claimed.berth_id, user_id=current_user.user_id))
     await session.commit()
@@ -320,14 +314,18 @@ async def list_berth_invites(
     ).scalar_one()
 
     rows = (
-        await session.execute(
-            select(BerthInvite)
-            .where(*where)
-            .options(joinedload(BerthInvite.berth))
-            .order_by(BerthInvite.created_at.desc())
-            .limit(limit)
-            .offset(offset)
+        (
+            await session.execute(
+                select(BerthInvite)
+                .where(*where)
+                .options(joinedload(BerthInvite.berth))
+                .order_by(BerthInvite.created_at.desc())
+                .limit(limit)
+                .offset(offset)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
 
     return BerthInviteList(items=[_to_out(inv) for inv in rows], total=total)

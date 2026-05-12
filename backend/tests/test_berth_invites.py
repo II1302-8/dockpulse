@@ -346,10 +346,14 @@ async def test_accept_releases_users_prior_berth(
     )
     assert r.status_code == 200
     assignments = (
-        await session.execute(
-            select(Assignment).where(Assignment.user_id == boat_owner.user_id)
+        (
+            await session.execute(
+                select(Assignment).where(Assignment.user_id == boat_owner.user_id)
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     assert [a.berth_id for a in assignments] == ["b1"]
 
 

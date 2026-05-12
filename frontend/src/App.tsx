@@ -39,6 +39,12 @@ const NotFound = lazy(() =>
   import("./pages/NotFound").then((m) => ({ default: m.NotFound })),
 );
 
+const ActivityLogPage = lazy(() =>
+  import("./pages/ActivityLogPage").then((m) => ({
+    default: m.ActivityLogPage,
+  })),
+);
+
 // validates :marinaSlug against the registry so unknown slugs 404
 // instead of rendering a generic dashboard for "marina admin" etc
 function MarinaGuard() {
@@ -146,6 +152,17 @@ export function App() {
                 <RequireAuth>
                   <Suspense fallback={<div className="h-full w-full" />}>
                     <InvitesSettings />
+                  </Suspense>
+                </RequireAuth>
+              }
+            />
+
+            <Route
+              path="activity"
+              element={
+                <RequireAuth>
+                  <Suspense fallback={<div className="h-full w-full" />}>
+                    <ActivityLogPage />
                   </Suspense>
                 </RequireAuth>
               }

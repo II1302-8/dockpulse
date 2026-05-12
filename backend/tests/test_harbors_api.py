@@ -4,7 +4,13 @@ import pytest_asyncio
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Assignment, BerthAvailabilityWindow, Harbor, User
+from app.models import (
+    Assignment,
+    BerthAvailabilityWindow,
+    Event,
+    Harbor,
+    User,
+)
 from tests._helpers import auth_cookies as _creds
 from tests._helpers import hash_password
 
@@ -152,6 +158,116 @@ async def test_search_harbor_users_isolates_harbors(
     await session.commit()
     r = await client.get(
         "/api/harbors/h2/users",
+        cookies=_creds(harbor_master.user_id),
+    )
+    assert r.status_code == 403
+
+
+# --- harbor events ---
+
+
+@pytest_asyncio.fixture
+async def harbor_events(session, seeded_berth, harbor_master):
+    now = datetime.now(UTC)
+    session.add_all(
+        [
+            Event(
+                event_id="ev-1",
+                berth_id="b1",
+                node_id="n1",
+                event_type="occupied",
+                sensor_raw=500,
+                mesh_unicast_addr="0x0042",
+                timestamp=now - timedelta(minutes=10),
+            ),
+            Event(
+                event_id="ev-2",
+                berth_id="b1",
+                node_id="n1",
+                event_type="freed",
+                sensor_raw=100,
+                mesh_unicast_addr="0x0042",
+                timestamp=now - timedelta(minutes=5),
+            ),
+            Event(
+                event_id="ev-3",
+                berth_id="b1",
+                event_type="assignment_removed",
+                actor_user_id=harbor_master.user_id,
+                timestamp=now,
+            ),
+        ]
+    )
+    await session.commit()
+
+
+async def test_list_harbor_events_paginates_newest_first(
+    client: AsyncClient, harbor_events, harbor_master
+):
+    r = await client.get(
+        "/api/harbors/h1/events?limit=2",
+        cookies=_creds(harbor_master.user_id),
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert body["total"] == 3
+    assert [e["event_id"] for e in body["items"]] == ["ev-3", "ev-2"]
+
+
+async def test_list_harbor_events_offset(
+    client: AsyncClient, harbor_events, harbor_master
+):
+    r = await client.get(
+        "/api/harbors/h1/events?limit=2&offset=2",
+        cookies=_creds(harbor_master.user_id),
+    )
+    body = r.json()
+    assert body["total"] == 3
+    assert [e["event_id"] for e in body["items"]] == ["ev-1"]
+
+
+async def test_list_harbor_events_filter_by_type(
+    client: AsyncClient, harbor_events, harbor_master
+):
+    r = await client.get(
+        "/api/harbors/h1/events?event_type=assignment_removed",
+        cookies=_creds(harbor_master.user_id),
+    )
+    body = r.json()
+    assert body["total"] == 1
+    assert body["items"][0]["event_id"] == "ev-3"
+    assert body["items"][0]["actor_user_id"] == harbor_master.user_id
+
+
+async def test_list_harbor_events_filter_multiple_types(
+    client: AsyncClient, harbor_events, harbor_master
+):
+    r = await client.get(
+        "/api/harbors/h1/events?event_type=occupied&event_type=freed",
+        cookies=_creds(harbor_master.user_id),
+    )
+    body = r.json()
+    assert body["total"] == 2
+    assert sorted(e["event_id"] for e in body["items"]) == ["ev-1", "ev-2"]
+
+
+async def test_list_harbor_events_requires_harbormaster(
+    client: AsyncClient, harbor_events, boat_owner
+):
+    r = await client.get(
+        "/api/harbors/h1/events",
+        cookies=_creds(boat_owner.user_id),
+    )
+    assert r.status_code == 403
+
+
+async def test_list_harbor_events_isolates_harbors(
+    client: AsyncClient, harbor_events, harbor_master, session
+):
+    session.add(Harbor(harbor_id="h2", name="Other"))
+    await session.commit()
+    r = await client.get(
+        "/api/harbors/h2/events",
         cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 403

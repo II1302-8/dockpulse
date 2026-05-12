@@ -6,7 +6,12 @@ import { apiFetch } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
 import { cn } from "../../lib/utils";
 import { Button } from "../shared/ui/button";
-import { Dialog, DialogContent, DialogTitle } from "../shared/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "../shared/ui/dialog";
 import { Input } from "../shared/ui/input";
 import { Label } from "../shared/ui/label";
 import { PasswordInput } from "../shared/ui/password-input";
@@ -237,6 +242,9 @@ export function AuthDialog({
           <DialogTitle>
             {isForgot ? "Reset password" : "Log in or sign up"}
           </DialogTitle>
+          <DialogDescription>
+            Authentication dialog to log in or create an account.
+          </DialogDescription>
         </VisuallyHidden.Root>
 
         <div className="space-y-6">

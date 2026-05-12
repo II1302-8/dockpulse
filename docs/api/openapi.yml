@@ -866,8 +866,33 @@ components:
       - name
       title: DockWithBerthsOut
       type: object
+    EventList:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/EventOut'
+          title: Items
+          type: array
+        total:
+          examples:
+          - 1234
+          title: Total
+          type: integer
+      required:
+      - items
+      - total
+      title: EventList
+      type: object
     EventOut:
       properties:
+        actor_user_id:
+          anyOf:
+          - examples: &id014
+            - user-001
+            type: string
+          - type: 'null'
+          examples: *id014
+          title: Actor User Id
         berth_id:
           examples:
           - berth-001
@@ -888,15 +913,29 @@ components:
           title: Event Type
           type: string
         node_id:
-          examples:
-          - node-012
+          anyOf:
+          - examples: &id015
+            - node-012
+            type: string
+          - type: 'null'
+          examples: *id015
           title: Node Id
-          type: string
         sensor_raw:
-          examples:
-          - 1234
+          anyOf:
+          - examples: &id016
+            - 1234
+            type: integer
+          - type: 'null'
+          examples: *id016
           title: Sensor Raw
-          type: integer
+        subject_user_id:
+          anyOf:
+          - examples: &id017
+            - user-002
+            type: string
+          - type: 'null'
+          examples: *id017
+          title: Subject User Id
         timestamp:
           examples:
           - '2026-05-03T14:30:00Z'
@@ -906,9 +945,7 @@ components:
       required:
       - event_id
       - berth_id
-      - node_id
       - event_type
-      - sensor_raw
       - timestamp
       title: EventOut
       type: object
@@ -964,12 +1001,12 @@ components:
           type: string
         last_seen:
           anyOf:
-          - examples: &id014
+          - examples: &id018
             - '2026-05-03T14:30:00Z'
             format: date-time
             type: string
           - type: 'null'
-          examples: *id014
+          examples: *id018
           title: Last Seen
         name:
           examples:
@@ -978,12 +1015,12 @@ components:
           type: string
         provision_ttl_s:
           anyOf:
-          - examples: &id015
+          - examples: &id019
             - 180
             type: integer
           - type: 'null'
           description: Per-gateway override; null falls back to ADOPTION_TTL
-          examples: *id015
+          examples: *id019
           title: Provision Ttl S
         status:
           enum:
@@ -1259,11 +1296,11 @@ components:
           type: string
         battery_pct:
           anyOf:
-          - examples: &id016
+          - examples: &id020
             - 87
             type: integer
           - type: 'null'
-          examples: *id016
+          examples: *id020
           title: Battery Pct
         berth_id:
           examples:
@@ -1285,12 +1322,12 @@ components:
           type: string
         last_seen:
           anyOf:
-          - examples: &id017
+          - examples: &id021
             - '2026-05-03T14:30:00Z'
             format: date-time
             type: string
           - type: 'null'
-          examples: *id017
+          examples: *id021
           title: Last Seen
         mesh_unicast_addr:
           examples:
@@ -1333,11 +1370,11 @@ components:
           type: string
         battery_pct:
           anyOf:
-          - examples: &id018
+          - examples: &id022
             - 87
             type: integer
           - type: 'null'
-          examples: *id018
+          examples: *id022
           title: Battery Pct
         berth_id:
           examples:
@@ -1359,12 +1396,12 @@ components:
           type: string
         last_seen:
           anyOf:
-          - examples: &id019
+          - examples: &id023
             - '2026-05-03T14:30:00Z'
             format: date-time
             type: string
           - type: 'null'
-          examples: *id019
+          examples: *id023
           title: Last Seen
         mesh_unicast_addr:
           examples:
@@ -1722,19 +1759,19 @@ components:
       properties:
         assigned_berth_id:
           anyOf:
-          - examples: &id020
+          - examples: &id024
             - berth-001
             type: string
           - type: 'null'
-          examples: *id020
+          examples: *id024
           title: Assigned Berth Id
         boat_club:
           anyOf:
-          - examples: &id021
+          - examples: &id025
             - Saltsjöbadens BK
             type: string
           - type: 'null'
-          examples: *id021
+          examples: *id025
           title: Boat Club
         email:
           examples:
@@ -1754,11 +1791,11 @@ components:
           type: string
         phone:
           anyOf:
-          - examples: &id022
+          - examples: &id026
             - +46 70 123 45 67
             type: string
           - type: 'null'
-          examples: *id022
+          examples: *id026
           title: Phone
         role:
           enum:
@@ -1928,12 +1965,12 @@ components:
       properties:
         boat_club:
           anyOf:
-          - examples: &id023
+          - examples: &id027
             - Saltsjöbadens BK
             maxLength: 100
             type: string
           - type: 'null'
-          examples: *id023
+          examples: *id027
           title: Boat Club
         email:
           examples:
@@ -1968,13 +2005,13 @@ components:
           writeOnly: true
         phone:
           anyOf:
-          - examples: &id024
+          - examples: &id028
             - +46 70 123 45 67
             maxLength: 20
             pattern: ^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$
             type: string
           - type: 'null'
-          examples: *id024
+          examples: *id028
           title: Phone
       required:
       - firstname
@@ -1987,12 +2024,12 @@ components:
       properties:
         boat_club:
           anyOf:
-          - examples: &id025
+          - examples: &id029
             - Saltsjöbadens BK
             maxLength: 100
             type: string
           - type: 'null'
-          examples: *id025
+          examples: *id029
           title: Boat Club
         current_password:
           anyOf:
@@ -2003,38 +2040,38 @@ components:
           title: Current Password
         email:
           anyOf:
-          - examples: &id026
+          - examples: &id030
             - alex@example.com
             format: email
             type: string
           - type: 'null'
-          examples: *id026
+          examples: *id030
           title: Email
         firstname:
           anyOf:
-          - examples: &id027
+          - examples: &id031
             - Alex
             maxLength: 100
             minLength: 1
             pattern: ^[\p{L}\p{M}'’ .\-]+$
             type: string
           - type: 'null'
-          examples: *id027
+          examples: *id031
           title: Firstname
         lastname:
           anyOf:
-          - examples: &id028
+          - examples: &id032
             - Alex
             maxLength: 100
             minLength: 1
             pattern: ^[\p{L}\p{M}'’ .\-]+$
             type: string
           - type: 'null'
-          examples: *id028
+          examples: *id032
           title: Lastname
         password:
           anyOf:
-          - examples: &id029
+          - examples: &id033
             - correct horse battery staple
             format: password
             maxLength: 128
@@ -2042,17 +2079,17 @@ components:
             type: string
             writeOnly: true
           - type: 'null'
-          examples: *id029
+          examples: *id033
           title: Password
         phone:
           anyOf:
-          - examples: &id030
+          - examples: &id034
             - +46 70 123 45 67
             maxLength: 20
             pattern: ^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$
             type: string
           - type: 'null'
-          examples: *id030
+          examples: *id034
           title: Phone
       title: UserPatch
       type: object
@@ -4147,6 +4184,61 @@ paths:
       summary: Revoke a pending invite (harbormaster only)
       tags:
       - berth-invites
+  /api/harbors/{harbor_id}/events:
+    get:
+      operationId: listHarborEvents
+      parameters:
+      - in: path
+        name: harbor_id
+        required: true
+        schema:
+          title: Harbor Id
+          type: string
+      - in: query
+        name: event_type
+        required: false
+        schema:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Event Type
+      - in: query
+        name: limit
+        required: false
+        schema:
+          default: 50
+          maximum: 500
+          minimum: 1
+          title: Limit
+          type: integer
+      - in: query
+        name: offset
+        required: false
+        schema:
+          default: 0
+          minimum: 0
+          title: Offset
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventList'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - APIKeyCookie: []
+      summary: List events for all berths in a harbor, paginated (harbormaster only)
+      tags:
+      - harbors
   /api/harbors/{harbor_id}/users:
     get:
       operationId: searchHarborUsers

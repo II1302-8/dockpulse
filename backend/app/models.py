@@ -9,10 +9,12 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    LargeBinary,
     String,
     func,
     text,
 )
+from sqlalchemy.dialects.postgresql import CITEXT
 from sqlalchemy.orm import Mapped, declarative_mixin, mapped_column, relationship
 
 from app.db import Base
@@ -124,8 +126,11 @@ class BerthInvite(Base):
     harbor_id: Mapped[str] = mapped_column(
         ForeignKey("harbors.harbor_id", ondelete="CASCADE"), nullable=False, index=True
     )
-    email: Mapped[str] = mapped_column(String, nullable=False)
-    token_hash: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    # citext lets the partial-unique-pending check hit case-insensitively
+    # without explicit lower() on every query
+    email: Mapped[str] = mapped_column(CITEXT, nullable=False)
+    # raw 32-byte sha256 digest; plaintext token only ever lives in the email
+    token_hash: Mapped[bytes] = mapped_column(LargeBinary, nullable=False, unique=True)
     created_by: Mapped[str] = mapped_column(
         ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False
     )

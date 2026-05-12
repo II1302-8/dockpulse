@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import CITEXT
 
 
 revision: str = "51a9521408a9"
@@ -18,13 +19,14 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
+    op.execute("CREATE EXTENSION IF NOT EXISTS citext")
     op.create_table(
         "berth_invites",
         sa.Column("invite_id", sa.String(), nullable=False),
         sa.Column("berth_id", sa.String(), nullable=False),
         sa.Column("harbor_id", sa.String(), nullable=False),
-        sa.Column("email", sa.String(), nullable=False),
-        sa.Column("token_hash", sa.String(), nullable=False),
+        sa.Column("email", CITEXT(), nullable=False),
+        sa.Column("token_hash", sa.LargeBinary(), nullable=False),
         sa.Column("created_by", sa.String(), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),

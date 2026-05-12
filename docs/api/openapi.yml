@@ -455,6 +455,23 @@ components:
       - email
       title: BerthInviteCreate
       type: object
+    BerthInviteList:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/BerthInviteOut'
+          title: Items
+          type: array
+        total:
+          examples:
+          - 42
+          title: Total
+          type: integer
+      required:
+      - items
+      - total
+      title: BerthInviteList
+      type: object
     BerthInviteOut:
       properties:
         berth_id:
@@ -462,6 +479,14 @@ components:
           - berth-001
           title: Berth Id
           type: string
+        berth_label:
+          anyOf:
+          - examples: &id005
+            - A-12
+            type: string
+          - type: 'null'
+          examples: *id005
+          title: Berth Label
         email:
           examples:
           - alex@example.com
@@ -477,6 +502,14 @@ components:
           - harbor-001
           title: Harbor Id
           type: string
+        harbor_name:
+          anyOf:
+          - examples: &id006
+            - Saltsjöbaden
+            type: string
+          - type: 'null'
+          examples: *id006
+          title: Harbor Name
         invite_id:
           examples:
           - inv-001
@@ -504,11 +537,11 @@ components:
           - type: 'null'
         battery_pct:
           anyOf:
-          - examples: &id005
+          - examples: &id007
             - 87
             type: integer
           - type: 'null'
-          examples: *id005
+          examples: *id007
           title: Battery Pct
         berth_id:
           examples:
@@ -517,11 +550,11 @@ components:
           type: string
         depth_m:
           anyOf:
-          - examples: &id006
+          - examples: &id008
             - 2.0
             type: number
           - type: 'null'
-          examples: *id006
+          examples: *id008
           title: Depth M
         dock_id:
           examples:
@@ -534,36 +567,36 @@ components:
           type: boolean
         label:
           anyOf:
-          - examples: &id007
+          - examples: &id009
             - A1
             type: string
           - type: 'null'
-          examples: *id007
+          examples: *id009
           title: Label
         last_updated:
           anyOf:
-          - examples: &id008
+          - examples: &id010
             - '2026-05-03T14:30:00Z'
             format: date-time
             type: string
           - type: 'null'
-          examples: *id008
+          examples: *id010
           title: Last Updated
         length_m:
           anyOf:
-          - examples: &id009
+          - examples: &id011
             - 8.5
             type: number
           - type: 'null'
-          examples: *id009
+          examples: *id011
           title: Length M
         sensor_raw:
           anyOf:
-          - examples: &id010
+          - examples: &id012
             - 1234
             type: integer
           - type: 'null'
-          examples: *id010
+          examples: *id012
           title: Sensor Raw
         status:
           enum:
@@ -573,11 +606,11 @@ components:
           type: string
         width_m:
           anyOf:
-          - examples: &id011
+          - examples: &id013
             - 3.2
             type: number
           - type: 'null'
-          examples: *id011
+          examples: *id013
           title: Width M
       required:
       - berth_id
@@ -930,12 +963,12 @@ components:
           type: string
         last_seen:
           anyOf:
-          - examples: &id012
+          - examples: &id014
             - '2026-05-03T14:30:00Z'
             format: date-time
             type: string
           - type: 'null'
-          examples: *id012
+          examples: *id014
           title: Last Seen
         name:
           examples:
@@ -944,12 +977,12 @@ components:
           type: string
         provision_ttl_s:
           anyOf:
-          - examples: &id013
+          - examples: &id015
             - 180
             type: integer
           - type: 'null'
           description: Per-gateway override; null falls back to ADOPTION_TTL
-          examples: *id013
+          examples: *id015
           title: Provision Ttl S
         status:
           enum:
@@ -1225,11 +1258,11 @@ components:
           type: string
         battery_pct:
           anyOf:
-          - examples: &id014
+          - examples: &id016
             - 87
             type: integer
           - type: 'null'
-          examples: *id014
+          examples: *id016
           title: Battery Pct
         berth_id:
           examples:
@@ -1251,12 +1284,12 @@ components:
           type: string
         last_seen:
           anyOf:
-          - examples: &id015
+          - examples: &id017
             - '2026-05-03T14:30:00Z'
             format: date-time
             type: string
           - type: 'null'
-          examples: *id015
+          examples: *id017
           title: Last Seen
         mesh_unicast_addr:
           examples:
@@ -1299,11 +1332,11 @@ components:
           type: string
         battery_pct:
           anyOf:
-          - examples: &id016
+          - examples: &id018
             - 87
             type: integer
           - type: 'null'
-          examples: *id016
+          examples: *id018
           title: Battery Pct
         berth_id:
           examples:
@@ -1325,12 +1358,12 @@ components:
           type: string
         last_seen:
           anyOf:
-          - examples: &id017
+          - examples: &id019
             - '2026-05-03T14:30:00Z'
             format: date-time
             type: string
           - type: 'null'
-          examples: *id017
+          examples: *id019
           title: Last Seen
         mesh_unicast_addr:
           examples:
@@ -1688,19 +1721,19 @@ components:
       properties:
         assigned_berth_id:
           anyOf:
-          - examples: &id018
+          - examples: &id020
             - berth-001
             type: string
           - type: 'null'
-          examples: *id018
+          examples: *id020
           title: Assigned Berth Id
         boat_club:
           anyOf:
-          - examples: &id019
+          - examples: &id021
             - Saltsjöbadens BK
             type: string
           - type: 'null'
-          examples: *id019
+          examples: *id021
           title: Boat Club
         email:
           examples:
@@ -1720,11 +1753,11 @@ components:
           type: string
         phone:
           anyOf:
-          - examples: &id020
+          - examples: &id022
             - +46 70 123 45 67
             type: string
           - type: 'null'
-          examples: *id020
+          examples: *id022
           title: Phone
         role:
           enum:
@@ -1864,12 +1897,12 @@ components:
       properties:
         boat_club:
           anyOf:
-          - examples: &id021
+          - examples: &id023
             - Saltsjöbadens BK
             maxLength: 100
             type: string
           - type: 'null'
-          examples: *id021
+          examples: *id023
           title: Boat Club
         email:
           examples:
@@ -1904,13 +1937,13 @@ components:
           writeOnly: true
         phone:
           anyOf:
-          - examples: &id022
+          - examples: &id024
             - +46 70 123 45 67
             maxLength: 20
             pattern: ^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$
             type: string
           - type: 'null'
-          examples: *id022
+          examples: *id024
           title: Phone
       required:
       - firstname
@@ -1923,12 +1956,12 @@ components:
       properties:
         boat_club:
           anyOf:
-          - examples: &id023
+          - examples: &id025
             - Saltsjöbadens BK
             maxLength: 100
             type: string
           - type: 'null'
-          examples: *id023
+          examples: *id025
           title: Boat Club
         current_password:
           anyOf:
@@ -1939,38 +1972,38 @@ components:
           title: Current Password
         email:
           anyOf:
-          - examples: &id024
+          - examples: &id026
             - alex@example.com
             format: email
             type: string
           - type: 'null'
-          examples: *id024
+          examples: *id026
           title: Email
         firstname:
           anyOf:
-          - examples: &id025
+          - examples: &id027
             - Alex
             maxLength: 100
             minLength: 1
             pattern: ^[\p{L}\p{M}'’ .\-]+$
             type: string
           - type: 'null'
-          examples: *id025
+          examples: *id027
           title: Firstname
         lastname:
           anyOf:
-          - examples: &id026
+          - examples: &id028
             - Alex
             maxLength: 100
             minLength: 1
             pattern: ^[\p{L}\p{M}'’ .\-]+$
             type: string
           - type: 'null'
-          examples: *id026
+          examples: *id028
           title: Lastname
         password:
           anyOf:
-          - examples: &id027
+          - examples: &id029
             - correct horse battery staple
             format: password
             maxLength: 128
@@ -1978,17 +2011,17 @@ components:
             type: string
             writeOnly: true
           - type: 'null'
-          examples: *id027
+          examples: *id029
           title: Password
         phone:
           anyOf:
-          - examples: &id028
+          - examples: &id030
             - +46 70 123 45 67
             maxLength: 20
             pattern: ^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$
             type: string
           - type: 'null'
-          examples: *id028
+          examples: *id030
           title: Phone
       title: UserPatch
       type: object
@@ -3985,15 +4018,29 @@ paths:
           - type: string
           - type: 'null'
           title: Status
+      - in: query
+        name: limit
+        required: false
+        schema:
+          default: 50
+          maximum: 200
+          minimum: 1
+          title: Limit
+          type: integer
+      - in: query
+        name: offset
+        required: false
+        schema:
+          default: 0
+          minimum: 0
+          title: Offset
+          type: integer
       responses:
         '200':
           content:
             application/json:
               schema:
-                items:
-                  $ref: '#/components/schemas/BerthInviteOut'
-                title: Response Listberthinvites
-                type: array
+                $ref: '#/components/schemas/BerthInviteList'
           description: Successful Response
         '422':
           content:
@@ -4003,7 +4050,7 @@ paths:
           description: Validation Error
       security:
       - APIKeyCookie: []
-      summary: List invites for a harbor (harbormaster only)
+      summary: List invites for a harbor, paginated (harbormaster only)
       tags:
       - berth-invites
     post:

@@ -21,6 +21,7 @@ from app.adoption.sweeper import sweeper_loop
 from app.auth import require_csrf
 from app.config import get_settings
 from app.db import get_engine, get_sessionmaker
+from app.invites.sweeper import sweeper_loop as invite_sweeper_loop
 from app.logging_config import request_id_var, setup_logging
 from app.models import AdoptionRequest, Gateway
 from app.mqtt import is_mqtt_connected, mqtt_listener
@@ -112,6 +113,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     tasks = [
         asyncio.create_task(mqtt_listener(), name="mqtt_listener"),
         asyncio.create_task(sweeper_loop(), name="adoption_sweeper"),
+        asyncio.create_task(invite_sweeper_loop(), name="invite_sweeper"),
     ]
     for task in tasks:
         task.add_done_callback(_log_task_exception)

@@ -33,6 +33,10 @@ class AuditTimestampsMixin:
 
 
 berth_status_enum = Enum("free", "occupied", name="berth_status")
+berth_invite_status_enum = Enum(
+    "pending", "accepted", "expired", "revoked", "rejected", name="berth_invite_status"
+)
+# berth_role_enum = Enum("harbor_master", "visitor", "spot_owner", name="berth_role")
 event_type_enum = Enum(
     "occupied", "freed", "alert_unauthorized", "heartbeat", name="event_type"
 )
@@ -62,6 +66,11 @@ class User(Base):
     notification_prefs: Mapped["UserNotificationPrefs | None"] = relationship(
         back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
+    berth_invites: Mapped[list["BerthInvite"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        foreign_keys="[BerthInvite.created_by]",
+    )
 
 
 class BerthAvailabilityWindow(Base):
@@ -90,6 +99,34 @@ class BerthAvailabilityWindow(Base):
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class BerthInvite(Base):
+    __tablename__ = "berth_invites"
+
+    invite_id: Mapped[str] = mapped_column(String, primary_key=True)
+    berth_id: Mapped[str] = mapped_column(ForeignKey("berths.berth_id"), nullable=False)
+    harbor_id: Mapped[str] = mapped_column(
+        ForeignKey("harbors.harbor_id"), nullable=False
+    )
+    email: Mapped[str] = mapped_column(String, nullable=False)
+    token_hash: Mapped[str] = mapped_column(String, nullable=False)
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.user_id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(
+        berth_invite_status_enum, default="pending"
+    )  # (String, default="pending")  # (berth_invite_status_enum, default="pending")
+    accepted_by: Mapped[str] = mapped_column(ForeignKey("users.user_id"), nullable=True)
+    accepted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+    berth: Mapped["Berth"] = relationship(back_populates="berth_invites")
+    user: Mapped["User"] = relationship(
+        back_populates="berth_invites", foreign_keys=[created_by]
+    )
+    user: Mapped["User"] = relationship(
+        back_populates="berth_invites", foreign_keys=[accepted_by]
     )
 
 
@@ -149,6 +186,9 @@ class Berth(AuditTimestampsMixin, Base):
     alerts: Mapped[list["Alert"]] = relationship(back_populates="berth")
     assignment: Mapped["Assignment | None"] = relationship(
         back_populates="berth", uselist=False
+    )
+    berth_invites: Mapped[list["BerthInvite"]] = relationship(
+        back_populates="berth", cascade="all, delete-orphan"
     )
 
 
@@ -349,7 +389,9 @@ class UserHarborRole(Base):
         primary_key=True,
         index=True,
     )
-    role: Mapped[str] = mapped_column(String, primary_key=True)
+    role: Mapped[str] = mapped_column(
+        String, primary_key=True
+    )  # mapped_column(berth_role_enum, primary_key=True)
 
 
 class RefreshToken(Base):

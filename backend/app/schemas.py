@@ -107,6 +107,11 @@ class AssignBerthIn(BaseModel):
     user_id: str = Field(min_length=1, examples=["user-001"])
 
 
+class AssignmentInvitationOut(_BaseSchema):
+    berth_id: str = Field(examples=["berth-001"])
+    email: str = Field(examples=["john.doe@example.com"])
+
+
 class DockOut(_BaseSchema):
     dock_id: str = Field(examples=["dock-a"])
     harbor_id: str = Field(examples=["harbor-saltsjobaden"])

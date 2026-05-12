@@ -3,18 +3,26 @@ import json
 import uuid
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request
 from sqlalchemy import delete, select
 from sqlalchemy.orm import selectinload
 from sse_starlette.sse import EventSourceResponse
 
-from app import broadcaster
+from app import broadcaster, notifications
 from app.dependencies import (
     CurrentUserDep,
     HarbormasterForBerthDep,
     SessionDep,
 )
-from app.models import Assignment, Berth, BerthAvailabilityWindow, Dock, Event, User
+from app.models import (
+    Assignment,
+    Berth,
+    BerthAvailabilityWindow,
+    Dock,
+    Event,
+    Harbor,
+    User,
+)
 from app.schemas import (
     AssignBerthIn,
     BerthAvailabilityWindowIn,
@@ -178,17 +186,67 @@ async def list_berth_events(
     summary="Remove a berth assignment",
 )
 async def remove_berth_assignment(
-    berth_id: str, session: SessionDep, _: HarbormasterForBerthDep
+    berth_id: str,
+    session: SessionDep,
+    hm: HarbormasterForBerthDep,
+    background_tasks: BackgroundTasks,
 ):
     berth = await session.get(Berth, berth_id)
     if not berth:
         raise HTTPException(status_code=404, detail="Berth not found")
 
+    # load the user + harbor up front so the audit event has everything it
+    # needs and the email body can include the human-readable harbor name
+    row = (
+        await session.execute(
+            select(Assignment, User, Harbor.name, Berth.label)
+            .join(User, User.user_id == Assignment.user_id)
+            .join(Berth, Berth.berth_id == Assignment.berth_id)
+            .join(Dock, Dock.dock_id == Berth.dock_id)
+            .join(Harbor, Harbor.harbor_id == Dock.harbor_id)
+            .where(Assignment.berth_id == berth_id)
+        )
+    ).first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Assignment not found")
+    assignment, tenant, harbor_name, berth_label = row
+    tenant_id = tenant.user_id
+    tenant_email = tenant.email
+
+    # boat-owner vs visitor is implicit in the assignment row (memory:
+    # user_roles). deleting the row IS the downgrade. an explicit role
+    # column would change this; see issue #175 discussion
+    now = datetime.now(UTC)
     await session.execute(delete(Assignment).where(Assignment.berth_id == berth_id))
     berth.status = "free"
     berth.is_reserved = False
+    session.add(
+        Event(
+            event_id=str(uuid.uuid4()),
+            berth_id=berth_id,
+            event_type="assignment_removed",
+            actor_user_id=hm.user_id,
+            subject_user_id=tenant_id,
+            timestamp=now,
+        )
+    )
     await session.commit()
 
+    label = berth_label or berth_id
+    subject = f"Your berth assignment at {harbor_name} has ended"
+    html = (
+        f"<p>Your assignment to berth <strong>{label}</strong> at "
+        f"<strong>{harbor_name}</strong> has been ended by a harbormaster.</p>"
+    )
+    background_tasks.add_task(
+        notifications.send_email,
+        to=tenant_email,
+        subject=subject,
+        html=html,
+        idempotency_key=(
+            f"assignment-removed:{berth_id}:{tenant_id}:{int(now.timestamp())}"
+        ),
+    )
     return await _load_berth_with_assignment(session, berth_id)
 
 

@@ -3,7 +3,6 @@ import {
   Clock,
   Mail,
   Ruler,
-  ShieldCheck,
   Thermometer,
   Trash2,
   X,
@@ -90,8 +89,9 @@ export function BerthDetailPanel({
 
   const closeTimeoutRef = useRef<number | null>(null);
 
-  const canInviteOwner =
-    isHarborMaster && berth?.status === "free" && !berth.assignment;
+  // booking is scrapped, so invite is the only owner-facing action;
+  // status doesn't gate it — occupied + unassigned still needs an owner
+  const canInviteOwner = isHarborMaster && Boolean(berth) && !berth?.assignment;
 
   const canRemoveTenant = isHarborMaster && Boolean(berth?.assignment);
 
@@ -527,35 +527,35 @@ export function BerthDetailPanel({
           )}
         </div>
 
-        <div className="animate-in fade-in slide-in-from-top-4 border-t border-black/5 bg-white/20 p-6 duration-500 delay-700 fill-mode-both">
-          {isHarborMaster && pendingInviteForBerth && (
-            <div className="mb-4 flex items-start justify-between gap-4 rounded-2xl border border-amber-500/20 bg-amber-50 p-4">
-              <div className="min-w-0 space-y-1.5">
-                <p className="text-[9px] font-black uppercase tracking-widest text-amber-700/70">
-                  Pending invite
-                </p>
-                <p className="truncate text-xs font-bold text-amber-900">
-                  {pendingInviteForBerth.email}
-                </p>
-                <p className="text-[9px] font-bold uppercase tracking-widest text-amber-700/60">
-                  Expires{" "}
-                  {new Date(
-                    pendingInviteForBerth.expires_at,
-                  ).toLocaleDateString()}
-                </p>
+        {canInviteOwner && (
+          <div className="animate-in fade-in slide-in-from-top-4 border-t border-black/5 bg-white/20 p-6 duration-500 delay-700 fill-mode-both">
+            {pendingInviteForBerth && (
+              <div className="mb-4 flex items-start justify-between gap-4 rounded-2xl border border-amber-500/20 bg-amber-50 p-4">
+                <div className="min-w-0 space-y-1.5">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-amber-700/70">
+                    Pending invite
+                  </p>
+                  <p className="truncate text-xs font-bold text-amber-900">
+                    {pendingInviteForBerth.email}
+                  </p>
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-amber-700/60">
+                    Expires{" "}
+                    {new Date(
+                      pendingInviteForBerth.expires_at,
+                    ).toLocaleDateString()}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRevokeInvite}
+                  disabled={isRevokingInvite}
+                  className="shrink-0 rounded-full bg-amber-500/10 px-4 py-2 text-[9px] font-black uppercase tracking-widest text-amber-700 transition-colors hover:bg-amber-500/20 disabled:opacity-50"
+                >
+                  {isRevokingInvite ? "..." : "Revoke"}
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={handleRevokeInvite}
-                disabled={isRevokingInvite}
-                className="shrink-0 rounded-full bg-amber-500/10 px-4 py-2 text-[9px] font-black uppercase tracking-widest text-amber-700 transition-colors hover:bg-amber-500/20 disabled:opacity-50"
-              >
-                {isRevokingInvite ? "..." : "Revoke"}
-              </button>
-            </div>
-          )}
+            )}
 
-          {canInviteOwner ? (
             <button
               type="button"
               onClick={() => setIsInviteOpen(true)}
@@ -565,17 +565,8 @@ export function BerthDetailPanel({
               <Mail size={16} strokeWidth={3} />
               Invite Owner
             </button>
-          ) : (
-            <button
-              type="button"
-              disabled
-              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-brand-blue to-brand-cyan py-4 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-brand-blue/20 transition-all disabled:grayscale disabled:opacity-50"
-            >
-              <ShieldCheck size={16} strokeWidth={3} />
-              Book Berth
-            </button>
-          )}
-        </div>
+          </div>
+        )}
       </aside>
 
       {berth && harborId && (

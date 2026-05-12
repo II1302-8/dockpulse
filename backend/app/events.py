@@ -8,7 +8,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from app import broadcaster
-from app.models import Berth, Dock, Event, Node, User, UserHarborRole
+from app.models import (
+    Berth,
+    BerthAvailabilityWindow,
+    Dock,
+    Event,
+    Node,
+    User,
+    UserHarborRole,
+)
 from app.notifications import send_email
 from app.schemas import BerthUpdateEvent
 
@@ -51,23 +59,33 @@ async def _notify_harbormasters(
     )
     harbormasters = result.unique().scalars().all()
 
+    # only the occupied transition can be unauthorized mooring
+    if new_status != "occupied":
+        return
+
+    # sensor has no boat identity so a window-less occupied could be owner
+    # or stranger. flagging both is the closest we can get; once berth
+    # invites land we can tighten this to "visitor without invite"
+    now = datetime.now(UTC)
+    window_result = await session.execute(
+        select(BerthAvailabilityWindow).where(
+            BerthAvailabilityWindow.berth_id == berth.berth_id,
+            BerthAvailabilityWindow.from_date < now,
+            BerthAvailabilityWindow.return_date > now,
+        )
+    )
+    if window_result.scalars().first() is not None:
+        return
+
     label = berth.label or berth.berth_id
-    if new_status == "occupied":
-        subject = f"Berth {label} is now occupied"
-        html = f"<p>Berth <strong>{label}</strong> has been occupied.</p>"
-    else:
-        subject = f"Berth {label} is now free"
-        html = f"<p>Berth <strong>{label}</strong> has been freed.</p>"
+    subject = f"Berth {label} is now occupied"
+    html = f"<p>Berth <strong>{label}</strong> has been occupied.</p>"
 
     coros = []
     for hm in harbormasters:
         prefs = hm.notification_prefs
-        if prefs is not None:
-            if new_status == "occupied" and not prefs.notify_arrival:
-                continue
-            if new_status == "free" and not prefs.notify_departure:
-                continue
-
+        if prefs is not None and not prefs.notify_arrival:
+            continue
         idem_key = f"berth-status/{event_id}/{hm.user_id}"
         coros.append(send_email(hm.email, subject, html, idem_key))
 

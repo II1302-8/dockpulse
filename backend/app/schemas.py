@@ -202,6 +202,18 @@ class EventList(_BaseSchema):
     total: int = Field(examples=[1234])
 
 
+AlertType = Literal["unauthorized_mooring", "sensor_offline", "low_battery"]
+
+
+class AlertOut(_BaseSchema):
+    alert_id: str = Field(examples=["alrt-0001"])
+    berth_id: str = Field(examples=["berth-001"])
+    type: AlertType
+    message: str = Field(examples=["Battery below 15%"])
+    acknowledged: bool = False
+    timestamp: datetime = Field(examples=["2026-05-03T14:30:00Z"])
+
+
 class NodeOut(_BaseSchema):
     node_id: str = Field(examples=["node-012"])
     mesh_uuid: str = Field(examples=["a1b2c3d4-e5f6-7890-abcd-ef1234567890"])

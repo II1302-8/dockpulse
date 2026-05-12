@@ -242,6 +242,48 @@ components:
       - request
       title: AdoptionUpdateEvent
       type: object
+    AlertOut:
+      properties:
+        acknowledged:
+          default: false
+          title: Acknowledged
+          type: boolean
+        alert_id:
+          examples:
+          - alrt-0001
+          title: Alert Id
+          type: string
+        berth_id:
+          examples:
+          - berth-001
+          title: Berth Id
+          type: string
+        message:
+          examples:
+          - Battery below 15%
+          title: Message
+          type: string
+        timestamp:
+          examples:
+          - '2026-05-03T14:30:00Z'
+          format: date-time
+          title: Timestamp
+          type: string
+        type:
+          enum:
+          - unauthorized_mooring
+          - sensor_offline
+          - low_battery
+          title: Type
+          type: string
+      required:
+      - alert_id
+      - berth_id
+      - type
+      - message
+      - timestamp
+      title: AlertOut
+      type: object
     AssignBerthIn:
       properties:
         user_id:
@@ -3294,6 +3336,78 @@ paths:
       summary: Subscribe to adoption progress via Server-Sent Events
       tags:
       - adoptions
+  /api/alerts:
+    get:
+      operationId: listAlerts
+      parameters:
+      - description: filter by acknowledged flag; omit to return both states
+        in: query
+        name: acknowledged
+        required: false
+        schema:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          description: filter by acknowledged flag; omit to return both states
+          title: Acknowledged
+      - in: query
+        name: limit
+        required: false
+        schema:
+          default: 100
+          maximum: 500
+          minimum: 1
+          title: Limit
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/AlertOut'
+                title: Response Listalerts
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - APIKeyCookie: []
+      summary: List alerts in harbors the user manages
+      tags:
+      - alerts
+  /api/alerts/{alert_id}/acknowledge:
+    post:
+      operationId: acknowledgeAlert
+      parameters:
+      - in: path
+        name: alert_id
+        required: true
+        schema:
+          title: Alert Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - APIKeyCookie: []
+      summary: Mark an alert as acknowledged
+      tags:
+      - alerts
   /api/auth/login:
     post:
       operationId: login

@@ -191,6 +191,29 @@ export function ActivityLogPanel({
     return e.type === filterType;
   });
 
+  function closePanel() {
+    onCloseCB?.();
+  }
+
+  function handleCloseClick(event: React.MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    closePanel();
+  }
+
+  function handleClosePointerDown(
+    event: React.PointerEvent<HTMLButtonElement>,
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  function handleClosePointerUp(event: React.PointerEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    closePanel();
+  }
+
   return (
     <section
       className={cn(
@@ -215,8 +238,10 @@ export function ActivityLogPanel({
         <button
           type="button"
           aria-label="Close activity log"
-          onClick={onCloseCB}
-          className="grid h-10 w-10 cursor-pointer place-items-center rounded-full bg-[#0A2540]/5 text-[#0A2540]/60 transition-colors active:bg-[#0A2540]/15"
+          onPointerDown={handleClosePointerDown}
+          onPointerUp={handleClosePointerUp}
+          onClick={handleCloseClick}
+          className="pointer-events-auto relative z-[130] grid h-10 w-10 touch-manipulation cursor-pointer place-items-center rounded-full bg-[#0A2540]/5 text-[#0A2540]/60 transition-colors active:scale-95 active:bg-[#0A2540]/15"
         >
           <X size={16} strokeWidth={3} />
         </button>

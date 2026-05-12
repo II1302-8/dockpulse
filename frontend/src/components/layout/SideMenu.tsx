@@ -1,4 +1,11 @@
-import { Activity, LayoutDashboard, Menu, Settings, X } from "lucide-react";
+import {
+  Activity,
+  HeartPulse,
+  LayoutDashboard,
+  Menu,
+  Settings,
+  X,
+} from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { cn } from "../../lib/utils";
 
@@ -7,8 +14,10 @@ interface SideMenuProps {
   onToggle: () => void;
   onOverviewToggle: () => void;
   onActivityLogToggle: () => void;
+  onNodeHealthToggle: () => void;
   isOverviewActive: boolean;
   isActivityLogActive: boolean;
+  isNodeHealthActive: boolean;
 }
 
 export function SideMenu({
@@ -16,8 +25,10 @@ export function SideMenu({
   onToggle,
   onOverviewToggle,
   onActivityLogToggle,
+  onNodeHealthToggle,
   isOverviewActive,
   isActivityLogActive,
+  isNodeHealthActive,
 }: SideMenuProps) {
   const { marinaSlug } = useParams<{ marinaSlug: string }>();
   const settingsPath = marinaSlug ? `/${marinaSlug}/settings` : null;
@@ -27,6 +38,7 @@ export function SideMenu({
       id: "overview",
       icon: LayoutDashboard,
       label: "Harbor Overview",
+      mobileLabel: "Map",
       active: isOverviewActive,
       onClick: onOverviewToggle,
     },
@@ -34,8 +46,17 @@ export function SideMenu({
       id: "activity",
       icon: Activity,
       label: "Activity Log",
+      mobileLabel: "Log",
       active: isActivityLogActive,
       onClick: onActivityLogToggle,
+    },
+    {
+      id: "nodes",
+      icon: HeartPulse,
+      label: "Node Health",
+      mobileLabel: "Nodes",
+      active: isNodeHealthActive,
+      onClick: onNodeHealthToggle,
     },
   ];
 
@@ -176,7 +197,7 @@ export function SideMenu({
             <item.icon size={20} strokeWidth={2.5} />
             {item.active && (
               <span className="text-[7px] font-black uppercase tracking-tighter mt-0.5">
-                {item.id === "overview" ? "Map" : "Log"}
+                {item.mobileLabel}
               </span>
             )}
           </button>

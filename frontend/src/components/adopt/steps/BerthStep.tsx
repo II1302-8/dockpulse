@@ -25,7 +25,7 @@ export function BerthStep({
     <div className="space-y-3">
       <SectionHead
         title="Pick berth"
-        hint={`Free berths on dock ${gateway.dock_id}`}
+        hint={`Available berths on dock ${gateway.dock_id}`}
         onBack={onBack}
       />
       {isLoading ? (
@@ -33,7 +33,7 @@ export function BerthStep({
       ) : error ? (
         <ErrorBlock message={error} />
       ) : berths.length === 0 ? (
-        <ErrorBlock message="No free berths on this dock" />
+        <ErrorBlock message="No available berths on this dock" />
       ) : (
         <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {berths.map((b) => (

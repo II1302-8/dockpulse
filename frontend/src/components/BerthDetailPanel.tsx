@@ -17,13 +17,40 @@ import {
   revokeInvite,
   useBerthInvites,
 } from "../hooks/useBerthInvites";
+import { useNow } from "../hooks/useNow";
 import { apiFetch } from "../lib/api";
+import { isOnline } from "../lib/freshness";
 import { cn } from "../lib/utils";
 import { InviteOwnerModal } from "./InviteOwnerModal";
 import type { AuthOutletContext } from "./layout/MainLayout";
 
 type Event = components["schemas"]["EventOut"];
 type Berth = components["schemas"]["BerthOut"];
+
+// status pill text reflects what a harbormaster cares about: sensor liveness
+// first, then occupancy. backend status stays free/occupied, this is presentation
+function getDisplayStatus(berth: Berth, now: number): string {
+  if (!isOnline(berth.last_updated, now)) return "Disconnected";
+  if (berth.status === "occupied" || berth.is_reserved) return "Unavailable";
+  return "Available";
+}
+
+function getEventLabel(eventType: string): string {
+  switch (eventType) {
+    case "occupied":
+      return "Arrived";
+    case "freed":
+      return "Departed";
+    case "alert_unauthorized":
+      return "Unauthorized access";
+    case "heartbeat":
+      return "System heartbeat";
+    case "assignment_removed":
+      return "Tenant removed";
+    default:
+      return eventType.charAt(0).toUpperCase() + eventType.slice(1);
+  }
+}
 
 interface BerthDetailPanelProps {
   berthId: string;
@@ -62,6 +89,7 @@ export function BerthDetailPanel({
 
   const { berth: fetchedBerth, isLoading, error } = useBerthDetail(berthId);
   const berth = liveBerth || fetchedBerth;
+  const now = useNow();
 
   const [events, setEvents] = useState<Event[]>([]);
   const [isEventsLoading, setIsEventsLoading] = useState(false);
@@ -333,21 +361,25 @@ export function BerthDetailPanel({
                 <div
                   className={cn(
                     "inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider",
-                    berth.status === "occupied"
-                      ? "border-red-500/20 bg-red-500/10 text-red-500"
-                      : "border-emerald-500/20 bg-emerald-500/10 text-emerald-600",
+                    !isOnline(berth.last_updated, now)
+                      ? "border-slate-500/20 bg-slate-500/10 text-slate-500"
+                      : berth.status === "occupied" || berth.is_reserved
+                        ? "border-red-500/20 bg-red-500/10 text-red-500"
+                        : "border-emerald-500/20 bg-emerald-500/10 text-emerald-600",
                   )}
                 >
                   <span
                     className={cn(
                       "h-2 w-2 rounded-full",
-                      berth.status === "occupied"
-                        ? "animate-pulse bg-red-500 drop-shadow-[0_0_4px_rgba(239,68,68,0.5)]"
-                        : "bg-emerald-500 glow-emerald",
+                      !isOnline(berth.last_updated, now)
+                        ? "bg-slate-400"
+                        : berth.status === "occupied" || berth.is_reserved
+                          ? "animate-pulse bg-red-500 drop-shadow-[0_0_4px_rgba(239,68,68,0.5)]"
+                          : "bg-emerald-500 glow-emerald",
                     )}
                   />
 
-                  {berth.status}
+                  {getDisplayStatus(berth, now)}
                 </div>
               </div>
 
@@ -500,8 +532,8 @@ export function BerthDetailPanel({
                           />
 
                           <div className="flex-1">
-                            <p className="text-[11px] font-bold capitalize text-brand-navy/70">
-                              {ev.event_type}
+                            <p className="text-[11px] font-bold text-brand-navy/70">
+                              {getEventLabel(ev.event_type)}
                             </p>
 
                             <p className="text-[8px] font-bold uppercase tracking-widest text-brand-navy/30">

@@ -11,12 +11,14 @@ interface HarborMasterOverviewProps {
   berths: Berth[];
   isOpen?: boolean;
   onCloseCB?: () => void;
+  onOpenNodeHealth?: () => void;
 }
 
 export function HarborMasterOverview({
   berths,
   isOpen,
   onCloseCB,
+  onOpenNodeHealth,
 }: HarborMasterOverviewProps) {
   const now = useNow();
   const isFirstLoad = useRef(true);
@@ -30,10 +32,13 @@ export function HarborMasterOverview({
   }, []);
 
   const totalBerths = berths.length;
-  const occupiedBerths = berths.filter((b) => b.status === "occupied").length;
-  const availableBerths = totalBerths - occupiedBerths;
+  // reserved berths count as unavailable even though sensor reports free
+  const unavailableBerths = berths.filter(
+    (b) => b.status === "occupied" || b.is_reserved,
+  ).length;
+  const availableBerths = totalBerths - unavailableBerths;
   const occupancyRate =
-    totalBerths > 0 ? Math.round((occupiedBerths / totalBerths) * 100) : 0;
+    totalBerths > 0 ? Math.round((unavailableBerths / totalBerths) * 100) : 0;
 
   const activeNodes = berths.filter((b) =>
     isOnline(b.last_updated, now),
@@ -123,7 +128,7 @@ export function HarborMasterOverview({
             <div className="mb-2 flex items-center gap-2 text-emerald-500">
               <Anchor size={14} strokeWidth={2.5} />
               <span className="text-[9px] font-black uppercase tracking-widest opacity-60">
-                Free
+                Available
               </span>
             </div>
 
@@ -134,16 +139,42 @@ export function HarborMasterOverview({
             </p>
           </div>
 
-          <div className="rounded-3xl border border-white/50 bg-white/80 p-4 shadow-subtle">
-            <div className="mb-2 flex items-center gap-2 text-brand-blue">
-              <Zap size={14} strokeWidth={2.5} />
-              <span className="text-[9px] font-black uppercase tracking-widest opacity-60">
-                Active
-              </span>
-            </div>
+          {onOpenNodeHealth ? (
+            <button
+              type="button"
+              onClick={onOpenNodeHealth}
+              className="rounded-3xl border border-white/50 bg-white/80 p-4 text-left shadow-subtle transition-all hover:-translate-y-0.5 hover:border-brand-blue/30 hover:shadow-md"
+            >
+              <div className="mb-2 flex items-center justify-between gap-2 text-brand-blue">
+                <div className="flex items-center gap-2">
+                  <Zap size={14} strokeWidth={2.5} />
+                  <span className="text-[9px] font-black uppercase tracking-widest opacity-60">
+                    Active
+                  </span>
+                </div>
+                <span className="text-[9px] font-black uppercase tracking-widest opacity-40">
+                  Open →
+                </span>
+              </div>
 
-            <p className="text-xl font-black text-brand-navy">{activeNodes}</p>
-          </div>
+              <p className="text-xl font-black text-brand-navy">
+                {activeNodes}
+              </p>
+            </button>
+          ) : (
+            <div className="rounded-3xl border border-white/50 bg-white/80 p-4 shadow-subtle">
+              <div className="mb-2 flex items-center gap-2 text-brand-blue">
+                <Zap size={14} strokeWidth={2.5} />
+                <span className="text-[9px] font-black uppercase tracking-widest opacity-60">
+                  Active
+                </span>
+              </div>
+
+              <p className="text-xl font-black text-brand-navy">
+                {activeNodes}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="border-t border-[#0A2540]/5 pt-6">

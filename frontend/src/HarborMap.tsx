@@ -1,3 +1,4 @@
+import { LayoutDashboard } from "lucide-react";
 import panzoom from "panzoom";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOutletContext } from "react-router-dom";
@@ -8,6 +9,7 @@ import { HarborOverview } from "./components/HarborOverview";
 import { useDashboardLayout } from "./components/layout/DashboardLayoutContext";
 import type { AuthOutletContext } from "./components/layout/MainLayout";
 import { MapLegend } from "./components/MapLegend";
+import { NodeHealthPanel } from "./components/NodeHealthPanel";
 import { NorthArrow } from "./components/NorthArrow";
 import { useBerthsStream } from "./hooks/useBerthsStream";
 import { cn } from "./lib/utils";
@@ -26,6 +28,10 @@ export function HarborMap() {
     setIsOverviewOpen,
     isActivityLogOpen,
     setIsActivityLogOpen,
+    isNodeHealthOpen,
+    setIsNodeHealthOpen,
+    toggleOverview,
+    toggleNodeHealth,
   } = useDashboardLayout();
 
   const [selectedBerthId, setSelectedBerthId] = useState<string | null>(null);
@@ -45,10 +51,12 @@ export function HarborMap() {
 
   const overviewIsVisible = isOverviewOpen;
   const activityLogIsVisible = isActivityLogOpen;
+  const nodeHealthIsVisible = isNodeHealthOpen;
 
   // berth detail sits in the gutter so the map stays interactive behind it.
-  // only overview/activity occupy enough surface to warrant blocking map drag
-  const isMapBlocked = overviewIsVisible || activityLogIsVisible;
+  // only overview/activity/node-health occupy the gutter side and block drag
+  const isMapBlocked =
+    overviewIsVisible || activityLogIsVisible || nodeHealthIsVisible;
 
   const shouldShowMapLegend = !isMapBlocked && !selectedBerthId;
 
@@ -75,6 +83,12 @@ export function HarborMap() {
         }
 
         return Boolean(target?.closest("[data-berth-id]"));
+      },
+      // wheel events on overlay panels would otherwise zoom the map instead
+      // of scrolling the panel content
+      beforeWheel: (event) => {
+        const target = event.target as Node | null;
+        return !!target && !contentElement.contains(target);
       },
       filterKey: () => true,
     });
@@ -106,9 +120,10 @@ export function HarborMap() {
     (berthId: string) => {
       setIsOverviewOpen(false);
       setIsActivityLogOpen(false);
+      setIsNodeHealthOpen(false);
       setSelectedBerthId(berthId);
     },
-    [setIsOverviewOpen, setIsActivityLogOpen],
+    [setIsOverviewOpen, setIsActivityLogOpen, setIsNodeHealthOpen],
   );
 
   const handleCloseBerthPanel = useCallback(() => {
@@ -122,6 +137,10 @@ export function HarborMap() {
   const handleCloseActivityLog = useCallback(() => {
     setIsActivityLogOpen(false);
   }, [setIsActivityLogOpen]);
+
+  const handleCloseNodeHealth = useCallback(() => {
+    setIsNodeHealthOpen(false);
+  }, [setIsNodeHealthOpen]);
 
   return (
     <div className="relative h-full w-full overflow-hidden border-4 border-white/70 bg-sky-50/20 font-body shadow-inner">
@@ -168,12 +187,25 @@ export function HarborMap() {
         </div>
       )}
 
+      {!isHarborMaster && !isOverviewOpen && (
+        <button
+          type="button"
+          onClick={toggleOverview}
+          data-map-control
+          className="pointer-events-auto fixed left-8 top-48 z-[var(--z-map-content)] flex h-12 w-12 items-center justify-center rounded-full border border-white/40 bg-white/40 text-brand-blue shadow-deep backdrop-blur-xl transition-all hover:scale-110 hover:bg-white/60 active:scale-95 lg:left-[var(--sidebar-total-offset,32px)]"
+          aria-label="Open harbor overview"
+        >
+          <LayoutDashboard size={20} strokeWidth={2.5} />
+        </button>
+      )}
+
       {isHarborMaster ? (
         <HarborMasterOverview
           key="master-overview"
           berths={berths}
           isOpen={overviewIsVisible}
           onCloseCB={handleCloseOverview}
+          onOpenNodeHealth={toggleNodeHealth}
         />
       ) : (
         <HarborOverview
@@ -190,6 +222,14 @@ export function HarborMap() {
         isOpen={activityLogIsVisible}
         onCloseCB={handleCloseActivityLog}
       />
+
+      {isHarborMaster && (
+        <NodeHealthPanel
+          key="node-health"
+          isOpen={nodeHealthIsVisible}
+          onCloseCB={handleCloseNodeHealth}
+        />
+      )}
 
       {shouldShowMapLegend && <MapLegend />}
       <NorthArrow />

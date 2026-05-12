@@ -49,8 +49,10 @@ function MainLayoutContent({
     setIsMenuExpanded,
     isOverviewOpen,
     isActivityLogOpen,
+    isNodeHealthOpen,
     toggleOverview,
     toggleActivityLog,
+    toggleNodeHealth,
     isDesktop,
   } = useDashboardLayout();
 
@@ -95,8 +97,10 @@ function MainLayoutContent({
           onToggle={() => setIsMenuExpanded(!isMenuExpanded)}
           isOverviewActive={isOverviewOpen}
           isActivityLogActive={isActivityLogOpen}
+          isNodeHealthActive={isNodeHealthOpen}
           onOverviewToggle={toggleOverview}
           onActivityLogToggle={toggleActivityLog}
+          onNodeHealthToggle={toggleNodeHealth}
         />
       )}
 

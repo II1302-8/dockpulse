@@ -1,10 +1,10 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from sqlalchemy import select
 
 from app.events import process_heartbeat, process_sensor_reading
-from app.models import Berth, Event, Gateway, Node
+from app.models import Berth, BerthAvailabilityWindow, Event, Gateway, Node
 
 
 async def test_state_change_creates_event(session, seeded_berth):
@@ -251,3 +251,112 @@ async def test_no_notification_on_same_status(
         sensor_raw=100,
     )
     assert sent == []
+
+
+async def _add_window(
+    session,
+    *,
+    window_id: str,
+    berth_id: str,
+    user_id: str,
+    starts_hours_ago: int = 1,
+    ends_hours_ahead: int = 1,
+) -> None:
+    now = datetime.now(UTC)
+    session.add(
+        BerthAvailabilityWindow(
+            window_id=window_id,
+            berth_id=berth_id,
+            user_id=user_id,
+            from_date=now - timedelta(hours=starts_hours_ago),
+            return_date=now + timedelta(hours=ends_hours_ahead),
+        )
+    )
+    await session.commit()
+
+
+async def test_notify_suppressed_when_window_covers_berth(
+    session, seeded_berth, harbor_master, boat_owner, monkeypatch
+):
+    await _add_window(
+        session, window_id="w1", berth_id="b1", user_id=boat_owner.user_id
+    )
+
+    sent: list = []
+
+    async def _fake_send(*a, **kw):
+        sent.append(a)
+
+    monkeypatch.setattr("app.events.send_email", _fake_send)
+
+    await process_sensor_reading(
+        session,
+        berth_id="b1",
+        node_id="n1",
+        mesh_unicast_addr="0x0042",
+        occupied=True,
+        sensor_raw=500,
+    )
+    assert sent == []
+
+
+async def test_notify_fires_when_window_covers_different_berth(
+    session, seeded_berth, harbor_master, boat_owner, monkeypatch
+):
+    # window exists for a sibling berth b2 in the same dock, must not suppress b1
+    session.add(Berth(berth_id="b2", dock_id="d1", status="free"))
+    await session.commit()
+    await _add_window(
+        session, window_id="w2", berth_id="b2", user_id=boat_owner.user_id
+    )
+
+    sent: list = []
+
+    async def _fake_send(*a, **kw):
+        sent.append(a)
+
+    monkeypatch.setattr("app.events.send_email", _fake_send)
+
+    await process_sensor_reading(
+        session,
+        berth_id="b1",
+        node_id="n1",
+        mesh_unicast_addr="0x0042",
+        occupied=True,
+        sensor_raw=500,
+    )
+    assert len(sent) == 1
+
+
+async def test_notify_fires_when_window_expired(
+    session, seeded_berth, harbor_master, boat_owner, monkeypatch
+):
+    # window already closed, mooring is no longer authorized
+    now = datetime.now(UTC)
+    session.add(
+        BerthAvailabilityWindow(
+            window_id="w3",
+            berth_id="b1",
+            user_id=boat_owner.user_id,
+            from_date=now - timedelta(hours=4),
+            return_date=now - timedelta(hours=1),
+        )
+    )
+    await session.commit()
+
+    sent: list = []
+
+    async def _fake_send(*a, **kw):
+        sent.append(a)
+
+    monkeypatch.setattr("app.events.send_email", _fake_send)
+
+    await process_sensor_reading(
+        session,
+        berth_id="b1",
+        node_id="n1",
+        mesh_unicast_addr="0x0042",
+        occupied=True,
+        sensor_raw=500,
+    )
+    assert len(sent) == 1

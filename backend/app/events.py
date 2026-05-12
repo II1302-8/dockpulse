@@ -59,37 +59,40 @@ async def _notify_harbormasters(
     )
     harbormasters = result.unique().scalars().all()
 
-    label = berth.label or berth.berth_id
-    if new_status == "occupied":
-        subject = f"Berth {label} is now occupied"
-        html = f"<p>Berth <strong>{label}</strong> has been occupied.</p>"
-    else:
+    # only the occupied transition can be unauthorized mooring
+    if new_status != "occupied":
         return
-    #    subject = f"Berth {label} is now free"
-    #    html = f"<p>Berth <strong>{label}</strong> has been freed.</p>"
-    stmt = select(BerthAvailabilityWindow).where(
-        BerthAvailabilityWindow.from_date < datetime.now(),
-        BerthAvailabilityWindow.return_date > datetime.now(),
+
+    # sensor has no boat identity so a window-less occupied could be owner
+    # or stranger. flagging both is the closest we can get; once berth
+    # invites land we can tighten this to "visitor without invite"
+    now = datetime.now(UTC)
+    window_result = await session.execute(
+        select(BerthAvailabilityWindow).where(
+            BerthAvailabilityWindow.berth_id == berth.berth_id,
+            BerthAvailabilityWindow.from_date < now,
+            BerthAvailabilityWindow.return_date > now,
+        )
     )
-    result = await session.execute(stmt)
-    berth_available = result.scalars().first()
-    if not berth_available:
-        coros = []
-        for hm in harbormasters:
-            prefs = hm.notification_prefs
-            if prefs is not None:
-                if new_status == "occupied" and not prefs.notify_arrival:
-                    continue
-                if new_status == "free" and not prefs.notify_departure:
-                    continue
+    if window_result.scalars().first() is not None:
+        return
 
-            idem_key = f"berth-status/{event_id}/{hm.user_id}"
-            coros.append(send_email(hm.email, subject, html, idem_key))
+    label = berth.label or berth.berth_id
+    subject = f"Berth {label} is now occupied"
+    html = f"<p>Berth <strong>{label}</strong> has been occupied.</p>"
 
-        results = await asyncio.gather(*coros, return_exceptions=True)
-        for exc in results:
-            if isinstance(exc, BaseException):
-                logger.warning("Failed to send notification email: %s", exc)
+    coros = []
+    for hm in harbormasters:
+        prefs = hm.notification_prefs
+        if prefs is not None and not prefs.notify_arrival:
+            continue
+        idem_key = f"berth-status/{event_id}/{hm.user_id}"
+        coros.append(send_email(hm.email, subject, html, idem_key))
+
+    results = await asyncio.gather(*coros, return_exceptions=True)
+    for exc in results:
+        if isinstance(exc, BaseException):
+            logger.warning("Failed to send notification email: %s", exc)
 
 
 async def process_sensor_reading(

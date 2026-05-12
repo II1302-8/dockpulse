@@ -76,8 +76,7 @@ export function AcceptBerthPage() {
   async function handleAccept() {
     if (!token || !invite) return;
 
-    const assignedBerthId = (user as { assigned_berth_id?: string | null })
-      ?.assigned_berth_id;
+    const assignedBerthId = user?.assigned_berth_id;
 
     if (
       assignedBerthId &&
@@ -101,7 +100,8 @@ export function AcceptBerthPage() {
 
     await refresh();
     toast.success("Berth invite accepted.");
-    navigate(`/${invite.harbor_id}`, { replace: true });
+    // root redirects to the configured marina dashboard via App.tsx
+    navigate("/", { replace: true });
   }
 
   async function handleReject() {
@@ -248,7 +248,11 @@ export function AcceptBerthPage() {
                     onClick={handleAccept}
                     className="rounded-2xl bg-gradient-to-r from-brand-blue to-brand-cyan px-6 py-4 text-xs font-black uppercase tracking-widest text-white"
                   >
-                    {isSubmitting ? "Working..." : "Accept"}
+                    {isSubmitting
+                      ? "Working..."
+                      : confirmRelease
+                        ? "Confirm release"
+                        : "Accept"}
                   </button>
                 </div>
               </div>

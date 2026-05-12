@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Outlet, useNavigate, useSearchParams } from "react-router-dom";
 import { Toaster } from "sonner";
 import { type AuthUser, useAuth } from "../../lib/auth-context";
@@ -142,10 +142,10 @@ function MainLayout() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  function openAuthDialog(options?: AuthDialogOptions) {
+  const openAuthDialog = useCallback((options?: AuthDialogOptions) => {
     setAuthDialogOptions(options ?? {});
     setIsLoginOpen(true);
-  }
+  }, []);
 
   // route guard redirect lands here with ?login=1, open the dialog and consume the flag
   useEffect(() => {

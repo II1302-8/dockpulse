@@ -10,8 +10,14 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useOutletContext, useParams } from "react-router-dom";
+import { toast } from "sonner";
 import type { components } from "../api-types";
 import { useBerthDetail } from "../hooks/useBerthDetail";
+import {
+  type BerthInvite,
+  revokeInvite,
+  useBerthInvites,
+} from "../hooks/useBerthInvites";
 import { apiFetch } from "../lib/api";
 import { cn } from "../lib/utils";
 import { InviteOwnerModal } from "./InviteOwnerModal";
@@ -69,6 +75,19 @@ export function BerthDetailPanel({
     null,
   );
 
+  const [tenantEmail, setTenantEmail] = useState<string | null>(null);
+  const [isRevokingInvite, setIsRevokingInvite] = useState(false);
+
+  const { invites: pendingInvites, loadInvites: reloadInvites } =
+    useBerthInvites(harborId, {
+      enabled: isHarborMaster && Boolean(harborId),
+      status: "pending",
+    });
+
+  const pendingInviteForBerth: BerthInvite | undefined = pendingInvites.find(
+    (inv) => inv.berth_id === berthId,
+  );
+
   const closeTimeoutRef = useRef<number | null>(null);
 
   const canInviteOwner =
@@ -116,6 +135,39 @@ export function BerthDetailPanel({
       }
     };
   }, []);
+
+  // tenant email shown in the remove dialog, fetched on demand because
+  // BerthOut.assignment carries only user_id
+  useEffect(() => {
+    if (!isHarborMaster || !berth?.assignment) {
+      setTenantEmail(null);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    async function fetchTenant() {
+      try {
+        const res = await apiFetch(
+          `/api/users?berth_id=${encodeURIComponent(berthId)}`,
+          { signal: controller.signal },
+        );
+
+        if (res.ok) {
+          const data = (await res.json()) as { email?: string };
+          setTenantEmail(data.email ?? null);
+        }
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          console.error("Failed to fetch tenant", err);
+        }
+      }
+    }
+
+    fetchTenant();
+
+    return () => controller.abort();
+  }, [berthId, isHarborMaster, berth?.assignment]);
 
   function closePanel() {
     if (isClosing) return;
@@ -182,6 +234,27 @@ export function BerthDetailPanel({
     } finally {
       setIsRemovingTenant(false);
     }
+  }
+
+  async function handleRevokeInvite() {
+    if (!harborId || !pendingInviteForBerth || isRevokingInvite) return;
+
+    setIsRevokingInvite(true);
+
+    const result = await revokeInvite(
+      harborId,
+      pendingInviteForBerth.invite_id,
+    );
+
+    setIsRevokingInvite(false);
+
+    if (!result.ok) {
+      toast.error(result.error);
+      return;
+    }
+
+    toast.success("Invite revoked.");
+    await reloadInvites();
   }
 
   return (
@@ -455,11 +528,38 @@ export function BerthDetailPanel({
         </div>
 
         <div className="animate-in fade-in slide-in-from-top-4 border-t border-black/5 bg-white/20 p-6 duration-500 delay-700 fill-mode-both">
+          {isHarborMaster && pendingInviteForBerth && (
+            <div className="mb-4 flex items-start justify-between gap-4 rounded-2xl border border-amber-500/20 bg-amber-50 p-4">
+              <div className="min-w-0 space-y-1.5">
+                <p className="text-[9px] font-black uppercase tracking-widest text-amber-700/70">
+                  Pending invite
+                </p>
+                <p className="truncate text-xs font-bold text-amber-900">
+                  {pendingInviteForBerth.email}
+                </p>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-amber-700/60">
+                  Expires{" "}
+                  {new Date(
+                    pendingInviteForBerth.expires_at,
+                  ).toLocaleDateString()}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleRevokeInvite}
+                disabled={isRevokingInvite}
+                className="shrink-0 rounded-full bg-amber-500/10 px-4 py-2 text-[9px] font-black uppercase tracking-widest text-amber-700 transition-colors hover:bg-amber-500/20 disabled:opacity-50"
+              >
+                {isRevokingInvite ? "..." : "Revoke"}
+              </button>
+            </div>
+          )}
+
           {canInviteOwner ? (
             <button
               type="button"
               onClick={() => setIsInviteOpen(true)}
-              disabled={!harborId}
+              disabled={!harborId || Boolean(pendingInviteForBerth)}
               className="flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-brand-blue to-brand-cyan py-4 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-brand-blue/20 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-blue/40 active:translate-y-0 disabled:grayscale disabled:opacity-50"
             >
               <Mail size={16} strokeWidth={3} />
@@ -484,19 +584,20 @@ export function BerthDetailPanel({
           berth={berth}
           harborId={harborId}
           onClose={() => setIsInviteOpen(false)}
+          onCreated={reloadInvites}
         />
       )}
 
       {berth?.assignment && isRemoveTenantOpen && (
         <div className="fixed inset-0 z-[220] grid place-items-center bg-brand-navy/30 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-[32px] border border-white/60 bg-white p-6 shadow-deep">
-            <div className="mb-6 flex items-start justify-between gap-4">
+          <div className="w-full max-w-md rounded-[32px] border border-white/60 bg-white p-7 shadow-deep sm:p-8">
+            <div className="mb-8 flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-black uppercase tracking-tight text-brand-navy">
                   Remove Tenant?
                 </h2>
 
-                <p className="mt-1 text-xs font-bold uppercase tracking-widest text-brand-navy/40">
+                <p className="mt-1.5 text-xs font-bold uppercase tracking-widest text-brand-navy/40">
                   Berth {berth.label || berth.berth_id}
                 </p>
               </div>
@@ -520,28 +621,28 @@ export function BerthDetailPanel({
               . The berth will become free after the update is pushed.
             </p>
 
-            <div className="mt-4 rounded-2xl bg-slate-50 p-4">
+            <div className="mt-6 rounded-2xl bg-slate-50 p-5">
               <p className="text-[10px] font-black uppercase tracking-widest text-brand-navy/40">
                 Tenant
               </p>
 
-              <p className="mt-1 break-all text-xs font-bold text-brand-navy/70">
-                {berth.assignment.user_id}
+              <p className="mt-2 break-all text-xs font-bold text-brand-navy/70">
+                {tenantEmail ?? berth.assignment.user_id}
               </p>
             </div>
 
             {removeTenantError && (
-              <p className="mt-4 rounded-xl bg-red-50 p-3 text-xs font-bold text-red-600">
+              <p className="mt-6 rounded-xl bg-red-50 p-4 text-xs font-bold text-red-600">
                 {removeTenantError}
               </p>
             )}
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
               <button
                 type="button"
                 disabled={isRemovingTenant}
                 onClick={closeRemoveTenantDialog}
-                className="rounded-2xl border border-slate-200 px-6 py-4 text-xs font-black uppercase tracking-widest text-brand-navy/60 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-14 rounded-2xl border border-slate-200 px-6 text-xs font-black uppercase tracking-widest text-brand-navy/60 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -550,7 +651,7 @@ export function BerthDetailPanel({
                 type="button"
                 disabled={isRemovingTenant}
                 onClick={handleRemoveTenant}
-                className="rounded-2xl bg-red-500 px-6 py-4 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-14 rounded-2xl bg-red-500 px-6 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isRemovingTenant ? "Removing..." : "Remove"}
               </button>

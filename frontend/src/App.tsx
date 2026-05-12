@@ -19,8 +19,20 @@ const Settings = lazy(() =>
   import("./pages/Settings").then((m) => ({ default: m.Settings })),
 );
 
+const InvitesSettings = lazy(() =>
+  import("./pages/InvitesSettings").then((m) => ({
+    default: m.InvitesSettings,
+  })),
+);
+
 const ResetPassword = lazy(() =>
   import("./pages/ResetPassword").then((m) => ({ default: m.ResetPassword })),
+);
+
+const AcceptBerthPage = lazy(() =>
+  import("./pages/AcceptBerthPage").then((m) => ({
+    default: m.AcceptBerthPage,
+  })),
 );
 
 const NotFound = lazy(() =>
@@ -94,6 +106,19 @@ export function App() {
             }
           />
 
+          {/* public berth invite accept page, wrapped in MainLayout so the
+              shared AuthDialog opens with prefilled email */}
+          <Route element={<MainLayout />}>
+            <Route
+              path="/accept-berth"
+              element={
+                <Suspense fallback={<div className="h-full w-full" />}>
+                  <AcceptBerthPage />
+                </Suspense>
+              }
+            />
+          </Route>
+
           <Route path="/:marinaSlug" element={<MarinaGuard />}>
             <Route
               index
@@ -110,6 +135,17 @@ export function App() {
                 <RequireAuth>
                   <Suspense fallback={<div className="h-full w-full" />}>
                     <Settings />
+                  </Suspense>
+                </RequireAuth>
+              }
+            />
+
+            <Route
+              path="settings/invites"
+              element={
+                <RequireAuth>
+                  <Suspense fallback={<div className="h-full w-full" />}>
+                    <InvitesSettings />
                   </Suspense>
                 </RequireAuth>
               }

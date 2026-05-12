@@ -264,6 +264,13 @@ class UserOut(_BaseSchema):
     assigned_berth_id: str | None = Field(default=None, examples=["berth-001"])
 
 
+class UserSearchOut(_BaseSchema):
+    user_id: str = Field(examples=["user-001"])
+    firstname: str = Field(examples=["Alex"])
+    lastname: str = Field(examples=["Lindgren"])
+    email: EmailField
+
+
 class UserPatch(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 

@@ -110,6 +110,9 @@ class AssignBerthIn(BaseModel):
 class AssignmentInvitationOut(_BaseSchema):
     berth_id: str = Field(examples=["berth-001"])
     email: str = Field(examples=["john.doe@example.com"])
+    harbor_id: str = Field(examples=["harbor-001"])
+    status: str = Field(examples=["pending"])
+    expires_at: datetime = Field()
 
 
 class DockOut(_BaseSchema):

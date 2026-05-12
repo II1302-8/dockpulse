@@ -48,8 +48,6 @@ async def create_berth_invite(
     POST   /api/harbors/{harbor_id}/berth-invites — harbormaster only.
     Body {berth_id, email}. 409 if a pending invite already exists for the berth.
     """
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Not logged in")
     stmt = select(UserHarborRole).where(
         UserHarborRole.role == "harbor_master",
         UserHarborRole.harbor_id == harbor_id,
@@ -107,7 +105,7 @@ async def create_berth_invite(
     return AssignmentInvitationOut(berth_id=berth_id, email=email)
 
 
-@router.get("/berth-invites/by-token/{token}")
+@router.get("/berth-invites/by-token/{token}", response_model=AssignmentInvitationOut)
 async def berth_invite_token_info(token: str, session: SessionDep):
     """
     GET    /api/berth-invites/by-token/{token} — public.
@@ -122,14 +120,20 @@ async def berth_invite_token_info(token: str, session: SessionDep):
 
     if matching_token_row:
         return AssignmentInvitationOut(
-            berth_id=matching_token_row.berth_id, email=matching_token_row.email
+            berth_id=matching_token_row.berth_id,
+            email=matching_token_row.email,
+            harbor_id=matching_token_row.harbor_id,
+            status=matching_token_row.status,
+            expires_at=matching_token_row.expires_at,
         )
 
     raise HTTPException(status_code=404, detail="Token not found")
     #   410 ???
 
 
-@router.post("/berth-invites/by-token/{token}/accept")
+@router.post(
+    "/berth-invites/by-token/{token}/accept", response_model=AssignmentInvitationOut
+)
 async def accept_berth_invite(
     token: str, session: SessionDep, current_user: CurrentUserDep
 ):
@@ -169,7 +173,14 @@ async def accept_berth_invite(
         old_assignment = result.scalars().first()
         await session.delete(old_assignment)
 
-        new_assignment = Assignment(user_id=current_user.user_id, berth_id=berth_id)
+        new_assignment = Assignment(
+            user_id=current_user.user_id,
+            berth_id=berth_id,
+            harbor_id=matching_token_row.harbor_id,
+            email=matching_token_row.email,
+            status=matching_token_row.status,
+            expires_at=matching_token_row.expires_at,
+        )
         session.add(new_assignment)
 
         return {"Success": "invitation accepted"}
@@ -200,7 +211,7 @@ async def reject_berth_invite(
                 status_code=400,
                 detail="Token is not valid anymore",
             )
-        matching_token_row.status = "accepted"
+        matching_token_row.status = "rejected"
         matching_token_row.accepted_by = current_user.user_id
         matching_token_row.accepted_at = datetime.now(UTC)
 
@@ -210,7 +221,7 @@ async def reject_berth_invite(
     raise HTTPException()
 
 
-@router.delete("/harbors/{harbor_id}/berth-invites/{id}")
+@router.delete("/harbors/{harbor_id}/berth-invites/{id}", status_code=204)
 async def delete_berth_invite(
     harbor_id: str, id: str, current_user: CurrentUserDep, session: SessionDep
 ):
@@ -230,9 +241,13 @@ async def delete_berth_invite(
         UserHarborRole.role == "harbor_master",
     )
     result = await session.execute(stmt)
-    old_invite = result.scalars().first()
-    await session.delete(old_invite)
-    return {"Success": "Invitation deleted"}
+    correct_harbor_master = result.scalars().first()
+    if not correct_harbor_master:
+        raise HTTPException(
+            status_code=403, detail="Not authorized to delete invitation"
+        )
+    await session.delete(invitation)
+    await session.commit()
 
 
 @router.get("/harbors/{harbor_id}/berth-invites", response_model=list[BerthInvite])

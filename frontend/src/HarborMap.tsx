@@ -84,6 +84,12 @@ export function HarborMap() {
 
         return Boolean(target?.closest("[data-berth-id]"));
       },
+      // wheel events on overlay panels would otherwise zoom the map instead
+      // of scrolling the panel content
+      beforeWheel: (event) => {
+        const target = event.target as Node | null;
+        return !!target && !contentElement.contains(target);
+      },
       filterKey: () => true,
     });
 

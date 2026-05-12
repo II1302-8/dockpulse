@@ -29,6 +29,7 @@ from app.rate_limit import limiter
 from app.routers import (
     admin,
     adoptions,
+    alerts,
     auth,
     berths,
     docks,
@@ -189,6 +190,7 @@ if _cors_origins:
 
 app.include_router(admin.router)
 app.include_router(adoptions.router)
+app.include_router(alerts.router)
 app.include_router(auth.router)
 app.include_router(berths.router)
 app.include_router(docks.router)

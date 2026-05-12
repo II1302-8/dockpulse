@@ -188,9 +188,29 @@ class BerthAvailabilityWindowIn(BaseModel):
 class EventOut(_BaseSchema):
     event_id: str = Field(examples=["evt-0001"])
     berth_id: str = Field(examples=["berth-001"])
-    node_id: str = Field(examples=["node-012"])
+    # audit events (e.g. assignment_removed) have no originating node
+    node_id: str | None = Field(default=None, examples=["node-012"])
     event_type: EventType
-    sensor_raw: int = Field(examples=[1234])
+    sensor_raw: int | None = Field(default=None, examples=[1234])
+    timestamp: datetime = Field(examples=["2026-05-03T14:30:00Z"])
+    actor_user_id: str | None = Field(default=None, examples=["user-001"])
+    subject_user_id: str | None = Field(default=None, examples=["user-002"])
+
+
+class EventList(_BaseSchema):
+    items: list[EventOut]
+    total: int = Field(examples=[1234])
+
+
+AlertType = Literal["unauthorized_mooring", "sensor_offline", "low_battery"]
+
+
+class AlertOut(_BaseSchema):
+    alert_id: str = Field(examples=["alrt-0001"])
+    berth_id: str = Field(examples=["berth-001"])
+    type: AlertType
+    message: str = Field(examples=["Battery below 15%"])
+    acknowledged: bool = False
     timestamp: datetime = Field(examples=["2026-05-03T14:30:00Z"])
 
 

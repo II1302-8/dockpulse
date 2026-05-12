@@ -435,6 +435,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List alerts in harbors the user manages */
+        get: operations["listAlerts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/alerts/{alert_id}/acknowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark an alert as acknowledged */
+        post: operations["acknowledgeAlert"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/login": {
         parameters: {
             query?: never;
@@ -883,6 +917,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/harbors/{harbor_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List events for all berths in a harbor, paginated (harbormaster only) */
+        get: operations["listHarborEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/harbors/{harbor_id}/users": {
         parameters: {
             query?: never;
@@ -1227,6 +1278,40 @@ export interface components {
              * @constant
              */
             type: "adoption.update";
+        };
+        /** AlertOut */
+        AlertOut: {
+            /**
+             * Acknowledged
+             * @default false
+             */
+            acknowledged: boolean;
+            /**
+             * Alert Id
+             * @example alrt-0001
+             */
+            alert_id: string;
+            /**
+             * Berth Id
+             * @example berth-001
+             */
+            berth_id: string;
+            /**
+             * Message
+             * @example Battery below 15%
+             */
+            message: string;
+            /**
+             * Timestamp
+             * Format: date-time
+             * @example 2026-05-03T14:30:00Z
+             */
+            timestamp: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "unauthorized_mooring" | "sensor_offline" | "low_battery";
         };
         /** AssignBerthIn */
         AssignBerthIn: {
@@ -1611,8 +1696,23 @@ export interface components {
              */
             name: string;
         };
+        /** EventList */
+        EventList: {
+            /** Items */
+            items: components["schemas"]["EventOut"][];
+            /**
+             * Total
+             * @example 1234
+             */
+            total: number;
+        };
         /** EventOut */
         EventOut: {
+            /**
+             * Actor User Id
+             * @example user-001
+             */
+            actor_user_id?: string | null;
             /**
              * Berth Id
              * @example berth-001
@@ -1632,12 +1732,17 @@ export interface components {
              * Node Id
              * @example node-012
              */
-            node_id: string;
+            node_id?: string | null;
             /**
              * Sensor Raw
              * @example 1234
              */
-            sensor_raw: number;
+            sensor_raw?: number | null;
+            /**
+             * Subject User Id
+             * @example user-002
+             */
+            subject_user_id?: string | null;
             /**
              * Timestamp
              * Format: date-time
@@ -3497,6 +3602,70 @@ export interface operations {
             };
         };
     };
+    listAlerts: {
+        parameters: {
+            query?: {
+                /** @description filter by acknowledged flag; omit to return both states */
+                acknowledged?: boolean | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    acknowledgeAlert: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                alert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     login: {
         parameters: {
             query?: never;
@@ -4383,6 +4552,41 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listHarborEvents: {
+        parameters: {
+            query?: {
+                event_type?: string[] | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                harbor_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventList"];
+                };
             };
             /** @description Validation Error */
             422: {

@@ -257,7 +257,7 @@ async def get_pending_invites_for_harbor(
     """
     GET /api/harbors/{harbor_id}/berth-invites?status=pending
     """
-    stmt = select(BerthInvite).where(BerthInvite.status == "pending")
+    stmt = select(BerthInvite).where(BerthInvite.status == status, BerthInvite.harbor_id == harbor_id)
     result = await session.execute(stmt)
     invitations = result.scalars().all()
     if not invitations:

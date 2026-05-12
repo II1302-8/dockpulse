@@ -43,8 +43,14 @@ export function HarborMap() {
     [berths, selectedBerthId],
   );
 
-  const shouldShowMapLegend =
-    !selectedBerthId && !isOverviewOpen && !isActivityLogOpen;
+  const canShowDashboardPanels = !selectedBerthId;
+  const overviewIsVisible = isOverviewOpen && canShowDashboardPanels;
+  const activityLogIsVisible = isActivityLogOpen && canShowDashboardPanels;
+
+  const isAnyPanelOpen =
+    !!selectedBerthId || overviewIsVisible || activityLogIsVisible;
+
+  const shouldShowMapLegend = !isAnyPanelOpen;
 
   useEffect(() => {
     const contentElement = contentRef.current;
@@ -85,20 +91,25 @@ export function HarborMap() {
     const instance = panzoomRef.current;
     if (!instance) return;
 
-    if (selectedBerthId || isOverviewOpen || isActivityLogOpen) {
+    if (isAnyPanelOpen) {
       instance.pause();
     } else {
       instance.resume();
     }
-  }, [selectedBerthId, isOverviewOpen, isActivityLogOpen]);
+  }, [isAnyPanelOpen]);
 
   useEffect(() => {
     if (!isLoading) setShowInitialSpinner(false);
   }, [isLoading]);
 
-  const handleBerthClick = useCallback((berthId: string) => {
-    setSelectedBerthId(berthId);
-  }, []);
+  const handleBerthClick = useCallback(
+    (berthId: string) => {
+      setIsOverviewOpen(false);
+      setIsActivityLogOpen(false);
+      setSelectedBerthId(berthId);
+    },
+    [setIsOverviewOpen, setIsActivityLogOpen],
+  );
 
   const handleCloseBerthPanel = useCallback(() => {
     setSelectedBerthId(null);
@@ -108,6 +119,10 @@ export function HarborMap() {
     setIsOverviewOpen(false);
   }, [setIsOverviewOpen]);
 
+  const handleCloseActivityLog = useCallback(() => {
+    setIsActivityLogOpen(false);
+  }, [setIsActivityLogOpen]);
+
   return (
     <div className="relative h-full w-full overflow-hidden border-4 border-white/70 bg-sky-50/20 font-body shadow-inner">
       <section
@@ -116,8 +131,7 @@ export function HarborMap() {
         className={cn(
           "absolute inset-0 z-10 h-full w-full cursor-grab active:cursor-grabbing",
           "md:touch-none",
-          (selectedBerthId || isOverviewOpen || isActivityLogOpen) &&
-            "pointer-events-none",
+          isAnyPanelOpen && "pointer-events-none",
         )}
       >
         <SvgMap
@@ -158,14 +172,14 @@ export function HarborMap() {
         <HarborMasterOverview
           key="master-overview"
           berths={berths}
-          isOpen={isOverviewOpen}
+          isOpen={overviewIsVisible}
           onCloseCB={handleCloseOverview}
         />
       ) : (
         <HarborOverview
           key="public-overview"
           berths={berths}
-          isOpen={isOverviewOpen}
+          isOpen={overviewIsVisible}
           onCloseCB={handleCloseOverview}
         />
       )}
@@ -173,8 +187,8 @@ export function HarborMap() {
       <ActivityLogPanel
         key="activity-log"
         berths={berths}
-        isOpen={isActivityLogOpen}
-        onCloseCB={() => setIsActivityLogOpen(false)}
+        isOpen={activityLogIsVisible}
+        onCloseCB={handleCloseActivityLog}
       />
 
       {shouldShowMapLegend && <MapLegend />}

@@ -1,6 +1,6 @@
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { Loader2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { apiFetch } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
@@ -67,9 +67,18 @@ async function getErrorMessage(
 interface AuthDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  prefillEmail?: string;
+  lockEmail?: boolean;
+  defaultTab?: "login" | "signup";
 }
 
-export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
+export function AuthDialog({
+  open,
+  onOpenChange,
+  prefillEmail,
+  lockEmail = false,
+  defaultTab = "login",
+}: AuthDialogProps) {
   const { refresh } = useAuth();
 
   const [authTab, setAuthTab] = useState<AuthTab>("login");
@@ -98,6 +107,21 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
     passwordValid &&
     signupForm.confirmPassword.length > 0 &&
     !passwordMismatch;
+
+  useEffect(() => {
+    if (!open) return;
+
+    setAuthTab(defaultTab);
+    setError(null);
+
+    if (prefillEmail) {
+      setLoginEmail(prefillEmail);
+      setSignupForm((prev) => ({
+        ...prev,
+        email: prefillEmail,
+      }));
+    }
+  }, [open, prefillEmail, defaultTab]);
 
   function updateSignupField<K extends keyof SignupForm>(
     field: K,
@@ -194,6 +218,9 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
     }
   }
 
+  const lockedEmailClass =
+    lockEmail && "cursor-not-allowed bg-slate-100 text-brand-navy/60";
+
   return (
     <Dialog
       open={open}
@@ -284,12 +311,15 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                     autoComplete="email"
                     placeholder="name@marina.com"
                     required
+                    readOnly={lockEmail}
+                    aria-readonly={lockEmail}
                     value={loginEmail}
                     onChange={(e) => {
+                      if (lockEmail) return;
                       setLoginEmail(e.target.value);
                       setError(null);
                     }}
-                    className={fieldInputClass}
+                    className={cn(fieldInputClass, lockedEmailClass)}
                   />
                 </div>
 
@@ -363,9 +393,14 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                     autoComplete="email"
                     placeholder="name@marina.com"
                     required
+                    readOnly={lockEmail}
+                    aria-readonly={lockEmail}
                     value={signupForm.email}
-                    onChange={(e) => updateSignupField("email", e.target.value)}
-                    className={fieldInputClass}
+                    onChange={(e) => {
+                      if (lockEmail) return;
+                      updateSignupField("email", e.target.value);
+                    }}
+                    className={cn(fieldInputClass, lockedEmailClass)}
                   />
                 </div>
 

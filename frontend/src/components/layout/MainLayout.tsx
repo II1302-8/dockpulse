@@ -14,20 +14,31 @@ import { SideMenu } from "./SideMenu";
 
 export type { AuthUser } from "../../lib/auth-context";
 
+export type AuthDialogOptions = {
+  prefillEmail?: string;
+  lockEmail?: boolean;
+  defaultTab?: "login" | "signup";
+};
+
 export type AuthOutletContext = {
   user: AuthUser | null;
   isLoginOpen: boolean;
   setIsLoginOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  openAuthDialog: (options?: AuthDialogOptions) => void;
 };
 
 interface MainLayoutContentProps {
   isLoginOpen: boolean;
   setIsLoginOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  authDialogOptions: AuthDialogOptions;
+  openAuthDialog: (options?: AuthDialogOptions) => void;
 }
 
 function MainLayoutContent({
   isLoginOpen,
   setIsLoginOpen,
+  authDialogOptions,
+  openAuthDialog,
 }: MainLayoutContentProps) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -47,7 +58,9 @@ function MainLayoutContent({
 
   async function handleLogout() {
     if (isLoggingOut) return;
+
     setIsLoggingOut(true);
+
     try {
       await logout();
       setIsLoginOpen(false);
@@ -55,6 +68,10 @@ function MainLayoutContent({
     } finally {
       setIsLoggingOut(false);
     }
+  }
+
+  function handleAuthDialogOpenChange(nextOpen: boolean) {
+    setIsLoginOpen(nextOpen);
   }
 
   const userInitials =
@@ -68,7 +85,7 @@ function MainLayoutContent({
         isLoggedIn={Boolean(user)}
         isLoggingOut={isLoggingOut}
         userInitials={userInitials}
-        onLoginClickCB={() => setIsLoginOpen(true)}
+        onLoginClickCB={() => openAuthDialog()}
         onLogoutClickCB={handleLogout}
       />
 
@@ -95,14 +112,20 @@ function MainLayoutContent({
               user,
               isLoginOpen,
               setIsLoginOpen,
+              openAuthDialog,
             } satisfies AuthOutletContext
           }
         />
       </main>
 
-      <AuthDialog open={isLoginOpen} onOpenChange={setIsLoginOpen} />
+      <AuthDialog
+        open={isLoginOpen}
+        onOpenChange={handleAuthDialogOpenChange}
+        prefillEmail={authDialogOptions.prefillEmail}
+        lockEmail={authDialogOptions.lockEmail}
+        defaultTab={authDialogOptions.defaultTab}
+      />
 
-      {/* mobile harbormaster has bottom dock, footer would clash */}
       {!isDesktop && isHarborMaster ? null : <Footer />}
 
       <Toaster position="top-center" richColors />
@@ -112,13 +135,24 @@ function MainLayoutContent({
 
 function MainLayout() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [authDialogOptions, setAuthDialogOptions] = useState<AuthDialogOptions>(
+    {},
+  );
+
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  function openAuthDialog(options?: AuthDialogOptions) {
+    setAuthDialogOptions(options ?? {});
+    setIsLoginOpen(true);
+  }
 
   // route guard redirect lands here with ?login=1, open the dialog and consume the flag
   useEffect(() => {
     if (searchParams.get("login") === "1") {
+      setAuthDialogOptions({});
       setIsLoginOpen(true);
+
       const next = new URLSearchParams(searchParams);
       next.delete("login");
       setSearchParams(next, { replace: true });
@@ -130,6 +164,8 @@ function MainLayout() {
       <MainLayoutContent
         isLoginOpen={isLoginOpen}
         setIsLoginOpen={setIsLoginOpen}
+        authDialogOptions={authDialogOptions}
+        openAuthDialog={openAuthDialog}
       />
     </DashboardLayoutProvider>
   );

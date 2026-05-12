@@ -43,14 +43,14 @@ export function HarborMap() {
     [berths, selectedBerthId],
   );
 
-  const canShowDashboardPanels = !selectedBerthId;
-  const overviewIsVisible = isOverviewOpen && canShowDashboardPanels;
-  const activityLogIsVisible = isActivityLogOpen && canShowDashboardPanels;
+  const overviewIsVisible = isOverviewOpen;
+  const activityLogIsVisible = isActivityLogOpen;
 
-  const isAnyPanelOpen =
-    !!selectedBerthId || overviewIsVisible || activityLogIsVisible;
+  // berth detail sits in the gutter so the map stays interactive behind it.
+  // only overview/activity occupy enough surface to warrant blocking map drag
+  const isMapBlocked = overviewIsVisible || activityLogIsVisible;
 
-  const shouldShowMapLegend = !isAnyPanelOpen;
+  const shouldShowMapLegend = !isMapBlocked && !selectedBerthId;
 
   useEffect(() => {
     const contentElement = contentRef.current;
@@ -91,12 +91,12 @@ export function HarborMap() {
     const instance = panzoomRef.current;
     if (!instance) return;
 
-    if (isAnyPanelOpen) {
+    if (isMapBlocked) {
       instance.pause();
     } else {
       instance.resume();
     }
-  }, [isAnyPanelOpen]);
+  }, [isMapBlocked]);
 
   useEffect(() => {
     if (!isLoading) setShowInitialSpinner(false);
@@ -131,7 +131,7 @@ export function HarborMap() {
         className={cn(
           "absolute inset-0 z-10 h-full w-full cursor-grab active:cursor-grabbing",
           "md:touch-none",
-          isAnyPanelOpen && "pointer-events-none",
+          isMapBlocked && "pointer-events-none",
         )}
       >
         <SvgMap

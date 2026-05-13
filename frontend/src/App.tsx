@@ -45,6 +45,10 @@ const ActivityLogPage = lazy(() =>
   })),
 );
 
+const MyBookingsPage = lazy(() =>
+  import("./pages/MyBookingsPage").then((m) => ({ default: m.MyBookingsPage })),
+);
+
 const VerifyEmail = lazy(() =>
   import("./pages/VerifyEmail").then((m) => ({ default: m.VerifyEmail })),
 );
@@ -176,6 +180,17 @@ export function App() {
                 <RequireAuth>
                   <Suspense fallback={<div className="h-full w-full" />}>
                     <ActivityLogPage />
+                  </Suspense>
+                </RequireAuth>
+              }
+            />
+
+            <Route
+              path="bookings"
+              element={
+                <RequireAuth>
+                  <Suspense fallback={<div className="h-full w-full" />}>
+                    <MyBookingsPage />
                   </Suspense>
                 </RequireAuth>
               }

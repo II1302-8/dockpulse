@@ -41,6 +41,7 @@ interface UseMyBookingsResult {
   bookings: Booking[];
   isLoading: boolean;
   error: string | null;
+  refetch: () => void;
 }
 
 export function useMyBookings(
@@ -50,6 +51,7 @@ export function useMyBookings(
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
 
   useEffect(() => {
     const ac = new AbortController();
@@ -76,9 +78,13 @@ export function useMyBookings(
       });
 
     return () => ac.abort();
-  }, [status, options.from, options.to]);
+  }, [status, options.from, options.to, refetchTrigger]);
 
-  return { bookings, isLoading, error };
+  function refetch() {
+    setRefetchTrigger((prev) => prev + 1);
+  }
+
+  return { bookings, isLoading, error, refetch };
 }
 
 export async function createBooking(

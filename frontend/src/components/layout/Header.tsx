@@ -168,6 +168,17 @@ function Header({
                   Dashboard
                 </Link>
 
+                {isLoggedIn && !isHarbormaster && (
+                  <Link
+                    to={`${marinaPath}/bookings`}
+                    role="menuitem"
+                    onClick={closeMenus}
+                    className="block w-full rounded-xl px-3 py-3 text-left text-sm font-semibold text-brand-navy hover:bg-slate-100"
+                  >
+                    Bookings
+                  </Link>
+                )}
+
                 {isLoggedIn && (
                   <>
                     {isHarbormaster && (
@@ -236,10 +247,29 @@ function Header({
         <nav className="hidden items-center gap-2 md:flex">
           <Link
             to={marinaPath}
-            className="rounded-full bg-gradient-to-r from-brand-blue to-brand-cyan px-6 py-2 text-xs font-black text-white shadow-lg shadow-brand-blue/20 transition-transform hover:scale-105"
+            className={cn(
+              "rounded-full px-6 py-2 text-xs font-black transition-transform hover:scale-105 shadow-lg",
+              isOnMarinaHome 
+                ? "bg-gradient-to-r from-brand-blue to-brand-cyan text-white shadow-brand-blue/20"
+                : "bg-white border border-slate-200 text-brand-navy hover:bg-slate-50"
+            )}
           >
             Dashboard
           </Link>
+          
+          {isLoggedIn && !isHarbormaster && (
+            <Link
+              to={`${marinaPath}/bookings`}
+              className={cn(
+                "rounded-full px-6 py-2 text-xs font-black transition-transform hover:scale-105 shadow-lg",
+                location.pathname === `${marinaPath}/bookings`
+                  ? "bg-gradient-to-r from-brand-blue to-brand-cyan text-white shadow-brand-blue/20"
+                  : "bg-white border border-slate-200 text-brand-navy hover:bg-slate-50"
+              )}
+            >
+              Bookings
+            </Link>
+          )}
         </nav>
 
         <div

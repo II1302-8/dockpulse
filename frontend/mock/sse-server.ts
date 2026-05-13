@@ -582,7 +582,12 @@ async function handleBookings(req: Request, url: URL): Promise<Response | null> 
       return new Response(JSON.stringify({ detail: "Forbidden" }), { status: 403 });
     }
 
-    booking.status = "cancelled_by_visitor";
+    if (booking.status === "confirmed") {
+      booking.status = "cancelled_by_visitor";
+    } else {
+      mockBookings.delete(id);
+    }
+    
     return new Response(null, { status: 204 });
   }
 

@@ -282,6 +282,9 @@ class UserOut(_BaseSchema):
     boat_club: str | None = Field(default=None, examples=["Saltsjöbadens BK"])
     role: Role
     assigned_berth_id: str | None = Field(default=None, examples=["berth-001"])
+    # harbormasters: first managed harbor; lets the FE build correct urls
+    # without having to map marina-slug → harbor_id on the client
+    harbor_id: str | None = Field(default=None, examples=["ksss-saltsjobaden"])
 
 
 class UserSearchOut(_BaseSchema):

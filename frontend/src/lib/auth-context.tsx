@@ -17,6 +17,7 @@ export type AuthUser = {
   boat_club?: string;
   role?: string;
   assigned_berth_id?: string | null;
+  harbor_id?: string | null;
 };
 
 export type AuthState = {

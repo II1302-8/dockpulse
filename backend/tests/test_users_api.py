@@ -56,6 +56,26 @@ async def test_get_me_requires_auth(client: AsyncClient):
     assert r.status_code == 401
 
 
+async def test_get_me_exposes_harbor_id_for_harbormaster(
+    client: AsyncClient, harbor_master
+):
+    token = make_token(harbor_master.user_id)
+    r = await client.get("/api/users/me", cookies=_creds(token))
+    assert r.status_code == 200
+    data = r.json()
+    assert data["role"] == "harbormaster"
+    assert data["harbor_id"] == "h1"
+
+
+async def test_get_me_harbor_id_null_for_boat_owner(client: AsyncClient, boat_owner):
+    token = make_token(boat_owner.user_id)
+    r = await client.get("/api/users/me", cookies=_creds(token))
+    assert r.status_code == 200
+    data = r.json()
+    assert data["role"] == "boat_owner"
+    assert data["harbor_id"] is None
+
+
 async def test_patch_me_updates_fields(client: AsyncClient, test_user: User):
     token = make_token(test_user.user_id)
     r = await client.patch(

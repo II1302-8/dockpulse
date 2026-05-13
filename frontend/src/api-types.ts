@@ -2453,6 +2453,11 @@ export interface components {
              */
             firstname: string;
             /**
+             * Harbor Id
+             * @example ksss-saltsjobaden
+             */
+            harbor_id?: string | null;
+            /**
              * Lastname
              * @example Lindgren
              */

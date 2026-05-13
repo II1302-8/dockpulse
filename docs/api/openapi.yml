@@ -1952,6 +1952,14 @@ components:
           - Alex
           title: Firstname
           type: string
+        harbor_id:
+          anyOf:
+          - examples: &id026
+            - ksss-saltsjobaden
+            type: string
+          - type: 'null'
+          examples: *id026
+          title: Harbor Id
         lastname:
           examples:
           - Lindgren
@@ -1959,11 +1967,11 @@ components:
           type: string
         phone:
           anyOf:
-          - examples: &id026
+          - examples: &id027
             - +46 70 123 45 67
             type: string
           - type: 'null'
-          examples: *id026
+          examples: *id027
           title: Phone
         role:
           enum:
@@ -2150,12 +2158,12 @@ components:
       properties:
         boat_club:
           anyOf:
-          - examples: &id027
+          - examples: &id028
             - Saltsjöbadens BK
             maxLength: 100
             type: string
           - type: 'null'
-          examples: *id027
+          examples: *id028
           title: Boat Club
         email:
           examples:
@@ -2190,13 +2198,13 @@ components:
           writeOnly: true
         phone:
           anyOf:
-          - examples: &id028
+          - examples: &id029
             - +46 70 123 45 67
             maxLength: 20
             pattern: ^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$
             type: string
           - type: 'null'
-          examples: *id028
+          examples: *id029
           title: Phone
       required:
       - firstname
@@ -2209,12 +2217,12 @@ components:
       properties:
         boat_club:
           anyOf:
-          - examples: &id029
+          - examples: &id030
             - Saltsjöbadens BK
             maxLength: 100
             type: string
           - type: 'null'
-          examples: *id029
+          examples: *id030
           title: Boat Club
         current_password:
           anyOf:
@@ -2225,25 +2233,14 @@ components:
           title: Current Password
         email:
           anyOf:
-          - examples: &id030
+          - examples: &id031
             - alex@example.com
             format: email
             type: string
           - type: 'null'
-          examples: *id030
+          examples: *id031
           title: Email
         firstname:
-          anyOf:
-          - examples: &id031
-            - Alex
-            maxLength: 100
-            minLength: 1
-            pattern: ^[\p{L}\p{M}'’ .\-]+$
-            type: string
-          - type: 'null'
-          examples: *id031
-          title: Firstname
-        lastname:
           anyOf:
           - examples: &id032
             - Alex
@@ -2253,10 +2250,21 @@ components:
             type: string
           - type: 'null'
           examples: *id032
+          title: Firstname
+        lastname:
+          anyOf:
+          - examples: &id033
+            - Alex
+            maxLength: 100
+            minLength: 1
+            pattern: ^[\p{L}\p{M}'’ .\-]+$
+            type: string
+          - type: 'null'
+          examples: *id033
           title: Lastname
         password:
           anyOf:
-          - examples: &id033
+          - examples: &id034
             - correct horse battery staple
             format: password
             maxLength: 128
@@ -2264,17 +2272,17 @@ components:
             type: string
             writeOnly: true
           - type: 'null'
-          examples: *id033
+          examples: *id034
           title: Password
         phone:
           anyOf:
-          - examples: &id034
+          - examples: &id035
             - +46 70 123 45 67
             maxLength: 20
             pattern: ^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$
             type: string
           - type: 'null'
-          examples: *id034
+          examples: *id035
           title: Phone
       title: UserPatch
       type: object

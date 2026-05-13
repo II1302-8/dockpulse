@@ -472,7 +472,8 @@ class UserVerification(Base):
     user_id: Mapped[str] = mapped_column(
         ForeignKey("users.user_id", ondelete="CASCADE"), nullable=False, index=True
     )
-    token: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    # sha256 digest; plaintext token only ever lives in the verification email
+    token_hash: Mapped[bytes] = mapped_column(LargeBinary, nullable=False, unique=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

@@ -45,6 +45,7 @@ class UserAdminOut(BaseModel):
     firstname: str
     lastname: str
     role: str = Field(examples=["harbormaster"])
+    email_verified: bool = False
     phone: str | None = None
     boat_club: str | None = None
 
@@ -99,6 +100,7 @@ async def list_users(session: SessionDep) -> list[dict]:
             "firstname": u.firstname,
             "lastname": u.lastname,
             "role": "harbormaster" if u.user_id in harbormaster_ids else "boat_owner",
+            "email_verified": u.email_verified,
             "phone": u.phone,
             "boat_club": u.boat_club,
         }
@@ -253,3 +255,30 @@ async def revoke_harbor(user_id: str, harbor_id: str, session: SessionDep) -> No
         raise HTTPException(status_code=404, detail="Grant not found")
     await session.delete(row)
     await session.commit()
+
+
+class VerifyEmailOut(BaseModel):
+    user_id: str
+    email: str
+    email_verified: bool
+
+
+@router.post(
+    "/users/{user_id}/verify-email",
+    response_model=VerifyEmailOut,
+    operation_id="adminVerifyEmail",
+)
+async def verify_email(user_id: str, session: SessionDep) -> dict:
+    # admin escape hatch: flips email_verified=true so a stuck user can log in
+    # without us being able to re-send / re-receive the verification email
+    u = await session.get(User, user_id)
+    if u is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    if not u.email_verified:
+        u.email_verified = True
+        await session.commit()
+    return {
+        "user_id": u.user_id,
+        "email": u.email,
+        "email_verified": u.email_verified,
+    }

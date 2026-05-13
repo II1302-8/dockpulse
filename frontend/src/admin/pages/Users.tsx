@@ -18,6 +18,7 @@ interface User {
   firstname: string;
   lastname: string;
   role: string;
+  email_verified: boolean;
   phone: string | null;
   boat_club: string | null;
 }
@@ -211,6 +212,18 @@ export function UsersPage() {
     }
   }
 
+  async function verifyEmail(userId: string) {
+    setBusyId(userId);
+    try {
+      await adminPost(`/users/${encodeURIComponent(userId)}/verify-email`);
+      await refresh();
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function revoke(userId: string, harborId: string) {
     if (!window.confirm(`Revoke harbormaster on ${harborId}?`)) return;
     setBusyId(`revoke:${userId}:${harborId}`);
@@ -329,7 +342,15 @@ export function UsersPage() {
       ) : (
         <div className="space-y-4">
           <Table
-            head={["Email", "Name", "Role", "Phone", "Boat club", ""]}
+            head={[
+              "Email",
+              "Name",
+              "Role",
+              "Verified",
+              "Phone",
+              "Boat club",
+              "",
+            ]}
             rows={visible.map((u) => {
               const isEditing = editingId === u.user_id;
               const isExpanded = expandedId === u.user_id;
@@ -361,6 +382,21 @@ export function UsersPage() {
                     `${u.firstname} ${u.lastname}`
                   ),
                   u.role,
+                  u.email_verified ? (
+                    <span key="verified" className="text-emerald-600">
+                      verified
+                    </span>
+                  ) : (
+                    <Button
+                      key="verify"
+                      variant="primary"
+                      disabled={busyId === u.user_id}
+                      onClick={() => verifyEmail(u.user_id)}
+                      tooltip="Flip email_verified to true (admin escape hatch)"
+                    >
+                      Mark verified
+                    </Button>
+                  ),
                   isEditing ? (
                     <Input
                       key="phone"

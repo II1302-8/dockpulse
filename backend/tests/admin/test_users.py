@@ -1,6 +1,26 @@
 """user crud + harbor grant/revoke"""
 
+import pytest_asyncio
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models import User
+from tests._helpers import hash_password
+
+
+@pytest_asyncio.fixture
+async def unverified_user(session: AsyncSession) -> User:
+    user = User(
+        user_id="o2",
+        firstname="Una",
+        lastname="Unverified",
+        email="una@example.com",
+        password_hash=hash_password("secret"),
+        email_verified=False,
+    )
+    session.add(user)
+    await session.commit()
+    return user
 
 
 async def test_create_user_starts_as_boat_owner(client: AsyncClient, auth_headers):
@@ -76,3 +96,45 @@ async def test_revoke_harbor(
         headers=auth_headers,
     )
     assert r.status_code == 204
+
+
+async def test_verify_email_flips_flag(
+    client: AsyncClient, auth_headers, unverified_user, session
+):
+    assert unverified_user.email_verified is False
+    r = await client.post(
+        f"/api/admin/users/{unverified_user.user_id}/verify-email",
+        headers=auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["email_verified"] is True
+    await session.refresh(unverified_user)
+    assert unverified_user.email_verified is True
+
+
+async def test_verify_email_idempotent(client: AsyncClient, auth_headers, boat_owner):
+    # boat_owner fixture seeds email_verified=True
+    r = await client.post(
+        f"/api/admin/users/{boat_owner.user_id}/verify-email",
+        headers=auth_headers,
+    )
+    assert r.status_code == 200
+    assert r.json()["email_verified"] is True
+
+
+async def test_verify_email_unknown_user_returns_404(client: AsyncClient, auth_headers):
+    r = await client.post(
+        "/api/admin/users/does-not-exist/verify-email",
+        headers=auth_headers,
+    )
+    assert r.status_code == 404
+
+
+async def test_list_users_exposes_email_verified(
+    client: AsyncClient, auth_headers, unverified_user, boat_owner
+):
+    r = await client.get("/api/admin/users", headers=auth_headers)
+    assert r.status_code == 200
+    rows = {u["user_id"]: u for u in r.json()}
+    assert rows[unverified_user.user_id]["email_verified"] is False
+    assert rows[boat_owner.user_id]["email_verified"] is True

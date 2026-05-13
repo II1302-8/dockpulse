@@ -1875,6 +1875,10 @@ components:
         email:
           title: Email
           type: string
+        email_verified:
+          default: false
+          title: Email Verified
+          type: boolean
         firstname:
           title: Firstname
           type: string
@@ -2052,6 +2056,23 @@ components:
       - msg
       - type
       title: ValidationError
+      type: object
+    VerifyEmailOut:
+      properties:
+        email:
+          title: Email
+          type: string
+        email_verified:
+          title: Email Verified
+          type: boolean
+        user_id:
+          title: User Id
+          type: string
+      required:
+      - user_id
+      - email
+      - email_verified
+      title: VerifyEmailOut
       type: object
     app__routers__admin__users__UserCreate:
       properties:
@@ -3597,6 +3618,40 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       summary: Revoke Harbor
+      tags:
+      - admin
+  /api/admin/users/{user_id}/verify-email:
+    post:
+      operationId: adminVerifyEmail
+      parameters:
+      - in: path
+        name: user_id
+        required: true
+        schema:
+          title: User Id
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyEmailOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Verify Email
       tags:
       - admin
   /api/adoptions:

@@ -187,15 +187,20 @@ export function HarborMap() {
         </div>
       )}
 
-      {!isHarborMaster && !isOverviewOpen && (
+      {!isHarborMaster && !isOverviewOpen && !selectedBerthId && (
         <button
           type="button"
           onClick={toggleOverview}
           data-map-control
-          className="pointer-events-auto fixed left-8 top-48 z-[var(--z-map-content)] flex h-12 w-12 items-center justify-center rounded-full border border-white/40 bg-white/40 text-brand-blue shadow-deep backdrop-blur-xl transition-all hover:scale-110 hover:bg-white/60 active:scale-95 lg:left-[var(--sidebar-total-offset,32px)]"
+          className="pointer-events-auto fixed left-6 top-28 z-[var(--z-map-content)] flex items-center gap-2 rounded-full border border-white/60 bg-white/70 px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.18em] text-brand-navy shadow-deep backdrop-blur-2xl transition-all hover:bg-white/90 active:scale-95 lg:top-32"
           aria-label="Open harbor overview"
         >
-          <LayoutDashboard size={20} strokeWidth={2.5} />
+          <LayoutDashboard
+            size={14}
+            strokeWidth={2.5}
+            className="text-brand-blue"
+          />
+          Harbor Overview
         </button>
       )}
 

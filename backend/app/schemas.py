@@ -32,6 +32,9 @@ AdoptionStatus = Literal["pending", "ok", "err"]
 EventType = Literal[
     "occupied", "freed", "alert_unauthorized", "heartbeat", "assignment_removed"
 ]
+BookingStatus = Literal[
+    "confirmed", "cancelled_by_visitor", "cancelled_by_host", "completed"
+]
 
 
 # --- shared input field annotations ---
@@ -185,6 +188,92 @@ class BerthAvailabilityWindowOut(_BaseSchema):
 class BerthAvailabilityWindowIn(BaseModel):
     from_date: datetime = Field(examples=["2026-06-01T00:00:00Z"])
     return_date: datetime = Field(examples=["2026-06-08T00:00:00Z"])
+
+
+# --- bookings ---
+
+
+class BookingCreate(BaseModel):
+    from_date: datetime = Field(examples=["2026-06-03T00:00:00Z"])
+    to_date: datetime = Field(examples=["2026-06-06T00:00:00Z"])
+    boat_length_m: float | None = Field(default=None, ge=0, examples=[8.5])
+    boat_width_m: float | None = Field(default=None, ge=0, examples=[3.2])
+    notes: str | None = Field(default=None, max_length=500, examples=["arriving late"])
+
+
+class BookingCancelIn(BaseModel):
+    # host-side cancellations carry a reason; visitors omit it
+    reason: str | None = Field(default=None, max_length=500)
+
+
+class BookingOut(_BaseSchema):
+    booking_id: str = Field(examples=["bk-0001"])
+    berth_id: str = Field(examples=["berth-001"])
+    user_id: str = Field(examples=["user-001"])
+    from_date: datetime = Field(examples=["2026-06-03T00:00:00Z"])
+    to_date: datetime = Field(examples=["2026-06-06T00:00:00Z"])
+    status: BookingStatus
+    boat_length_m: float | None = Field(default=None, examples=[8.5])
+    boat_width_m: float | None = Field(default=None, examples=[3.2])
+    notes: str | None = Field(default=None, examples=["arriving late"])
+    cancelled_by: str | None = Field(default=None, examples=["user-002"])
+    cancelled_at: datetime | None = Field(
+        default=None, examples=["2026-06-02T08:00:00Z"]
+    )
+    cancel_reason: str | None = Field(default=None, examples=["storm"])
+    created_at: datetime = Field(examples=["2026-05-13T14:30:00Z"])
+
+
+class BookingList(_BaseSchema):
+    items: list[BookingOut]
+    total: int = Field(examples=[42])
+
+
+class BookableBerthOut(_BaseSchema):
+    berth_id: str = Field(examples=["berth-001"])
+    dock_id: str = Field(examples=["dock-a"])
+    harbor_id: str = Field(examples=["harbor-saltsjobaden"])
+    label: str | None = Field(default=None, examples=["A1"])
+    length_m: float | None = Field(default=None, examples=[8.5])
+    width_m: float | None = Field(default=None, examples=[3.2])
+    depth_m: float | None = Field(default=None, examples=[2.0])
+    # availability window covering the queried range; the booking attaches here
+    window_id: str = Field(examples=["win-0001"])
+    window_from: datetime = Field(examples=["2026-06-01T00:00:00Z"])
+    window_to: datetime = Field(examples=["2026-06-08T00:00:00Z"])
+
+
+class BookedRange(_BaseSchema):
+    booking_id: str = Field(examples=["bk-0001"])
+    from_date: datetime = Field(examples=["2026-06-03T00:00:00Z"])
+    to_date: datetime = Field(examples=["2026-06-06T00:00:00Z"])
+
+
+class BookableWindowOut(_BaseSchema):
+    window_id: str = Field(examples=["win-0001"])
+    berth_id: str = Field(examples=["berth-001"])
+    from_date: datetime = Field(examples=["2026-06-01T00:00:00Z"])
+    return_date: datetime = Field(examples=["2026-06-08T00:00:00Z"])
+    booked: list[BookedRange] = []
+
+
+class BookingConflict(_BaseSchema):
+    # discriminates 'no covering window' vs 'overlaps existing booking'
+    kind: Literal["no_window", "overlap", "dates_invalid"]
+    booking_id: str | None = Field(default=None, examples=["bk-0007"])
+    from_date: datetime | None = Field(default=None)
+    to_date: datetime | None = Field(default=None)
+
+
+class BookingPreflightIn(BaseModel):
+    from_date: datetime = Field(examples=["2026-06-03T00:00:00Z"])
+    to_date: datetime = Field(examples=["2026-06-06T00:00:00Z"])
+
+
+class BookingPreflightOut(_BaseSchema):
+    ok: bool
+    window_id: str | None = Field(default=None, examples=["win-0001"])
+    conflicts: list[BookingConflict] = []
 
 
 # --- nodes / events / adoption ---

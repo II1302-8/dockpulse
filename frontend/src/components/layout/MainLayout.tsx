@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useSearchParams } from "react-router-dom";
 import { Toaster } from "sonner";
 import { type AuthUser, useAuth } from "../../lib/auth-context";
 import { cn } from "../../lib/utils";
+import { VerifyEmailBanner } from "../VerifyEmailBanner";
 import { AuthDialog } from "./AuthDialog";
 import {
   DashboardLayoutProvider,
@@ -131,6 +132,8 @@ function MainLayoutContent({
       />
 
       {!isDesktop && isHarborMaster ? null : <Footer />}
+
+      <VerifyEmailBanner />
 
       <Toaster position="top-center" richColors />
     </div>

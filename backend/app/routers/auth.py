@@ -246,11 +246,9 @@ async def login(
     if user is None:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    if get_settings().app_env == "prod" and not user.email_verified:
-        raise HTTPException(
-            status_code=403, detail="Email not verified. Check your inbox."
-        )
-
+    # unverified users can still log in; the FE shows a banner driven by
+    # UserOut.email_verified so they can request a resend without being locked
+    # out of the dashboard. resend-verification still works while logged in
     await _issue_session(user, response, session)
     await session.commit()
     return await to_user_out(session, user)

@@ -16,6 +16,7 @@ export type AuthUser = {
   phone?: string;
   boat_club?: string;
   role?: string;
+  email_verified?: boolean;
   assigned_berth_id?: string | null;
   harbor_id?: string | null;
 };

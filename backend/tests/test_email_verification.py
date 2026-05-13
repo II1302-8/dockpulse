@@ -381,9 +381,11 @@ async def test_resend_returns_200_for_already_verified(
 # ── login gate ────────────────────────────────────────────────────────────────
 
 
-async def test_login_blocked_for_unverified_user(
+async def test_login_succeeds_for_unverified_user_with_banner_flag(
     client: AsyncClient, session: AsyncSession
 ):
+    # unverified users can log in; the response surfaces email_verified=false
+    # so the FE shows the resend-verification banner instead of a hard 403
     from tests._helpers import hash_password
 
     user = User(
@@ -400,8 +402,8 @@ async def test_login_blocked_for_unverified_user(
         "/api/auth/login",
         json={"email": "unverified@example.com", "password": "password1234"},
     )
-    assert r.status_code == 403
-    assert "verified" in r.json()["detail"].lower()
+    assert r.status_code == 200
+    assert r.json()["email_verified"] is False
 
 
 async def test_login_succeeds_for_verified_user(

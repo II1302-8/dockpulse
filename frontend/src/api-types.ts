@@ -2448,6 +2448,11 @@ export interface components {
              */
             email: string;
             /**
+             * Email Verified
+             * @default false
+             */
+            email_verified: boolean;
+            /**
              * Firstname
              * @example Alex
              */

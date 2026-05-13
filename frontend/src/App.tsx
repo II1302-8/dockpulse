@@ -45,6 +45,10 @@ const ActivityLogPage = lazy(() =>
   })),
 );
 
+const VerifyEmail = lazy(() =>
+  import("./pages/VerifyEmail").then((m) => ({ default: m.VerifyEmail })),
+);
+
 // validates :marinaSlug against the registry so unknown slugs 404
 // instead of rendering a generic dashboard for "marina admin" etc
 function MarinaGuard() {
@@ -108,6 +112,15 @@ export function App() {
             element={
               <Suspense fallback={<div className="h-full w-full" />}>
                 <ResetPassword />
+              </Suspense>
+            }
+          />
+
+          <Route
+            path="/verify-email"
+            element={
+              <Suspense fallback={<div className="h-full w-full" />}>
+                <VerifyEmail />
               </Suspense>
             }
           />

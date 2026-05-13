@@ -56,6 +56,7 @@ async def to_user_out(
             "phone": user.phone,
             "boat_club": user.boat_club,
             "role": role,
+            "email_verified": user.email_verified,
             "assigned_berth_id": berth_id,
             "harbor_id": harbor_id,
         }

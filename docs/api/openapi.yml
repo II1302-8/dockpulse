@@ -1947,6 +1947,10 @@ components:
           format: email
           title: Email
           type: string
+        email_verified:
+          default: false
+          title: Email Verified
+          type: boolean
         firstname:
           examples:
           - Alex

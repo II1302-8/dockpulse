@@ -281,6 +281,7 @@ class UserOut(_BaseSchema):
     phone: str | None = Field(default=None, examples=["+46 70 123 45 67"])
     boat_club: str | None = Field(default=None, examples=["Saltsjöbadens BK"])
     role: Role
+    email_verified: bool = False
     assigned_berth_id: str | None = Field(default=None, examples=["berth-001"])
     # harbormasters: first managed harbor; lets the FE build correct urls
     # without having to map marina-slug → harbor_id on the client

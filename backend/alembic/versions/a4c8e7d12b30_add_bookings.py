@@ -13,6 +13,7 @@ the same berth overlap.
 from collections.abc import Sequence
 
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 from alembic import op
 
@@ -25,7 +26,7 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     op.execute("CREATE EXTENSION IF NOT EXISTS btree_gist")
 
-    booking_status = sa.Enum(
+    booking_status = postgresql.ENUM(
         "confirmed",
         "cancelled_by_visitor",
         "cancelled_by_host",
@@ -33,6 +34,10 @@ def upgrade() -> None:
         name="booking_status",
     )
     booking_status.create(op.get_bind(), checkfirst=True)
+    # reference the existing type from the column so create_table doesn't retry
+    booking_status_ref = postgresql.ENUM(
+        name="booking_status", create_type=False
+    )
 
     op.create_table(
         "bookings",
@@ -53,7 +58,7 @@ def upgrade() -> None:
         sa.Column("to_date", sa.DateTime(timezone=True), nullable=False),
         sa.Column(
             "status",
-            booking_status,
+            booking_status_ref,
             nullable=False,
             server_default=sa.text("'confirmed'"),
         ),
@@ -99,4 +104,4 @@ def downgrade() -> None:
     op.drop_index("ix_bookings_user_id_status", "bookings")
     op.drop_index("ix_bookings_berth_id_status", "bookings")
     op.drop_table("bookings")
-    sa.Enum(name="booking_status").drop(op.get_bind(), checkfirst=True)
+    postgresql.ENUM(name="booking_status").drop(op.get_bind(), checkfirst=True)

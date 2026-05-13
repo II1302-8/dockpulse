@@ -138,6 +138,12 @@ async def test_accept_creates_assignment_and_marks_accepted(
         await session.execute(select(Assignment).where(Assignment.berth_id == "b1"))
     ).scalar_one()
     assert assignment.user_id == boat_owner.user_id
+    # owned berth is reserved-for-owner by default; the owner then opens it
+    # to visitors via BerthAvailabilityWindow from the settings page
+    from app.models import Berth as BerthModel
+
+    berth = await session.get(BerthModel, "b1")
+    assert berth.is_reserved is True
 
 
 async def test_accept_replaces_existing_assignment(
@@ -331,10 +337,13 @@ async def test_accept_releases_users_prior_berth(
     captured_emails,
     session,
 ):
-    # pre-seed a second berth that the boat owner currently holds
+    # pre-seed a second berth that the boat owner currently holds (reserved
+    # by default the same way invite-accept marks newly-claimed berths)
     from app.models import Berth
 
-    session.add(Berth(berth_id="b-prior", dock_id="d1", status="free"))
+    session.add(
+        Berth(berth_id="b-prior", dock_id="d1", status="free", is_reserved=True)
+    )
     session.add(Assignment(berth_id="b-prior", user_id=boat_owner.user_id))
     await session.commit()
 
@@ -355,6 +364,11 @@ async def test_accept_releases_users_prior_berth(
         .all()
     )
     assert [a.berth_id for a in assignments] == ["b1"]
+    # released berth flips back to !is_reserved so it appears free again
+    prior = await session.get(Berth, "b-prior")
+    assert prior.is_reserved is False
+    claimed = await session.get(Berth, "b1")
+    assert claimed.is_reserved is True
 
 
 async def test_get_by_token_returns_berth_label_and_harbor_name(

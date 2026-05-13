@@ -231,15 +231,40 @@ async def accept_berth_invite(
     if claimed is None:
         raise HTTPException(status_code=410, detail="Invite is no longer valid")
 
-    # release any prior assignment this user held (one boat-owner = one berth)
-    await session.execute(
-        Assignment.__table__.delete().where(Assignment.user_id == current_user.user_id)
+    # release any prior assignment this user held (one boat-owner = one berth).
+    # flip the prior berth back to !is_reserved so it appears available again
+    prior_berth_ids = list(
+        (
+            await session.execute(
+                select(Assignment.berth_id).where(
+                    Assignment.user_id == current_user.user_id
+                )
+            )
+        ).scalars()
     )
+    if prior_berth_ids:
+        await session.execute(
+            Assignment.__table__.delete().where(
+                Assignment.user_id == current_user.user_id
+            )
+        )
+        await session.execute(
+            Berth.__table__.update()
+            .where(Berth.berth_id.in_(prior_berth_ids))
+            .values(is_reserved=False)
+        )
     # clear whoever previously held the target berth
     await session.execute(
         Assignment.__table__.delete().where(Assignment.berth_id == claimed.berth_id)
     )
     session.add(Assignment(berth_id=claimed.berth_id, user_id=current_user.user_id))
+    # owned berths are reserved-for-owner by default; the owner punches holes
+    # via BerthAvailabilityWindow in the settings page when they're away
+    await session.execute(
+        Berth.__table__.update()
+        .where(Berth.berth_id == claimed.berth_id)
+        .values(is_reserved=True)
+    )
     await session.commit()
     await session.refresh(claimed)
     return _to_out(claimed)

@@ -1,6 +1,7 @@
 import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
+from hashlib import sha256
 from typing import Annotated
 
 import jwt
@@ -24,7 +25,13 @@ from app.dependencies import CurrentUserDep, SessionDep
 from app.models import RefreshToken, User, UserVerification
 from app.notifications import send_account_exists_email, send_verification_email
 from app.rate_limit import limiter
-from app.schemas import LoginIn, ResendVerificationIn, UserCreate, UserOut
+from app.schemas import (
+    LoginIn,
+    ResendVerificationIn,
+    UserCreate,
+    UserOut,
+    VerifyEmailIn,
+)
 from app.serializers import to_user_out
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -64,12 +71,18 @@ async def _invalidate_verification_tokens(user_id: str, session: SessionDep) -> 
     )
 
 
+def _hash_verification_token(token: str) -> bytes:
+    return sha256(token.encode("utf-8")).digest()
+
+
 def _create_verification_token(user_id: str, session: SessionDep, settings) -> str:
+    # plaintext returned to caller (email body); DB only sees the hash so a leak
+    # can't replay live links. matches the berth_invites approach
     token = secrets.token_urlsafe(32)
     session.add(
         UserVerification(
             user_id=user_id,
-            token=token,
+            token_hash=_hash_verification_token(token),
             expires_at=datetime.now(UTC)
             + timedelta(hours=settings.verification_token_ttl_hours),
         )
@@ -153,7 +166,7 @@ async def register(
     return {"message": "Check your email to verify your account"}
 
 
-@router.get(
+@router.post(
     "/verify-email",
     status_code=200,
     operation_id="verifyEmail",
@@ -163,19 +176,30 @@ async def register(
 @limiter.limit("10/hour")
 async def verify_email(
     request: Request,
-    token: str,
+    body: VerifyEmailIn,
     session: SessionDep,
 ):
+    # POST + body so email-client URL prefetch can't burn the token, and so
+    # accidental double-submit from React StrictMode is harmless: a used
+    # token whose user is already email_verified=true is treated as success
+    token_hash = _hash_verification_token(body.token)
     result = await session.execute(
-        select(UserVerification).where(UserVerification.token == token)
+        select(UserVerification).where(UserVerification.token_hash == token_hash)
     )
     record = result.scalar_one_or_none()
 
-    if record is None or record.used or record.expires_at <= datetime.now(UTC):
+    if record is None or record.expires_at <= datetime.now(UTC):
         raise HTTPException(status_code=400, detail="Invalid or expired token")
 
     user = await session.get(User, record.user_id)
     if user is None:
+        raise HTTPException(status_code=400, detail="Invalid or expired token")
+
+    # idempotent: a token that was already consumed for an already-verified
+    # user returns success so retries / prefetchers don't surface false errors
+    if record.used:
+        if user.email_verified:
+            return {"message": "Email verified. You can now log in."}
         raise HTTPException(status_code=400, detail="Invalid or expired token")
 
     record.used = True

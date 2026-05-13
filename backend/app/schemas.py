@@ -51,8 +51,9 @@ _PHONE = Field(
     pattern=r"^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$",
     examples=["+46 70 123 45 67"],
 )
-# prod floor per nist 800-63b rev 4, dev/staging relaxed for local testing
-_PASSWORD_MIN = 12 if _APP_ENV == "prod" else 4
+# non-dev floors per nist 800-63b rev 4; dev relaxed for local testing.
+# matches FE which keys on Vite MODE=production (staging is also a prod build)
+_PASSWORD_MIN = 4 if _APP_ENV == "dev" else 12
 _PASSWORD = Field(
     min_length=_PASSWORD_MIN,
     max_length=128,
@@ -336,6 +337,10 @@ class ResendVerificationIn(BaseModel):
     email: EmailField
 
 
+class VerifyEmailIn(BaseModel):
+    token: str = Field(min_length=1, max_length=512)
+
+
 # --- system ---
 
 
@@ -412,3 +417,8 @@ class PasswordResetConfirm(_BaseSchema):
 class PasswordResetOut(_BaseSchema):
     message: str
     invite_token: str | None = Field(default=None, max_length=512)
+
+
+class AccountDeleteIn(BaseModel):
+    # re-auth so a stolen cookie or shared browser can't wipe the account
+    current_password: SecretStr

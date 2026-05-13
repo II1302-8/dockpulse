@@ -53,6 +53,9 @@ class Settings(BaseSettings):
     # proxy deploys need uvicorn --forwarded-allow-ips so client.host is real ip
     rate_limit_login: str = "10/minute"
     rate_limit_register: str = "5/hour"
+    # logged-in pw change still wants a ceiling so a stolen cookie can't drive
+    # offline-test rounds via the authed endpoint
+    rate_limit_password_change: str = "10/hour"
     # adoption is auth-protected but a compromised harbormaster cookie can
     # still flood random QR pastes (JWT verify + pending row + mqtt publish)
     rate_limit_adopt: str = "20/minute"

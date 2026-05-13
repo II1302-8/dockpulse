@@ -20,6 +20,7 @@ from app.email_templates import render as render_email
 from app.models import Assignment, User, UserNotificationPrefs
 from app.rate_limit import limiter
 from app.schemas import (
+    AccountDeleteIn,
     NotificationPrefsOut,
     NotificationPrefsPatch,
     PasswordResetConfirm,
@@ -207,7 +208,13 @@ async def get_me(current_user: CurrentUserDep, session: SessionDep):
     operation_id="updateMe",
     summary="Update current user profile",
 )
-async def update_me(body: UserPatch, current_user: CurrentUserDep, session: SessionDep):
+@limiter.limit(lambda: get_settings().rate_limit_password_change)
+async def update_me(
+    request: Request,
+    body: UserPatch,
+    current_user: CurrentUserDep,
+    session: SessionDep,
+):
     if body.email and body.email != current_user.email:
         existing = await session.execute(select(User).where(User.email == body.email))
         if existing.scalar_one_or_none() is not None:
@@ -242,19 +249,30 @@ async def update_me(body: UserPatch, current_user: CurrentUserDep, session: Sess
     return await to_user_out(session, current_user, berth_id)
 
 
-@router.delete(
-    "/me",
+@router.post(
+    "/me/delete",
     status_code=204,
     operation_id="deleteMe",
     summary="Delete the current boat-owner account",
 )
-async def delete_me(current_user: CurrentUserDep, session: SessionDep):
+async def delete_me(
+    body: AccountDeleteIn,
+    current_user: CurrentUserDep,
+    session: SessionDep,
+):
     # harbormasters own hardware adoption records, offboarding is admin-only
     if await user_is_harbormaster(current_user, session):
         raise HTTPException(
             status_code=403,
             detail="Harbormaster accounts cannot be self-deleted",
         )
+    # re-auth: stolen cookie / shared browser can't wipe the account
+    try:
+        _ph.verify(current_user.password_hash, body.current_password.get_secret_value())
+    except VerifyMismatchError:
+        raise HTTPException(
+            status_code=401, detail="Current password is incorrect."
+        ) from None
     await session.delete(current_user)
     await session.commit()
 

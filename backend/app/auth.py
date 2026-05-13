@@ -169,10 +169,15 @@ async def require_csrf(request: Request) -> None:
     # raw header/cookie reads so this dep doesn't pollute openapi parameters
     if request.method in {"GET", "HEAD", "OPTIONS"}:
         return
+    access_cookie = request.cookies.get(ACCESS_COOKIE)
     csrf_cookie = request.cookies.get(CSRF_COOKIE)
-    # anonymous flows like /login arrive without the cookie, no token to compare
-    if csrf_cookie is None:
+    # anonymous flows (/login, /register, /resetpassword) arrive without the
+    # access cookie — no session to forge against, so no csrf needed. once a
+    # session exists, csrf cookie + header must match
+    if access_cookie is None:
         return
+    if csrf_cookie is None:
+        raise HTTPException(status_code=403, detail="CSRF cookie missing")
     csrf_header = request.headers.get(CSRF_HEADER)
     if csrf_header is None or not secrets.compare_digest(csrf_header, csrf_cookie):
         raise HTTPException(status_code=403, detail="CSRF token mismatch")

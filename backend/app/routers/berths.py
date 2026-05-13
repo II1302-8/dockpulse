@@ -44,16 +44,24 @@ SSE_PING_SECONDS = 15
     "",
     response_model=list[BerthOut],
     operation_id="listBerths",
-    summary="List all berths",
+    summary="List berths in a single harbor",
 )
 async def list_berths(
     session: SessionDep,
+    harbor_id: str = Query(..., description="harbor scope (required)"),
     dock_id: str | None = Query(None, description="filter by dock"),
     status: str | None = Query(
         None, pattern="^(free|occupied)$", description="filter by status"
     ),
 ):
-    stmt = select(Berth).options(selectinload(Berth.assignment))
+    # required harbor scope so visitor views can't enumerate other tenants'
+    # berths or subscribe to live updates across the whole deployment
+    stmt = (
+        select(Berth)
+        .join(Dock, Dock.dock_id == Berth.dock_id)
+        .where(Dock.harbor_id == harbor_id)
+        .options(selectinload(Berth.assignment))
+    )
     if dock_id:
         stmt = stmt.where(Berth.dock_id == dock_id)
     if status:
@@ -84,12 +92,30 @@ async def list_berths(
         }
     },
 )
-async def stream_berths(request: Request, session: SessionDep):
+async def stream_berths(
+    request: Request,
+    session: SessionDep,
+    harbor_id: str = Query(..., description="harbor scope (required)"),
+):
+    # scope snapshot + live frames to one harbor so visitors can't subscribe
+    # to other tenants' berth updates
+    stmt = (
+        select(Berth.berth_id)
+        .join(Dock, Dock.dock_id == Berth.dock_id)
+        .where(Dock.harbor_id == harbor_id)
+    )
+    scoped_ids = {r for r in (await session.execute(stmt)).scalars().all()}
+
     async def event_gen():
         # subscribe before snapshot so updates between them aren't lost
         async with broadcaster.subscribe() as queue:
-            stmt = select(Berth).options(selectinload(Berth.assignment))
-            berths = list((await session.execute(stmt)).scalars().all())
+            stmt2 = (
+                select(Berth)
+                .join(Dock, Dock.dock_id == Berth.dock_id)
+                .where(Dock.harbor_id == harbor_id)
+                .options(selectinload(Berth.assignment))
+            )
+            berths = list((await session.execute(stmt2)).scalars().all())
             out = await serialize_berths(session, berths)
             snapshot = BerthSnapshotEvent(berths=out).model_dump(mode="json")
             yield {"event": snapshot["type"], "data": json.dumps(snapshot)}
@@ -102,6 +128,8 @@ async def stream_berths(request: Request, session: SessionDep):
                     continue
                 # broadcaster fans every event to every queue, drop non-berth
                 if event.get("type") != "berth.update":
+                    continue
+                if event.get("berth", {}).get("berth_id") not in scoped_ids:
                     continue
                 yield {"event": event["type"], "data": json.dumps(event)}
 
@@ -157,9 +185,9 @@ async def assign_berth(
     if not await session.get(User, body.user_id):
         raise HTTPException(status_code=404, detail="User not found")
 
-    # merge by single-PK berth_id reuses the row, replacing user on re-assign
+    # merge by single-PK berth_id reuses the row, replacing user on re-assign.
+    # status mirrors sensor reality; is_reserved is the assignment signal
     await session.merge(Assignment(berth_id=berth_id, user_id=body.user_id))
-    berth.status = "occupied"
     berth.is_reserved = True
     await session.commit()
 
@@ -229,7 +257,7 @@ async def remove_berth_assignment(
     # column would change this; see issue #175 discussion
     now = datetime.now(UTC)
     await session.execute(delete(Assignment).where(Assignment.berth_id == berth_id))
-    berth.status = "free"
+    # status is sensor-driven now; only flip the reservation signal
     berth.is_reserved = False
     session.add(
         Event(

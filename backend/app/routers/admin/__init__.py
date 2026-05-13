@@ -9,10 +9,13 @@ from fastapi import APIRouter, Depends
 
 from app.routers.admin._deps import require_cf_access
 from app.routers.admin.adoptions import router as adoptions_router
+from app.routers.admin.alerts import router as alerts_router
 from app.routers.admin.berths import router as berths_router
 from app.routers.admin.docks import router as docks_router
+from app.routers.admin.events import router as events_router
 from app.routers.admin.gateways import router as gateways_router
 from app.routers.admin.harbors import router as harbors_router
+from app.routers.admin.invites import router as invites_router
 from app.routers.admin.nodes import router as nodes_router
 from app.routers.admin.snapshot import router as snapshot_router
 from app.routers.admin.users import router as users_router
@@ -32,6 +35,9 @@ for _sub in (
     nodes_router,
     adoptions_router,
     users_router,
+    alerts_router,
+    events_router,
+    invites_router,
 ):
     router.include_router(_sub)
 

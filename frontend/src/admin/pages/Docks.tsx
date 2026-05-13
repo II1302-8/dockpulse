@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AdminApiError,
   adminDelete,
@@ -7,6 +7,7 @@ import {
   adminPost,
 } from "../api";
 import { Button } from "../components/Button";
+import { FilterInput } from "../components/FilterInput";
 import { Input } from "../components/Input";
 import { PageHeader } from "../components/PageHeader";
 import { Table } from "../components/Table";
@@ -30,6 +31,7 @@ function errorMessage(err: unknown): string {
 
 export function DocksPage() {
   const [rows, setRows] = useState<Dock[] | null>(null);
+  const [filter, setFilter] = useState("");
   const [harbors, setHarbors] = useState<Harbor[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -98,6 +100,18 @@ export function DocksPage() {
       setBusyId(null);
     }
   }
+
+  const visible = useMemo(() => {
+    if (!rows) return [];
+    const q = filter.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter(
+      (r) =>
+        r.dock_id.toLowerCase().includes(q) ||
+        r.harbor_id.toLowerCase().includes(q) ||
+        r.name.toLowerCase().includes(q),
+    );
+  }, [rows, filter]);
 
   async function remove(dockId: string) {
     if (
@@ -193,12 +207,20 @@ export function DocksPage() {
         </form>
       )}
 
+      <div className="mb-4 max-w-sm">
+        <FilterInput
+          value={filter}
+          onChange={setFilter}
+          placeholder="Filter id / harbor / name…"
+        />
+      </div>
+
       {rows === null ? (
         <div className="text-sm text-brand-navy/50">Loading…</div>
       ) : (
         <Table
           head={["ID", "Harbor", "Name", ""]}
-          rows={rows.map((d) => {
+          rows={visible.map((d) => {
             const isEditing = editingId === d.dock_id;
             return {
               key: d.dock_id,

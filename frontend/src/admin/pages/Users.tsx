@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AdminApiError,
   adminDelete,
@@ -7,6 +7,7 @@ import {
   adminPost,
 } from "../api";
 import { Button } from "../components/Button";
+import { FilterInput } from "../components/FilterInput";
 import { Input } from "../components/Input";
 import { PageHeader } from "../components/PageHeader";
 import { Table } from "../components/Table";
@@ -39,6 +40,7 @@ function errorMessage(err: unknown): string {
 
 export function UsersPage() {
   const [users, setUsers] = useState<User[] | null>(null);
+  const [filter, setFilter] = useState("");
   const [harbors, setHarbors] = useState<Harbor[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -136,6 +138,19 @@ export function UsersPage() {
       setBusyId(null);
     }
   }
+
+  const visible = useMemo(() => {
+    if (!users) return [];
+    const q = filter.trim().toLowerCase();
+    if (!q) return users;
+    return users.filter(
+      (u) =>
+        u.email.toLowerCase().includes(q) ||
+        u.firstname.toLowerCase().includes(q) ||
+        u.lastname.toLowerCase().includes(q) ||
+        u.role.toLowerCase().includes(q),
+    );
+  }, [users, filter]);
 
   async function remove(userId: string) {
     if (
@@ -301,13 +316,21 @@ export function UsersPage() {
         </form>
       )}
 
+      <div className="mb-4 max-w-sm">
+        <FilterInput
+          value={filter}
+          onChange={setFilter}
+          placeholder="Filter email / name / role…"
+        />
+      </div>
+
       {users === null ? (
         <div className="text-sm text-brand-navy/50">Loading…</div>
       ) : (
         <div className="space-y-4">
           <Table
             head={["Email", "Name", "Role", "Phone", "Boat club", ""]}
-            rows={users.map((u) => {
+            rows={visible.map((u) => {
               const isEditing = editingId === u.user_id;
               const isExpanded = expandedId === u.user_id;
               return {

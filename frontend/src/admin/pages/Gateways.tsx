@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AdminApiError,
   adminDelete,
@@ -7,6 +7,7 @@ import {
   adminPost,
 } from "../api";
 import { Button } from "../components/Button";
+import { FilterInput } from "../components/FilterInput";
 import { Input } from "../components/Input";
 import { PageHeader } from "../components/PageHeader";
 import { Table } from "../components/Table";
@@ -54,6 +55,7 @@ function parseTtl(value: string): number | null {
 
 export function GatewaysPage() {
   const [gateways, setGateways] = useState<Gateway[] | null>(null);
+  const [filter, setFilter] = useState("");
   const [pending, setPending] = useState<PendingGateway[]>([]);
   const [docks, setDocks] = useState<Dock[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -157,6 +159,18 @@ export function GatewaysPage() {
       setBusyId(null);
     }
   }
+
+  const visibleGateways = useMemo(() => {
+    if (!gateways) return [];
+    const q = filter.trim().toLowerCase();
+    if (!q) return gateways;
+    return gateways.filter(
+      (g) =>
+        g.gateway_id.toLowerCase().includes(q) ||
+        g.dock_id.toLowerCase().includes(q) ||
+        g.name.toLowerCase().includes(q),
+    );
+  }, [gateways, filter]);
 
   async function remove(gatewayId: string) {
     if (
@@ -289,15 +303,23 @@ export function GatewaysPage() {
         </div>
       )}
 
-      <h2 className="mb-2 text-[10px] font-black uppercase tracking-widest text-brand-navy/60">
-        Registered gateways
-      </h2>
+      <div className="mb-2 flex items-end justify-between gap-3">
+        <h2 className="text-[10px] font-black uppercase tracking-widest text-brand-navy/60">
+          Registered gateways
+        </h2>
+        <FilterInput
+          value={filter}
+          onChange={setFilter}
+          placeholder="Filter id / dock / name…"
+          className="max-w-xs"
+        />
+      </div>
       {gateways === null ? (
         <div className="text-sm text-brand-navy/50">Loading…</div>
       ) : (
         <Table
           head={["ID", "Dock", "Name", "Status", "Last seen", "TTL", ""]}
-          rows={gateways.map((g) => {
+          rows={visibleGateways.map((g) => {
             const isEditing = editingId === g.gateway_id;
             return {
               key: g.gateway_id,

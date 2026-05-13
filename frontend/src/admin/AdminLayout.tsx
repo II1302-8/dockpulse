@@ -1,9 +1,12 @@
 import {
+  Activity,
   Anchor,
+  Bell,
   Cable,
   CircleAlert,
   Cpu,
   Home,
+  Mail,
   Sailboat,
   ScrollText,
   Users,
@@ -31,6 +34,9 @@ const NAV = [
     icon: CircleAlert,
     end: false,
   },
+  { to: `${BASE}/alerts`, label: "Alerts", icon: Bell, end: false },
+  { to: `${BASE}/events`, label: "Events", icon: Activity, end: false },
+  { to: `${BASE}/invites`, label: "Invites", icon: Mail, end: false },
   { to: `${BASE}/users`, label: "Users", icon: Users, end: false },
 ];
 

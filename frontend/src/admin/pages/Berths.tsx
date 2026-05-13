@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AdminApiError,
   adminDelete,
@@ -7,6 +7,7 @@ import {
   adminPost,
 } from "../api";
 import { Button } from "../components/Button";
+import { FilterInput } from "../components/FilterInput";
 import { Input } from "../components/Input";
 import { PageHeader } from "../components/PageHeader";
 import { Table } from "../components/Table";
@@ -43,6 +44,7 @@ function parseNum(value: string): number | null {
 
 export function BerthsPage() {
   const [rows, setRows] = useState<Berth[] | null>(null);
+  const [filter, setFilter] = useState("");
   const [docks, setDocks] = useState<Dock[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -139,6 +141,18 @@ export function BerthsPage() {
       setBusyId(null);
     }
   }
+
+  const visible = useMemo(() => {
+    if (!rows) return [];
+    const q = filter.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter(
+      (r) =>
+        r.berth_id.toLowerCase().includes(q) ||
+        r.dock_id.toLowerCase().includes(q) ||
+        (r.label ?? "").toLowerCase().includes(q),
+    );
+  }, [rows, filter]);
 
   async function remove(berthId: string) {
     if (
@@ -265,6 +279,14 @@ export function BerthsPage() {
         </form>
       )}
 
+      <div className="mb-4 max-w-sm">
+        <FilterInput
+          value={filter}
+          onChange={setFilter}
+          placeholder="Filter id / dock / label…"
+        />
+      </div>
+
       {rows === null ? (
         <div className="text-sm text-brand-navy/50">Loading…</div>
       ) : (
@@ -278,7 +300,7 @@ export function BerthsPage() {
             "Reserved",
             "",
           ]}
-          rows={rows.map((b) => {
+          rows={visible.map((b) => {
             const isEditing = editingId === b.berth_id;
             const dims = `${b.length_m ?? "—"}×${b.width_m ?? "—"}×${b.depth_m ?? "—"}`;
             return {

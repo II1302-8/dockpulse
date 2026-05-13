@@ -1,11 +1,14 @@
 import { Anchor, LayoutDashboard, X, Zap } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { components } from "../api-types";
 import { useNow } from "../hooks/useNow";
 import { isOnline } from "../lib/freshness";
 import { cn } from "../lib/utils";
 
 type Berth = components["schemas"]["BerthOut"];
+type HealthStatus = components["schemas"]["HealthStatus"];
+
+const HEALTH_POLL_MS = 30_000;
 
 interface HarborMasterOverviewProps {
   berths: Berth[];
@@ -22,6 +25,7 @@ export function HarborMasterOverview({
 }: HarborMasterOverviewProps) {
   const now = useNow();
   const isFirstLoad = useRef(true);
+  const [health, setHealth] = useState<HealthStatus | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -31,16 +35,38 @@ export function HarborMasterOverview({
     return () => clearTimeout(timer);
   }, []);
 
+  // pull /api/health so the system-status block reflects reality instead of
+  // hardcoded "Operational". 503 still returns a body, so accept !res.ok
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    async function load() {
+      try {
+        const res = await fetch("/api/health", { credentials: "include" });
+        const data = (await res.json()) as HealthStatus;
+        if (!cancelled) setHealth(data);
+      } catch {
+        if (!cancelled) setHealth(null);
+      }
+    }
+    load();
+    const id = window.setInterval(load, HEALTH_POLL_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [isOpen]);
+
+  // only online sensors are eligible to count as available; offline berths
+  // shouldn't inflate availability the way they did when subtracted from total
+  const onlineBerths = berths.filter((b) => isOnline(b.last_updated, now));
   const totalBerths = berths.length;
-  // server-derived: factors sensor + reservation + active visitor window
-  const unavailableBerths = berths.filter((b) => !b.is_available_now).length;
-  const availableBerths = totalBerths - unavailableBerths;
+  const availableBerths = onlineBerths.filter((b) => b.is_available_now).length;
+  const unavailableBerths = totalBerths - availableBerths;
   const occupancyRate =
     totalBerths > 0 ? Math.round((unavailableBerths / totalBerths) * 100) : 0;
 
-  const activeNodes = berths.filter((b) =>
-    isOnline(b.last_updated, now),
-  ).length;
+  const activeNodes = onlineBerths.length;
 
   function closePanel() {
     onCloseCB?.();
@@ -181,39 +207,59 @@ export function HarborMasterOverview({
           </h3>
 
           <div className="space-y-3">
-            {[
-              {
-                label: "IoT Mesh Network",
-                status: "Operational",
-                color: "bg-emerald-500",
-              },
-              {
-                label: "Real-time Stream",
-                status: "Live",
-                color: "bg-emerald-500",
-              },
-              {
-                label: "Cloud Sync",
-                status: "Active",
-                color: "bg-brand-blue",
-              },
-            ].map((s) => (
-              <div
-                key={s.label}
-                className="group flex items-center justify-between"
-              >
-                <span className="text-[10px] font-bold text-brand-navy/60 transition-colors group-hover:text-brand-navy">
-                  {s.label}
-                </span>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-black uppercase tracking-tighter text-brand-navy/30">
-                    {s.status}
+            {(() => {
+              const okColor = "bg-emerald-500";
+              const errColor = "bg-red-500";
+              const items: { label: string; status: string; color: string }[] =
+                [
+                  health
+                    ? {
+                        label: "MQTT Broker",
+                        status: health.mqtt === "ok" ? "Online" : "Offline",
+                        color: health.mqtt === "ok" ? okColor : errColor,
+                      }
+                    : {
+                        label: "MQTT Broker",
+                        status: "—",
+                        color: "bg-slate-300",
+                      },
+                  health
+                    ? {
+                        label: "Database",
+                        status: health.database === "ok" ? "Online" : "Offline",
+                        color: health.database === "ok" ? okColor : errColor,
+                      }
+                    : { label: "Database", status: "—", color: "bg-slate-300" },
+                  health
+                    ? {
+                        label: "Gateways",
+                        status: `${health.gateways_online}/${health.gateways_total}`,
+                        color:
+                          health.gateways_total > 0 &&
+                          health.gateways_online === health.gateways_total
+                            ? okColor
+                            : "bg-amber-500",
+                      }
+                    : { label: "Gateways", status: "—", color: "bg-slate-300" },
+                ];
+              return items.map((s) => (
+                <div
+                  key={s.label}
+                  className="group flex items-center justify-between"
+                >
+                  <span className="text-[10px] font-bold text-brand-navy/60 transition-colors group-hover:text-brand-navy">
+                    {s.label}
                   </span>
-                  <div className={cn("h-1.5 w-1.5 rounded-full", s.color)} />
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-black uppercase tracking-tighter text-brand-navy/30">
+                      {s.status}
+                    </span>
+                    <div className={cn("h-1.5 w-1.5 rounded-full", s.color)} />
+                  </div>
                 </div>
-              </div>
-            ))}
+              ));
+            })()}
           </div>
         </div>
       </div>

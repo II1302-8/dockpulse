@@ -148,10 +148,6 @@ export function SvgMap({
         data-berth-id={slot.berth_id}
         className={`berth-group cursor-pointer outline-none ${isSelected ? "selected" : ""}`}
         onClick={openBerthDetails}
-        onTouchEnd={(event) => {
-          event.preventDefault();
-          openBerthDetails();
-        }}
         role="button"
         tabIndex={0}
         aria-label={`View details for ${slot.label}`}

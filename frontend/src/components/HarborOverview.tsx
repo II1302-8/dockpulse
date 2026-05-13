@@ -164,7 +164,7 @@ export function HarborOverview({
                   className="flex items-center justify-between rounded-xl border border-red-500/10 bg-red-500/5 p-2"
                 >
                   <span className="text-[10px] font-bold text-[#0A2540]">
-                    B-{node.label || node.berth_id}
+                    {node.label || node.berth_id}
                   </span>
                   <span className="text-[10px] font-black text-red-500">
                     {node.battery_pct}%

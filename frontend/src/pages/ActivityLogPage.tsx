@@ -11,7 +11,7 @@ import {
   User,
   UserX,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactElement, useEffect, useMemo, useState } from "react";
 import { Link, useOutletContext, useParams } from "react-router-dom";
 import type { AuthOutletContext } from "../components/layout/MainLayout";
 import { type HarborEvent, useHarborEvents } from "../hooks/useHarborEvents";
@@ -73,11 +73,6 @@ export function ActivityLogPage() {
   useEffect(() => {
     document.title = `${marinaName} - Activity Log | DockPulse`;
   }, [marinaName]);
-
-  // reset page when the filter changes
-  useEffect(() => {
-    setPage(1);
-  }, []);
 
   // highlight the newest event when a fresh page lands on page 1
   useEffect(() => {
@@ -151,12 +146,13 @@ export function ActivityLogPage() {
     );
   }
 
-  const filterButtons: { id: FilterKey; label: string; icon: JSX.Element }[] = [
-    { id: "all", label: "All", icon: <Filter size={14} /> },
-    { id: "status", label: "Status", icon: <Activity size={14} /> },
-    { id: "owners", label: "Owners", icon: <UserX size={14} /> },
-    { id: "alerts", label: "Alerts", icon: <AlertTriangle size={14} /> },
-  ];
+  const filterButtons: { id: FilterKey; label: string; icon: ReactElement }[] =
+    [
+      { id: "all", label: "All", icon: <Filter size={14} /> },
+      { id: "status", label: "Status", icon: <Activity size={14} /> },
+      { id: "owners", label: "Owners", icon: <UserX size={14} /> },
+      { id: "alerts", label: "Alerts", icon: <AlertTriangle size={14} /> },
+    ];
 
   return (
     <div className="flex h-full min-h-dvh flex-col overflow-hidden bg-[#F8FAFC]">
@@ -262,8 +258,8 @@ export function ActivityLogPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-xl shadow-slate-200/40">
-            <table className="w-full border-collapse text-left">
+          <div className="overflow-x-auto rounded-[32px] border border-slate-200 bg-white shadow-xl shadow-slate-200/40">
+            <table className="w-full min-w-[640px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/50">
                   <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">

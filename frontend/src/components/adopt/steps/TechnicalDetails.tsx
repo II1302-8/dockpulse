@@ -15,14 +15,17 @@ export function TechnicalDetails({
   gateway: Gateway | null;
   berth: Berth | null;
 }) {
-  const rows: Array<[string, string | null | undefined]> = [
-    ["Request ID", requestId],
-    ["Mesh UUID", request?.mesh_uuid],
-    ["Mesh unicast addr", request?.mesh_unicast_addr],
-    ["Berth", berth?.berth_id ?? request?.berth_id],
-    ["Gateway", gateway?.gateway_id ?? request?.gateway_id],
-    ["Serial number", request?.serial_number],
-  ].filter(([, v]) => Boolean(v));
+  // tuple shape lost across .filter, cast back to the explicit row type
+  const rows = (
+    [
+      ["Request ID", requestId],
+      ["Mesh UUID", request?.mesh_uuid],
+      ["Mesh unicast addr", request?.mesh_unicast_addr],
+      ["Berth", berth?.berth_id ?? request?.berth_id],
+      ["Gateway", gateway?.gateway_id ?? request?.gateway_id],
+      ["Serial number", request?.serial_number],
+    ] satisfies Array<[string, string | null | undefined]>
+  ).filter(([, v]) => Boolean(v));
   if (rows.length === 0) return null;
   return (
     <details className="group rounded-xl border border-brand-navy/10 bg-brand-navy/[0.02] open:bg-brand-navy/[0.04]">

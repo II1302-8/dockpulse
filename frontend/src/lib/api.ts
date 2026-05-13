@@ -35,13 +35,13 @@ async function performRefresh(): Promise<boolean> {
   if (refreshInFlight) return refreshInFlight;
   refreshInFlight = (async () => {
     try {
+      const headers: Record<string, string> = {};
+      const csrf = readCsrfCookie();
+      if (csrf) headers[CSRF_HEADER] = csrf;
       const res = await fetch("/api/auth/refresh", {
         method: "POST",
         credentials: "include",
-        headers: (() => {
-          const csrf = readCsrfCookie();
-          return csrf ? { [CSRF_HEADER]: csrf } : {};
-        })(),
+        headers,
       });
       return res.ok;
     } catch {
@@ -103,11 +103,11 @@ export async function apiJson<T>(
 }
 
 export class ApiError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-  ) {
+  readonly status: number;
+
+  constructor(status: number, message: string) {
     super(message);
+    this.status = status;
     this.name = "ApiError";
   }
 }

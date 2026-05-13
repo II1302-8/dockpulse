@@ -2,11 +2,13 @@
 // no cookies, no csrf dance
 
 export class AdminApiError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-  ) {
+  // explicit field instead of parameter-property: tsc's erasableSyntaxOnly
+  // (enabled in tsconfig for clean ESM transpile) rejects shorthand ctor params
+  readonly status: number;
+
+  constructor(status: number, message: string) {
     super(message);
+    this.status = status;
     this.name = "AdminApiError";
   }
 }

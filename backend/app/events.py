@@ -62,41 +62,53 @@ async def _notify_harbormasters(
         .options(joinedload(User.notification_prefs))
     )
     harbormasters = result.unique().scalars().all()
-
-    # only the occupied transition can be unauthorized mooring
-    if new_status != "occupied":
-        return
-
-    # sensor has no boat identity so a window-less occupied could be owner
-    # or stranger. flagging both is the closest we can get; once berth
-    # invites land we can tighten this to "visitor without invite"
-    now = datetime.now(UTC)
-    window_result = await session.execute(
-        select(BerthAvailabilityWindow).where(
-            BerthAvailabilityWindow.berth_id == berth.berth_id,
-            BerthAvailabilityWindow.from_date < now,
-            BerthAvailabilityWindow.return_date > now,
-        )
-    )
-    if window_result.scalars().first() is not None:
-        return
-
     label = berth.label or berth.berth_id
-    subject = f"Berth {label} is now occupied"
-    html = render_email(
-        title="Unauthorized mooring detected",
-        preheader=f"Berth {label} just flipped to occupied with no active window.",
-        intro=f"Berth {label} is now occupied.",
-        body_paragraphs=[
-            "The sensor reports a boat at this berth but no availability "
-            "window is currently active. Verify the mooring is authorized.",
-        ],
-    )
+
+    if new_status == "occupied":
+        # sensor has no boat identity so a window-less occupied could be
+        # owner or stranger. flagging both is the closest we can get; once
+        # berth invites land we can tighten this to "visitor without invite"
+        now = datetime.now(UTC)
+        window_result = await session.execute(
+            select(BerthAvailabilityWindow).where(
+                BerthAvailabilityWindow.berth_id == berth.berth_id,
+                BerthAvailabilityWindow.from_date < now,
+                BerthAvailabilityWindow.return_date > now,
+            )
+        )
+        if window_result.scalars().first() is not None:
+            return
+        subject = f"Berth {label} is now occupied"
+        html = render_email(
+            title="Unauthorized mooring detected",
+            preheader=(
+                f"Berth {label} just flipped to occupied with no active window."
+            ),
+            intro=f"Berth {label} is now occupied.",
+            body_paragraphs=[
+                "The sensor reports a boat at this berth but no availability "
+                "window is currently active. Verify the mooring is authorized.",
+            ],
+        )
+        pref_attr = "notify_arrival"
+    elif new_status == "free":
+        subject = f"Berth {label} is now free"
+        html = render_email(
+            title="Berth departure",
+            preheader=f"Berth {label} just flipped to free.",
+            intro=f"Berth {label} is now free.",
+            body_paragraphs=[
+                "The sensor reports the slot has been vacated.",
+            ],
+        )
+        pref_attr = "notify_departure"
+    else:
+        return
 
     coros = []
     for hm in harbormasters:
         prefs = hm.notification_prefs
-        if prefs is not None and not prefs.notify_arrival:
+        if prefs is not None and not getattr(prefs, pref_attr):
             continue
         idem_key = f"berth-status/{event_id}/{hm.user_id}"
         coros.append(send_email(hm.email, subject, html, idem_key))
@@ -116,8 +128,15 @@ async def process_sensor_reading(
     occupied: bool,
     sensor_raw: int,
     battery_pct: int | None = None,
+    expected_gateway_id: str | None = None,
 ) -> Event | None:
-    """Persist a berth status reading. Return a new Event on state change."""
+    """Persist a berth status reading. Return a new Event on state change.
+
+    If ``expected_gateway_id`` is provided (caller validated the MQTT topic
+    against the publishing cert), the registered Node must belong to that
+    gateway — guards against a single compromised gateway forging status for
+    berths it doesn't serve.
+    """
     berth = await load_berth_with_assignment(session, berth_id)
     if berth is None:
         raise ValueError(f"Unknown berth: {berth_id}")
@@ -127,11 +146,22 @@ async def process_sensor_reading(
         select(Node).where(Node.berth_id == berth_id, Node.status != "decommissioned")
     )
     node = registered.scalar_one_or_none()
-    if node is not None and node.mesh_unicast_addr != mesh_unicast_addr:
-        raise ValueError(
-            f"unicast addr mismatch for berth {berth_id}: "
-            f"registered={node.mesh_unicast_addr} got={mesh_unicast_addr}"
-        )
+    if node is not None:
+        if node.mesh_unicast_addr != mesh_unicast_addr:
+            raise ValueError(
+                f"unicast addr mismatch for berth {berth_id}: "
+                f"registered={node.mesh_unicast_addr} got={mesh_unicast_addr}"
+            )
+        if expected_gateway_id is not None and node.gateway_id != expected_gateway_id:
+            raise ValueError(
+                f"gateway mismatch for berth {berth_id}: "
+                f"node.gateway={node.gateway_id} topic.gateway={expected_gateway_id}"
+            )
+        if node.node_id != node_id:
+            raise ValueError(
+                f"node_id mismatch for berth {berth_id}: "
+                f"registered={node.node_id} got={node_id}"
+            )
 
     prev_status = berth.status
     prev_battery = berth.battery_pct
@@ -144,7 +174,7 @@ async def process_sensor_reading(
     if battery_pct is not None:
         berth.battery_pct = battery_pct
 
-    if new_status == prev_status or berth.is_reserved:
+    if new_status == prev_status:
         await session.commit()
         if berth.battery_pct != prev_battery:
             await publish_berth_update(session, berth)
@@ -159,11 +189,19 @@ async def process_sensor_reading(
         mesh_unicast_addr=mesh_unicast_addr,
         timestamp=now,
     )
+    # status mirrors the sensor regardless of reservation so the activity
+    # log + serializer see ground truth. is_reserved separately drives
+    # is_available_now in the BerthOut serializer
     berth.status = new_status
     session.add(event)
     await session.commit()
     await publish_berth_update(session, berth)
-    await _notify_harbormasters(session, berth, new_status, event.event_id)
+    # skip notification noise for owner arrivals/departures on reserved
+    # berths, harbormaster only cares about unauthorized activity. also skip
+    # un-adopted berths so a rogue device-cert can't spam emails by posting
+    # status for a berth_id no node has claimed
+    if not berth.is_reserved and node is not None:
+        await _notify_harbormasters(session, berth, new_status, event.event_id)
     return event
 
 

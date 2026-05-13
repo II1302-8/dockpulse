@@ -152,7 +152,9 @@ async def decommission_node(
 
     # idempotent, skip publish + commit if already decommissioned
     if node.status != "decommissioned":
-        # publish first, flip db only on broker ack so mesh + db can't diverge
+        # publish first so broker accepts (QoS=1 = broker receipt, not gateway
+        # ack). gateway's decommission/resp drives the rollback on err via
+        # _handle_decommission_resp so mesh + db eventually converge
         try:
             await publish_decommission_req(
                 gateway_id=node.gateway_id,

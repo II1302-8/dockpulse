@@ -16,7 +16,7 @@ from app.dependencies import (
     SessionDep,
 )
 from app.email_templates import render as render_email
-from app.models import Assignment, Berth, BerthInvite, Dock, Harbor
+from app.models import Assignment, Berth, BerthInvite, Dock, Harbor, User
 from app.schemas import BerthInviteCreate, BerthInviteList, BerthInviteOut
 
 router = APIRouter(prefix="/api", tags=["berth-invites"])
@@ -193,7 +193,10 @@ async def get_berth_invite_by_token(token: str, session: SessionDep):
     summary="Accept an invite (authed, must match invite email)",
 )
 async def accept_berth_invite(
-    token: str, session: SessionDep, current_user: CurrentUserDep
+    token: str,
+    session: SessionDep,
+    current_user: CurrentUserDep,
+    background_tasks: BackgroundTasks,
 ):
     token_hash = _hash_invite_token(token)
     now = datetime.now(UTC)
@@ -253,11 +256,48 @@ async def accept_berth_invite(
             .where(Berth.berth_id.in_(prior_berth_ids))
             .values(is_reserved=False)
         )
-    # clear whoever previously held the target berth
+    # clear whoever previously held the target berth, capturing their email +
+    # harbor name so we can notify the displaced tenant the same way
+    # remove_berth_assignment does
+    displaced_row = (
+        await session.execute(
+            select(User.email, User.user_id, Harbor.name, Berth.label)
+            .join(Assignment, Assignment.user_id == User.user_id)
+            .join(Berth, Berth.berth_id == Assignment.berth_id)
+            .join(Dock, Dock.dock_id == Berth.dock_id)
+            .join(Harbor, Harbor.harbor_id == Dock.harbor_id)
+            .where(Assignment.berth_id == claimed.berth_id)
+        )
+    ).first()
     await session.execute(
         Assignment.__table__.delete().where(Assignment.berth_id == claimed.berth_id)
     )
     session.add(Assignment(berth_id=claimed.berth_id, user_id=current_user.user_id))
+    if displaced_row is not None and displaced_row[1] != current_user.user_id:
+        displaced_email, displaced_user_id, harbor_name, berth_label = displaced_row
+        label = berth_label or claimed.berth_id
+        background_tasks.add_task(
+            notifications.send_email,
+            to=displaced_email,
+            subject=f"Your berth assignment at {harbor_name} has ended",
+            html=render_email(
+                title="Berth assignment ended",
+                preheader=(
+                    f"Your slot at berth {label} ({harbor_name}) was reassigned."
+                ),
+                intro=(
+                    f"Your assignment to berth {label} at {harbor_name} has been ended."
+                ),
+                body_paragraphs=[
+                    "A new boat-owner accepted an invite for this berth.",
+                    "If you think this was a mistake, contact your harbormaster.",
+                ],
+            ),
+            idempotency_key=(
+                f"assignment-displaced:{claimed.berth_id}:{displaced_user_id}:"
+                f"{int(now.timestamp())}"
+            ),
+        )
     # owned berths are reserved-for-owner by default; the owner punches holes
     # via BerthAvailabilityWindow in the settings page when they're away
     await session.execute(

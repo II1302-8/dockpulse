@@ -5,6 +5,7 @@ import json
 import uuid
 from datetime import UTC, datetime, timedelta
 
+import aiomqtt
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -22,7 +23,7 @@ from app.dependencies import (
     require_harbormaster_for_adoption_request,
 )
 from app.models import AdoptionRequest, Berth, Gateway, Node
-from app.mqtt import publish_provision_req
+from app.mqtt import MqttNotConnectedError, publish_provision_req
 from app.rate_limit import limiter
 from app.schemas import (
     AdoptIn,
@@ -155,14 +156,20 @@ async def create_adoption(
         existing.created_at = now
         await session.commit()
         await session.refresh(existing)
-        await publish_provision_req(
-            gateway_id=body.gateway_id,
-            request_id=existing.request_id,
-            mesh_uuid=claim.mesh_uuid,
-            oob=oob,
-            ttl_s=int(ttl.total_seconds()),
-            berth_id=body.berth_id,
-        )
+        try:
+            await publish_provision_req(
+                gateway_id=body.gateway_id,
+                request_id=existing.request_id,
+                mesh_uuid=claim.mesh_uuid,
+                oob=oob,
+                ttl_s=int(ttl.total_seconds()),
+                berth_id=body.berth_id,
+            )
+        except (MqttNotConnectedError, aiomqtt.MqttError) as exc:
+            raise HTTPException(
+                status_code=503,
+                detail=f"provision/req not delivered to gateway: {exc}",
+            ) from exc
         response.status_code = 200
         return existing
 
@@ -189,14 +196,21 @@ async def create_adoption(
 
     await session.refresh(request)
 
-    await publish_provision_req(
-        gateway_id=body.gateway_id,
-        request_id=request.request_id,
-        mesh_uuid=claim.mesh_uuid,
-        oob=oob,
-        ttl_s=int(ttl.total_seconds()),
-        berth_id=body.berth_id,
-    )
+    try:
+        await publish_provision_req(
+            gateway_id=body.gateway_id,
+            request_id=request.request_id,
+            mesh_uuid=claim.mesh_uuid,
+            oob=oob,
+            ttl_s=int(ttl.total_seconds()),
+            berth_id=body.berth_id,
+        )
+    except (MqttNotConnectedError, aiomqtt.MqttError) as exc:
+        # broker unreachable, sweeper will expire the pending row at TTL
+        raise HTTPException(
+            status_code=503,
+            detail=f"provision/req not delivered to gateway: {exc}",
+        ) from exc
     return request
 
 

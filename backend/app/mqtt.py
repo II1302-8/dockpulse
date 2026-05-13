@@ -5,6 +5,7 @@ import ssl
 from datetime import UTC, datetime
 
 import aiomqtt
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import broadcaster
@@ -12,7 +13,7 @@ from app.adoption.finalize import complete_adoption_err, complete_adoption_ok
 from app.config import get_settings
 from app.db import get_sessionmaker
 from app.events import process_heartbeat, process_sensor_reading
-from app.models import Gateway, Node, PendingGateway
+from app.models import Berth, Dock, Gateway, Node, PendingGateway
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +78,14 @@ def _parse_gateway_topic(topic: str) -> tuple[str, str] | None:
     return parts[3], "/".join(parts[4:])
 
 
-async def _handle_status(session: AsyncSession, payload: dict, berth_id: str) -> None:
+async def _handle_status(
+    session: AsyncSession,
+    payload: dict,
+    *,
+    topic_harbor_id: str,
+    topic_dock_id: str,
+    berth_id: str,
+) -> None:
     node_id = payload.get("node_id")
     occupied = payload.get("occupied")
     sensor_raw = payload.get("sensor_raw")
@@ -89,6 +97,36 @@ async def _handle_status(session: AsyncSession, payload: dict, berth_id: str) ->
         or not mesh_unicast_addr
     ):
         logger.warning("status payload missing fields for berth %s", berth_id)
+        return
+
+    # validate topic harbor/dock against the berth's actual hierarchy so a
+    # device that publishes harbor/A/B/their_berth_id/status can't address
+    # a berth in harbor X/dock Y by tweaking the topic prefix
+    hierarchy = (
+        await session.execute(
+            select(Dock.harbor_id, Berth.dock_id)
+            .join(Berth, Berth.dock_id == Dock.dock_id)
+            .where(Berth.berth_id == berth_id)
+        )
+    ).first()
+    if hierarchy is None:
+        logger.warning(
+            "status for unknown berth=%s topic=%s/%s",
+            berth_id,
+            topic_harbor_id,
+            topic_dock_id,
+        )
+        return
+    actual_harbor_id, actual_dock_id = hierarchy
+    if actual_harbor_id != topic_harbor_id or actual_dock_id != topic_dock_id:
+        logger.warning(
+            "topic prefix mismatch for berth=%s topic=%s/%s actual=%s/%s",
+            berth_id,
+            topic_harbor_id,
+            topic_dock_id,
+            actual_harbor_id,
+            actual_dock_id,
+        )
         return
 
     try:
@@ -291,10 +329,16 @@ async def _handle_message(message: aiomqtt.Message) -> None:
     parsed = _parse_berth_topic(topic)
     if parsed is None:
         return
-    _, _, berth_id, kind = parsed
+    topic_harbor_id, topic_dock_id, berth_id, kind = parsed
     async with get_sessionmaker()() as session:
         if kind == "status":
-            await _handle_status(session, payload, berth_id)
+            await _handle_status(
+                session,
+                payload,
+                topic_harbor_id=topic_harbor_id,
+                topic_dock_id=topic_dock_id,
+                berth_id=berth_id,
+            )
         elif kind == "heartbeat":
             await _handle_heartbeat(session, payload, berth_id)
 
@@ -308,10 +352,16 @@ async def publish_provision_req(
     ttl_s: int,
     berth_id: str,
 ) -> None:
-    """Publish a provisioning command to a gateway"""
+    """Publish a provisioning command to a gateway.
+
+    Raises ``MqttNotConnectedError`` on broker disconnect so callers can
+    surface a 503 instead of letting the adoption row hang until the
+    180s sweeper expires it.
+    """
     if _client is None:
-        logger.warning("MQTT not connected; provision/req for %s dropped", request_id)
-        return
+        raise MqttNotConnectedError(
+            f"provision/req for req_id={request_id} not published; broker client down"
+        )
 
     topic = f"{GATEWAY_TOPIC_PREFIX}/{gateway_id}/provision/req"
     # berth_id pinned so gateway routes uplink to the right berth instead of

@@ -298,15 +298,18 @@ export function ActivityLogPage() {
                       <td className="whitespace-nowrap px-6 py-5">
                         <div className="flex flex-col">
                           <span className="text-sm font-bold text-slate-700">
-                            {new Date(event.timestamp).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              second: "2-digit",
-                            })}
+                            {new Date(event.timestamp).toLocaleTimeString(
+                              "sv-SE",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                second: "2-digit",
+                              },
+                            )}
                           </span>
                           <span className="text-[10px] font-medium text-slate-400">
                             {new Date(event.timestamp).toLocaleDateString(
-                              undefined,
+                              "sv-SE",
                               { month: "short", day: "numeric" },
                             )}
                           </span>

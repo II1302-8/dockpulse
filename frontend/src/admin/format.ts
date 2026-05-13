@@ -1,6 +1,7 @@
+import { fmtDateTime } from "../lib/date";
+
 export function fmtTs(ts: string | null | undefined): string {
-  if (!ts) return "—";
-  return new Date(ts).toLocaleString();
+  return fmtDateTime(ts);
 }
 
 export function fmtRelative(ts: string | null | undefined): string {

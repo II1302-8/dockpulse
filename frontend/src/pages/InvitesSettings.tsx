@@ -9,6 +9,7 @@ import {
   revokeInvite,
   useBerthInvites,
 } from "../hooks/useBerthInvites";
+import { fmtDate } from "../lib/date";
 
 function statusBadgeClass(status: BerthInvite["status"]) {
   switch (status) {
@@ -145,7 +146,7 @@ function InvitesSettings() {
                       {invite.email}
                     </td>
                     <td className="px-4 py-3 text-brand-navy/70">
-                      {new Date(invite.expires_at).toLocaleDateString()}
+                      {fmtDate(invite.expires_at)}
                     </td>
                     <td className="px-4 py-3">
                       <span

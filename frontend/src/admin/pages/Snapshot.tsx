@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { fmtDateTime } from "../../lib/date";
 import { AdminApiError, adminGet } from "../api";
 
 interface Snapshot {
@@ -229,7 +230,5 @@ function Table({
 }
 
 function fmtTs(ts: string | null): string {
-  if (!ts) return "—";
-  const d = new Date(ts);
-  return d.toLocaleString();
+  return fmtDateTime(ts);
 }

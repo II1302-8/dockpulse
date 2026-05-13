@@ -13,7 +13,7 @@ const labelGroupClass = "space-y-1.5";
 function formatDateLong(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleDateString(undefined, {
+  return date.toLocaleDateString("sv-SE", {
     year: "numeric",
     month: "long",
     day: "numeric",

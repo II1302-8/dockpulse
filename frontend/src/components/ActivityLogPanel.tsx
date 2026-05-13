@@ -11,6 +11,7 @@ import { Link, useParams } from "react-router-dom";
 import type { components } from "../api-types";
 import { useActiveAlerts } from "../hooks/useActiveAlerts";
 import { useActivityLog } from "../hooks/useActivityLog";
+import { fmtTime } from "../lib/date";
 import { cn } from "../lib/utils";
 
 type Berth = components["schemas"]["BerthOut"];
@@ -207,10 +208,7 @@ export function ActivityLogPanel({
                     Berth {alert.berth_id}
                   </span>
                   <span className="text-[8px] font-bold text-amber-500/60">
-                    {new Date(alert.timestamp).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    {fmtTime(alert.timestamp)}
                   </span>
                 </div>
                 <p className="mb-3 text-[11px] font-bold leading-relaxed text-amber-900/80">
@@ -251,10 +249,7 @@ export function ActivityLogPanel({
                 </span>
                 <span className="flex items-center gap-1 text-[8px] font-bold uppercase tracking-widest text-brand-navy/30">
                   <Clock size={9} strokeWidth={3} />
-                  {ev.timestamp.toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {fmtTime(ev.timestamp)}
                 </span>
               </div>
               <p className="mt-1 text-[10px] font-bold text-brand-navy/60">

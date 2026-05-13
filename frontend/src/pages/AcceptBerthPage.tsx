@@ -14,6 +14,7 @@ import {
   rejectInviteByToken,
 } from "../hooks/useBerthInvites";
 import { useAuth } from "../lib/auth-context";
+import { fmtDateTime } from "../lib/date";
 
 function sameEmail(a?: string | null, b?: string | null) {
   return (a ?? "").trim().toLowerCase() === (b ?? "").trim().toLowerCase();
@@ -182,7 +183,7 @@ export function AcceptBerthPage() {
               </p>
               <p>
                 <span className="font-black text-brand-navy">Expires:</span>{" "}
-                {new Date(invite.expires_at).toLocaleString()}
+                {fmtDateTime(invite.expires_at)}
               </p>
             </div>
 

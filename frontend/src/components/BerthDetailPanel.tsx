@@ -8,7 +8,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Link, useOutletContext, useParams } from "react-router-dom";
+import { useOutletContext, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import type { components } from "../api-types";
 import { useBerthDetail } from "../hooks/useBerthDetail";
@@ -19,6 +19,7 @@ import {
 } from "../hooks/useBerthInvites";
 import { useNow } from "../hooks/useNow";
 import { apiFetch } from "../lib/api";
+import { fmtDate, fmtDateShort, fmtDateTime } from "../lib/date";
 import { isOnline } from "../lib/freshness";
 import { cn } from "../lib/utils";
 import { InviteOwnerModal } from "./InviteOwnerModal";
@@ -101,8 +102,16 @@ export function BerthDetailPanel({
     null,
   );
 
-  const [tenantEmail, setTenantEmail] = useState<string | null>(null);
+  const [tenant, setTenant] = useState<{
+    firstname?: string;
+    lastname?: string;
+    email?: string;
+  } | null>(null);
   const [isRevokingInvite, setIsRevokingInvite] = useState(false);
+
+  const tenantEmail = tenant?.email ?? null;
+  const tenantFullName =
+    [tenant?.firstname, tenant?.lastname].filter(Boolean).join(" ") || null;
 
   const { invites: pendingInvites, loadInvites: reloadInvites } =
     useBerthInvites(harborId, {
@@ -165,9 +174,11 @@ export function BerthDetailPanel({
 
   // tenant email shown in the remove dialog, fetched on demand because
   // BerthOut.assignment carries only user_id
+  // tenant name + email shown in ownership section and remove dialog,
+  // fetched on demand because BerthOut.assignment carries only user_id
   useEffect(() => {
     if (!isHarborMaster || !berth?.assignment) {
-      setTenantEmail(null);
+      setTenant(null);
       return;
     }
 
@@ -181,8 +192,16 @@ export function BerthDetailPanel({
         );
 
         if (res.ok) {
-          const data = (await res.json()) as { email?: string };
-          setTenantEmail(data.email ?? null);
+          const data = (await res.json()) as {
+            firstname?: string;
+            lastname?: string;
+            email?: string;
+          };
+          setTenant({
+            firstname: data.firstname,
+            lastname: data.lastname,
+            email: data.email,
+          });
         }
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
@@ -403,45 +422,46 @@ export function BerthDetailPanel({
                 ))}
               </div>
 
-              <div className="animate-in fade-in slide-in-from-bottom-4 rounded-[24px] border border-brand-blue/10 bg-brand-blue/5 p-5 duration-500 delay-500 fill-mode-both">
-                <div className="mb-3 flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-brand-blue/60">
-                  <Clock size={12} strokeWidth={3} />
-                  Node Check-in
+              {isHarborMaster && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 rounded-[24px] border border-brand-blue/10 bg-brand-blue/5 p-5 duration-500 delay-500 fill-mode-both">
+                  <div className="mb-3 flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-brand-blue/60">
+                    <Clock size={12} strokeWidth={3} />
+                    Node Check-in
+                  </div>
+
+                  <span className="block w-fit rounded-xl border border-brand-blue/10 bg-white/60 px-3 py-1.5 font-mono text-[10px] font-bold text-brand-navy shadow-sm">
+                    {fmtDateTime(berth.last_updated) || "Never"}
+                  </span>
                 </div>
+              )}
 
-                <span className="block w-fit rounded-xl border border-brand-blue/10 bg-white/60 px-3 py-1.5 font-mono text-[10px] font-bold text-brand-navy shadow-sm">
-                  {berth.last_updated
-                    ? new Date(berth.last_updated).toLocaleString()
-                    : "Never"}
-                </span>
-              </div>
-
-              {isHarborMaster && berth.assignment && marinaSlug && (
+              {isHarborMaster && berth.assignment && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 mt-6 border-t border-black/5 pt-6 duration-500 delay-550 fill-mode-both">
                   <span className="mb-3 block text-[9px] font-bold uppercase tracking-widest text-brand-navy/40">
                     Ownership Details
                   </span>
 
-                  <Link
-                    to={`/${marinaSlug}/profile/${berth.assignment.user_id}`}
-                    className="group flex items-center gap-4 rounded-2xl border border-white/60 bg-white/60 p-4 shadow-sm transition-all hover:bg-brand-blue/5 hover:shadow-md"
-                  >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-blue/10 text-brand-blue transition-transform group-hover:scale-110">
+                  <div className="flex items-center gap-4 rounded-2xl border border-white/60 bg-white/60 p-4 shadow-sm">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-blue/10 text-brand-blue">
                       <span className="text-xs font-black">
-                        {berth.assignment.user_id.slice(0, 2).toUpperCase()}
+                        {(tenantFullName ?? tenant?.email ?? "??")
+                          .slice(0, 2)
+                          .toUpperCase()}
                       </span>
                     </div>
 
                     <div className="min-w-0">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-brand-navy transition-colors group-hover:text-brand-blue">
-                        Owner Profile
+                      <p className="truncate text-[11px] font-bold text-brand-navy">
+                        {tenantFullName ?? "Loading…"}
                       </p>
 
-                      <p className="truncate text-[9px] font-bold text-brand-navy/40">
-                        ID: {berth.assignment.user_id}
-                      </p>
+                      {tenantEmail && (
+                        <p className="truncate text-[9px] font-bold text-brand-navy/40">
+                          {tenantEmail}
+                        </p>
+                      )}
                     </div>
-                  </Link>
+                  </div>
 
                   {canRemoveTenant && (
                     <button
@@ -456,7 +476,7 @@ export function BerthDetailPanel({
                 </div>
               )}
 
-              {berth.battery_pct != null && (
+              {isHarborMaster && berth.battery_pct != null && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-600 fill-mode-both">
                   <div className="mb-3 flex items-center justify-between">
                     <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-brand-navy/50">
@@ -521,12 +541,7 @@ export function BerthDetailPanel({
                             </p>
 
                             <p className="text-[8px] font-bold uppercase tracking-widest text-brand-navy/30">
-                              {new Date(ev.timestamp).toLocaleString([], {
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}
+                              {fmtDateShort(ev.timestamp)}
                             </p>
                           </div>
                         </div>
@@ -555,10 +570,7 @@ export function BerthDetailPanel({
                     {pendingInviteForBerth.email}
                   </p>
                   <p className="text-[9px] font-bold uppercase tracking-widest text-amber-700/60">
-                    Expires{" "}
-                    {new Date(
-                      pendingInviteForBerth.expires_at,
-                    ).toLocaleDateString()}
+                    Expires {fmtDate(pendingInviteForBerth.expires_at)}
                   </p>
                 </div>
                 <button

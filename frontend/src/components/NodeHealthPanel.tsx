@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import type { components } from "../api-types";
 import { apiFetch } from "../lib/api";
+import { fmtTime } from "../lib/date";
 import { cn } from "../lib/utils";
 import type { AuthOutletContext } from "./layout/MainLayout";
 
@@ -298,8 +299,7 @@ export function NodeHealthPanel({ isOpen, onCloseCB }: NodeHealthPanelProps) {
 
       <div className="mt-4 border-t border-black/5 pt-4">
         <p className="text-center text-[8px] font-bold uppercase tracking-[0.2em] text-brand-navy/20">
-          Last updated:{" "}
-          {lastUpdated ? lastUpdated.toLocaleTimeString() : "never"}
+          Last updated: {lastUpdated ? fmtTime(lastUpdated) : "never"}
         </p>
       </div>
     </aside>

@@ -97,7 +97,8 @@ TAGS_METADATA = [
 
 SERVERS = [
     {"url": "http://localhost:8000", "description": "Local development"},
-    {"url": "https://staging.example.com", "description": "Staging"},
+    {"url": "https://staging.dockpulse.xyz", "description": "Staging"},
+    {"url": "https://dockpulse.xyz", "description": "Production"},
 ]
 
 

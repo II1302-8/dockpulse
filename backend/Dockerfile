@@ -22,7 +22,7 @@ RUN groupadd --system app && useradd --system --gid app --home-dir /app app
 WORKDIR /app
 COPY --from=builder /app/.venv /app/.venv
 COPY --chown=app:app backend/app /app/app/
-COPY --chown=app:app backend/scripts /app/scripts/
+COPY --chown=app:app --chmod=755 backend/scripts /app/scripts/
 COPY --chown=app:app backend/alembic /app/alembic/
 COPY --chown=app:app backend/alembic.ini backend/pyproject.toml backend/uv.lock /app/
 COPY --chown=app:app docs/api/openapi.yml /docs/api/openapi.yml
@@ -30,4 +30,5 @@ USER app
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD python -c "import urllib.request,sys; r=urllib.request.urlopen('http://127.0.0.1:8000/api/health',timeout=3); sys.exit(0 if r.status<500 else 1)"
+ENTRYPOINT ["/app/scripts/entrypoint.sh"]
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

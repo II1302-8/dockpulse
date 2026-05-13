@@ -905,6 +905,393 @@ components:
       - berth
       title: BerthUpdateEvent
       type: object
+    BookableBerthOut:
+      properties:
+        berth_id:
+          examples:
+          - berth-001
+          title: Berth Id
+          type: string
+        depth_m:
+          anyOf:
+          - examples: &id014
+            - 2.0
+            type: number
+          - type: 'null'
+          examples: *id014
+          title: Depth M
+        dock_id:
+          examples:
+          - dock-a
+          title: Dock Id
+          type: string
+        harbor_id:
+          examples:
+          - harbor-saltsjobaden
+          title: Harbor Id
+          type: string
+        label:
+          anyOf:
+          - examples: &id015
+            - A1
+            type: string
+          - type: 'null'
+          examples: *id015
+          title: Label
+        length_m:
+          anyOf:
+          - examples: &id016
+            - 8.5
+            type: number
+          - type: 'null'
+          examples: *id016
+          title: Length M
+        width_m:
+          anyOf:
+          - examples: &id017
+            - 3.2
+            type: number
+          - type: 'null'
+          examples: *id017
+          title: Width M
+        window_from:
+          examples:
+          - '2026-06-01T00:00:00Z'
+          format: date-time
+          title: Window From
+          type: string
+        window_id:
+          examples:
+          - win-0001
+          title: Window Id
+          type: string
+        window_to:
+          examples:
+          - '2026-06-08T00:00:00Z'
+          format: date-time
+          title: Window To
+          type: string
+      required:
+      - berth_id
+      - dock_id
+      - harbor_id
+      - window_id
+      - window_from
+      - window_to
+      title: BookableBerthOut
+      type: object
+    BookableWindowOut:
+      properties:
+        berth_id:
+          examples:
+          - berth-001
+          title: Berth Id
+          type: string
+        booked:
+          default: []
+          items:
+            $ref: '#/components/schemas/BookedRange'
+          title: Booked
+          type: array
+        from_date:
+          examples:
+          - '2026-06-01T00:00:00Z'
+          format: date-time
+          title: From Date
+          type: string
+        return_date:
+          examples:
+          - '2026-06-08T00:00:00Z'
+          format: date-time
+          title: Return Date
+          type: string
+        window_id:
+          examples:
+          - win-0001
+          title: Window Id
+          type: string
+      required:
+      - window_id
+      - berth_id
+      - from_date
+      - return_date
+      title: BookableWindowOut
+      type: object
+    BookedRange:
+      properties:
+        booking_id:
+          examples:
+          - bk-0001
+          title: Booking Id
+          type: string
+        from_date:
+          examples:
+          - '2026-06-03T00:00:00Z'
+          format: date-time
+          title: From Date
+          type: string
+        to_date:
+          examples:
+          - '2026-06-06T00:00:00Z'
+          format: date-time
+          title: To Date
+          type: string
+      required:
+      - booking_id
+      - from_date
+      - to_date
+      title: BookedRange
+      type: object
+    BookingCancelIn:
+      properties:
+        reason:
+          anyOf:
+          - maxLength: 500
+            type: string
+          - type: 'null'
+          title: Reason
+      title: BookingCancelIn
+      type: object
+    BookingConflict:
+      properties:
+        booking_id:
+          anyOf:
+          - examples: &id018
+            - bk-0007
+            type: string
+          - type: 'null'
+          examples: *id018
+          title: Booking Id
+        from_date:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: From Date
+        kind:
+          enum:
+          - no_window
+          - overlap
+          - dates_invalid
+          title: Kind
+          type: string
+        to_date:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: To Date
+      required:
+      - kind
+      title: BookingConflict
+      type: object
+    BookingCreate:
+      properties:
+        boat_length_m:
+          anyOf:
+          - examples: &id019
+            - 8.5
+            minimum: 0.0
+            type: number
+          - type: 'null'
+          examples: *id019
+          title: Boat Length M
+        boat_width_m:
+          anyOf:
+          - examples: &id020
+            - 3.2
+            minimum: 0.0
+            type: number
+          - type: 'null'
+          examples: *id020
+          title: Boat Width M
+        from_date:
+          examples:
+          - '2026-06-03T00:00:00Z'
+          format: date-time
+          title: From Date
+          type: string
+        notes:
+          anyOf:
+          - examples: &id021
+            - arriving late
+            maxLength: 500
+            type: string
+          - type: 'null'
+          examples: *id021
+          title: Notes
+        to_date:
+          examples:
+          - '2026-06-06T00:00:00Z'
+          format: date-time
+          title: To Date
+          type: string
+      required:
+      - from_date
+      - to_date
+      title: BookingCreate
+      type: object
+    BookingList:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/BookingOut'
+          title: Items
+          type: array
+        total:
+          examples:
+          - 42
+          title: Total
+          type: integer
+      required:
+      - items
+      - total
+      title: BookingList
+      type: object
+    BookingOut:
+      properties:
+        berth_id:
+          examples:
+          - berth-001
+          title: Berth Id
+          type: string
+        boat_length_m:
+          anyOf:
+          - examples: &id022
+            - 8.5
+            type: number
+          - type: 'null'
+          examples: *id022
+          title: Boat Length M
+        boat_width_m:
+          anyOf:
+          - examples: &id023
+            - 3.2
+            type: number
+          - type: 'null'
+          examples: *id023
+          title: Boat Width M
+        booking_id:
+          examples:
+          - bk-0001
+          title: Booking Id
+          type: string
+        cancel_reason:
+          anyOf:
+          - examples: &id024
+            - storm
+            type: string
+          - type: 'null'
+          examples: *id024
+          title: Cancel Reason
+        cancelled_at:
+          anyOf:
+          - examples: &id025
+            - '2026-06-02T08:00:00Z'
+            format: date-time
+            type: string
+          - type: 'null'
+          examples: *id025
+          title: Cancelled At
+        cancelled_by:
+          anyOf:
+          - examples: &id026
+            - user-002
+            type: string
+          - type: 'null'
+          examples: *id026
+          title: Cancelled By
+        created_at:
+          examples:
+          - '2026-05-13T14:30:00Z'
+          format: date-time
+          title: Created At
+          type: string
+        from_date:
+          examples:
+          - '2026-06-03T00:00:00Z'
+          format: date-time
+          title: From Date
+          type: string
+        notes:
+          anyOf:
+          - examples: &id027
+            - arriving late
+            type: string
+          - type: 'null'
+          examples: *id027
+          title: Notes
+        status:
+          enum:
+          - confirmed
+          - cancelled_by_visitor
+          - cancelled_by_host
+          - completed
+          title: Status
+          type: string
+        to_date:
+          examples:
+          - '2026-06-06T00:00:00Z'
+          format: date-time
+          title: To Date
+          type: string
+        user_id:
+          examples:
+          - user-001
+          title: User Id
+          type: string
+      required:
+      - booking_id
+      - berth_id
+      - user_id
+      - from_date
+      - to_date
+      - status
+      - created_at
+      title: BookingOut
+      type: object
+    BookingPreflightIn:
+      properties:
+        from_date:
+          examples:
+          - '2026-06-03T00:00:00Z'
+          format: date-time
+          title: From Date
+          type: string
+        to_date:
+          examples:
+          - '2026-06-06T00:00:00Z'
+          format: date-time
+          title: To Date
+          type: string
+      required:
+      - from_date
+      - to_date
+      title: BookingPreflightIn
+      type: object
+    BookingPreflightOut:
+      properties:
+        conflicts:
+          default: []
+          items:
+            $ref: '#/components/schemas/BookingConflict'
+          title: Conflicts
+          type: array
+        ok:
+          title: Ok
+          type: boolean
+        window_id:
+          anyOf:
+          - examples: &id028
+            - win-0001
+            type: string
+          - type: 'null'
+          examples: *id028
+          title: Window Id
+      required:
+      - ok
+      title: BookingPreflightOut
+      type: object
     BulkDeleteOut:
       properties:
         deleted:
@@ -1066,11 +1453,11 @@ components:
       properties:
         actor_user_id:
           anyOf:
-          - examples: &id014
+          - examples: &id029
             - user-001
             type: string
           - type: 'null'
-          examples: *id014
+          examples: *id029
           title: Actor User Id
         berth_id:
           examples:
@@ -1093,27 +1480,27 @@ components:
           type: string
         node_id:
           anyOf:
-          - examples: &id015
+          - examples: &id030
             - node-012
             type: string
           - type: 'null'
-          examples: *id015
+          examples: *id030
           title: Node Id
         sensor_raw:
           anyOf:
-          - examples: &id016
+          - examples: &id031
             - 1234
             type: integer
           - type: 'null'
-          examples: *id016
+          examples: *id031
           title: Sensor Raw
         subject_user_id:
           anyOf:
-          - examples: &id017
+          - examples: &id032
             - user-002
             type: string
           - type: 'null'
-          examples: *id017
+          examples: *id032
           title: Subject User Id
         timestamp:
           examples:
@@ -1180,12 +1567,12 @@ components:
           type: string
         last_seen:
           anyOf:
-          - examples: &id018
+          - examples: &id033
             - '2026-05-03T14:30:00Z'
             format: date-time
             type: string
           - type: 'null'
-          examples: *id018
+          examples: *id033
           title: Last Seen
         name:
           examples:
@@ -1194,12 +1581,12 @@ components:
           type: string
         provision_ttl_s:
           anyOf:
-          - examples: &id019
+          - examples: &id034
             - 180
             type: integer
           - type: 'null'
           description: Per-gateway override; null falls back to ADOPTION_TTL
-          examples: *id019
+          examples: *id034
           title: Provision Ttl S
         status:
           enum:
@@ -1475,11 +1862,11 @@ components:
           type: string
         battery_pct:
           anyOf:
-          - examples: &id020
+          - examples: &id035
             - 87
             type: integer
           - type: 'null'
-          examples: *id020
+          examples: *id035
           title: Battery Pct
         berth_id:
           examples:
@@ -1501,12 +1888,12 @@ components:
           type: string
         last_seen:
           anyOf:
-          - examples: &id021
+          - examples: &id036
             - '2026-05-03T14:30:00Z'
             format: date-time
             type: string
           - type: 'null'
-          examples: *id021
+          examples: *id036
           title: Last Seen
         mesh_unicast_addr:
           examples:
@@ -1549,11 +1936,11 @@ components:
           type: string
         battery_pct:
           anyOf:
-          - examples: &id022
+          - examples: &id037
             - 87
             type: integer
           - type: 'null'
-          examples: *id022
+          examples: *id037
           title: Battery Pct
         berth_id:
           examples:
@@ -1575,12 +1962,12 @@ components:
           type: string
         last_seen:
           anyOf:
-          - examples: &id023
+          - examples: &id038
             - '2026-05-03T14:30:00Z'
             format: date-time
             type: string
           - type: 'null'
-          examples: *id023
+          examples: *id038
           title: Last Seen
         mesh_unicast_addr:
           examples:
@@ -1942,19 +2329,19 @@ components:
       properties:
         assigned_berth_id:
           anyOf:
-          - examples: &id024
+          - examples: &id039
             - berth-001
             type: string
           - type: 'null'
-          examples: *id024
+          examples: *id039
           title: Assigned Berth Id
         boat_club:
           anyOf:
-          - examples: &id025
+          - examples: &id040
             - Saltsjöbadens BK
             type: string
           - type: 'null'
-          examples: *id025
+          examples: *id040
           title: Boat Club
         email:
           examples:
@@ -1973,11 +2360,11 @@ components:
           type: string
         harbor_id:
           anyOf:
-          - examples: &id026
+          - examples: &id041
             - ksss-saltsjobaden
             type: string
           - type: 'null'
-          examples: *id026
+          examples: *id041
           title: Harbor Id
         lastname:
           examples:
@@ -1986,11 +2373,11 @@ components:
           type: string
         phone:
           anyOf:
-          - examples: &id027
+          - examples: &id042
             - +46 70 123 45 67
             type: string
           - type: 'null'
-          examples: *id027
+          examples: *id042
           title: Phone
         role:
           enum:
@@ -2188,12 +2575,12 @@ components:
       properties:
         boat_club:
           anyOf:
-          - examples: &id028
+          - examples: &id043
             - Saltsjöbadens BK
             maxLength: 100
             type: string
           - type: 'null'
-          examples: *id028
+          examples: *id043
           title: Boat Club
         email:
           examples:
@@ -2228,13 +2615,13 @@ components:
           writeOnly: true
         phone:
           anyOf:
-          - examples: &id029
+          - examples: &id044
             - +46 70 123 45 67
             maxLength: 20
             pattern: ^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$
             type: string
           - type: 'null'
-          examples: *id029
+          examples: *id044
           title: Phone
       required:
       - firstname
@@ -2247,12 +2634,12 @@ components:
       properties:
         boat_club:
           anyOf:
-          - examples: &id030
+          - examples: &id045
             - Saltsjöbadens BK
             maxLength: 100
             type: string
           - type: 'null'
-          examples: *id030
+          examples: *id045
           title: Boat Club
         current_password:
           anyOf:
@@ -2263,38 +2650,38 @@ components:
           title: Current Password
         email:
           anyOf:
-          - examples: &id031
+          - examples: &id046
             - alex@example.com
             format: email
             type: string
           - type: 'null'
-          examples: *id031
+          examples: *id046
           title: Email
         firstname:
           anyOf:
-          - examples: &id032
+          - examples: &id047
             - Alex
             maxLength: 100
             minLength: 1
             pattern: ^[\p{L}\p{M}'’ .\-]+$
             type: string
           - type: 'null'
-          examples: *id032
+          examples: *id047
           title: Firstname
         lastname:
           anyOf:
-          - examples: &id033
+          - examples: &id048
             - Alex
             maxLength: 100
             minLength: 1
             pattern: ^[\p{L}\p{M}'’ .\-]+$
             type: string
           - type: 'null'
-          examples: *id033
+          examples: *id048
           title: Lastname
         password:
           anyOf:
-          - examples: &id034
+          - examples: &id049
             - correct horse battery staple
             format: password
             maxLength: 128
@@ -2302,17 +2689,17 @@ components:
             type: string
             writeOnly: true
           - type: 'null'
-          examples: *id034
+          examples: *id049
           title: Password
         phone:
           anyOf:
-          - examples: &id035
+          - examples: &id050
             - +46 70 123 45 67
             maxLength: 20
             pattern: ^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$
             type: string
           - type: 'null'
-          examples: *id035
+          examples: *id050
           title: Phone
       title: UserPatch
       type: object
@@ -4465,6 +4852,174 @@ paths:
       summary: Delete an availability window
       tags:
       - berths
+  /api/berths/{berth_id}/bookable-windows:
+    get:
+      operationId: listBookableWindows
+      parameters:
+      - in: path
+        name: berth_id
+        required: true
+        schema:
+          title: Berth Id
+          type: string
+      - in: query
+        name: from
+        required: false
+        schema:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: From
+      - in: query
+        name: to
+        required: false
+        schema:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: To
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/BookableWindowOut'
+                title: Response Listbookablewindows
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: List a berth's availability windows with booked sub-ranges
+      tags:
+      - bookings
+  /api/berths/{berth_id}/bookings:
+    get:
+      operationId: listBerthBookings
+      parameters:
+      - in: path
+        name: berth_id
+        required: true
+        schema:
+          title: Berth Id
+          type: string
+      - in: query
+        name: status
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      - in: query
+        name: from
+        required: false
+        schema:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: From
+      - in: query
+        name: to
+        required: false
+        schema:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: To
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingList'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - APIKeyCookie: []
+      summary: List bookings on a berth (spot-owner or harbormaster)
+      tags:
+      - bookings
+    post:
+      operationId: createBooking
+      parameters:
+      - in: path
+        name: berth_id
+        required: true
+        schema:
+          title: Berth Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingCreate'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - APIKeyCookie: []
+      summary: Create a booking on a berth
+      tags:
+      - bookings
+  /api/berths/{berth_id}/bookings:preflight:
+    post:
+      operationId: preflightBooking
+      parameters:
+      - in: path
+        name: berth_id
+        required: true
+        schema:
+          title: Berth Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingPreflightIn'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingPreflightOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - APIKeyCookie: []
+      summary: Validate a proposed booking without creating it
+      tags:
+      - bookings
   /api/berths/{berth_id}/events:
     get:
       operationId: listBerthEvents
@@ -4505,6 +5060,115 @@ paths:
       summary: List events for a berth
       tags:
       - berths
+  /api/bookings/me:
+    get:
+      operationId: listMyBookings
+      parameters:
+      - in: query
+        name: status
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      - in: query
+        name: from
+        required: false
+        schema:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: From
+      - in: query
+        name: to
+        required: false
+        schema:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: To
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingList'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - APIKeyCookie: []
+      summary: List the current user's bookings
+      tags:
+      - bookings
+  /api/bookings/{booking_id}:
+    delete:
+      operationId: cancelBooking
+      parameters:
+      - in: path
+        name: booking_id
+        required: true
+        schema:
+          title: Booking Id
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookingCancelIn'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - APIKeyCookie: []
+      summary: Cancel a booking
+      tags:
+      - bookings
+    get:
+      operationId: getBooking
+      parameters:
+      - in: path
+        name: booking_id
+        required: true
+        schema:
+          title: Booking Id
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - APIKeyCookie: []
+      summary: Get a booking by id
+      tags:
+      - bookings
   /api/docks:
     get:
       operationId: listDocks
@@ -4796,6 +5460,138 @@ paths:
       summary: Revoke a pending invite (harbormaster only)
       tags:
       - berth-invites
+  /api/harbors/{harbor_id}/bookable-berths:
+    get:
+      operationId: listBookableBerths
+      parameters:
+      - in: path
+        name: harbor_id
+        required: true
+        schema:
+          title: Harbor Id
+          type: string
+      - in: query
+        name: from
+        required: true
+        schema:
+          format: date-time
+          title: From
+          type: string
+      - in: query
+        name: to
+        required: true
+        schema:
+          format: date-time
+          title: To
+          type: string
+      - in: query
+        name: length_m
+        required: false
+        schema:
+          anyOf:
+          - minimum: 0
+            type: number
+          - type: 'null'
+          title: Length M
+      - in: query
+        name: width_m
+        required: false
+        schema:
+          anyOf:
+          - minimum: 0
+            type: number
+          - type: 'null'
+          title: Width M
+      - in: query
+        name: depth_m
+        required: false
+        schema:
+          anyOf:
+          - minimum: 0
+            type: number
+          - type: 'null'
+          title: Depth M
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/BookableBerthOut'
+                title: Response Listbookableberths
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: List berths in a harbor bookable across a date range
+      tags:
+      - bookings
+  /api/harbors/{harbor_id}/bookings:
+    get:
+      operationId: listHarborBookings
+      parameters:
+      - in: path
+        name: harbor_id
+        required: true
+        schema:
+          title: Harbor Id
+          type: string
+      - in: query
+        name: status
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      - in: query
+        name: dock_id
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Dock Id
+      - in: query
+        name: from
+        required: false
+        schema:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: From
+      - in: query
+        name: to
+        required: false
+        schema:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: To
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingList'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - APIKeyCookie: []
+      summary: List bookings in a harbor (harbormaster only)
+      tags:
+      - bookings
   /api/harbors/{harbor_id}/events:
     get:
       operationId: listHarborEvents
@@ -5280,6 +6076,8 @@ tags:
   name: system
 - description: Berth monitoring and live updates
   name: berths
+- description: Visitor bookings against availability windows
+  name: bookings
 - description: Dock listing and detail
   name: docks
 - description: Registration, login, logout

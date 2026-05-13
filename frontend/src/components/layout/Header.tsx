@@ -249,14 +249,14 @@ function Header({
             to={marinaPath}
             className={cn(
               "rounded-full px-6 py-2 text-xs font-black transition-transform hover:scale-105 shadow-lg",
-              isOnMarinaHome 
+              isOnMarinaHome
                 ? "bg-gradient-to-r from-brand-blue to-brand-cyan text-white shadow-brand-blue/20"
-                : "bg-white border border-slate-200 text-brand-navy hover:bg-slate-50"
+                : "bg-white border border-slate-200 text-brand-navy hover:bg-slate-50",
             )}
           >
             Dashboard
           </Link>
-          
+
           {isLoggedIn && !isHarbormaster && (
             <Link
               to={`${marinaPath}/bookings`}
@@ -264,7 +264,7 @@ function Header({
                 "rounded-full px-6 py-2 text-xs font-black transition-transform hover:scale-105 shadow-lg",
                 location.pathname === `${marinaPath}/bookings`
                   ? "bg-gradient-to-r from-brand-blue to-brand-cyan text-white shadow-brand-blue/20"
-                  : "bg-white border border-slate-200 text-brand-navy hover:bg-slate-50"
+                  : "bg-white border border-slate-200 text-brand-navy hover:bg-slate-50",
               )}
             >
               Bookings

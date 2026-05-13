@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { useBookings } from "../hooks/useBookings";
-import { fmtDateShort } from "../lib/date";
 import type { AuthUser } from "../lib/auth-context";
+import { fmtDateShort } from "../lib/date";
 import { cn } from "../lib/utils";
 import { Button } from "./shared/ui/button";
 import {
@@ -85,7 +85,15 @@ export function BookingConfirmationDialog({
       setBookingError(null);
       setIsSubmitting(false);
     }
-  }, [open, window, berthId, preflightBooking, user.boat_length_m, user.boat_width_m, user.boat_depth_m]);
+  }, [
+    open,
+    window,
+    berthId,
+    preflightBooking,
+    user.boat_length_m,
+    user.boat_width_m,
+    user.boat_depth_m,
+  ]);
 
   const handleConfirm = async () => {
     if (!window) return;
@@ -107,9 +115,10 @@ export function BookingConfirmationDialog({
         onBooked();
       } else {
         const errorMsg =
-          result.error?.includes("409") || result.error?.toLowerCase().includes("already booked")
+          result.error?.includes("409") ||
+          result.error?.toLowerCase().includes("already booked")
             ? "This slot was just taken by another visitor. Choose a different window below."
-            : result.error ?? "Could not book berth. Please try again.";
+            : (result.error ?? "Could not book berth. Please try again.");
         setBookingError(errorMsg);
       }
     } catch {
@@ -120,18 +129,30 @@ export function BookingConfirmationDialog({
   };
 
   const visitorBoatInfo = [
-    { label: "Length", value: user.boat_length_m ? `${user.boat_length_m}m` : null },
-    { label: "Width", value: user.boat_width_m ? `${user.boat_width_m}m` : null },
-    { label: "Depth", value: user.boat_depth_m ? `${user.boat_depth_m}m` : null },
+    {
+      label: "Length",
+      value: user.boat_length_m ? `${user.boat_length_m}m` : null,
+    },
+    {
+      label: "Width",
+      value: user.boat_width_m ? `${user.boat_width_m}m` : null,
+    },
+    {
+      label: "Depth",
+      value: user.boat_depth_m ? `${user.boat_depth_m}m` : null,
+    },
   ];
 
-  const hasNoDimensions = !user.boat_length_m && !user.boat_width_m && !user.boat_depth_m;
+  const hasNoDimensions =
+    !user.boat_length_m && !user.boat_width_m && !user.boat_depth_m;
 
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
       <DialogContent className="max-w-md rounded-[32px] border-white/40 bg-white/80 p-6 shadow-2xl backdrop-blur-xl transition-all sm:rounded-[32px]">
         <DialogHeader className="space-y-1">
-          <DialogTitle className="text-2xl font-bold text-brand-navy">Confirm Booking</DialogTitle>
+          <DialogTitle className="text-2xl font-bold text-brand-navy">
+            Confirm Booking
+          </DialogTitle>
           <DialogDescription className="text-brand-navy/60">
             {berthLabel ? `Berth ${berthLabel}` : "Selected Berth"}
           </DialogDescription>
@@ -171,15 +192,21 @@ export function BookingConfirmationDialog({
               <div className="space-y-1 rounded-xl bg-white/40 p-3 text-sm text-brand-navy/80 border border-white/40">
                 <div className="flex justify-between">
                   <span>Length</span>
-                  <span className="font-medium">{berthLength ? `${berthLength}m` : "—"}</span>
+                  <span className="font-medium">
+                    {berthLength ? `${berthLength}m` : "—"}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Width</span>
-                  <span className="font-medium">{berthWidth ? `${berthWidth}m` : "—"}</span>
+                  <span className="font-medium">
+                    {berthWidth ? `${berthWidth}m` : "—"}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Depth</span>
-                  <span className="font-medium">{berthDepth ? `${berthDepth}m` : "—"}</span>
+                  <span className="font-medium">
+                    {berthDepth ? `${berthDepth}m` : "—"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -192,7 +219,9 @@ export function BookingConfirmationDialog({
               <div className="space-y-1 rounded-xl bg-white/40 p-3 text-sm text-brand-navy/80 border border-white/40">
                 {hasNoDimensions ? (
                   <div className="flex flex-col gap-1">
-                    <span className="text-brand-navy/40 italic">Not provided</span>
+                    <span className="text-brand-navy/40 italic">
+                      Not provided
+                    </span>
                     <a
                       href={`/${marinaSlug}/settings`}
                       className="text-[10px] text-blue-600 hover:underline"
@@ -243,7 +272,9 @@ export function BookingConfirmationDialog({
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
                   <p className="font-semibold">Validation failed</p>
-                  <p className="opacity-90">Could not check availability. You may still proceed.</p>
+                  <p className="opacity-90">
+                    Could not check availability. You may still proceed.
+                  </p>
                 </div>
               </div>
             )}
@@ -272,7 +303,7 @@ export function BookingConfirmationDialog({
             className={cn(
               "rounded-full px-8 font-semibold text-white transition-all",
               "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-200",
-              (preflightState === "loading" || isSubmitting) && "opacity-50"
+              (preflightState === "loading" || isSubmitting) && "opacity-50",
             )}
           >
             {isSubmitting ? (

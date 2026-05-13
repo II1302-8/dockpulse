@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useOutletContext, useParams } from "react-router-dom";
 import { ActivityLogPanel } from "./components/ActivityLogPanel";
 import { BerthDetailPanel } from "./components/BerthDetailPanel";
+import { BookingsManagerPanel } from "./components/BookingsManagerPanel";
 import { HarborMasterOverview } from "./components/HarborMasterOverview";
 import { HarborOverview } from "./components/HarborOverview";
 import { useDashboardLayout } from "./components/layout/DashboardLayoutContext";
@@ -12,12 +13,11 @@ import { MapLegend } from "./components/MapLegend";
 import { NodeHealthPanel } from "./components/NodeHealthPanel";
 import { NorthArrow } from "./components/NorthArrow";
 import { useBerthsStream } from "./hooks/useBerthsStream";
+import { useHarborBookings } from "./hooks/useBookings";
 import { getHarborIdFromSlug } from "./lib/marinas";
 import { cn } from "./lib/utils";
 import { mapBerthIds } from "./svg";
 import { SvgMap } from "./svgMap";
-import { BookingsManagerPanel } from "./components/BookingsManagerPanel";
-import { useHarborBookings } from "./hooks/useBookings";
 
 export function HarborMap() {
   const contentRef = useRef<HTMLDivElement>(null);
@@ -48,7 +48,6 @@ export function HarborMap() {
     setIsBookingsOpen,
     toggleOverview,
     toggleNodeHealth,
-    toggleBookings,
   } = useDashboardLayout();
 
   // Highlight berths that have confirmed bookings when the bookings panel is open
@@ -149,7 +148,7 @@ export function HarborMap() {
       setIsBookingsOpen(false);
       setSelectedBerthId(berthId);
     },
-    [setIsOverviewOpen, setIsActivityLogOpen, setIsNodeHealthOpen, setIsBookingsOpen],
+    [setIsActivityLogOpen, setIsNodeHealthOpen, setIsBookingsOpen],
   );
 
   const handleCloseBerthPanel = useCallback(() => {

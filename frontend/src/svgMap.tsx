@@ -1,6 +1,7 @@
 import type { components } from "./api-types";
 import { useNow } from "./hooks/useNow";
 import { isOnline } from "./lib/freshness";
+import { cn } from "./lib/utils";
 import {
   horizontalPier,
   leftSideBerths,
@@ -8,7 +9,6 @@ import {
   topBerths,
   verticalPier,
 } from "./svg";
-import { cn } from "./lib/utils";
 
 const stroke = "rgba(10, 37, 64, 0.2)";
 const selectedStroke = "#0093E9";
@@ -185,7 +185,9 @@ export function SvgMap({
           width={slot.width}
           height={slot.height}
           fill={fill}
-          stroke={isSelected ? selectedStroke : isHighlighted ? "#0093E9" : "none"}
+          stroke={
+            isSelected ? selectedStroke : isHighlighted ? "#0093E9" : "none"
+          }
           strokeWidth={isSelected ? 4 : isHighlighted ? 3 : 0}
           strokeOpacity={isHighlighted && !isSelected ? 0.6 : 1}
           className="berth-rect transition-all duration-300"

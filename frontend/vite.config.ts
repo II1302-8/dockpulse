@@ -45,24 +45,47 @@ export default defineConfig({
       // mock server handles paths Prism can't (SSE, cookie-setting auth, adoption flow)
       ...(sseMockUrl
         ? {
-            "/api/berths/stream": sseMockUrl,
+            "/api/berths/stream": {
+              target: sseMockUrl,
+              changeOrigin: true,
+            },
             "^/api/berths/.*/bookable-windows": {
               target: sseMockUrl,
               changeOrigin: true,
               rewrite: (path) => path,
             },
-            "/api/auth": sseMockUrl,
+            "/api/auth": {
+              target: sseMockUrl,
+              changeOrigin: true,
+            },
             "^/api/berths/.*/bookings": {
               target: sseMockUrl,
               changeOrigin: true,
               rewrite: (path) => path,
             },
-            "/api/bookings": sseMockUrl,
-            "/api/users": sseMockUrl,
-            "/api/adoptions": sseMockUrl,
+            "^/api/harbors/.*/bookings": {
+              target: sseMockUrl,
+              changeOrigin: true,
+              rewrite: (path) => path,
+            },
+            "/api/bookings": {
+              target: sseMockUrl,
+              changeOrigin: true,
+            },
+            "/api/users": {
+              target: sseMockUrl,
+              changeOrigin: true,
+            },
+            "/api/adoptions": {
+              target: sseMockUrl,
+              changeOrigin: true,
+            },
           }
         : {}),
-      "/api": apiUrl,
+      "/api": {
+        target: apiUrl,
+        changeOrigin: true,
+      },
     },
   },
 });

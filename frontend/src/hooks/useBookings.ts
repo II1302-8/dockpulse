@@ -53,7 +53,14 @@ export function useMyBookings(
   const [error, setError] = useState<string | null>(null);
   const [refetchTrigger, setRefetchTrigger] = useState(0);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: refetchTrigger is a manual trigger
   useEffect(() => {
+    if (!status) {
+      setBookings([]);
+      setIsLoading(false);
+      return;
+    }
+
     const ac = new AbortController();
     setIsLoading(true);
     setError(null);
@@ -88,7 +95,7 @@ export function useMyBookings(
 }
 
 export function useHarborBookings(
-  harborId: string,
+  harborId: string | null,
   options: { status?: BookingStatus; from?: string; to?: string } = {},
 ): UseMyBookingsResult {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -96,7 +103,14 @@ export function useHarborBookings(
   const [error, setError] = useState<string | null>(null);
   const [refetchTrigger, setRefetchTrigger] = useState(0);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: refetchTrigger is a manual trigger
   useEffect(() => {
+    if (!harborId) {
+      setBookings([]);
+      setIsLoading(false);
+      return;
+    }
+
     const ac = new AbortController();
     setIsLoading(true);
     setError(null);

@@ -91,10 +91,14 @@ function withSetCookies(
 
 function hasAccessCookie(req: Request): boolean {
   const raw = req.headers.get("cookie") ?? "";
-  return raw.split(";").some((c) => {
+  const hasAccess = raw.split(";").some((c) => {
     const [name, value] = c.trim().split("=");
     return name === "dockpulse_access" && value;
   });
+  if (!hasAccess) {
+    console.log("[MOCK] Auth Check Failed. Cookies received:", raw);
+  }
+  return hasAccess;
 }
 
 function unauthorized(): Response {
@@ -117,39 +121,44 @@ async function handleAuth(req: Request, url: URL): Promise<Response | null> {
         role = "visitor";
         email = "visitor@example.com";
       }
-    } catch (e) {}
+    } catch (_e) {}
 
     const user = { ...MOCK_USER, role, email, user_id: `u-mock-${role}` };
     return withSetCookies(JSON.stringify(user), setSessionCookies(email));
   }
   if (path === "/api/auth/register" && req.method === "POST") {
-    return withSetCookies(JSON.stringify(MOCK_USER), setSessionCookies(MOCK_USER.email), {
-      status: 201,
-    });
+    return withSetCookies(
+      JSON.stringify(MOCK_USER),
+      setSessionCookies(MOCK_USER.email),
+      {
+        status: 201,
+      },
+    );
   }
   if (path === "/api/auth/me" && req.method === "GET") {
     if (!hasAccessCookie(req)) return unauthorized();
-    
+
     // determine role from our mock_user cookie
-    const isVisitor = req.headers.get("cookie")?.includes("visitor%40example.com") || false;
+    const isVisitor =
+      req.headers.get("cookie")?.includes("visitor%40example.com") || false;
     const userId = isVisitor ? "u-mock-visitor" : "u-mock-harbormaster";
     const dims = MOCK_DIMENSIONS.get(userId);
 
-    const user = isVisitor 
-      ? { 
-          ...MOCK_USER, 
-          role: "visitor", 
-          email: "visitor@example.com", 
+    const user = isVisitor
+      ? {
+          ...MOCK_USER,
+          role: "visitor",
+          email: "visitor@example.com",
           user_id: "u-mock-visitor",
           boat_length_m: dims?.length,
           boat_width_m: dims?.width,
-          boat_depth_m: dims?.depth
+          boat_depth_m: dims?.depth,
         }
       : {
           ...MOCK_USER,
           boat_length_m: dims?.length,
           boat_width_m: dims?.width,
-          boat_depth_m: dims?.depth
+          boat_depth_m: dims?.depth,
         };
 
     return new Response(JSON.stringify(user), {
@@ -160,7 +169,9 @@ async function handleAuth(req: Request, url: URL): Promise<Response | null> {
   if (path === "/api/auth/refresh" && req.method === "POST") {
     if (!hasAccessCookie(req)) return unauthorized();
     // we don't bother extracting email for refresh in mock
-    return withSetCookies(null, setSessionCookies("harbormaster@example.com"), { status: 204 });
+    return withSetCookies(null, setSessionCookies("harbormaster@example.com"), {
+      status: 204,
+    });
   }
   if (path === "/api/auth/logout" && req.method === "POST") {
     return withSetCookies(null, clearedCookies(), { status: 204 });
@@ -169,27 +180,36 @@ async function handleAuth(req: Request, url: URL): Promise<Response | null> {
 }
 
 // simple in-memory store for boat dimensions since mock users are static
-const MOCK_DIMENSIONS = new Map<string, { length?: number; width?: number; depth?: number }>();
+const MOCK_DIMENSIONS = new Map<
+  string,
+  { length?: number; width?: number; depth?: number }
+>();
 
 async function handleUsers(req: Request, url: URL): Promise<Response | null> {
   const path = url.pathname;
   if (path === "/api/users/me" && req.method === "PATCH") {
     if (!hasAccessCookie(req)) return unauthorized();
-    
-    const isVisitor = req.headers.get("cookie")?.includes("visitor%40example.com") || false;
+
+    const isVisitor =
+      req.headers.get("cookie")?.includes("visitor%40example.com") || false;
     const userId = isVisitor ? "u-mock-visitor" : "u-mock-harbormaster";
-    
+
     const body = await req.json();
     const dims = MOCK_DIMENSIONS.get(userId) || {};
-    
+
     if (body.boat_length_m !== undefined) dims.length = body.boat_length_m;
     if (body.boat_width_m !== undefined) dims.width = body.boat_width_m;
     if (body.boat_depth_m !== undefined) dims.depth = body.boat_depth_m;
-    
+
     MOCK_DIMENSIONS.set(userId, dims);
-    
-    const baseUser = isVisitor 
-      ? { ...MOCK_USER, role: "visitor", email: "visitor@example.com", user_id: "u-mock-visitor" }
+
+    const baseUser = isVisitor
+      ? {
+          ...MOCK_USER,
+          role: "visitor",
+          email: "visitor@example.com",
+          user_id: "u-mock-visitor",
+        }
       : MOCK_USER;
 
     const updatedUser = {
@@ -434,7 +454,9 @@ async function handleAdoptions(
 }
 
 function handleBerthWindows(req: Request, url: URL): Response | null {
-  const match = url.pathname.match(/^\/api\/berths\/([^/]+)\/bookable-windows$/);
+  const match = url.pathname.match(
+    /^\/api\/berths\/([^/]+)\/bookable-windows$/,
+  );
   if (!match || req.method !== "GET") return null;
 
   const berthId = match[1];
@@ -468,46 +490,108 @@ type MockBooking = {
   visitor_id: string;
   from_date: string;
   to_date: string;
-  status: "confirmed" | "cancelled_by_visitor" | "cancelled_by_host" | "completed";
+  status:
+    | "confirmed"
+    | "cancelled_by_visitor"
+    | "cancelled_by_host"
+    | "completed";
   created_at: string;
 };
 
 const mockBookings = new Map<string, MockBooking>();
+
+// Seed initial bookings for demonstration
+const now = new Date();
+const seedBookings: MockBooking[] = [
+  {
+    booking_id: "seed-1",
+    berth_id: "ksss-saltsjobaden-pier-1-t1",
+    visitor_id: "u-mock-visitor",
+    from_date: new Date(now.getTime() + 86400000).toISOString(),
+    to_date: new Date(now.getTime() + 86400000 * 2).toISOString(),
+    status: "confirmed",
+    created_at: new Date(now.getTime() - 86400000).toISOString(),
+  },
+  {
+    booking_id: "seed-2",
+    berth_id: "ksss-saltsjobaden-pier-1-t2",
+    visitor_id: "u-mock-visitor-2",
+    from_date: new Date(now.getTime() + 86400000 * 3).toISOString(),
+    to_date: new Date(now.getTime() + 86400000 * 5).toISOString(),
+    status: "confirmed",
+    created_at: new Date(now.getTime() - 172800000).toISOString(),
+  },
+  {
+    booking_id: "seed-3",
+    berth_id: "ksss-saltsjobaden-pier-1-t3",
+    visitor_id: "u-mock-visitor-3",
+    from_date: new Date(now.getTime() - 86400000 * 5).toISOString(),
+    to_date: new Date(now.getTime() - 86400000 * 3).toISOString(),
+    status: "completed",
+    created_at: new Date(now.getTime() - 86400000 * 7).toISOString(),
+  },
+  {
+    booking_id: "seed-4",
+    berth_id: "ksss-saltsjobaden-pier-1-t4",
+    visitor_id: "u-mock-visitor-4",
+    from_date: new Date(now.getTime() - 86400000 * 2).toISOString(),
+    to_date: new Date(now.getTime() - 86400000).toISOString(),
+    status: "cancelled_by_visitor",
+    created_at: new Date(now.getTime() - 86400000 * 3).toISOString(),
+  },
+];
+
+for (const b of seedBookings) {
+  mockBookings.set(b.booking_id, b);
+}
 
 function getMockUserId(req: Request): string {
   const raw = req.headers.get("cookie") ?? "";
   const match = raw.match(/dockpulse_mock_user=([^;]+)/);
   if (!match) return "u-mock-anonymous";
   const email = decodeURIComponent(match[1]);
-  return email === "visitor@example.com" ? "u-mock-visitor" : "u-mock-harbormaster";
+  return email === "visitor@example.com"
+    ? "u-mock-visitor"
+    : "u-mock-harbormaster";
 }
 
-async function handleBookings(req: Request, url: URL): Promise<Response | null> {
+async function handleBookings(
+  req: Request,
+  url: URL,
+): Promise<Response | null> {
   const path = url.pathname;
-  
+
   // POST /api/berths/{id}/bookings:preflight
-  const preflightMatch = path.match(/^\/api\/berths\/([^/]+)\/bookings:preflight$/);
+  const preflightMatch = path.match(
+    /^\/api\/berths\/([^/]+)\/bookings:preflight$/,
+  );
   if (preflightMatch && req.method === "POST") {
     if (!hasAccessCookie(req)) return unauthorized();
-    
+
     const body = await req.json();
     const berthId = preflightMatch[1];
-    const berth = BERTHS.find(b => b.berth_id === berthId) || BERTHS[0];
-    
+    const berth = BERTHS.find((b) => b.berth_id === berthId) || BERTHS[0];
+
     const reasons: string[] = [];
     let fits = true;
-    
+
     if (body.length_m && body.length_m > (berth.length_m || 8.5)) {
       fits = false;
-      reasons.push(`Boat length (${body.length_m}m) exceeds berth length (${berth.length_m || 8.5}m)`);
+      reasons.push(
+        `Boat length (${body.length_m}m) exceeds berth length (${berth.length_m || 8.5}m)`,
+      );
     }
     if (body.width_m && body.width_m > (berth.width_m || 3.2)) {
       fits = false;
-      reasons.push(`Boat width (${body.width_m}m) exceeds berth width (${berth.width_m || 3.2}m)`);
+      reasons.push(
+        `Boat width (${body.width_m}m) exceeds berth width (${berth.width_m || 3.2}m)`,
+      );
     }
     if (body.depth_m && body.depth_m > (berth.depth_m || 2.0)) {
       fits = false;
-      reasons.push(`Boat depth (${body.depth_m}m) exceeds berth depth (${berth.depth_m || 2.0}m)`);
+      reasons.push(
+        `Boat depth (${body.depth_m}m) exceeds berth depth (${berth.depth_m || 2.0}m)`,
+      );
     }
 
     return new Response(JSON.stringify({ available: true, fits, reasons }), {
@@ -529,14 +613,17 @@ async function handleBookings(req: Request, url: URL): Promise<Response | null> 
         b.berth_id === berthId &&
         b.status === "confirmed" &&
         ((body.from_date >= b.from_date && body.from_date < b.to_date) ||
-          (body.to_date > b.from_date && body.to_date <= b.to_date))
+          (body.to_date > b.from_date && body.to_date <= b.to_date)),
     );
 
     if (hasOverlap) {
-      return new Response(JSON.stringify({ detail: "Berth already booked for these dates." }), {
-        status: 409,
-        headers: { "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ detail: "Berth already booked for these dates." }),
+        {
+          status: 409,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
     }
 
     const booking: MockBooking = {
@@ -560,7 +647,7 @@ async function handleBookings(req: Request, url: URL): Promise<Response | null> 
     if (!hasAccessCookie(req)) return unauthorized();
     const userId = getMockUserId(req);
     const statusFilter = url.searchParams.get("status");
-    
+
     const items = Array.from(mockBookings.values())
       .filter((b) => b.visitor_id === userId)
       .filter((b) => !statusFilter || b.status === statusFilter);
@@ -577,7 +664,10 @@ async function handleBookings(req: Request, url: URL): Promise<Response | null> 
     const userId = getMockUserId(req);
     // In mock, only harbormaster can see all harbor bookings
     if (userId !== "u-mock-harbormaster") {
-      return new Response(JSON.stringify({ detail: "Forbidden" }), { status: 403, headers: { "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ detail: "Forbidden" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      });
     }
 
     const statusFilter = url.searchParams.get("status");
@@ -601,12 +691,14 @@ async function handleBookings(req: Request, url: URL): Promise<Response | null> 
     const id = deleteMatch[1];
     const booking = mockBookings.get(id);
     if (!booking) return new Response(null, { status: 404 });
-    
+
     const userId = getMockUserId(req);
     const isHM = userId === "u-mock-harbormaster";
-    
+
     if (booking.visitor_id !== userId && !isHM) {
-      return new Response(JSON.stringify({ detail: "Forbidden" }), { status: 403 });
+      return new Response(JSON.stringify({ detail: "Forbidden" }), {
+        status: 403,
+      });
     }
 
     if (booking.status === "confirmed") {
@@ -614,7 +706,7 @@ async function handleBookings(req: Request, url: URL): Promise<Response | null> 
     } else {
       mockBookings.delete(id);
     }
-    
+
     return new Response(null, { status: 204 });
   }
 
@@ -625,7 +717,11 @@ Bun.serve({
   port: PORT,
   async fetch(req) {
     const url = new URL(req.url);
-    console.log(`[MOCK] ${req.method} ${url.pathname}`);
+    const headers: Record<string, string> = {};
+    req.headers.forEach((v: string, k: string) => {
+      headers[k] = v;
+    });
+    console.log(`[MOCK] ${req.method} ${url.pathname}`, { headers });
 
     const authResponse = await handleAuth(req, url);
     if (authResponse) return authResponse;

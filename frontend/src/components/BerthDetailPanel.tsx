@@ -19,14 +19,17 @@ import {
   revokeInvite,
   useBerthInvites,
 } from "../hooks/useBerthInvites";
+import {
+  type BookableWindow,
+  useBookableWindows,
+} from "../hooks/useBookableWindows";
 import { useNow } from "../hooks/useNow";
 import { apiFetch } from "../lib/api";
 import { fmtDate, fmtDateShort, fmtDateTime } from "../lib/date";
 import { isOnline } from "../lib/freshness";
 import { cn } from "../lib/utils";
-import { InviteOwnerModal } from "./InviteOwnerModal";
 import { BookingConfirmationDialog } from "./BookingConfirmationDialog";
-import { useBookableWindows, type BookableWindow } from "../hooks/useBookableWindows";
+import { InviteOwnerModal } from "./InviteOwnerModal";
 import type { AuthOutletContext } from "./layout/MainLayout";
 
 type Event = components["schemas"]["EventOut"];
@@ -82,7 +85,8 @@ export function BerthDetailPanel({
   berth: liveBerth,
 }: BerthDetailPanelProps) {
   const { marinaSlug } = useParams<{ marinaSlug: string }>();
-  const { user: currentUser, openAuthDialog } = useOutletContext<AuthOutletContext>();
+  const { user: currentUser, openAuthDialog } =
+    useOutletContext<AuthOutletContext>();
   const isHarborMaster = currentUser?.role === "harbormaster";
   const isVisitor = currentUser && !isHarborMaster;
 
@@ -112,12 +116,14 @@ export function BerthDetailPanel({
     email?: string;
   } | null>(null);
   const [isRevokingInvite, setIsRevokingInvite] = useState(false);
-  const [selectedWindow, setSelectedWindow] = useState<BookableWindow | null>(null);
-
-  const isBerthBookable = berth && isOnline(berth.last_updated, now) && berth.is_available_now;
-  const { windows: bookableWindows, isLoading: isWindowsLoading } = useBookableWindows(
-    isVisitor && isBerthBookable ? berthId : null,
+  const [selectedWindow, setSelectedWindow] = useState<BookableWindow | null>(
+    null,
   );
+
+  const isBerthBookable =
+    berth && isOnline(berth.last_updated, now) && berth.is_available_now;
+  const { windows: bookableWindows, isLoading: isWindowsLoading } =
+    useBookableWindows(isVisitor && isBerthBookable ? berthId : null);
 
   const tenantEmail = tenant?.email ?? null;
   const tenantFullName =
@@ -454,7 +460,8 @@ export function BerthDetailPanel({
                         >
                           <div className="mb-2 flex items-center justify-between">
                             <span className="text-[10px] font-bold text-brand-navy/60">
-                              {fmtDateShort(window.from_date)} — {fmtDateShort(window.to_date)}
+                              {fmtDateShort(window.from_date)} —{" "}
+                              {fmtDateShort(window.to_date)}
                             </span>
                           </div>
 

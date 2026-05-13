@@ -2,8 +2,8 @@ import { Ship } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { apiFetch } from "../../lib/api";
-import { useAuth } from "../../lib/auth-context";
 import type { AuthUser } from "../../lib/auth-context";
+import { useAuth } from "../../lib/auth-context";
 import { Button } from "../shared/ui/button";
 import { Input } from "../shared/ui/input";
 import { Label } from "../shared/ui/label";
@@ -75,7 +75,10 @@ export function BoatDimensionsSection({ user }: BoatDimensionsSectionProps) {
       <form onSubmit={handleSave} className="space-y-6">
         <div className="grid gap-6 sm:grid-cols-3">
           <div className="space-y-2">
-            <Label htmlFor="boat-length" className="text-[10px] font-black uppercase tracking-widest text-brand-navy/60">
+            <Label
+              htmlFor="boat-length"
+              className="text-[10px] font-black uppercase tracking-widest text-brand-navy/60"
+            >
               Length (m)
             </Label>
             <Input
@@ -91,7 +94,10 @@ export function BoatDimensionsSection({ user }: BoatDimensionsSectionProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="boat-width" className="text-[10px] font-black uppercase tracking-widest text-brand-navy/60">
+            <Label
+              htmlFor="boat-width"
+              className="text-[10px] font-black uppercase tracking-widest text-brand-navy/60"
+            >
               Width (m)
             </Label>
             <Input
@@ -107,7 +113,10 @@ export function BoatDimensionsSection({ user }: BoatDimensionsSectionProps) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="boat-depth" className="text-[10px] font-black uppercase tracking-widest text-brand-navy/60">
+            <Label
+              htmlFor="boat-depth"
+              className="text-[10px] font-black uppercase tracking-widest text-brand-navy/60"
+            >
               Depth (m)
             </Label>
             <Input

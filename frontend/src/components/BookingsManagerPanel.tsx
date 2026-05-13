@@ -13,7 +13,7 @@ import { cn } from "../lib/utils";
 interface BookingsManagerPanelProps {
   isOpen?: boolean;
   onCloseCB: () => void;
-  harborId: string;
+  harborId: string | null;
 }
 
 export function BookingsManagerPanel({
@@ -21,14 +21,20 @@ export function BookingsManagerPanel({
   onCloseCB,
   harborId,
 }: BookingsManagerPanelProps) {
-  const [filterStatus, setFilterStatus] = useState<BookingStatus | "all">("all");
+  const [filterStatus, setFilterStatus] = useState<BookingStatus | "all">(
+    "all",
+  );
   const { bookings, isLoading, error, refetch } = useHarborBookings(harborId, {
     status: filterStatus === "all" ? undefined : filterStatus,
   });
   const { cancelBooking } = useBookings();
 
   async function handleCancel(bookingId: string) {
-    if (!confirm("Are you sure you want to cancel this booking? This will notify the visitor.")) {
+    if (
+      !confirm(
+        "Are you sure you want to cancel this booking? This will notify the visitor.",
+      )
+    ) {
       return;
     }
 

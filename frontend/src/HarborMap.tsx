@@ -53,10 +53,9 @@ export function HarborMap() {
   const activityLogIsVisible = isActivityLogOpen;
   const nodeHealthIsVisible = isNodeHealthOpen;
 
-  // berth detail sits in the gutter so the map stays interactive behind it.
-  // only overview/activity/node-health occupy the gutter side and block drag
-  const isMapBlocked =
-    overviewIsVisible || activityLogIsVisible || nodeHealthIsVisible;
+  // overview is small enough to leave the map pannable; activity/nodeHealth
+  // panels still pause panzoom because they fill the gutter on mobile
+  const isMapBlocked = activityLogIsVisible || nodeHealthIsVisible;
 
   const shouldShowMapLegend = !isMapBlocked && !selectedBerthId;
 
@@ -129,6 +128,15 @@ export function HarborMap() {
   const handleCloseBerthPanel = useCallback(() => {
     setSelectedBerthId(null);
   }, []);
+
+  useEffect(() => {
+    if (!selectedBerthId) return;
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setSelectedBerthId(null);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selectedBerthId]);
 
   const handleCloseOverview = useCallback(() => {
     setIsOverviewOpen(false);

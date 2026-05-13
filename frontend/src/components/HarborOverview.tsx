@@ -83,7 +83,7 @@ export function HarborOverview({
           onPointerDown={handleClosePointerDown}
           onPointerUp={handleClosePointerUp}
           onClick={handleCloseClick}
-          className="pointer-events-auto relative z-[130] touch-manipulation rounded-full bg-[#0A2540]/5 p-2 text-[#0A2540]/60 transition-colors hover:bg-[#0A2540]/10 active:scale-95 lg:hidden"
+          className="pointer-events-auto relative z-[130] touch-manipulation rounded-full bg-[#0A2540]/5 p-2 text-[#0A2540]/60 transition-colors hover:bg-[#0A2540]/10 active:scale-95"
           aria-label="Close harbor overview"
         >
           <X size={14} strokeWidth={3} />

@@ -115,7 +115,7 @@ def render(
           <tr>
             <td style="padding:20px 32px 28px;border-top:1px solid rgba(10,37,64,0.06);">
               <p style="margin:0;color:{INK_FAINT};font-size:11px;line-height:1.5;">
-                Sent by DockPulse · <a href="https://www.dockpulse.xyz" style="color:{BRAND_BLUE};text-decoration:none;">dockpulse.xyz</a>
+                Sent by DockPulse · <a href="https://dockpulse.xyz" style="color:{BRAND_BLUE};text-decoration:none;">dockpulse.xyz</a>
               </p>
             </td>
           </tr>

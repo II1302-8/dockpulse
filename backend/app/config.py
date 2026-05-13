@@ -102,7 +102,7 @@ class Settings(BaseSettings):
         # when APP_BASE_URL wasn't wired through the deployment env
         if not self.app_base_url:
             self.app_base_url = {
-                "prod": "https://www.dockpulse.xyz",
+                "prod": "https://dockpulse.xyz",
                 "staging": "https://staging.dockpulse.xyz",
                 "dev": "http://localhost:5173",
             }[self.app_env]

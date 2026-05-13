@@ -5,7 +5,7 @@ import { defineConfig } from "vite";
 
 // https://vite.dev/config/
 const sseMockUrl = process.env.MOCK_SSE_URL;
-const apiUrl = process.env.API_URL || "http://localhost:8000";
+const apiUrl = process.env.API_URL || "http://127.0.0.1:8000";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -46,7 +46,19 @@ export default defineConfig({
       ...(sseMockUrl
         ? {
             "/api/berths/stream": sseMockUrl,
+            "^/api/berths/.*/bookable-windows": {
+              target: sseMockUrl,
+              changeOrigin: true,
+              rewrite: (path) => path,
+            },
             "/api/auth": sseMockUrl,
+            "^/api/berths/.*/bookings": {
+              target: sseMockUrl,
+              changeOrigin: true,
+              rewrite: (path) => path,
+            },
+            "/api/bookings": sseMockUrl,
+            "/api/users": sseMockUrl,
             "/api/adoptions": sseMockUrl,
           }
         : {}),

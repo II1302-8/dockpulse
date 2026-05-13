@@ -25,8 +25,8 @@ import { fmtDate, fmtDateShort, fmtDateTime } from "../lib/date";
 import { isOnline } from "../lib/freshness";
 import { cn } from "../lib/utils";
 import { InviteOwnerModal } from "./InviteOwnerModal";
-import { createBooking } from "../hooks/useBookings";
-import { useBookableWindows } from "../hooks/useBookableWindows";
+import { BookingConfirmationDialog } from "./BookingConfirmationDialog";
+import { useBookableWindows, type BookableWindow } from "../hooks/useBookableWindows";
 import type { AuthOutletContext } from "./layout/MainLayout";
 
 type Event = components["schemas"]["EventOut"];
@@ -112,7 +112,7 @@ export function BerthDetailPanel({
     email?: string;
   } | null>(null);
   const [isRevokingInvite, setIsRevokingInvite] = useState(false);
-  const [isBooking, setIsBooking] = useState<string | null>(null);
+  const [selectedWindow, setSelectedWindow] = useState<BookableWindow | null>(null);
 
   const isBerthBookable = berth && isOnline(berth.last_updated, now) && berth.is_available_now;
   const { windows: bookableWindows, isLoading: isWindowsLoading } = useBookableWindows(
@@ -460,28 +460,10 @@ export function BerthDetailPanel({
 
                           <button
                             type="button"
-                            disabled={Boolean(isBooking)}
-                            onClick={async () => {
-                              setIsBooking(window.window_id);
-                              const res = await createBooking(berthId, {
-                                from_date: window.from_date,
-                                to_date: window.to_date,
-                              });
-                              setIsBooking(null);
-                              if (res.ok) {
-                                toast.success("Berth booked!");
-                                closePanel();
-                              } else {
-                                toast.error(res.error);
-                              }
-                            }}
-                            className="flex w-full items-center justify-center rounded-xl bg-brand-blue py-2 text-[9px] font-black uppercase tracking-widest text-white transition-all hover:bg-brand-blue/90 disabled:opacity-50"
+                            onClick={() => setSelectedWindow(window)}
+                            className="flex w-full items-center justify-center rounded-xl bg-brand-blue py-2 text-[9px] font-black uppercase tracking-widest text-white transition-all hover:bg-brand-blue/90"
                           >
-                            {isBooking === window.window_id ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : (
-                              "Book Now"
-                            )}
+                            Book this window
                           </button>
                         </div>
                       ))}
@@ -692,6 +674,24 @@ export function BerthDetailPanel({
           harborId={harborId}
           onClose={() => setIsInviteOpen(false)}
           onCreated={reloadInvites}
+        />
+      )}
+
+      {selectedWindow && currentUser && (
+        <BookingConfirmationDialog
+          open={Boolean(selectedWindow)}
+          berthId={berthId}
+          berthLabel={berth?.label ?? null}
+          berthLength={berth?.length_m ?? null}
+          berthWidth={berth?.width_m ?? null}
+          berthDepth={berth?.depth_m ?? null}
+          window={selectedWindow}
+          user={currentUser}
+          onClose={() => setSelectedWindow(null)}
+          onBooked={() => {
+            setSelectedWindow(null);
+            closePanel();
+          }}
         />
       )}
 

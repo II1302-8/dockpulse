@@ -25,6 +25,12 @@ export type CreateBookingForm = {
   depth_m?: number;
 };
 
+export type PreflightResult = {
+  available: boolean;
+  fits: boolean;
+  reasons: string[];
+};
+
 export type CreateResult =
   | { ok: true; booking: Booking }
   | { ok: false; error: string };
@@ -37,7 +43,10 @@ interface UseMyBookingsResult {
   error: string | null;
 }
 
-export function useMyBookings(status?: BookingStatus): UseMyBookingsResult {
+export function useMyBookings(
+  status?: BookingStatus,
+  options: { from?: string; to?: string } = {},
+): UseMyBookingsResult {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +58,8 @@ export function useMyBookings(status?: BookingStatus): UseMyBookingsResult {
 
     const params = new URLSearchParams();
     if (status) params.append("status", status);
+    if (options.from) params.append("from", options.from);
+    if (options.to) params.append("to", options.to);
 
     apiFetch(`/api/bookings/me?${params.toString()}`, { signal: ac.signal })
       .then((res) => (res.ok ? (res.json() as Promise<Booking[]>) : []))
@@ -65,7 +76,7 @@ export function useMyBookings(status?: BookingStatus): UseMyBookingsResult {
       });
 
     return () => ac.abort();
-  }, [status]);
+  }, [status, options.from, options.to]);
 
   return { bookings, isLoading, error };
 }
@@ -121,7 +132,7 @@ export async function cancelBooking(bookingId: string): Promise<CancelResult> {
 export async function preflightBooking(
   berthId: string,
   form: CreateBookingForm,
-): Promise<unknown> {
+): Promise<PreflightResult> {
   try {
     const res = await apiFetch(`/api/berths/${berthId}/bookings:preflight`, {
       method: "POST",
@@ -134,9 +145,17 @@ export async function preflightBooking(
       throw new Error(data.detail || data.message || "Preflight failed.");
     }
 
-    return await res.json();
+    return (await res.json()) as PreflightResult;
   } catch (err) {
     console.error("Preflight error", err);
     throw err;
   }
+}
+
+export function useBookings() {
+  return {
+    createBooking,
+    preflightBooking,
+    cancelBooking,
+  };
 }

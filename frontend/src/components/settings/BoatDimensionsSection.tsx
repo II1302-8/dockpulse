@@ -1,6 +1,8 @@
+import { Ship } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { apiFetch } from "../../lib/api";
+import { useAuth } from "../../lib/auth-context";
 import type { AuthUser } from "../../lib/auth-context";
 import { Button } from "../shared/ui/button";
 import { Input } from "../shared/ui/input";
@@ -11,6 +13,7 @@ interface BoatDimensionsSectionProps {
 }
 
 export function BoatDimensionsSection({ user }: BoatDimensionsSectionProps) {
+  const { refresh } = useAuth();
   // dimensions might not exist in the initial user object from backend yet
   const [length, setLength] = useState<string>(
     user.boat_length_m?.toString() || "",
@@ -28,7 +31,7 @@ export function BoatDimensionsSection({ user }: BoatDimensionsSectionProps) {
     setIsSaving(true);
 
     try {
-      const res = await apiFetch("/api/auth/me", {
+      const res = await apiFetch("/api/users/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -40,6 +43,7 @@ export function BoatDimensionsSection({ user }: BoatDimensionsSectionProps) {
 
       if (res.ok) {
         toast.success("Boat dimensions saved.");
+        refresh().catch(() => {});
       } else {
         const data = await res.json().catch(() => ({}));
         toast.error(data.detail || "Failed to save dimensions.");
@@ -53,14 +57,19 @@ export function BoatDimensionsSection({ user }: BoatDimensionsSectionProps) {
   }
 
   return (
-    <section className="animate-in fade-in slide-in-from-bottom-4 rounded-[32px] border border-white/60 bg-white/70 p-6 shadow-deep backdrop-blur-2xl duration-500 delay-200 fill-mode-both md:p-8">
-      <div className="mb-8">
-        <h2 className="text-xl font-black uppercase tracking-tight text-brand-navy">
-          Boat Dimensions
-        </h2>
-        <p className="mt-1 text-xs font-bold uppercase tracking-widest text-brand-navy/40">
-          Used to auto-fill booking requests
-        </p>
+    <section className="animate-in fade-in slide-in-from-bottom-4 rounded-[32px] border border-slate-200 bg-white/80 p-6 shadow-lg backdrop-blur-2xl duration-500 delay-200 fill-mode-both md:p-8 mt-8">
+      <div className="flex items-center gap-3 mb-8">
+        <div className="w-10 h-10 rounded-2xl bg-brand-blue/10 flex items-center justify-center text-brand-blue">
+          <Ship size={20} strokeWidth={2.5} />
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold text-brand-navy">
+            Boat Dimensions
+          </h2>
+          <p className="text-sm text-brand-navy/60">
+            Used to auto-fill booking requests
+          </p>
+        </div>
       </div>
 
       <form onSubmit={handleSave} className="space-y-6">

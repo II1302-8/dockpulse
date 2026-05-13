@@ -16,6 +16,7 @@ interface UseBookableWindowsResult {
 
 export function useBookableWindows(
   berthId: string | null,
+  options: { from?: string; to?: string } = {},
 ): UseBookableWindowsResult {
   const [windows, setWindows] = useState<BookableWindow[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,7 +33,14 @@ export function useBookableWindows(
     setIsLoading(true);
     setError(null);
 
-    apiFetch(`/api/berths/${berthId}/bookable-windows`, { signal: ac.signal })
+    const params = new URLSearchParams();
+    if (options.from) params.append("from", options.from);
+    if (options.to) params.append("to", options.to);
+    const query = params.toString() ? `?${params.toString()}` : "";
+
+    apiFetch(`/api/berths/${berthId}/bookable-windows${query}`, {
+      signal: ac.signal,
+    })
       .then((res) => (res.ok ? (res.json() as Promise<BookableWindow[]>) : []))
       .then((data) => {
         if (!ac.signal.aborted) setWindows(data);
@@ -47,7 +55,7 @@ export function useBookableWindows(
       });
 
     return () => ac.abort();
-  }, [berthId]);
+  }, [berthId, options.from, options.to]);
 
   return { windows, isLoading, error };
 }

@@ -18,6 +18,10 @@ type Berth = {
   sensor_raw?: number;
   battery_pct?: number;
   last_updated?: string;
+  length_m?: number;
+  width_m?: number;
+  depth_m?: number;
+  is_available_now?: boolean;
 };
 
 const DOCK_ID = "ksss-saltsjobaden-pier-1";
@@ -30,6 +34,10 @@ const BERTHS: Berth[] = SIDES.flatMap((side) =>
     label: `${side.toUpperCase()}${idx}`,
     status: "free" as const,
     battery_pct: 80,
+    length_m: 8.5,
+    width_m: 3.2,
+    depth_m: 2.0,
+    is_available_now: true,
   })),
 );
 
@@ -51,11 +59,12 @@ const MOCK_USER = {
 const COOKIE_BASE = "Path=/; SameSite=Lax";
 const SESSION_TTL = 60 * 60 * 24;
 
-function setSessionCookies(): string[] {
+function setSessionCookies(email: string): string[] {
   return [
     `dockpulse_access=mock-access; HttpOnly; Max-Age=${SESSION_TTL}; ${COOKIE_BASE}`,
     `dockpulse_refresh=mock-refresh; HttpOnly; Max-Age=${SESSION_TTL}; ${COOKIE_BASE}`,
     `dockpulse_csrf=mock-csrf; Max-Age=${SESSION_TTL}; ${COOKIE_BASE}`,
+    `dockpulse_mock_user=${encodeURIComponent(email)}; Max-Age=${SESSION_TTL}; ${COOKIE_BASE}`,
   ];
 }
 
@@ -95,33 +104,111 @@ function unauthorized(): Response {
   });
 }
 
-function handleAuth(req: Request, url: URL): Response | null {
+async function handleAuth(req: Request, url: URL): Promise<Response | null> {
   const path = url.pathname;
   if (!path.startsWith("/api/auth/")) return null;
 
   if (path === "/api/auth/login" && req.method === "POST") {
-    return withSetCookies(JSON.stringify(MOCK_USER), setSessionCookies());
+    let role = "harbormaster";
+    let email = "harbormaster@example.com";
+    try {
+      const body = await req.clone().json();
+      if (body.email === "visitor@example.com") {
+        role = "visitor";
+        email = "visitor@example.com";
+      }
+    } catch (e) {}
+
+    const user = { ...MOCK_USER, role, email, user_id: `u-mock-${role}` };
+    return withSetCookies(JSON.stringify(user), setSessionCookies(email));
   }
   if (path === "/api/auth/register" && req.method === "POST") {
-    return withSetCookies(JSON.stringify(MOCK_USER), setSessionCookies(), {
+    return withSetCookies(JSON.stringify(MOCK_USER), setSessionCookies(MOCK_USER.email), {
       status: 201,
     });
   }
   if (path === "/api/auth/me" && req.method === "GET") {
     if (!hasAccessCookie(req)) return unauthorized();
-    return new Response(JSON.stringify(MOCK_USER), {
+    
+    // determine role from our mock_user cookie
+    const isVisitor = req.headers.get("cookie")?.includes("visitor%40example.com") || false;
+    const userId = isVisitor ? "u-mock-visitor" : "u-mock-harbormaster";
+    const dims = MOCK_DIMENSIONS.get(userId);
+
+    const user = isVisitor 
+      ? { 
+          ...MOCK_USER, 
+          role: "visitor", 
+          email: "visitor@example.com", 
+          user_id: "u-mock-visitor",
+          boat_length_m: dims?.length,
+          boat_width_m: dims?.width,
+          boat_depth_m: dims?.depth
+        }
+      : {
+          ...MOCK_USER,
+          boat_length_m: dims?.length,
+          boat_width_m: dims?.width,
+          boat_depth_m: dims?.depth
+        };
+
+    return new Response(JSON.stringify(user), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
   }
   if (path === "/api/auth/refresh" && req.method === "POST") {
     if (!hasAccessCookie(req)) return unauthorized();
-    return withSetCookies(null, setSessionCookies(), { status: 204 });
+    // we don't bother extracting email for refresh in mock
+    return withSetCookies(null, setSessionCookies("harbormaster@example.com"), { status: 204 });
   }
   if (path === "/api/auth/logout" && req.method === "POST") {
     return withSetCookies(null, clearedCookies(), { status: 204 });
   }
   return new Response("not found", { status: 404 });
+}
+
+// simple in-memory store for boat dimensions since mock users are static
+const MOCK_DIMENSIONS = new Map<string, { length?: number; width?: number; depth?: number }>();
+
+async function handleUsers(req: Request, url: URL): Promise<Response | null> {
+  const path = url.pathname;
+  if (path === "/api/users/me" && req.method === "PATCH") {
+    if (!hasAccessCookie(req)) return unauthorized();
+    
+    const isVisitor = req.headers.get("cookie")?.includes("visitor%40example.com") || false;
+    const userId = isVisitor ? "u-mock-visitor" : "u-mock-harbormaster";
+    
+    const body = await req.json();
+    const dims = MOCK_DIMENSIONS.get(userId) || {};
+    
+    if (body.boat_length_m !== undefined) dims.length = body.boat_length_m;
+    if (body.boat_width_m !== undefined) dims.width = body.boat_width_m;
+    if (body.boat_depth_m !== undefined) dims.depth = body.boat_depth_m;
+    
+    MOCK_DIMENSIONS.set(userId, dims);
+    
+    const baseUser = isVisitor 
+      ? { ...MOCK_USER, role: "visitor", email: "visitor@example.com", user_id: "u-mock-visitor" }
+      : MOCK_USER;
+
+    const updatedUser = {
+      ...baseUser,
+      boat_length_m: dims.length,
+      boat_width_m: dims.width,
+      boat_depth_m: dims.depth,
+      // also handle other profile fields if present in body
+      firstname: body.firstname || baseUser.firstname,
+      lastname: body.lastname || baseUser.lastname,
+      email: body.email || baseUser.email,
+    };
+
+    return new Response(JSON.stringify(updatedUser), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  return null;
 }
 
 function encodeFrame(event: string, data: unknown): Uint8Array {
@@ -346,16 +433,182 @@ async function handleAdoptions(
   return null;
 }
 
+function handleBerthWindows(req: Request, url: URL): Response | null {
+  const match = url.pathname.match(/^\/api\/berths\/([^/]+)\/bookable-windows$/);
+  if (!match || req.method !== "GET") return null;
+
+  const berthId = match[1];
+  const now = new Date();
+  const tomorrow = new Date(now.getTime() + 86400000);
+  const nextWeek = new Date(now.getTime() + 86400000 * 7);
+
+  // return two windows for any berth requested
+  return new Response(
+    JSON.stringify([
+      {
+        window_id: `win-${berthId}-1`,
+        berth_id: berthId,
+        from_date: tomorrow.toISOString(),
+        to_date: new Date(tomorrow.getTime() + 86400000 * 2).toISOString(),
+      },
+      {
+        window_id: `win-${berthId}-2`,
+        berth_id: berthId,
+        from_date: nextWeek.toISOString(),
+        to_date: new Date(nextWeek.getTime() + 86400000 * 3).toISOString(),
+      },
+    ]),
+    { headers: { "Content-Type": "application/json" } },
+  );
+}
+
+type MockBooking = {
+  booking_id: string;
+  berth_id: string;
+  visitor_id: string;
+  from_date: string;
+  to_date: string;
+  status: "confirmed" | "cancelled_by_visitor" | "cancelled_by_host" | "completed";
+  created_at: string;
+};
+
+const mockBookings = new Map<string, MockBooking>();
+
+function getMockUserId(req: Request): string {
+  const raw = req.headers.get("cookie") ?? "";
+  const match = raw.match(/dockpulse_mock_user=([^;]+)/);
+  if (!match) return "u-mock-anonymous";
+  const email = decodeURIComponent(match[1]);
+  return email === "visitor@example.com" ? "u-mock-visitor" : "u-mock-harbormaster";
+}
+
+async function handleBookings(req: Request, url: URL): Promise<Response | null> {
+  const path = url.pathname;
+  
+  // POST /api/berths/{id}/bookings:preflight
+  const preflightMatch = path.match(/^\/api\/berths\/([^/]+)\/bookings:preflight$/);
+  if (preflightMatch && req.method === "POST") {
+    if (!hasAccessCookie(req)) return unauthorized();
+    
+    const body = await req.json();
+    const berthId = preflightMatch[1];
+    const berth = BERTHS.find(b => b.berth_id === berthId) || BERTHS[0];
+    
+    const reasons: string[] = [];
+    let fits = true;
+    
+    if (body.length_m && body.length_m > (berth.length_m || 8.5)) {
+      fits = false;
+      reasons.push(`Boat length (${body.length_m}m) exceeds berth length (${berth.length_m || 8.5}m)`);
+    }
+    if (body.width_m && body.width_m > (berth.width_m || 3.2)) {
+      fits = false;
+      reasons.push(`Boat width (${body.width_m}m) exceeds berth width (${berth.width_m || 3.2}m)`);
+    }
+    if (body.depth_m && body.depth_m > (berth.depth_m || 2.0)) {
+      fits = false;
+      reasons.push(`Boat depth (${body.depth_m}m) exceeds berth depth (${berth.depth_m || 2.0}m)`);
+    }
+
+    return new Response(JSON.stringify({ available: true, fits, reasons }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // POST /api/berths/{id}/bookings
+  const createMatch = path.match(/^\/api\/berths\/([^/]+)\/bookings$/);
+  if (createMatch && req.method === "POST") {
+    if (!hasAccessCookie(req)) return unauthorized();
+    const berthId = createMatch[1];
+    const body = await req.json();
+    const userId = getMockUserId(req);
+
+    // simple overlap check for the same berth
+    const hasOverlap = Array.from(mockBookings.values()).some(
+      (b) =>
+        b.berth_id === berthId &&
+        b.status === "confirmed" &&
+        ((body.from_date >= b.from_date && body.from_date < b.to_date) ||
+          (body.to_date > b.from_date && body.to_date <= b.to_date))
+    );
+
+    if (hasOverlap) {
+      return new Response(JSON.stringify({ detail: "Berth already booked for these dates." }), {
+        status: 409,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const booking: MockBooking = {
+      booking_id: crypto.randomUUID(),
+      berth_id: berthId,
+      visitor_id: userId,
+      from_date: body.from_date,
+      to_date: body.to_date,
+      status: "confirmed",
+      created_at: new Date().toISOString(),
+    };
+    mockBookings.set(booking.booking_id, booking);
+    return new Response(JSON.stringify(booking), {
+      status: 201,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // GET /api/bookings/me
+  if (path === "/api/bookings/me" && req.method === "GET") {
+    if (!hasAccessCookie(req)) return unauthorized();
+    const userId = getMockUserId(req);
+    const statusFilter = url.searchParams.get("status");
+    
+    const items = Array.from(mockBookings.values())
+      .filter((b) => b.visitor_id === userId)
+      .filter((b) => !statusFilter || b.status === statusFilter);
+
+    return new Response(JSON.stringify(items), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  // DELETE /api/bookings/{id}
+  const deleteMatch = path.match(/^\/api\/bookings\/([^/]+)$/);
+  if (deleteMatch && req.method === "DELETE") {
+    if (!hasAccessCookie(req)) return unauthorized();
+    const id = deleteMatch[1];
+    const booking = mockBookings.get(id);
+    if (!booking) return new Response(null, { status: 404 });
+    
+    if (booking.visitor_id !== getMockUserId(req)) {
+      return new Response(JSON.stringify({ detail: "Forbidden" }), { status: 403 });
+    }
+
+    booking.status = "cancelled_by_visitor";
+    return new Response(null, { status: 204 });
+  }
+
+  return null;
+}
+
 Bun.serve({
   port: PORT,
   async fetch(req) {
     const url = new URL(req.url);
+    console.log(`[MOCK] ${req.method} ${url.pathname}`);
 
-    const authResponse = handleAuth(req, url);
+    const authResponse = await handleAuth(req, url);
     if (authResponse) return authResponse;
+
+    const userResponse = await handleUsers(req, url);
+    if (userResponse) return userResponse;
 
     const adoptionResponse = await handleAdoptions(req, url);
     if (adoptionResponse) return adoptionResponse;
+
+    const bookingResponse = await handleBookings(req, url);
+    if (bookingResponse) return bookingResponse;
+
+    const windowsResponse = handleBerthWindows(req, url);
+    if (windowsResponse) return windowsResponse;
 
     if (url.pathname !== "/api/berths/stream") {
       return new Response("not found", { status: 404 });
@@ -375,6 +628,7 @@ Bun.serve({
           const berth = BERTHS[i % BERTHS.length];
           i++;
           berth.status = berth.status === "free" ? "occupied" : "free";
+          berth.is_available_now = berth.status === "free";
           berth.last_updated = new Date().toISOString();
           controller.enqueue(
             encodeFrame("berth.update", { type: "berth.update", berth }),

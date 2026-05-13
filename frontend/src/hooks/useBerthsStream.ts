@@ -5,7 +5,7 @@ type Berth = components["schemas"]["BerthOut"];
 type BerthEvent = components["schemas"]["BerthUpdateEvent"];
 type BerthSnapshot = components["schemas"]["BerthSnapshotEvent"];
 
-export function useBerthsStream() {
+export function useBerthsStream(harborId: string | null) {
   const [berthsById, setBerthsById] = useState<Map<string, Berth>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +16,13 @@ export function useBerthsStream() {
   useEffect(() => {
     // generation read so the dep array re-runs the effect on retry
     void generation;
-    const source = new EventSource("/api/berths/stream");
+    if (!harborId) {
+      setIsLoading(false);
+      return;
+    }
+    const source = new EventSource(
+      `/api/berths/stream?harbor_id=${encodeURIComponent(harborId)}`,
+    );
     sourceRef.current = source;
 
     source.addEventListener("berth.snapshot", (e) => {
@@ -56,7 +62,7 @@ export function useBerthsStream() {
       source.close();
       sourceRef.current = null;
     };
-  }, [generation]);
+  }, [generation, harborId]);
 
   const refetchACB = useCallback(() => {
     setIsLoading(true);

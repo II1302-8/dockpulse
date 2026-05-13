@@ -1,5 +1,5 @@
 import { CheckCircle2, Loader2, XCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 import { useAuth } from "../lib/auth-context";
@@ -14,21 +14,28 @@ export function VerifyEmail() {
   const token = searchParams.get("token");
   const { refresh } = useAuth();
   const [state, setState] = useState<State>({ phase: "loading" });
+  // strictmode double-mounts effects in dev, ref guards against double POST
+  const didRun = useRef(false);
 
   useEffect(() => {
     document.title = "Verify email | DockPulse";
   }, []);
 
   useEffect(() => {
+    if (didRun.current) return;
+    didRun.current = true;
+
     async function run() {
       if (!token) {
         setState({ phase: "error", message: "Missing verification token." });
         return;
       }
       try {
-        const res = await apiFetch(
-          `/api/auth/verify-email?token=${encodeURIComponent(token)}`,
-        );
+        const res = await apiFetch("/api/auth/verify-email", {
+          method: "POST",
+          body: JSON.stringify({ token }),
+          skipAuthRefresh: true,
+        });
         if (!res.ok) {
           let detail = "Could not verify the link.";
           try {

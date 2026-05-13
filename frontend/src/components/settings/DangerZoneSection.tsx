@@ -15,6 +15,7 @@ import {
 } from "../shared/ui/dialog";
 import { Input } from "../shared/ui/input";
 import { Label } from "../shared/ui/label";
+import { PasswordInput } from "../shared/ui/password-input";
 import { getErrorsFromResponse } from "./lib/validation";
 
 const errorClass = "text-sm text-red-500";
@@ -30,6 +31,7 @@ export function DangerZoneSection({ user, onAfterDelete }: Props) {
 
   const [isOpen, setIsOpen] = useState(false);
   const [confirmText, setConfirmText] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -37,12 +39,13 @@ export function DangerZoneSection({ user, onAfterDelete }: Props) {
   const normalizedConfirm = trimmedConfirm.toLowerCase();
   const normalizedEmail = user.email.trim().toLowerCase();
 
-  const canDelete =
+  const phraseMatches =
     trimmedConfirm === "DELETE" || normalizedConfirm === normalizedEmail;
+  const canDelete = phraseMatches && currentPassword.length > 0;
 
   async function handleDelete() {
     // DELETE stays case-sensitive on purpose, email match is case-insensitive
-    if (!canDelete) {
+    if (!phraseMatches) {
       setError(
         normalizedEmail
           ? `Type DELETE or ${user.email} to confirm.`
@@ -50,12 +53,19 @@ export function DangerZoneSection({ user, onAfterDelete }: Props) {
       );
       return;
     }
+    if (!currentPassword) {
+      setError("Enter your current password to confirm.");
+      return;
+    }
 
     setIsDeleting(true);
     setError(null);
 
     try {
-      const res = await apiFetch("/api/users/me", { method: "DELETE" });
+      const res = await apiFetch("/api/users/me/delete", {
+        method: "POST",
+        body: JSON.stringify({ current_password: currentPassword }),
+      });
 
       if (!res.ok) {
         const responseErrors = await getErrorsFromResponse(
@@ -100,6 +110,7 @@ export function DangerZoneSection({ user, onAfterDelete }: Props) {
           variant="destructive"
           onClick={() => {
             setConfirmText("");
+            setCurrentPassword("");
             setError(null);
             setIsOpen(true);
           }}
@@ -117,6 +128,7 @@ export function DangerZoneSection({ user, onAfterDelete }: Props) {
           setIsOpen(next);
           if (!next) {
             setConfirmText("");
+            setCurrentPassword("");
             setError(null);
           }
         }}
@@ -146,7 +158,21 @@ export function DangerZoneSection({ user, onAfterDelete }: Props) {
               }}
               placeholder="Type DELETE or your email"
               autoComplete="off"
-              aria-invalid={Boolean(error)}
+              aria-invalid={Boolean(error) && !phraseMatches}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="delete-password">Current password</Label>
+            <PasswordInput
+              id="delete-password"
+              value={currentPassword}
+              onChange={(e) => {
+                setCurrentPassword(e.target.value);
+                setError(null);
+              }}
+              autoComplete="current-password"
+              aria-invalid={Boolean(error) && phraseMatches}
               aria-describedby={error ? "delete-error" : undefined}
             />
             {error && (

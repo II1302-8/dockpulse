@@ -1,7 +1,7 @@
 import { LayoutDashboard } from "lucide-react";
 import panzoom from "panzoom";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useOutletContext, useParams } from "react-router-dom";
 import { ActivityLogPanel } from "./components/ActivityLogPanel";
 import { BerthDetailPanel } from "./components/BerthDetailPanel";
 import { HarborMasterOverview } from "./components/HarborMasterOverview";
@@ -12,6 +12,7 @@ import { MapLegend } from "./components/MapLegend";
 import { NodeHealthPanel } from "./components/NodeHealthPanel";
 import { NorthArrow } from "./components/NorthArrow";
 import { useBerthsStream } from "./hooks/useBerthsStream";
+import { getHarborIdFromSlug } from "./lib/marinas";
 import { cn } from "./lib/utils";
 import { mapBerthIds } from "./svg";
 import { SvgMap } from "./svgMap";
@@ -21,7 +22,18 @@ export function HarborMap() {
   const panzoomRef = useRef<ReturnType<typeof panzoom> | null>(null);
 
   const { user } = useOutletContext<AuthOutletContext>();
-  const { berths: apiBerths, isLoading, error, refetchACB } = useBerthsStream();
+  const { marinaSlug } = useParams<{ marinaSlug: string }>();
+  // hm session pins us to the user's own harbor; visitors fall back to the
+  // marina-slug → harbor_id mapping so the route still scopes the stream
+  const harborId =
+    (user as { harbor_id?: string | null } | null)?.harbor_id ??
+    getHarborIdFromSlug(marinaSlug);
+  const {
+    berths: apiBerths,
+    isLoading,
+    error,
+    refetchACB,
+  } = useBerthsStream(harborId);
 
   const {
     isOverviewOpen,

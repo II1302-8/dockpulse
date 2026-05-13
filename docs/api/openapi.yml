@@ -1,5 +1,16 @@
 components:
   schemas:
+    AccountDeleteIn:
+      properties:
+        current_password:
+          format: password
+          title: Current Password
+          type: string
+          writeOnly: true
+      required:
+      - current_password
+      title: AccountDeleteIn
+      type: object
     AdminAlertOut:
       properties:
         acknowledged:
@@ -2073,6 +2084,17 @@ components:
       - type
       title: ValidationError
       type: object
+    VerifyEmailIn:
+      properties:
+        token:
+          maxLength: 512
+          minLength: 1
+          title: Token
+          type: string
+      required:
+      - token
+      title: VerifyEmailIn
+      type: object
     VerifyEmailOut:
       properties:
         email:
@@ -3990,15 +4012,14 @@ paths:
       tags:
       - auth
   /api/auth/verify-email:
-    get:
+    post:
       operationId: verifyEmail
-      parameters:
-      - in: query
-        name: token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyEmailIn'
         required: true
-        schema:
-          title: Token
-          type: string
       responses:
         '200':
           content:
@@ -4102,6 +4123,14 @@ paths:
     get:
       operationId: listBerths
       parameters:
+      - description: harbor scope (required)
+        in: query
+        name: harbor_id
+        required: true
+        schema:
+          description: harbor scope (required)
+          title: Harbor Id
+          type: string
       - description: filter by dock
         in: query
         name: dock_id
@@ -4139,7 +4168,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
-      summary: List all berths
+      summary: List berths in a single harbor
       tags:
       - berths
   /api/berths/availability:
@@ -4229,6 +4258,15 @@ paths:
         yield a fresh snapshot, so clients do not need a separate `GET /api/berths` call to bootstrap
         or recover.
       operationId: streamBerths
+      parameters:
+      - description: harbor scope (required)
+        in: query
+        name: harbor_id
+        required: true
+        schema:
+          description: harbor scope (required)
+          title: Harbor Id
+          type: string
       responses:
         '200':
           content:
@@ -4239,6 +4277,12 @@ paths:
                 - $ref: '#/components/schemas/BerthUpdateEvent'
                 title: Response 200 Streamberths
           description: First frame is a `BerthSnapshotEvent`; subsequent frames are `BerthUpdateEvent`.
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
       summary: Subscribe to live berth updates via Server-Sent Events
       tags:
       - berths
@@ -5074,16 +5118,6 @@ paths:
       tags:
       - users
   /api/users/me:
-    delete:
-      operationId: deleteMe
-      responses:
-        '204':
-          description: Successful Response
-      security:
-      - APIKeyCookie: []
-      summary: Delete the current boat-owner account
-      tags:
-      - users
     get:
       operationId: getMe
       responses:
@@ -5122,6 +5156,29 @@ paths:
       security:
       - APIKeyCookie: []
       summary: Update current user profile
+      tags:
+      - users
+  /api/users/me/delete:
+    post:
+      operationId: deleteMe
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountDeleteIn'
+        required: true
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - APIKeyCookie: []
+      summary: Delete the current boat-owner account
       tags:
       - users
   /api/users/me/notification-prefs:
@@ -5215,7 +5272,9 @@ servers:
 - description: Local development
   url: http://localhost:8000
 - description: Staging
-  url: https://staging.example.com
+  url: https://staging.dockpulse.xyz
+- description: Production
+  url: https://dockpulse.xyz
 tags:
 - description: System health and status
   name: system

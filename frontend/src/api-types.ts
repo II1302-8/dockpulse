@@ -697,10 +697,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Verify email address using token from email link */
-        get: operations["verifyEmail"];
+        get?: never;
         put?: never;
-        post?: never;
+        /** Verify email address using token from email link */
+        post: operations["verifyEmail"];
         delete?: never;
         options?: never;
         head?: never;
@@ -765,7 +765,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List all berths */
+        /** List berths in a single harbor */
         get: operations["listBerths"];
         put?: never;
         post?: never;
@@ -1183,12 +1183,28 @@ export interface paths {
         get: operations["getMe"];
         put?: never;
         post?: never;
-        /** Delete the current boat-owner account */
-        delete: operations["deleteMe"];
+        delete?: never;
         options?: never;
         head?: never;
         /** Update current user profile */
         patch: operations["updateMe"];
+        trace?: never;
+    };
+    "/api/users/me/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Delete the current boat-owner account */
+        post: operations["deleteMe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/users/me/notification-prefs": {
@@ -1247,6 +1263,14 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AccountDeleteIn */
+        AccountDeleteIn: {
+            /**
+             * Current Password
+             * Format: password
+             */
+            current_password: string;
+        };
         /** AdminAlertOut */
         AdminAlertOut: {
             /** Acknowledged */
@@ -2550,6 +2574,11 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** VerifyEmailIn */
+        VerifyEmailIn: {
+            /** Token */
+            token: string;
         };
         /** VerifyEmailOut */
         VerifyEmailOut: {
@@ -4316,14 +4345,16 @@ export interface operations {
     };
     verifyEmail: {
         parameters: {
-            query: {
-                token: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyEmailIn"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -4447,7 +4478,9 @@ export interface operations {
     };
     listBerths: {
         parameters: {
-            query?: {
+            query: {
+                /** @description harbor scope (required) */
+                harbor_id: string;
                 /** @description filter by dock */
                 dock_id?: string | null;
                 /** @description filter by status */
@@ -4520,7 +4553,10 @@ export interface operations {
     };
     streamBerths: {
         parameters: {
-            query?: never;
+            query: {
+                /** @description harbor scope (required) */
+                harbor_id: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4534,6 +4570,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BerthSnapshotEvent"] | components["schemas"]["BerthUpdateEvent"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -5315,24 +5360,6 @@ export interface operations {
             };
         };
     };
-    deleteMe: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
     updateMe: {
         parameters: {
             query?: never;
@@ -5354,6 +5381,37 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["UserOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deleteMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountDeleteIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

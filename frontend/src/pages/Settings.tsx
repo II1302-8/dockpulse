@@ -8,6 +8,7 @@ import { NotificationSettings } from "../components/NotificationSettings";
 import { AvailabilitySection } from "../components/settings/AvailabilitySection";
 import { DangerZoneSection } from "../components/settings/DangerZoneSection";
 import { ProfileSection } from "../components/settings/ProfileSection";
+import { BoatDimensionsSection } from "../components/settings/BoatDimensionsSection";
 import { Button } from "../components/shared/ui/button";
 
 function getAssignedBerth(user: AuthUser | null) {
@@ -52,6 +53,8 @@ function Settings() {
       </div>
 
       <ProfileSection user={user} />
+
+      {user.role !== "harbormaster" && <BoatDimensionsSection user={user} />}
 
       <NotificationSettings />
 

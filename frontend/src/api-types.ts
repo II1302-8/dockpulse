@@ -4,53 +4,15 @@
  */
 
 export interface paths {
-    "/api/admin/adoptions": {
+    "/api/admin/snapshot": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List Adoptions */
-        get: operations["adminListAdoptions"];
-        put?: never;
-        post?: never;
-        /**
-         * Bulk Delete Adoptions
-         * @description default 'err', pass 'pending' to cancel-and-delete, 'all' to wipe
-         */
-        delete: operations["adminBulkDeleteAdoptions"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/adoptions/{request_id}/cancel": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Cancel Adoption */
-        post: operations["adminCancelAdoption"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/alerts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Alerts */
-        get: operations["adminListAlerts"];
+        /** Aggregate state across the gateway/node/adoption pipeline */
+        get: operations["adminSnapshot"];
         put?: never;
         post?: never;
         delete?: never;
@@ -59,7 +21,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/alerts/{alert_id}": {
+    "/api/admin/harbors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Harbors */
+        get: operations["adminListHarbors"];
+        put?: never;
+        /** Create Harbor */
+        post: operations["adminCreateHarbor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/harbors/{harbor_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -69,48 +49,33 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete Alert */
-        delete: operations["adminDeleteAlert"];
+        /** Delete Harbor */
+        delete: operations["adminDeleteHarbor"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Patch Harbor */
+        patch: operations["adminPatchHarbor"];
         trace?: never;
     };
-    "/api/admin/alerts/{alert_id}/acknowledge": {
+    "/api/admin/docks": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Docks */
+        get: operations["adminListDocks"];
         put?: never;
-        /** Acknowledge Alert */
-        post: operations["adminAcknowledgeAlert"];
+        /** Create Dock */
+        post: operations["adminCreateDock"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/admin/berth-invites": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Invites */
-        get: operations["adminListBerthInvites"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/berth-invites/{invite_id}": {
+    "/api/admin/docks/{dock_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -120,11 +85,12 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Revoke Invite */
-        delete: operations["adminRevokeBerthInvite"];
+        /** Delete Dock */
+        delete: operations["adminDeleteDock"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Patch Dock */
+        patch: operations["adminPatchDock"];
         trace?: never;
     };
     "/api/admin/berths": {
@@ -180,59 +146,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/docks": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Docks */
-        get: operations["adminListDocks"];
-        put?: never;
-        /** Create Dock */
-        post: operations["adminCreateDock"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/docks/{dock_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete Dock */
-        delete: operations["adminDeleteDock"];
-        options?: never;
-        head?: never;
-        /** Patch Dock */
-        patch: operations["adminPatchDock"];
-        trace?: never;
-    };
-    "/api/admin/events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Events */
-        get: operations["adminListEvents"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/admin/gateways": {
         parameters: {
             query?: never;
@@ -245,23 +158,6 @@ export interface paths {
         /** Create Gateway */
         post: operations["adminCreateGateway"];
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/gateways/pending/{gateway_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Dismiss Pending */
-        delete: operations["adminDismissPending"];
         options?: never;
         head?: never;
         patch?: never;
@@ -285,25 +181,7 @@ export interface paths {
         patch: operations["adminPatchGateway"];
         trace?: never;
     };
-    "/api/admin/harbors": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Harbors */
-        get: operations["adminListHarbors"];
-        put?: never;
-        /** Create Harbor */
-        post: operations["adminCreateHarbor"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/admin/harbors/{harbor_id}": {
+    "/api/admin/gateways/pending/{gateway_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -313,12 +191,11 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete Harbor */
-        delete: operations["adminDeleteHarbor"];
+        /** Dismiss Pending */
+        delete: operations["adminDismissPending"];
         options?: never;
         head?: never;
-        /** Patch Harbor */
-        patch: operations["adminPatchHarbor"];
+        patch?: never;
         trace?: never;
     };
     "/api/admin/nodes/{node_id}/decommission": {
@@ -361,17 +238,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/admin/snapshot": {
+    "/api/admin/adoptions": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Aggregate state across the gateway/node/adoption pipeline */
-        get: operations["adminSnapshot"];
+        /** List Adoptions */
+        get: operations["adminListAdoptions"];
         put?: never;
         post?: never;
+        /**
+         * Bulk Delete Adoptions
+         * @description default 'err', pass 'pending' to cancel-and-delete, 'all' to wipe
+         */
+        delete: operations["adminBulkDeleteAdoptions"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/adoptions/{request_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Adoption */
+        post: operations["adminCancelAdoption"];
         delete?: never;
         options?: never;
         head?: never;
@@ -483,6 +381,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Alerts */
+        get: operations["adminListAlerts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/alerts/{alert_id}/acknowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Acknowledge Alert */
+        post: operations["adminAcknowledgeAlert"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/alerts/{alert_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Alert */
+        delete: operations["adminDeleteAlert"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Events */
+        get: operations["adminListEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/berth-invites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Invites */
+        get: operations["adminListBerthInvites"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/berth-invites/{invite_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke Invite */
+        delete: operations["adminRevokeBerthInvite"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/adoptions": {
         parameters: {
             query?: never;
@@ -517,23 +517,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/adoptions/{request_id}/cancel": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Cancel a pending adoption request */
-        post: operations["cancelAdoption"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/adoptions/{request_id}/stream": {
         parameters: {
             query?: never;
@@ -548,6 +531,23 @@ export interface paths {
         get: operations["streamAdoption"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/adoptions/{request_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel a pending adoption request */
+        post: operations["cancelAdoption"];
         delete?: never;
         options?: never;
         head?: never;
@@ -588,6 +588,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Register a new user */
+        post: operations["registerUser"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/verify-email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Verify email address using token from email link */
+        get: operations["verifyEmail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/resend-verification": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resend verification email */
+        post: operations["resendVerification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/login": {
         parameters: {
             query?: never;
@@ -599,23 +650,6 @@ export interface paths {
         put?: never;
         /** Log in and set session cookies */
         post: operations["login"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/logout": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Invalidate all tokens for the current user */
-        post: operations["logout"];
         delete?: never;
         options?: never;
         head?: never;
@@ -656,7 +690,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/auth/register": {
+    "/api/auth/logout": {
         parameters: {
             query?: never;
             header?: never;
@@ -665,93 +699,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Register a new user */
-        post: operations["registerUser"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/resend-verification": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Resend verification email */
-        post: operations["resendVerification"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/verify-email": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Verify email address using token from email link */
-        get: operations["verifyEmail"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/berth-invites/by-token/{token}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Look up an invite by its token (public) */
-        get: operations["getBerthInviteByToken"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/berth-invites/by-token/{token}/accept": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Accept an invite (authed, must match invite email) */
-        post: operations["acceptBerthInvite"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/berth-invites/by-token/{token}/reject": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Reject an invite (authed, must match invite email) */
-        post: operations["rejectBerthInvite"];
+        /** Invalidate all tokens for the current user */
+        post: operations["logout"];
         delete?: never;
         options?: never;
         head?: never;
@@ -767,23 +716,6 @@ export interface paths {
         };
         /** List all berths */
         get: operations["listBerths"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/berths/availability": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List availability windows in a harbor */
-        get: operations["listHarborAvailability"];
         put?: never;
         post?: never;
         delete?: never;
@@ -847,6 +779,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/berths/{berth_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List events for a berth */
+        get: operations["listBerthEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/berths/availability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List availability windows in a harbor */
+        get: operations["listHarborAvailability"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/berths/{berth_id}/availability": {
         parameters: {
             query?: never;
@@ -882,23 +848,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/berths/{berth_id}/events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List events for a berth */
-        get: operations["listBerthEvents"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/docks": {
         parameters: {
             query?: never;
@@ -925,6 +874,57 @@ export interface paths {
         };
         /** Get a single dock with its berths */
         get: operations["getDock"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/harbors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all harbors */
+        get: operations["listHarbors"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/harbors/{harbor_id}/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search users known to this harbor (harbormaster only) */
+        get: operations["searchHarborUsers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/harbors/{harbor_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List events for all berths in a harbor, paginated (harbormaster only) */
+        get: operations["listHarborEvents"];
         put?: never;
         post?: never;
         delete?: never;
@@ -984,23 +984,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/harbors": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List all harbors */
-        get: operations["listHarbors"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/harbors/{harbor_id}/berth-invites": {
         parameters: {
             query?: never;
@@ -1019,6 +1002,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/berth-invites/by-token/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Look up an invite by its token (public) */
+        get: operations["getBerthInviteByToken"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/berth-invites/by-token/{token}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept an invite (authed, must match invite email) */
+        post: operations["acceptBerthInvite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/berth-invites/by-token/{token}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject an invite (authed, must match invite email) */
+        post: operations["rejectBerthInvite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/harbors/{harbor_id}/berth-invites/{invite_id}": {
         parameters: {
             query?: never;
@@ -1031,57 +1065,6 @@ export interface paths {
         post?: never;
         /** Revoke a pending invite (harbormaster only) */
         delete: operations["deleteBerthInvite"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/harbors/{harbor_id}/events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List events for all berths in a harbor, paginated (harbormaster only) */
-        get: operations["listHarborEvents"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/harbors/{harbor_id}/users": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Search users known to this harbor (harbormaster only) */
-        get: operations["searchHarborUsers"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Health check */
-        get: operations["getHealth"];
-        put?: never;
-        post?: never;
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1132,6 +1115,40 @@ export interface paths {
         put?: never;
         /** Mark node as decommissioned */
         post: operations["decommissionNode"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a password reset email if the address is registered */
+        post: operations["requestPasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/resetpassword": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply a new password using a reset token */
+        post: operations["confirmPasswordReset"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1192,34 +1209,17 @@ export interface paths {
         patch: operations["updateNotificationPrefs"];
         trace?: never;
     };
-    "/api/users/reset": {
+    "/api/health": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Health check */
+        get: operations["getHealth"];
         put?: never;
-        /** Send a password reset email if the address is registered */
-        post: operations["requestPasswordReset"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/users/resetpassword": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Apply a new password using a reset token */
-        post: operations["confirmPasswordReset"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1232,21 +1232,21 @@ export interface components {
     schemas: {
         /** AdminAlertOut */
         AdminAlertOut: {
-            /** Acknowledged */
-            acknowledged: boolean;
             /** Alert Id */
             alert_id: string;
             /** Berth Id */
             berth_id: string;
+            /** Type */
+            type: string;
             /** Message */
             message: string;
+            /** Acknowledged */
+            acknowledged: boolean;
             /**
              * Timestamp
              * Format: date-time
              */
             timestamp: string;
-            /** Type */
-            type: string;
         };
         /** AdminEventList */
         AdminEventList: {
@@ -1257,51 +1257,56 @@ export interface components {
         };
         /** AdminEventOut */
         AdminEventOut: {
-            /** Actor User Id */
-            actor_user_id?: string | null;
-            /** Berth Id */
-            berth_id: string;
             /** Event Id */
             event_id: string;
-            /** Event Type */
-            event_type: string;
+            /** Berth Id */
+            berth_id: string;
             /** Harbor Id */
             harbor_id: string;
             /** Node Id */
             node_id: string | null;
-            /** Subject User Id */
-            subject_user_id?: string | null;
+            /** Event Type */
+            event_type: string;
             /**
              * Timestamp
              * Format: date-time
              */
             timestamp: string;
+            /** Actor User Id */
+            actor_user_id?: string | null;
+            /** Subject User Id */
+            subject_user_id?: string | null;
         };
         /** AdminInviteOut */
         AdminInviteOut: {
+            /** Invite Id */
+            invite_id: string;
             /** Berth Id */
             berth_id: string;
+            /** Harbor Id */
+            harbor_id: string;
+            /** Email */
+            email: string;
+            /** Status */
+            status: string;
             /**
              * Created At
              * Format: date-time
              */
             created_at: string;
-            /** Email */
-            email: string;
             /**
              * Expires At
              * Format: date-time
              */
             expires_at: string;
-            /** Harbor Id */
-            harbor_id: string;
-            /** Invite Id */
-            invite_id: string;
-            /** Status */
-            status: string;
         };
         /** AdoptIn */
         AdoptIn: {
+            /**
+             * Qr Payload
+             * @description Base64url-encoded JSON from QR fragment (uuid, oob, sn, jwt)
+             */
+            qr_payload: string;
             /**
              * Berth Id
              * @example berth-001
@@ -1312,23 +1317,24 @@ export interface components {
              * @example gw-dock-a
              */
             gateway_id: string;
-            /**
-             * Qr Payload
-             * @description Base64url-encoded JSON from QR fragment (uuid, oob, sn, jwt)
-             */
-            qr_payload: string;
         };
         /** AdoptionAdminOut */
         AdoptionAdminOut: {
+            /** Request Id */
+            request_id: string;
+            /** Mesh Uuid */
+            mesh_uuid: string;
+            /** Serial Number */
+            serial_number: string;
+            /** Gateway Id */
+            gateway_id: string;
             /** Berth Id */
             berth_id: string;
-            /** Completed At */
-            completed_at?: string | null;
             /**
-             * Created At
-             * Format: date-time
+             * Status
+             * @example pending
              */
-            created_at: string;
+            status: string;
             /** Error Code */
             error_code?: string | null;
             /** Error Msg */
@@ -1338,62 +1344,70 @@ export interface components {
              * Format: date-time
              */
             expires_at: string;
-            /** Gateway Id */
-            gateway_id: string;
-            /** Mesh Uuid */
-            mesh_uuid: string;
-            /** Request Id */
-            request_id: string;
-            /** Serial Number */
-            serial_number: string;
             /**
-             * Status
-             * @example pending
+             * Created At
+             * Format: date-time
              */
-            status: string;
+            created_at: string;
+            /** Completed At */
+            completed_at?: string | null;
         };
         /** AdoptionCancelOut */
         AdoptionCancelOut: {
-            /** Error Code */
-            error_code?: string | null;
             /** Request Id */
             request_id: string;
             /** Status */
             status: string;
+            /** Error Code */
+            error_code?: string | null;
         };
         /** AdoptionPipelineStatus */
         AdoptionPipelineStatus: {
-            /**
-             * Err Last 15Min
-             * @description Failed adoptions in the last 15 minutes
-             * @example 0
-             */
-            err_last_15min: number;
             /**
              * Pending
              * @description Pending adoption requests
              * @example 0
              */
             pending: number;
+            /**
+             * Err Last 15Min
+             * @description Failed adoptions in the last 15 minutes
+             * @example 0
+             */
+            err_last_15min: number;
         };
         /** AdoptionRequestOut */
         AdoptionRequestOut: {
+            /**
+             * Request Id
+             * @example req-0001
+             */
+            request_id: string;
+            /**
+             * Mesh Uuid
+             * @example a1b2c3d4-e5f6-7890-abcd-ef1234567890
+             */
+            mesh_uuid: string;
+            /**
+             * Serial Number
+             * @example DP-N-000123
+             */
+            serial_number: string;
+            /**
+             * Gateway Id
+             * @example gw-dock-a
+             */
+            gateway_id: string;
             /**
              * Berth Id
              * @example berth-001
              */
             berth_id: string;
             /**
-             * Completed At
-             * @example 2026-05-03T14:31:00Z
+             * Status
+             * @enum {string}
              */
-            completed_at?: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             * @example 2026-05-03T14:30:00Z
-             */
-            created_at: string;
+            status: "pending" | "ok" | "err";
             /**
              * Error Code
              * @example timeout
@@ -1405,44 +1419,36 @@ export interface components {
              */
             error_msg?: string | null;
             /**
+             * Mesh Unicast Addr
+             * @example 0x0042
+             */
+            mesh_unicast_addr?: string | null;
+            /**
              * Expires At
              * Format: date-time
              * @example 2026-05-03T14:35:00Z
              */
             expires_at: string;
             /**
-             * Gateway Id
-             * @example gw-dock-a
+             * Created At
+             * Format: date-time
+             * @example 2026-05-03T14:30:00Z
              */
-            gateway_id: string;
+            created_at: string;
             /**
-             * Mesh Unicast Addr
-             * @example 0x0042
+             * Completed At
+             * @example 2026-05-03T14:31:00Z
              */
-            mesh_unicast_addr?: string | null;
-            /**
-             * Mesh Uuid
-             * @example a1b2c3d4-e5f6-7890-abcd-ef1234567890
-             */
-            mesh_uuid: string;
-            /**
-             * Request Id
-             * @example req-0001
-             */
-            request_id: string;
-            /**
-             * Serial Number
-             * @example DP-N-000123
-             */
-            serial_number: string;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "ok" | "err";
+            completed_at?: string | null;
         };
         /** AdoptionStateEvent */
         AdoptionStateEvent: {
+            /**
+             * Type
+             * @default adoption.state
+             * @constant
+             */
+            type: "adoption.state";
             /** Request Id */
             request_id: string;
             /**
@@ -1451,30 +1457,19 @@ export interface components {
              * @example link-open
              */
             state: string;
-            /**
-             * Type
-             * @default adoption.state
-             * @constant
-             */
-            type: "adoption.state";
         };
         /** AdoptionUpdateEvent */
         AdoptionUpdateEvent: {
-            request: components["schemas"]["AdoptionRequestOut"];
             /**
              * Type
              * @default adoption.update
              * @constant
              */
             type: "adoption.update";
+            request: components["schemas"]["AdoptionRequestOut"];
         };
         /** AlertOut */
         AlertOut: {
-            /**
-             * Acknowledged
-             * @default false
-             */
-            acknowledged: boolean;
             /**
              * Alert Id
              * @example alrt-0001
@@ -1486,21 +1481,26 @@ export interface components {
              */
             berth_id: string;
             /**
+             * Type
+             * @enum {string}
+             */
+            type: "unauthorized_mooring" | "sensor_offline" | "low_battery";
+            /**
              * Message
              * @example Battery below 15%
              */
             message: string;
+            /**
+             * Acknowledged
+             * @default false
+             */
+            acknowledged: boolean;
             /**
              * Timestamp
              * Format: date-time
              * @example 2026-05-03T14:30:00Z
              */
             timestamp: string;
-            /**
-             * Type
-             * @enum {string}
-             */
-            type: "unauthorized_mooring" | "sensor_offline" | "low_battery";
         };
         /** AssignBerthIn */
         AssignBerthIn: {
@@ -1527,23 +1527,23 @@ export interface components {
         BerthAdminOut: {
             /** Berth Id */
             berth_id: string;
-            /** Depth M */
-            depth_m?: number | null;
             /** Dock Id */
             dock_id: string;
-            /** Is Reserved */
-            is_reserved: boolean;
             /** Label */
             label?: string | null;
             /** Length M */
             length_m?: number | null;
+            /** Width M */
+            width_m?: number | null;
+            /** Depth M */
+            depth_m?: number | null;
             /**
              * Status
              * @example free
              */
             status: string;
-            /** Width M */
-            width_m?: number | null;
+            /** Is Reserved */
+            is_reserved: boolean;
         };
         /** BerthAvailabilityWindowIn */
         BerthAvailabilityWindowIn: {
@@ -1563,16 +1563,20 @@ export interface components {
         /** BerthAvailabilityWindowOut */
         BerthAvailabilityWindowOut: {
             /**
+             * Window Id
+             * @example win-0001
+             */
+            window_id: string;
+            /**
              * Berth Id
              * @example berth-001
              */
             berth_id: string;
             /**
-             * Created At
-             * Format: date-time
-             * @example 2026-05-05T14:30:00Z
+             * User Id
+             * @example user-001
              */
-            created_at: string;
+            user_id: string;
             /**
              * From Date
              * Format: date-time
@@ -1586,22 +1590,16 @@ export interface components {
              */
             return_date: string;
             /**
-             * User Id
-             * @example user-001
+             * Created At
+             * Format: date-time
+             * @example 2026-05-05T14:30:00Z
              */
-            user_id: string;
-            /**
-             * Window Id
-             * @example win-0001
-             */
-            window_id: string;
+            created_at: string;
         };
         /** BerthCreate */
         BerthCreate: {
             /** Berth Id */
             berth_id: string;
-            /** Depth M */
-            depth_m?: number | null;
             /** Dock Id */
             dock_id: string;
             /** Label */
@@ -1610,6 +1608,8 @@ export interface components {
             length_m?: number | null;
             /** Width M */
             width_m?: number | null;
+            /** Depth M */
+            depth_m?: number | null;
         };
         /** BerthCreatedOut */
         BerthCreatedOut: {
@@ -1647,6 +1647,11 @@ export interface components {
         /** BerthInviteOut */
         BerthInviteOut: {
             /**
+             * Invite Id
+             * @example inv-001
+             */
+            invite_id: string;
+            /**
              * Berth Id
              * @example berth-001
              */
@@ -1656,17 +1661,6 @@ export interface components {
              * @example A-12
              */
             berth_label?: string | null;
-            /**
-             * Email
-             * Format: email
-             * @example alex@example.com
-             */
-            email: string;
-            /**
-             * Expires At
-             * Format: date-time
-             */
-            expires_at: string;
             /**
              * Harbor Id
              * @example harbor-001
@@ -1678,102 +1672,113 @@ export interface components {
              */
             harbor_name?: string | null;
             /**
-             * Invite Id
-             * @example inv-001
+             * Email
+             * Format: email
+             * @example alex@example.com
              */
-            invite_id: string;
+            email: string;
             /**
              * Status
              * @example pending
              */
             status: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
         };
         /** BerthOut */
         BerthOut: {
-            assignment?: components["schemas"]["AssignmentOut"] | null;
-            /**
-             * Battery Pct
-             * @example 87
-             */
-            battery_pct?: number | null;
             /**
              * Berth Id
              * @example berth-001
              */
             berth_id: string;
             /**
-             * Depth M
-             * @example 2
-             */
-            depth_m?: number | null;
-            /**
              * Dock Id
              * @example dock-a
              */
             dock_id: string;
-            /**
-             * Is Reserved
-             * @default false
-             */
-            is_reserved: boolean;
             /**
              * Label
              * @example A1
              */
             label?: string | null;
             /**
-             * Last Updated
-             * @example 2026-05-03T14:30:00Z
-             */
-            last_updated?: string | null;
-            /**
              * Length M
              * @example 8.5
              */
             length_m?: number | null;
             /**
-             * Sensor Raw
-             * @example 1234
+             * Width M
+             * @example 3.2
              */
-            sensor_raw?: number | null;
+            width_m?: number | null;
+            /**
+             * Depth M
+             * @example 2
+             */
+            depth_m?: number | null;
             /**
              * Status
              * @enum {string}
              */
             status: "free" | "occupied";
             /**
-             * Width M
-             * @example 3.2
+             * Is Reserved
+             * @default false
              */
-            width_m?: number | null;
+            is_reserved: boolean;
+            /**
+             * Is Available Now
+             * @default true
+             */
+            is_available_now: boolean;
+            /**
+             * Sensor Raw
+             * @example 1234
+             */
+            sensor_raw?: number | null;
+            /**
+             * Battery Pct
+             * @example 87
+             */
+            battery_pct?: number | null;
+            /**
+             * Last Updated
+             * @example 2026-05-03T14:30:00Z
+             */
+            last_updated?: string | null;
+            assignment?: components["schemas"]["AssignmentOut"] | null;
         };
         /** BerthPatch */
         BerthPatch: {
-            /** Depth M */
-            depth_m?: number | null;
-            /** Is Reserved */
-            is_reserved?: boolean | null;
             /** Label */
             label?: string | null;
             /** Length M */
             length_m?: number | null;
             /** Width M */
             width_m?: number | null;
+            /** Depth M */
+            depth_m?: number | null;
+            /** Is Reserved */
+            is_reserved?: boolean | null;
         };
         /** BerthPatchOut */
         BerthPatchOut: {
             /** Berth Id */
             berth_id: string;
-            /** Depth M */
-            depth_m?: number | null;
-            /** Is Reserved */
-            is_reserved: boolean;
             /** Label */
             label?: string | null;
             /** Length M */
             length_m?: number | null;
             /** Width M */
             width_m?: number | null;
+            /** Depth M */
+            depth_m?: number | null;
+            /** Is Reserved */
+            is_reserved: boolean;
         };
         /** BerthResetOut */
         BerthResetOut: {
@@ -1784,24 +1789,24 @@ export interface components {
         };
         /** BerthSnapshotEvent */
         BerthSnapshotEvent: {
-            /** Berths */
-            berths: components["schemas"]["BerthOut"][];
             /**
              * Type
              * @default berth.snapshot
              * @constant
              */
             type: "berth.snapshot";
+            /** Berths */
+            berths: components["schemas"]["BerthOut"][];
         };
         /** BerthUpdateEvent */
         BerthUpdateEvent: {
-            berth: components["schemas"]["BerthOut"];
             /**
              * Type
              * @default berth.update
              * @constant
              */
             type: "berth.update";
+            berth: components["schemas"]["BerthOut"];
         };
         /** BulkDeleteOut */
         BulkDeleteOut: {
@@ -1814,10 +1819,10 @@ export interface components {
         DecommissionOut: {
             /** Node Id */
             node_id: string;
-            /** Noop */
-            noop: boolean;
             /** Status */
             status: string;
+            /** Noop */
+            noop: boolean;
         };
         /** DockAdminOut */
         DockAdminOut: {
@@ -1857,18 +1862,13 @@ export interface components {
         };
         /** DockPatch */
         DockPatch: {
-            /** Harbor Id */
-            harbor_id?: string | null;
             /** Name */
             name?: string | null;
+            /** Harbor Id */
+            harbor_id?: string | null;
         };
         /** DockWithBerthsOut */
         DockWithBerthsOut: {
-            /**
-             * Berths
-             * @default []
-             */
-            berths: components["schemas"]["BerthOut"][];
             /**
              * Dock Id
              * @example dock-a
@@ -1884,6 +1884,11 @@ export interface components {
              * @example A Pier
              */
             name: string;
+            /**
+             * Berths
+             * @default []
+             */
+            berths: components["schemas"]["BerthOut"][];
         };
         /** EventList */
         EventList: {
@@ -1898,53 +1903,53 @@ export interface components {
         /** EventOut */
         EventOut: {
             /**
-             * Actor User Id
-             * @example user-001
+             * Event Id
+             * @example evt-0001
              */
-            actor_user_id?: string | null;
+            event_id: string;
             /**
              * Berth Id
              * @example berth-001
              */
             berth_id: string;
             /**
-             * Event Id
-             * @example evt-0001
+             * Node Id
+             * @example node-012
              */
-            event_id: string;
+            node_id?: string | null;
             /**
              * Event Type
              * @enum {string}
              */
             event_type: "occupied" | "freed" | "alert_unauthorized" | "heartbeat" | "assignment_removed";
             /**
-             * Node Id
-             * @example node-012
-             */
-            node_id?: string | null;
-            /**
              * Sensor Raw
              * @example 1234
              */
             sensor_raw?: number | null;
-            /**
-             * Subject User Id
-             * @example user-002
-             */
-            subject_user_id?: string | null;
             /**
              * Timestamp
              * Format: date-time
              * @example 2026-05-03T14:30:00Z
              */
             timestamp: string;
+            /**
+             * Actor User Id
+             * @example user-001
+             */
+            actor_user_id?: string | null;
+            /**
+             * Subject User Id
+             * @example user-002
+             */
+            subject_user_id?: string | null;
         };
         /** GatewayCreate */
         GatewayCreate: {
-            /** Dock Id */
-            dock_id: string;
             /** Gateway Id */
             gateway_id: string;
+            /** Dock Id */
+            dock_id: string;
             /** Name */
             name: string;
         };
@@ -1961,68 +1966,68 @@ export interface components {
         /** GatewayOut */
         GatewayOut: {
             /**
-             * Dock Id
-             * @example dock-a
-             */
-            dock_id: string;
-            /**
              * Gateway Id
              * @example gw-dock-a
              */
             gateway_id: string;
             /**
-             * Last Seen
-             * @example 2026-05-03T14:30:00Z
+             * Dock Id
+             * @example dock-a
              */
-            last_seen?: string | null;
+            dock_id: string;
             /**
              * Name
              * @example Pier A gateway
              */
             name: string;
             /**
+             * Status
+             * @enum {string}
+             */
+            status: "online" | "offline";
+            /**
+             * Last Seen
+             * @example 2026-05-03T14:30:00Z
+             */
+            last_seen?: string | null;
+            /**
              * Provision Ttl S
              * @description Per-gateway override; null falls back to ADOPTION_TTL
              * @example 180
              */
             provision_ttl_s?: number | null;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "online" | "offline";
         };
         /** GatewayPatch */
         GatewayPatch: {
+            /** Name */
+            name?: string | null;
+            /** Provision Ttl S */
+            provision_ttl_s?: number | null;
             /**
              * Dock Id
              * @description Reassign to dock
              */
             dock_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Provision Ttl S */
-            provision_ttl_s?: number | null;
         };
         /** GatewayPatchOut */
         GatewayPatchOut: {
-            /** Dock Id */
-            dock_id: string;
             /** Gateway Id */
             gateway_id: string;
             /** Name */
             name: string;
+            /** Dock Id */
+            dock_id: string;
             /** Provision Ttl S */
             provision_ttl_s?: number | null;
         };
         /** GrantResultOut */
         GrantResultOut: {
+            /** User Id */
+            user_id: string;
             /** Harbor Id */
             harbor_id: string;
             /** Noop */
             noop: boolean;
-            /** User Id */
-            user_id: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -2033,23 +2038,23 @@ export interface components {
         HarborAdminOut: {
             /** Harbor Id */
             harbor_id: string;
+            /** Name */
+            name: string;
             /** Lat */
             lat?: number | null;
             /** Lng */
             lng?: number | null;
-            /** Name */
-            name: string;
         };
         /** HarborCreate */
         HarborCreate: {
             /** Harbor Id */
             harbor_id: string;
+            /** Name */
+            name: string;
             /** Lat */
             lat?: number | null;
             /** Lng */
             lng?: number | null;
-            /** Name */
-            name: string;
         };
         /** HarborGrant */
         HarborGrant: {
@@ -2078,36 +2083,15 @@ export interface components {
         };
         /** HarborPatch */
         HarborPatch: {
+            /** Name */
+            name?: string | null;
             /** Lat */
             lat?: number | null;
             /** Lng */
             lng?: number | null;
-            /** Name */
-            name?: string | null;
         };
         /** HealthStatus */
         HealthStatus: {
-            adoption: components["schemas"]["AdoptionPipelineStatus"];
-            /**
-             * Database
-             * @enum {string}
-             */
-            database: "ok" | "error";
-            /**
-             * Gateways Online
-             * @example 1
-             */
-            gateways_online: number;
-            /**
-             * Gateways Total
-             * @example 1
-             */
-            gateways_total: number;
-            /**
-             * Mqtt
-             * @enum {string}
-             */
-            mqtt: "ok" | "error";
             /**
              * Status
              * @enum {string}
@@ -2118,6 +2102,27 @@ export interface components {
              * @example 12345.6
              */
             uptime: number;
+            /**
+             * Database
+             * @enum {string}
+             */
+            database: "ok" | "error";
+            /**
+             * Mqtt
+             * @enum {string}
+             */
+            mqtt: "ok" | "error";
+            /**
+             * Gateways Online
+             * @example 1
+             */
+            gateways_online: number;
+            /**
+             * Gateways Total
+             * @example 1
+             */
+            gateways_total: number;
+            adoption: components["schemas"]["AdoptionPipelineStatus"];
         };
         /** LoginIn */
         LoginIn: {
@@ -2136,16 +2141,15 @@ export interface components {
         /** NodeDetailOut */
         NodeDetailOut: {
             /**
-             * Adopted At
-             * Format: date-time
-             * @example 2026-05-03T14:00:00Z
+             * Node Id
+             * @example node-012
              */
-            adopted_at: string;
+            node_id: string;
             /**
-             * Battery Pct
-             * @example 87
+             * Serial Number
+             * @example DP-N-000123
              */
-            battery_pct?: number | null;
+            serial_number: string;
             /**
              * Berth Id
              * @example berth-001
@@ -2157,49 +2161,49 @@ export interface components {
              */
             gateway_id: string;
             /**
-             * Health
-             * @enum {string}
-             */
-            health: "online" | "stale" | "offline" | "decommissioned";
-            /**
-             * Last Seen
-             * @example 2026-05-03T14:30:00Z
-             */
-            last_seen?: string | null;
-            /**
              * Mesh Unicast Addr
              * @example 0x0042
              */
             mesh_unicast_addr: string;
             /**
-             * Node Id
-             * @example node-012
+             * Adopted At
+             * Format: date-time
+             * @example 2026-05-03T14:00:00Z
              */
-            node_id: string;
+            adopted_at: string;
+            /**
+             * Health
+             * @enum {string}
+             */
+            health: "online" | "stale" | "offline" | "decommissioned";
+            /**
+             * Battery Pct
+             * @example 87
+             */
+            battery_pct?: number | null;
+            /**
+             * Last Seen
+             * @example 2026-05-03T14:30:00Z
+             */
+            last_seen?: string | null;
             /**
              * Recent Events
              * @default []
              */
             recent_events: components["schemas"]["EventOut"][];
+        };
+        /** NodeHealthOut */
+        NodeHealthOut: {
+            /**
+             * Node Id
+             * @example node-012
+             */
+            node_id: string;
             /**
              * Serial Number
              * @example DP-N-000123
              */
             serial_number: string;
-        };
-        /** NodeHealthOut */
-        NodeHealthOut: {
-            /**
-             * Adopted At
-             * Format: date-time
-             * @example 2026-05-03T14:00:00Z
-             */
-            adopted_at: string;
-            /**
-             * Battery Pct
-             * @example 87
-             */
-            battery_pct?: number | null;
             /**
              * Berth Id
              * @example berth-001
@@ -2211,30 +2215,31 @@ export interface components {
              */
             gateway_id: string;
             /**
-             * Health
-             * @enum {string}
-             */
-            health: "online" | "stale" | "offline" | "decommissioned";
-            /**
-             * Last Seen
-             * @example 2026-05-03T14:30:00Z
-             */
-            last_seen?: string | null;
-            /**
              * Mesh Unicast Addr
              * @example 0x0042
              */
             mesh_unicast_addr: string;
             /**
-             * Node Id
-             * @example node-012
+             * Adopted At
+             * Format: date-time
+             * @example 2026-05-03T14:00:00Z
              */
-            node_id: string;
+            adopted_at: string;
             /**
-             * Serial Number
-             * @example DP-N-000123
+             * Health
+             * @enum {string}
              */
-            serial_number: string;
+            health: "online" | "stale" | "offline" | "decommissioned";
+            /**
+             * Battery Pct
+             * @example 87
+             */
+            battery_pct?: number | null;
+            /**
+             * Last Seen
+             * @example 2026-05-03T14:30:00Z
+             */
+            last_seen?: string | null;
         };
         /** NotificationPrefsOut */
         NotificationPrefsOut: {
@@ -2252,23 +2257,23 @@ export interface components {
         };
         /** PasswordResetConfirm */
         PasswordResetConfirm: {
-            /** Invite Token */
-            invite_token?: string | null;
+            /** Token */
+            token: string;
             /**
              * Password
              * Format: password
              * @example correct horse battery staple
              */
             password: string;
-            /** Token */
-            token: string;
+            /** Invite Token */
+            invite_token?: string | null;
         };
         /** PasswordResetOut */
         PasswordResetOut: {
-            /** Invite Token */
-            invite_token?: string | null;
             /** Message */
             message: string;
+            /** Invite Token */
+            invite_token?: string | null;
         };
         /** PasswordResetRequest */
         PasswordResetRequest: {
@@ -2282,10 +2287,10 @@ export interface components {
         /** PendingGatewayOut */
         PendingGatewayOut: {
             /**
-             * Attempts
-             * @example 3
+             * Gateway Id
+             * @example gw-unregistered
              */
-            attempts: number;
+            gateway_id: string;
             /**
              * First Seen At
              * Format: date-time
@@ -2293,16 +2298,16 @@ export interface components {
              */
             first_seen_at: string;
             /**
-             * Gateway Id
-             * @example gw-unregistered
-             */
-            gateway_id: string;
-            /**
              * Last Seen At
              * Format: date-time
              * @example 2026-05-06T11:32:00Z
              */
             last_seen_at: string;
+            /**
+             * Attempts
+             * @example 3
+             */
+            attempts: number;
         };
         /** ResendDecommissionOut */
         ResendDecommissionOut: {
@@ -2322,71 +2327,71 @@ export interface components {
         };
         /** SnapshotAdoption */
         SnapshotAdoption: {
-            /** Err Last 15Min */
-            err_last_15min: number;
             /** Pending */
             pending: number;
+            /** Err Last 15Min */
+            err_last_15min: number;
         };
         /** SnapshotGateway */
         SnapshotGateway: {
-            /** Dock Id */
-            dock_id: string;
             /** Gateway Id */
             gateway_id: string;
-            /** Last Seen */
-            last_seen?: string | null;
+            /** Dock Id */
+            dock_id: string;
             /** Name */
             name: string;
-            /** Provision Ttl S */
-            provision_ttl_s?: number | null;
             /**
              * Status
              * @example online
              */
             status: string;
+            /** Last Seen */
+            last_seen?: string | null;
+            /** Provision Ttl S */
+            provision_ttl_s?: number | null;
         };
         /** SnapshotNode */
         SnapshotNode: {
-            /** Adopted At */
-            adopted_at?: string | null;
+            /** Node Id */
+            node_id: string;
             /** Berth Id */
             berth_id: string;
             /** Gateway Id */
             gateway_id: string;
-            /** Node Id */
-            node_id: string;
             /**
              * Status
              * @example provisioned
              */
             status: string;
+            /** Adopted At */
+            adopted_at?: string | null;
         };
         /** SnapshotOut */
         SnapshotOut: {
-            adoption: components["schemas"]["SnapshotAdoption"];
             /** Gateways */
             gateways: components["schemas"]["SnapshotGateway"][];
             /** Nodes */
             nodes: components["schemas"]["SnapshotNode"][];
             /** Pending Gateways */
             pending_gateways: components["schemas"]["SnapshotPending"][];
+            adoption: components["schemas"]["SnapshotAdoption"];
         };
         /** SnapshotPending */
         SnapshotPending: {
-            /** Attempts */
-            attempts: number;
+            /** Gateway Id */
+            gateway_id: string;
             /**
              * First Seen At
              * Format: date-time
              */
             first_seen_at: string;
-            /** Gateway Id */
-            gateway_id: string;
             /**
              * Last Seen At
              * Format: date-time
              */
             last_seen_at: string;
+            /** Attempts */
+            attempts: number;
         };
         /** SweeperRunOut */
         SweeperRunOut: {
@@ -2397,50 +2402,55 @@ export interface components {
         };
         /** UserAdminOut */
         UserAdminOut: {
-            /** Boat Club */
-            boat_club?: string | null;
+            /** User Id */
+            user_id: string;
             /** Email */
             email: string;
-            /**
-             * Email Verified
-             * @default false
-             */
-            email_verified: boolean;
             /** Firstname */
             firstname: string;
             /** Lastname */
             lastname: string;
-            /** Phone */
-            phone?: string | null;
             /**
              * Role
              * @example harbormaster
              */
             role: string;
-            /** User Id */
-            user_id: string;
+            /**
+             * Email Verified
+             * @default false
+             */
+            email_verified: boolean;
+            /** Phone */
+            phone?: string | null;
+            /** Boat Club */
+            boat_club?: string | null;
         };
         /** UserCreatedOut */
         UserCreatedOut: {
+            /** User Id */
+            user_id: string;
             /** Email */
             email: string;
             /** Role */
             role: string;
-            /** User Id */
-            user_id: string;
         };
         /** UserOut */
         UserOut: {
             /**
-             * Assigned Berth Id
-             * @example berth-001
+             * User Id
+             * @example user-001
              */
-            assigned_berth_id?: string | null;
+            user_id: string;
             /**
-             * Boat Club
-             * @example Saltsjöbadens BK
+             * Firstname
+             * @example Alex
              */
-            boat_club?: string | null;
+            firstname: string;
+            /**
+             * Lastname
+             * @example Lindgren
+             */
+            lastname: string;
             /**
              * Email
              * Format: email
@@ -2448,58 +2458,52 @@ export interface components {
              */
             email: string;
             /**
-             * Email Verified
-             * @default false
-             */
-            email_verified: boolean;
-            /**
-             * Firstname
-             * @example Alex
-             */
-            firstname: string;
-            /**
-             * Harbor Id
-             * @example ksss-saltsjobaden
-             */
-            harbor_id?: string | null;
-            /**
-             * Lastname
-             * @example Lindgren
-             */
-            lastname: string;
-            /**
              * Phone
              * @example +46 70 123 45 67
              */
             phone?: string | null;
+            /**
+             * Boat Club
+             * @example Saltsjöbadens BK
+             */
+            boat_club?: string | null;
             /**
              * Role
              * @enum {string}
              */
             role: "harbormaster" | "boat_owner";
             /**
-             * User Id
-             * @example user-001
+             * Email Verified
+             * @default false
              */
-            user_id: string;
+            email_verified: boolean;
+            /**
+             * Assigned Berth Id
+             * @example berth-001
+             */
+            assigned_berth_id?: string | null;
+            /**
+             * Harbor Id
+             * @example ksss-saltsjobaden
+             */
+            harbor_id?: string | null;
         };
         /** UserPatchOut */
         UserPatchOut: {
+            /** User Id */
+            user_id: string;
             /** Email */
             email: string;
             /** Role */
             role: string;
-            /** User Id */
-            user_id: string;
         };
         /** UserSearchOut */
         UserSearchOut: {
             /**
-             * Email
-             * Format: email
-             * @example alex@example.com
+             * User Id
+             * @example user-001
              */
-            email: string;
+            user_id: string;
             /**
              * Firstname
              * @example Alex
@@ -2511,78 +2515,68 @@ export interface components {
              */
             lastname: string;
             /**
-             * User Id
-             * @example user-001
+             * Email
+             * Format: email
+             * @example alex@example.com
              */
-            user_id: string;
+            email: string;
         };
         /** ValidationError */
         ValidationError: {
-            /** Context */
-            ctx?: Record<string, never>;
-            /** Input */
-            input?: unknown;
             /** Location */
             loc: (string | number)[];
             /** Message */
             msg: string;
             /** Error Type */
             type: string;
+            /** Input */
+            input?: unknown;
+            /** Context */
+            ctx?: Record<string, never>;
         };
         /** VerifyEmailOut */
         VerifyEmailOut: {
+            /** User Id */
+            user_id: string;
             /** Email */
             email: string;
             /** Email Verified */
             email_verified: boolean;
-            /** User Id */
-            user_id: string;
         };
         /** UserCreate */
         app__routers__admin__users__UserCreate: {
-            /** Boat Club */
-            boat_club?: string | null;
             /**
              * Email
              * Format: email
              */
             email: string;
-            /** Firstname */
-            firstname: string;
-            /** Lastname */
-            lastname: string;
             /**
              * Password
              * Format: password
              */
             password: string;
+            /** Firstname */
+            firstname: string;
+            /** Lastname */
+            lastname: string;
             /** Phone */
             phone?: string | null;
+            /** Boat Club */
+            boat_club?: string | null;
         };
         /** UserPatch */
         app__routers__admin__users__UserPatch: {
-            /** Boat Club */
-            boat_club?: string | null;
             /** Firstname */
             firstname?: string | null;
             /** Lastname */
             lastname?: string | null;
             /** Phone */
             phone?: string | null;
+            /** Boat Club */
+            boat_club?: string | null;
         };
         /** UserCreate */
         app__schemas__UserCreate: {
-            /**
-             * Boat Club
-             * @example Saltsjöbadens BK
-             */
-            boat_club?: string | null;
-            /**
-             * Email
-             * Format: email
-             * @example alex@example.com
-             */
-            email: string;
             /**
              * Firstname
              * @example Alex
@@ -2594,51 +2588,62 @@ export interface components {
              */
             lastname: string;
             /**
-             * Password
-             * Format: password
-             * @example correct horse battery staple
+             * Email
+             * Format: email
+             * @example alex@example.com
              */
-            password: string;
+            email: string;
             /**
              * Phone
              * @example +46 70 123 45 67
              */
             phone?: string | null;
-        };
-        /** UserPatch */
-        app__schemas__UserPatch: {
             /**
              * Boat Club
              * @example Saltsjöbadens BK
              */
             boat_club?: string | null;
-            /** Current Password */
-            current_password?: string | null;
+            /**
+             * Password
+             * Format: password
+             * @example correct horse battery staple
+             */
+            password: string;
+        };
+        /** UserPatch */
+        app__schemas__UserPatch: {
+            /**
+             * Firstname
+             * @example Alex
+             */
+            firstname?: string | null;
+            /**
+             * Lastname
+             * @example Alex
+             */
+            lastname?: string | null;
             /**
              * Email
              * @example alex@example.com
              */
             email?: string | null;
             /**
-             * Firstname
-             * @example Alex
+             * Phone
+             * @example +46 70 123 45 67
              */
-            firstname?: string | null;
+            phone?: string | null;
             /**
-             * Lastname
-             * @example Alex
+             * Boat Club
+             * @example Saltsjöbadens BK
              */
-            lastname?: string | null;
+            boat_club?: string | null;
             /**
              * Password
              * @example correct horse battery staple
              */
             password?: string | null;
-            /**
-             * Phone
-             * @example +46 70 123 45 67
-             */
-            phone?: string | null;
+            /** Current Password */
+            current_password?: string | null;
         };
     };
     responses: never;
@@ -2649,12 +2654,9 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    adminListAdoptions: {
+    adminSnapshot: {
         parameters: {
-            query?: {
-                status?: string | null;
-                limit?: number;
-            };
+            query?: never;
             header?: {
                 "Cf-Access-Jwt-Assertion"?: string | null;
             };
@@ -2669,7 +2671,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AdoptionAdminOut"][];
+                    "application/json": components["schemas"]["SnapshotOut"];
                 };
             };
             /** @description Validation Error */
@@ -2683,11 +2685,9 @@ export interface operations {
             };
         };
     };
-    adminBulkDeleteAdoptions: {
+    adminListHarbors: {
         parameters: {
-            query?: {
-                status?: string;
-            };
+            query?: never;
             header?: {
                 "Cf-Access-Jwt-Assertion"?: string | null;
             };
@@ -2702,7 +2702,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BulkDeleteOut"];
+                    "application/json": components["schemas"]["HarborAdminOut"][];
                 };
             };
             /** @description Validation Error */
@@ -2716,81 +2716,49 @@ export interface operations {
             };
         };
     };
-    adminCancelAdoption: {
+    adminCreateHarbor: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HarborCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HarborAdminOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminDeleteHarbor: {
         parameters: {
             query?: never;
             header?: {
                 "Cf-Access-Jwt-Assertion"?: string | null;
             };
             path: {
-                request_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdoptionCancelOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    adminListAlerts: {
-        parameters: {
-            query?: {
-                acknowledged?: boolean | null;
-                limit?: number;
-            };
-            header?: {
-                "Cf-Access-Jwt-Assertion"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminAlertOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    adminDeleteAlert: {
-        parameters: {
-            query?: never;
-            header?: {
-                "Cf-Access-Jwt-Assertion"?: string | null;
-            };
-            path: {
-                alert_id: string;
+                harbor_id: string;
             };
             cookie?: never;
         };
@@ -2814,18 +2782,22 @@ export interface operations {
             };
         };
     };
-    adminAcknowledgeAlert: {
+    adminPatchHarbor: {
         parameters: {
             query?: never;
             header?: {
                 "Cf-Access-Jwt-Assertion"?: string | null;
             };
             path: {
-                alert_id: string;
+                harbor_id: string;
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HarborPatch"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -2833,7 +2805,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AdminAlertOut"];
+                    "application/json": components["schemas"]["HarborAdminOut"];
                 };
             };
             /** @description Validation Error */
@@ -2847,13 +2819,9 @@ export interface operations {
             };
         };
     };
-    adminListBerthInvites: {
+    adminListDocks: {
         parameters: {
-            query?: {
-                harbor_id?: string | null;
-                status?: string | null;
-                limit?: number;
-            };
+            query?: never;
             header?: {
                 "Cf-Access-Jwt-Assertion"?: string | null;
             };
@@ -2868,7 +2836,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AdminInviteOut"][];
+                    "application/json": components["schemas"]["DockAdminOut"][];
                 };
             };
             /** @description Validation Error */
@@ -2882,14 +2850,49 @@ export interface operations {
             };
         };
     };
-    adminRevokeBerthInvite: {
+    adminCreateDock: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DockCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DockAdminOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminDeleteDock: {
         parameters: {
             query?: never;
             header?: {
                 "Cf-Access-Jwt-Assertion"?: string | null;
             };
             path: {
-                invite_id: string;
+                dock_id: string;
             };
             cookie?: never;
         };
@@ -2901,6 +2904,43 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminPatchDock: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                dock_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DockPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DockAdminOut"];
+                };
             };
             /** @description Validation Error */
             422: {
@@ -3080,176 +3120,6 @@ export interface operations {
             };
         };
     };
-    adminListDocks: {
-        parameters: {
-            query?: never;
-            header?: {
-                "Cf-Access-Jwt-Assertion"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DockAdminOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    adminCreateDock: {
-        parameters: {
-            query?: never;
-            header?: {
-                "Cf-Access-Jwt-Assertion"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DockCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DockAdminOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    adminDeleteDock: {
-        parameters: {
-            query?: never;
-            header?: {
-                "Cf-Access-Jwt-Assertion"?: string | null;
-            };
-            path: {
-                dock_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    adminPatchDock: {
-        parameters: {
-            query?: never;
-            header?: {
-                "Cf-Access-Jwt-Assertion"?: string | null;
-            };
-            path: {
-                dock_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DockPatch"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DockAdminOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    adminListEvents: {
-        parameters: {
-            query?: {
-                harbor_id?: string | null;
-                event_type?: string[] | null;
-                limit?: number;
-                offset?: number;
-            };
-            header?: {
-                "Cf-Access-Jwt-Assertion"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminEventList"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     adminCreateGateway: {
         parameters: {
             query?: never;
@@ -3273,37 +3143,6 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["GatewayCreatedOut"];
                 };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    adminDismissPending: {
-        parameters: {
-            query?: never;
-            header?: {
-                "Cf-Access-Jwt-Assertion"?: string | null;
-            };
-            path: {
-                gateway_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -3384,80 +3223,14 @@ export interface operations {
             };
         };
     };
-    adminListHarbors: {
-        parameters: {
-            query?: never;
-            header?: {
-                "Cf-Access-Jwt-Assertion"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HarborAdminOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    adminCreateHarbor: {
-        parameters: {
-            query?: never;
-            header?: {
-                "Cf-Access-Jwt-Assertion"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["HarborCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HarborAdminOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    adminDeleteHarbor: {
+    adminDismissPending: {
         parameters: {
             query?: never;
             header?: {
                 "Cf-Access-Jwt-Assertion"?: string | null;
             };
             path: {
-                harbor_id: string;
+                gateway_id: string;
             };
             cookie?: never;
         };
@@ -3469,43 +3242,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    adminPatchHarbor: {
-        parameters: {
-            query?: never;
-            header?: {
-                "Cf-Access-Jwt-Assertion"?: string | null;
-            };
-            path: {
-                harbor_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["HarborPatch"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HarborAdminOut"];
-                };
             };
             /** @description Validation Error */
             422: {
@@ -3584,9 +3320,12 @@ export interface operations {
             };
         };
     };
-    adminSnapshot: {
+    adminListAdoptions: {
         parameters: {
-            query?: never;
+            query?: {
+                status?: string | null;
+                limit?: number;
+            };
             header?: {
                 "Cf-Access-Jwt-Assertion"?: string | null;
             };
@@ -3601,7 +3340,73 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SnapshotOut"];
+                    "application/json": components["schemas"]["AdoptionAdminOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminBulkDeleteAdoptions: {
+        parameters: {
+            query?: {
+                status?: string;
+            };
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkDeleteOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminCancelAdoption: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdoptionCancelOut"];
                 };
             };
             /** @description Validation Error */
@@ -3915,6 +3720,206 @@ export interface operations {
             };
         };
     };
+    adminListAlerts: {
+        parameters: {
+            query?: {
+                acknowledged?: boolean | null;
+                limit?: number;
+            };
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminAlertOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminAcknowledgeAlert: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                alert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminAlertOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminDeleteAlert: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                alert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminListEvents: {
+        parameters: {
+            query?: {
+                harbor_id?: string | null;
+                event_type?: string[] | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminEventList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminListBerthInvites: {
+        parameters: {
+            query?: {
+                harbor_id?: string | null;
+                status?: string | null;
+                limit?: number;
+            };
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminInviteOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminRevokeBerthInvite: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                invite_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     createAdoption: {
         parameters: {
             query?: never;
@@ -3979,37 +3984,6 @@ export interface operations {
             };
         };
     };
-    cancelAdoption: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                request_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdoptionRequestOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     streamAdoption: {
         parameters: {
             query?: never;
@@ -4036,6 +4010,37 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancelAdoption: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdoptionRequestOut"];
+                };
             };
             /** @description Validation Error */
             422: {
@@ -4112,120 +4117,6 @@ export interface operations {
             };
         };
     };
-    login: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LoginIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserOut"];
-                };
-            };
-            /** @description Invalid credentials */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Email not verified */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    logout: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    getCurrentUser: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserOut"];
-                };
-            };
-        };
-    };
-    refreshSession: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                dockpulse_refresh?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     registerUser: {
         parameters: {
             query?: never;
@@ -4241,39 +4132,6 @@ export interface operations {
         responses: {
             /** @description Successful Response */
             201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    resendVerification: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ResendVerificationIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4330,16 +4188,18 @@ export interface operations {
             };
         };
     };
-    getBerthInviteByToken: {
+    resendVerification: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                token: string;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResendVerificationIn"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -4347,7 +4207,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BerthInviteOut"];
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -4361,16 +4221,18 @@ export interface operations {
             };
         };
     };
-    acceptBerthInvite: {
+    login: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                token: string;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginIn"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -4378,8 +4240,22 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BerthInviteOut"];
+                    "application/json": components["schemas"]["UserOut"];
                 };
+            };
+            /** @description Invalid credentials */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Email not verified */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -4392,13 +4268,11 @@ export interface operations {
             };
         };
     };
-    rejectBerthInvite: {
+    getCurrentUser: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                token: string;
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -4409,8 +4283,28 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BerthInviteOut"];
+                    "application/json": components["schemas"]["UserOut"];
                 };
+            };
+        };
+    };
+    refreshSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                dockpulse_refresh?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -4420,6 +4314,24 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -4444,45 +4356,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BerthOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    listHarborAvailability: {
-        parameters: {
-            query: {
-                /** @description harbor to filter on */
-                harbor_id: string;
-                /** @description windows must end after */
-                from_date?: string | null;
-                /** @description windows must start before */
-                return_date?: string | null;
-                length_m?: number | null;
-                width_m?: number | null;
-                depth_m?: number | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BerthAvailabilityWindowOut"][];
                 };
             };
             /** @description Validation Error */
@@ -4613,6 +4486,78 @@ export interface operations {
             };
         };
     };
+    listBerthEvents: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                berth_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listHarborAvailability: {
+        parameters: {
+            query: {
+                /** @description harbor to filter on */
+                harbor_id: string;
+                /** @description windows must end after */
+                from_date?: string | null;
+                /** @description windows must start before */
+                return_date?: string | null;
+                length_m?: number | null;
+                width_m?: number | null;
+                depth_m?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BerthAvailabilityWindowOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listBerthAvailability: {
         parameters: {
             query?: never;
@@ -4709,39 +4654,6 @@ export interface operations {
             };
         };
     };
-    listBerthEvents: {
-        parameters: {
-            query?: {
-                limit?: number;
-            };
-            header?: never;
-            path: {
-                berth_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     listDocks: {
         parameters: {
             query?: {
@@ -4792,6 +4704,96 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DockWithBerthsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listHarbors: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HarborOut"][];
+                };
+            };
+        };
+    };
+    searchHarborUsers: {
+        parameters: {
+            query?: {
+                /** @description email or name prefix, case-insensitive */
+                q?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                harbor_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserSearchOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listHarborEvents: {
+        parameters: {
+            query?: {
+                event_type?: string[] | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                harbor_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventList"];
                 };
             };
             /** @description Validation Error */
@@ -4890,26 +4892,6 @@ export interface operations {
             };
         };
     };
-    listHarbors: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HarborOut"][];
-                };
-            };
-        };
-    };
     listBerthInvites: {
         parameters: {
             query?: {
@@ -4980,6 +4962,99 @@ export interface operations {
             };
         };
     };
+    getBerthInviteByToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BerthInviteOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    acceptBerthInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BerthInviteOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rejectBerthInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BerthInviteOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     deleteBerthInvite: {
         parameters: {
             query?: never;
@@ -5006,105 +5081,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    listHarborEvents: {
-        parameters: {
-            query?: {
-                event_type?: string[] | null;
-                limit?: number;
-                offset?: number;
-            };
-            header?: never;
-            path: {
-                harbor_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventList"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    searchHarborUsers: {
-        parameters: {
-            query?: {
-                /** @description email or name prefix, case-insensitive */
-                q?: string | null;
-                limit?: number;
-            };
-            header?: never;
-            path: {
-                harbor_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserSearchOut"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    getHealth: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HealthStatus"];
-                };
-            };
-            /** @description Service is degraded — at least one dependency is unreachable */
-            503: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HealthStatus"];
                 };
             };
         };
@@ -5196,6 +5172,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NodeHealthOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    requestPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirmPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PasswordResetConfirm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasswordResetOut"];
                 };
             };
             /** @description Validation Error */
@@ -5364,49 +5404,14 @@ export interface operations {
             };
         };
     };
-    requestPasswordReset: {
+    getHealth: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PasswordResetRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    confirmPasswordReset: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PasswordResetConfirm"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -5414,16 +5419,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PasswordResetOut"];
+                    "application/json": components["schemas"]["HealthStatus"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Service is degraded — at least one dependency is unreachable */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["HealthStatus"];
                 };
             };
         };

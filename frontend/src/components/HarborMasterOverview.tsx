@@ -32,10 +32,8 @@ export function HarborMasterOverview({
   }, []);
 
   const totalBerths = berths.length;
-  // reserved berths count as unavailable even though sensor reports free
-  const unavailableBerths = berths.filter(
-    (b) => b.status === "occupied" || b.is_reserved,
-  ).length;
+  // server-derived: factors sensor + reservation + active visitor window
+  const unavailableBerths = berths.filter((b) => !b.is_available_now).length;
   const availableBerths = totalBerths - unavailableBerths;
   const occupancyRate =
     totalBerths > 0 ? Math.round((unavailableBerths / totalBerths) * 100) : 0;

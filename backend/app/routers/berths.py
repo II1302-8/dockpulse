@@ -33,6 +33,7 @@ from app.schemas import (
     BerthUpdateEvent,
     EventOut,
 )
+from app.serializers import serialize_berths
 
 router = APIRouter(prefix="/api/berths", tags=["berths"])
 
@@ -58,7 +59,7 @@ async def list_berths(
     if status:
         stmt = stmt.where(Berth.status == status)
     result = await session.execute(stmt)
-    return result.scalars().all()
+    return await serialize_berths(session, list(result.scalars().all()))
 
 
 @router.get(
@@ -89,7 +90,8 @@ async def stream_berths(request: Request, session: SessionDep):
         async with broadcaster.subscribe() as queue:
             stmt = select(Berth).options(selectinload(Berth.assignment))
             berths = list((await session.execute(stmt)).scalars().all())
-            snapshot = BerthSnapshotEvent(berths=berths).model_dump(mode="json")
+            out = await serialize_berths(session, berths)
+            snapshot = BerthSnapshotEvent(berths=out).model_dump(mode="json")
             yield {"event": snapshot["type"], "data": json.dumps(snapshot)}
             while True:
                 if await request.is_disconnected():
@@ -116,6 +118,14 @@ async def _load_berth_with_assignment(session, berth_id: str) -> Berth | None:
     return result.scalar_one_or_none()
 
 
+async def _load_berth_out(session, berth_id: str) -> BerthOut | None:
+    berth = await _load_berth_with_assignment(session, berth_id)
+    if berth is None:
+        return None
+    rows = await serialize_berths(session, [berth])
+    return rows[0]
+
+
 @router.get(
     "/{berth_id}",
     response_model=BerthOut,
@@ -123,10 +133,10 @@ async def _load_berth_with_assignment(session, berth_id: str) -> Berth | None:
     summary="Get a single berth",
 )
 async def get_berth(berth_id: str, session: SessionDep):
-    berth = await _load_berth_with_assignment(session, berth_id)
-    if not berth:
+    out = await _load_berth_out(session, berth_id)
+    if out is None:
         raise HTTPException(status_code=404, detail="Berth not found")
-    return berth
+    return out
 
 
 @router.put(
@@ -153,7 +163,7 @@ async def assign_berth(
     berth.is_reserved = True
     await session.commit()
 
-    return await _load_berth_with_assignment(session, berth_id)
+    return await _load_berth_out(session, berth_id)
 
 
 @router.get(
@@ -257,7 +267,7 @@ async def remove_berth_assignment(
             f"assignment-removed:{berth_id}:{tenant_id}:{int(now.timestamp())}"
         ),
     )
-    return await _load_berth_with_assignment(session, berth_id)
+    return await _load_berth_out(session, berth_id)
 
 
 async def _assert_owner(session, berth_id: str, user_id: str) -> Berth:

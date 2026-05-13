@@ -23,9 +23,9 @@ export function HarborOverview({
     isOnline(berth.last_updated, now),
   );
 
-  // reserved berths are not available even when sensor reports free
+  // server-derived: factors sensor + reservation + active visitor window
   const availableBerths = onlineBerths.filter(
-    (berth) => berth.status === "free" && !berth.is_reserved,
+    (berth) => berth.is_available_now,
   ).length;
 
   const offlineCount = berths.length - onlineBerths.length;

@@ -97,6 +97,10 @@ class BerthOut(_BaseSchema):
     depth_m: float | None = Field(default=None, examples=[2.0])
     status: BerthStatus
     is_reserved: bool = False
+    # owner-controlled visibility: true when the berth is currently usable by
+    # visitors. derived server-side from sensor status + reservation + any
+    # availability window covering "now". the FE map / overviews key off this
+    is_available_now: bool = True
     sensor_raw: int | None = Field(default=None, examples=[1234])
     battery_pct: int | None = Field(default=None, examples=[87])
     last_updated: datetime | None = Field(

@@ -123,7 +123,7 @@ async def complete_adoption_ok(
     # map waits on berth.update so adoption refreshes without first reading
     berth = await load_berth_with_assignment(session, request.berth_id)
     if berth is not None:
-        publish_berth_update(berth)
+        await publish_berth_update(session, berth)
     logger.info(
         "adoption ok: request=%s node=%s berth=%s",
         request_id,

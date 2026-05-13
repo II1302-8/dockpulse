@@ -31,8 +31,7 @@ type Berth = components["schemas"]["BerthOut"];
 // first, then occupancy. backend status stays free/occupied, this is presentation
 function getDisplayStatus(berth: Berth, now: number): string {
   if (!isOnline(berth.last_updated, now)) return "Disconnected";
-  if (berth.status === "occupied" || berth.is_reserved) return "Unavailable";
-  return "Available";
+  return berth.is_available_now ? "Available" : "Unavailable";
 }
 
 function getEventLabel(eventType: string): string {
@@ -363,7 +362,7 @@ export function BerthDetailPanel({
                     "inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider",
                     !isOnline(berth.last_updated, now)
                       ? "border-slate-500/20 bg-slate-500/10 text-slate-500"
-                      : berth.status === "occupied" || berth.is_reserved
+                      : !berth.is_available_now
                         ? "border-red-500/20 bg-red-500/10 text-red-500"
                         : "border-emerald-500/20 bg-emerald-500/10 text-emerald-600",
                   )}
@@ -373,7 +372,7 @@ export function BerthDetailPanel({
                       "h-2 w-2 rounded-full",
                       !isOnline(berth.last_updated, now)
                         ? "bg-slate-400"
-                        : berth.status === "occupied" || berth.is_reserved
+                        : !berth.is_available_now
                           ? "animate-pulse bg-red-500 drop-shadow-[0_0_4px_rgba(239,68,68,0.5)]"
                           : "bg-emerald-500 glow-emerald",
                     )}

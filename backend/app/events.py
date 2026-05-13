@@ -20,12 +20,15 @@ from app.models import (
 )
 from app.notifications import send_email
 from app.schemas import BerthUpdateEvent
+from app.serializers import berths_with_active_windows, serialize_berth
 
 logger = logging.getLogger(__name__)
 
 
-def publish_berth_update(berth: Berth) -> None:
-    event = BerthUpdateEvent(berth=berth)
+async def publish_berth_update(session: AsyncSession, berth: Berth) -> None:
+    active = await berths_with_active_windows(session, [berth.berth_id])
+    out = serialize_berth(berth, has_active_window=berth.berth_id in active)
+    event = BerthUpdateEvent(berth=out)
     broadcaster.publish(event.model_dump(mode="json"))
 
 
@@ -144,7 +147,7 @@ async def process_sensor_reading(
     if new_status == prev_status or berth.is_reserved:
         await session.commit()
         if berth.battery_pct != prev_battery:
-            publish_berth_update(berth)
+            await publish_berth_update(session, berth)
         return None
 
     event = Event(
@@ -159,7 +162,7 @@ async def process_sensor_reading(
     berth.status = new_status
     session.add(event)
     await session.commit()
-    publish_berth_update(berth)
+    await publish_berth_update(session, berth)
     await _notify_harbormasters(session, berth, new_status, event.event_id)
     return event
 
@@ -178,4 +181,4 @@ async def process_heartbeat(
     if battery_pct is not None:
         berth.battery_pct = battery_pct
     await session.commit()
-    publish_berth_update(berth)
+    await publish_berth_update(session, berth)

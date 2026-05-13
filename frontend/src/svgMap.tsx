@@ -118,9 +118,9 @@ export function SvgMap({
 
     const state: BerthState =
       apiBerth && isOnline(apiBerth.last_updated, now)
-        ? apiBerth.status === "occupied" || apiBerth.is_reserved
-          ? "red"
-          : "green"
+        ? apiBerth.is_available_now
+          ? "green"
+          : "red"
         : "grey";
 
     const fill =

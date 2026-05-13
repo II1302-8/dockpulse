@@ -134,9 +134,8 @@ export function useActivityLog(berths: Berth[], maxEvents: number) {
       for (const [id, berth] of currentBerths.entries()) {
         const prev = prevBerthsRef.current.get(id);
         if (!prev) continue;
-        const prevUnavailable = prev.status === "occupied" || prev.is_reserved;
-        const nextUnavailable =
-          berth.status === "occupied" || berth.is_reserved;
+        const prevUnavailable = !prev.is_available_now;
+        const nextUnavailable = !berth.is_available_now;
         if (prevUnavailable !== nextUnavailable) {
           const fromLabel = prevUnavailable ? "Unavailable" : "Available";
           const toLabel = nextUnavailable ? "Unavailable" : "Available";

@@ -115,10 +115,10 @@ async def test_heartbeat_unknown_berth_raises(session):
         await process_heartbeat(session, berth_id="does-not-exist")
 
 
-async def _seed_node(session, berth_id="b1", unicast="0x0042") -> Node:
+async def _seed_node(session, berth_id="b1", unicast="0x0042", node_id="n1") -> Node:
     session.add(Gateway(gateway_id="gw1", dock_id="d1", name="GW", status="online"))
     node = Node(
-        node_id="node-uuid-1",
+        node_id=node_id,
         mesh_uuid="meshuuid1",
         serial_number="DP-N-1",
         berth_id=berth_id,
@@ -134,7 +134,7 @@ async def _seed_node(session, berth_id="b1", unicast="0x0042") -> Node:
 
 
 async def test_unicast_addr_matches_registered_node(session, seeded_berth):
-    await _seed_node(session, unicast="0x0042")
+    await _seed_node(session, unicast="0x0042", node_id="n1")
     event = await process_sensor_reading(
         session,
         berth_id="b1",
@@ -149,13 +149,27 @@ async def test_unicast_addr_matches_registered_node(session, seeded_berth):
 
 
 async def test_unicast_addr_mismatch_raises(session, seeded_berth):
-    await _seed_node(session, unicast="0x0042")
+    await _seed_node(session, unicast="0x0042", node_id="n1")
     with pytest.raises(ValueError, match="unicast addr mismatch"):
         await process_sensor_reading(
             session,
             berth_id="b1",
             node_id="n1",
             mesh_unicast_addr="0x0099",
+            occupied=True,
+            sensor_raw=500,
+        )
+
+
+async def test_node_id_mismatch_raises(session, seeded_berth):
+    # registered node_id is n1; sensor claims it's n2 → reject as rogue
+    await _seed_node(session, unicast="0x0042", node_id="n1")
+    with pytest.raises(ValueError, match="node_id mismatch"):
+        await process_sensor_reading(
+            session,
+            berth_id="b1",
+            node_id="n2",
+            mesh_unicast_addr="0x0042",
             occupied=True,
             sensor_raw=500,
         )
@@ -178,6 +192,9 @@ async def test_unicast_addr_no_registered_node_accepts(session, seeded_berth):
 async def test_notify_harbormasters_called_on_state_change(
     session, seeded_berth, harbor_master, monkeypatch
 ):
+    # notifications only fire for adopted berths to prevent rogue device-cert
+    # spam against un-adopted berth_ids
+    await _seed_node(session, unicast="0x0042", node_id="n1")
     sent: list[dict] = []
 
     async def _fake_send(to, subject, html, idempotency_key=None):
@@ -205,6 +222,7 @@ async def test_notify_harbormasters_respects_arrival_pref(
 ):
     from app.models import UserNotificationPrefs
 
+    await _seed_node(session, unicast="0x0042", node_id="n1")
     prefs = UserNotificationPrefs(
         user_id=harbor_master.user_id,
         notify_arrival=False,
@@ -304,6 +322,7 @@ async def test_notify_fires_when_window_covers_different_berth(
     session, seeded_berth, harbor_master, boat_owner, monkeypatch
 ):
     # window exists for a sibling berth b2 in the same dock, must not suppress b1
+    await _seed_node(session, unicast="0x0042", node_id="n1")
     session.add(Berth(berth_id="b2", dock_id="d1", status="free"))
     await session.commit()
     await _add_window(
@@ -332,6 +351,7 @@ async def test_notify_fires_when_window_expired(
     session, seeded_berth, harbor_master, boat_owner, monkeypatch
 ):
     # window already closed, mooring is no longer authorized
+    await _seed_node(session, unicast="0x0042", node_id="n1")
     now = datetime.now(UTC)
     session.add(
         BerthAvailabilityWindow(

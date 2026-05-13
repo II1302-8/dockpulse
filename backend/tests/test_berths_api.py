@@ -33,11 +33,11 @@ async def test_api_filter_by_status(client, session, seeded_berth):
         sensor_raw=500,
     )
 
-    r_occupied = await client.get("/api/berths?status=occupied")
+    r_occupied = await client.get("/api/berths?harbor_id=h1&status=occupied")
     assert r_occupied.status_code == 200
     assert [b["berth_id"] for b in r_occupied.json()] == ["b1"]
 
-    r_free = await client.get("/api/berths?status=free")
+    r_free = await client.get("/api/berths?harbor_id=h1&status=free")
     assert r_free.status_code == 200
     assert r_free.json() == []
 

@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from hashlib import sha256
 
 from httpx import AsyncClient
 from sqlalchemy import select
@@ -6,6 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import ACCESS_COOKIE, REFRESH_COOKIE
 from app.models import User, UserVerification
+
+
+def _hash(token: str) -> bytes:
+    return sha256(token.encode("utf-8")).digest()
+
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -236,7 +242,7 @@ async def _create_unverified_user_with_token(
     session.add(
         UserVerification(
             user_id=user_id,
-            token=token_value,
+            token_hash=_hash(token_value),
             expires_at=datetime.now(UTC) + timedelta(hours=24),
         )
     )
@@ -248,7 +254,7 @@ async def test_verify_email_marks_user_verified(
     client: AsyncClient, session: AsyncSession
 ):
     user, token = await _create_unverified_user_with_token(session)
-    r = await client.get(f"/api/auth/verify-email?token={token}")
+    r = await client.post("/api/auth/verify-email", json={"token": token})
     assert r.status_code == 200
     assert "verified" in r.json()["message"].lower()
     await session.refresh(user)
@@ -259,27 +265,29 @@ async def test_verify_email_marks_token_used(
     client: AsyncClient, session: AsyncSession
 ):
     user, token = await _create_unverified_user_with_token(session)
-    await client.get(f"/api/auth/verify-email?token={token}")
+    await client.post("/api/auth/verify-email", json={"token": token})
     record = (
         await session.execute(
-            select(UserVerification).where(UserVerification.token == token)
+            select(UserVerification).where(UserVerification.token_hash == _hash(token))
         )
     ).scalar_one()
     assert record.used is True
 
 
 async def test_verify_email_unknown_token_returns_400(client: AsyncClient):
-    r = await client.get("/api/auth/verify-email?token=nonexistent")
+    r = await client.post("/api/auth/verify-email", json={"token": "nonexistent"})
     assert r.status_code == 400
 
 
-async def test_verify_email_used_token_returns_400(
+async def test_verify_email_used_token_returns_200_when_user_already_verified(
     client: AsyncClient, session: AsyncSession
 ):
+    # POST is idempotent for an already-verified user so React StrictMode's
+    # double-fire / email-scanner prefetch don't surface a false error
     user, token = await _create_unverified_user_with_token(session)
-    await client.get(f"/api/auth/verify-email?token={token}")
-    r = await client.get(f"/api/auth/verify-email?token={token}")
-    assert r.status_code == 400
+    await client.post("/api/auth/verify-email", json={"token": token})
+    r = await client.post("/api/auth/verify-email", json={"token": token})
+    assert r.status_code == 200
 
 
 async def test_verify_email_expired_token_returns_400(
@@ -300,12 +308,12 @@ async def test_verify_email_expired_token_returns_400(
     session.add(
         UserVerification(
             user_id="u-expired",
-            token="expired-token",
+            token_hash=_hash("expired-token"),
             expires_at=datetime.now(UTC) - timedelta(hours=1),
         )
     )
     await session.commit()
-    r = await client.get("/api/auth/verify-email?token=expired-token")
+    r = await client.post("/api/auth/verify-email", json={"token": "expired-token"})
     assert r.status_code == 400
 
 
@@ -344,7 +352,9 @@ async def test_resend_invalidates_old_token(
     )
     old = (
         await session.execute(
-            select(UserVerification).where(UserVerification.token == old_token)
+            select(UserVerification).where(
+                UserVerification.token_hash == _hash(old_token)
+            )
         )
     ).scalar_one()
     assert old.used is True

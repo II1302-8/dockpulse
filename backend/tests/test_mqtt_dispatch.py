@@ -1,7 +1,13 @@
+import pytest
 from sqlalchemy import select
 
 from app.models import Berth, Event
-from app.mqtt import _handle_heartbeat, _handle_status, publish_provision_req
+from app.mqtt import (
+    MqttNotConnectedError,
+    _handle_heartbeat,
+    _handle_status,
+    publish_provision_req,
+)
 
 
 async def test_status_handler_persists_reading(session, seeded_berth):
@@ -14,7 +20,13 @@ async def test_status_handler_persists_reading(session, seeded_berth):
         "battery_pct": 80,
         "timestamp": "2026-04-20T12:00:00Z",
     }
-    await _handle_status(session, payload, "b1")
+    await _handle_status(
+        session,
+        payload,
+        topic_harbor_id="h1",
+        topic_dock_id="d1",
+        berth_id="b1",
+    )
 
     berth = await session.get(Berth, "b1")
     assert berth.status == "occupied"
@@ -27,7 +39,13 @@ async def test_status_handler_persists_reading(session, seeded_berth):
 
 async def test_status_handler_skips_on_missing_fields(session, seeded_berth):
     # missing `occupied`
-    await _handle_status(session, {"node_id": "n1", "sensor_raw": 500}, "b1")
+    await _handle_status(
+        session,
+        {"node_id": "n1", "sensor_raw": 500},
+        topic_harbor_id="h1",
+        topic_dock_id="d1",
+        berth_id="b1",
+    )
     berth = await session.get(Berth, "b1")
     assert berth.status == "free"
     assert berth.sensor_raw is None
@@ -41,8 +59,35 @@ async def test_status_handler_skips_unknown_berth(session):
         "occupied": True,
         "sensor_raw": 500,
     }
-    # should not raise, ValueError is logged and swallowed
-    await _handle_status(session, payload, "b1")
+    # should not raise, hierarchy lookup logs + returns
+    await _handle_status(
+        session,
+        payload,
+        topic_harbor_id="h1",
+        topic_dock_id="d1",
+        berth_id="b1",
+    )
+
+
+async def test_status_handler_rejects_topic_hierarchy_mismatch(session, seeded_berth):
+    # b1 lives under h1/d1, but the topic claims it lives under h2/d-other
+    payload = {
+        "node_id": "n1",
+        "mesh_unicast_addr": "0x0042",
+        "occupied": True,
+        "sensor_raw": 500,
+    }
+    await _handle_status(
+        session,
+        payload,
+        topic_harbor_id="h2",
+        topic_dock_id="d1",
+        berth_id="b1",
+    )
+    berth = await session.get(Berth, "b1")
+    # status unchanged because the topic prefix lies about the berth's harbor
+    assert berth.status == "free"
+    assert berth.sensor_raw is None
 
 
 async def test_heartbeat_handler_persists_battery(session, seeded_berth):
@@ -57,16 +102,18 @@ async def test_heartbeat_handler_skips_unknown_berth(session):
     await _handle_heartbeat(session, {"battery_pct": 50}, "b1")
 
 
-async def test_publish_provision_req_noop_when_disconnected():
-    # _client is None at import so should warn and return
-    await publish_provision_req(
-        gateway_id="gw1",
-        request_id="req-1",
-        mesh_uuid="abcd" * 8,
-        oob="ff" * 16,
-        ttl_s=60,
-        berth_id="berth-1",
-    )
+async def test_publish_provision_req_raises_when_disconnected():
+    # _client is None at import so caller can surface 503 instead of letting
+    # the pending adoption row hang until the sweeper expires it
+    with pytest.raises(MqttNotConnectedError):
+        await publish_provision_req(
+            gateway_id="gw1",
+            request_id="req-1",
+            mesh_uuid="abcd" * 8,
+            oob="ff" * 16,
+            ttl_s=60,
+            berth_id="berth-1",
+        )
 
 
 async def test_gateway_status_records_unknown_id_as_pending(session):

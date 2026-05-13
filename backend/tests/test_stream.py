@@ -116,7 +116,7 @@ async def test_berth_stream_first_frame_is_snapshot(session, seeded_berth):
         async def is_disconnected(self):
             return False
 
-    response = await stream_berths(_Req(), session)  # type: ignore[arg-type]
+    response = await stream_berths(_Req(), session, harbor_id="h1")  # type: ignore[arg-type]
     gen = response.body_iterator
     try:
         frame = await asyncio.wait_for(gen.__anext__(), timeout=1.0)
@@ -136,7 +136,7 @@ async def test_berth_stream_loop_drops_non_berth_events(session, seeded_berth):
         async def is_disconnected(self):
             return False
 
-    response = await stream_berths(_Req(), session)  # type: ignore[arg-type]
+    response = await stream_berths(_Req(), session, harbor_id="h1")  # type: ignore[arg-type]
     gen = response.body_iterator
 
     snapshot = await asyncio.wait_for(gen.__anext__(), timeout=1.0)

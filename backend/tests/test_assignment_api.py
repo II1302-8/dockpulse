@@ -49,8 +49,9 @@ async def test_assign_then_get_returns_assignment(
     )
     assert r.status_code == 200, r.text
     body = r.json()
-    assert body["status"] == "occupied"
+    # status mirrors sensor reality; assignment only flips is_reserved
     assert body["is_reserved"] is True
+    assert body["is_available_now"] is False
     assert body["assignment"] == {"berth_id": "b1", "user_id": boat_owner.user_id}
 
     r = await client.get("/api/berths/b1")
@@ -93,7 +94,7 @@ async def test_remove_assignment_clears_state(
     r = await client.delete("/api/berths/b1/assignment", cookies=creds)
     assert r.status_code == 200, r.text
     body = r.json()
-    assert body["status"] == "free"
+    # status stays sensor-driven, only is_reserved flips off
     assert body["is_reserved"] is False
     assert body["assignment"] is None
 

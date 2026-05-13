@@ -1,0 +1,5 @@
+{
+  "Exclude": [
+    "backend/app/email_templates.py"
+  ]
+}

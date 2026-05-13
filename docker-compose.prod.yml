@@ -90,6 +90,7 @@ services:
       MQTT_TLS_CA: /etc/ssl/certs/ca-certificates.crt
       LOG_FORMAT: json
       FACTORY_PUBKEY: ${FACTORY_PUBKEY:?FACTORY_PUBKEY must be set in prod (Ed25519 PEM that verifies factory-signed QR claims)}
+      APP_BASE_URL: ${APP_BASE_URL:-https://www.dockpulse.xyz}
     networks:
       - internal
       - dockpulse

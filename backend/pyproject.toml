@@ -83,6 +83,8 @@ select = [
 [tool.ruff.lint.per-file-ignores]
 # CLI scripts legitimately use print for user feedback.
 "scripts/*" = ["T201"]
+# email template is a single big html literal, line wrapping hurts readability
+"app/email_templates.py" = ["E501"]
 
 [tool.ruff.format]
 quote-style = "double"

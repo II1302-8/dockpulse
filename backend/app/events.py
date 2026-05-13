@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
 from app import broadcaster
+from app.email_templates import render as render_email
 from app.models import (
     Berth,
     BerthAvailabilityWindow,
@@ -79,7 +80,15 @@ async def _notify_harbormasters(
 
     label = berth.label or berth.berth_id
     subject = f"Berth {label} is now occupied"
-    html = f"<p>Berth <strong>{label}</strong> has been occupied.</p>"
+    html = render_email(
+        title="Unauthorized mooring detected",
+        preheader=f"Berth {label} just flipped to occupied with no active window.",
+        intro=f"Berth {label} is now occupied.",
+        body_paragraphs=[
+            "The sensor reports a boat at this berth but no availability "
+            "window is currently active. Verify the mooring is authorized.",
+        ],
+    )
 
     coros = []
     for hm in harbormasters:

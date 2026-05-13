@@ -14,6 +14,7 @@ from app.dependencies import (
     HarbormasterForBerthDep,
     SessionDep,
 )
+from app.email_templates import render as render_email
 from app.models import (
     Assignment,
     Berth,
@@ -233,16 +234,25 @@ async def remove_berth_assignment(
     await session.commit()
 
     label = berth_label or berth_id
-    subject = f"Your berth assignment at {harbor_name} has ended"
-    html = (
-        f"<p>Your assignment to berth <strong>{label}</strong> at "
-        f"<strong>{harbor_name}</strong> has been ended by a harbormaster.</p>"
-    )
     background_tasks.add_task(
         notifications.send_email,
         to=tenant_email,
-        subject=subject,
-        html=html,
+        subject=f"Your berth assignment at {harbor_name} has ended",
+        html=render_email(
+            title="Berth assignment ended",
+            preheader=(
+                f"Your slot at berth {label} ({harbor_name}) was released "
+                "by a harbormaster."
+            ),
+            intro=(
+                f"Your assignment to berth {label} at {harbor_name} has been ended."
+            ),
+            body_paragraphs=[
+                "A harbormaster removed your assignment. The berth is now "
+                "free to be assigned to another owner.",
+                "If you think this was a mistake, contact your harbormaster.",
+            ],
+        ),
         idempotency_key=(
             f"assignment-removed:{berth_id}:{tenant_id}:{int(now.timestamp())}"
         ),

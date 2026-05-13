@@ -16,6 +16,7 @@ from app.dependencies import (
     SessionDep,
     user_is_harbormaster,
 )
+from app.email_templates import render as render_email
 from app.models import Assignment, User, UserNotificationPrefs
 from app.rate_limit import limiter
 from app.schemas import (
@@ -79,10 +80,20 @@ async def request_password_reset(
         notifications.send_email,
         to=user.email,
         subject="Reset your DockPulse password",
-        html=(
-            f"<p>Click the link below to reset your DockPulse password. "
-            f"The link expires in 60 minutes.</p>"
-            f'<p><a href="{reset_url}">{reset_url}</a></p>'
+        html=render_email(
+            title="Reset your password",
+            preheader="A short-lived link to set a new DockPulse password.",
+            intro="We received a request to reset your DockPulse password.",
+            body_paragraphs=[
+                "Tap the button below to choose a new password. The link "
+                "expires in 60 minutes.",
+            ],
+            cta_url=reset_url,
+            cta_label="Reset password",
+            footnote=(
+                "If you didn't request this, you can safely ignore the email "
+                "— your password stays unchanged."
+            ),
         ),
     )
 

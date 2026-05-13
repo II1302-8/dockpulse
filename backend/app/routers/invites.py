@@ -15,6 +15,7 @@ from app.dependencies import (
     HarbormasterForHarborDep,
     SessionDep,
 )
+from app.email_templates import render as render_email
 from app.models import Assignment, Berth, BerthInvite, Dock, Harbor
 from app.schemas import BerthInviteCreate, BerthInviteList, BerthInviteOut
 
@@ -121,19 +122,41 @@ async def create_berth_invite(
     await session.commit()
     await session.refresh(invite)
 
+    # fetch human-readable label + harbor name once for the email body
+    label_row = (
+        await session.execute(
+            select(Berth.label, Harbor.name)
+            .join(Harbor, Harbor.harbor_id == harbor_id)
+            .where(Berth.berth_id == body.berth_id)
+        )
+    ).first()
+    berth_label = (label_row[0] if label_row else None) or body.berth_id
+    harbor_name = (label_row[1] if label_row else None) or harbor_id
+
     accept_url = f"{settings.app_base_url}/accept-berth?token={token}"
-    reject_url = f"{settings.app_base_url}/reject-berth?token={token}"
-    html = (
-        f"<p>You have been invited to claim berth <strong>{body.berth_id}</strong>."
-        f"</p><p>"
-        f'<a href="{accept_url}">Accept</a> &middot; '
-        f'<a href="{reject_url}">Reject</a></p>'
-    )
     background_tasks.add_task(
         notifications.send_email,
         to=body.email,
-        subject=f"You've been invited to berth {body.berth_id}",
-        html=html,
+        subject=f"You've been invited to berth {berth_label} at {harbor_name}",
+        html=render_email(
+            title="Berth invitation",
+            preheader=f"Claim berth {berth_label} at {harbor_name}.",
+            intro=(
+                f"You've been invited to claim berth {berth_label} at {harbor_name}."
+            ),
+            body_paragraphs=[
+                "Open the link below to accept or decline. You can also "
+                "reject the invite from the same page if it isn't for you.",
+                "The invitation expires in "
+                f"{settings.invitation_token_ttl_hours // 24} days.",
+            ],
+            cta_url=accept_url,
+            cta_label="View invite",
+            footnote=(
+                "If you weren't expecting this, you can safely ignore the "
+                "email — no action will be taken."
+            ),
+        ),
         idempotency_key=f"berth-invite:{invite.invite_id}",
     )
     return _to_out(invite)

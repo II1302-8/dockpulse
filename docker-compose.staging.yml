@@ -30,6 +30,7 @@ services:
     environment:
       LOG_FORMAT: json
       FACTORY_PUBKEY: ${FACTORY_PUBKEY:?FACTORY_PUBKEY must be set in staging (Ed25519 PEM that verifies factory-signed QR claims)}
+      APP_BASE_URL: ${APP_BASE_URL:-https://staging.dockpulse.xyz}
     logging: *loki-logging
 
   frontend:

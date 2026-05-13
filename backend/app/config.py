@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Annotated, Literal
 
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 # 32 bytes matches the HS256 key length recommendation (RFC 7518 §3.2)
@@ -38,8 +38,11 @@ class Settings(BaseSettings):
     app_env: Literal["dev", "staging", "prod"] = "dev"
     resend_api_key: str | None = None
     email_from: str = "DockPulse <noreply@dockpulse.xyz>"
-    # base URL for email links (verification, password reset)
-    app_base_url: str = "http://localhost:5173"
+    # base URL for email links (verification, password reset, invites).
+    # explicit env var wins; the default below is replaced per app_env in the
+    # model_validator so forgetting to set APP_BASE_URL in prod doesn't ship
+    # localhost links in transactional emails
+    app_base_url: str = ""
     verification_token_ttl_hours: int = 24
     # per-ip throttle for the unauthenticated reset-request endpoint
     rate_limit_password_reset: str = "5/hour"
@@ -93,12 +96,20 @@ class Settings(BaseSettings):
             return [o.strip() for o in v.split(",") if o.strip()]
         return v
 
-    @field_validator("app_base_url")
-    @classmethod
-    def _validate_app_base_url(cls, v: str) -> str:
-        if not v.startswith(("http://", "https://")):
+    @model_validator(mode="after")
+    def _resolve_app_base_url(self) -> "Settings":
+        # fall back per app_env so emails always link to a sensible host even
+        # when APP_BASE_URL wasn't wired through the deployment env
+        if not self.app_base_url:
+            self.app_base_url = {
+                "prod": "https://www.dockpulse.xyz",
+                "staging": "https://staging.dockpulse.xyz",
+                "dev": "http://localhost:5173",
+            }[self.app_env]
+        if not self.app_base_url.startswith(("http://", "https://")):
             raise ValueError("APP_BASE_URL must start with http:// or https://")
-        return v.rstrip("/")
+        self.app_base_url = self.app_base_url.rstrip("/")
+        return self
 
     @field_validator("factory_pubkey", mode="before")
     @classmethod

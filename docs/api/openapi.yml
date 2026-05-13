@@ -5030,6 +5030,49 @@ paths:
       summary: Get the user assigned to a berth
       tags:
       - users
+  /api/users/boat-clubs:
+    get:
+      operationId: searchBoatClubs
+      parameters:
+      - description: case-insensitive substring filter
+        in: query
+        name: q
+        required: false
+        schema:
+          default: ''
+          description: case-insensitive substring filter
+          title: Q
+          type: string
+      - in: query
+        name: limit
+        required: false
+        schema:
+          default: 10
+          maximum: 50
+          minimum: 1
+          title: Limit
+          type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  type: string
+                title: Response Searchboatclubs
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      security:
+      - APIKeyCookie: []
+      summary: Search distinct boat-club names entered by other users
+      tags:
+      - users
   /api/users/me:
     delete:
       operationId: deleteMe

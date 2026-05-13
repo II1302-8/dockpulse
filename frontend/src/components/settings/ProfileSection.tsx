@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
 import type { AuthUser } from "../layout/MainLayout";
+import { BoatClubInput } from "../shared/BoatClubInput";
 import { Button } from "../shared/ui/button";
 import { Input } from "../shared/ui/input";
 import { Label } from "../shared/ui/label";
@@ -186,10 +187,12 @@ export function ProfileSection({ user }: Props) {
 
         <div className={labelGroupClass}>
           <Label htmlFor="settings-boat-club">Home boat club (optional)</Label>
-          <Input
-            id="settings-boat-club"
+          <BoatClubInput
             value={form.boat_club}
-            onChange={(e) => updateForm("boat_club", e.target.value)}
+            onValueChange={(value) => updateForm("boat_club", value)}
+            renderInput={(props) => (
+              <Input id="settings-boat-club" {...props} />
+            )}
           />
           {errors.boat_club && <p className={errorClass}>{errors.boat_club}</p>}
         </div>

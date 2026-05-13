@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { BoatClubInput } from "../../components/shared/BoatClubInput";
 import {
   AdminApiError,
   adminDelete,
@@ -306,12 +307,14 @@ export function UsersPage() {
               value={draft.phone}
               onChange={(e) => setDraft({ ...draft, phone: e.target.value })}
             />
-            <Input
-              placeholder="boat club (optional)"
+            <BoatClubInput
               value={draft.boat_club}
-              onChange={(e) =>
-                setDraft({ ...draft, boat_club: e.target.value })
+              onValueChange={(value) =>
+                setDraft({ ...draft, boat_club: value })
               }
+              renderInput={(props) => (
+                <Input placeholder="boat club (optional)" {...props} />
+              )}
             />
           </div>
           <div className="mt-3 flex justify-end gap-2">
@@ -409,12 +412,13 @@ export function UsersPage() {
                     (u.phone ?? "—")
                   ),
                   isEditing ? (
-                    <Input
+                    <BoatClubInput
                       key="club"
                       value={edit.boat_club}
-                      onChange={(e) =>
-                        setEdit({ ...edit, boat_club: e.target.value })
+                      onValueChange={(value) =>
+                        setEdit({ ...edit, boat_club: value })
                       }
+                      renderInput={(props) => <Input {...props} />}
                     />
                   ) : (
                     (u.boat_club ?? "—")

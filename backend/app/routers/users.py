@@ -5,7 +5,7 @@ import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 
 from app import notifications
 from app.auth import ALGORITHM
@@ -164,6 +164,30 @@ async def get_user_by_berth(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return await to_user_out(session, user, berth_id)
+
+
+@router.get(
+    "/boat-clubs",
+    response_model=list[str],
+    operation_id="searchBoatClubs",
+    summary="Search distinct boat-club names entered by other users",
+)
+async def search_boat_clubs(
+    session: SessionDep,
+    _: CurrentUserDep,
+    q: Annotated[str, Query(description="case-insensitive substring filter")] = "",
+    limit: Annotated[int, Query(ge=1, le=50)] = 10,
+):
+    # autocomplete source for the boat-club field, fed from values existing
+    # users have already typed. matches anywhere in the string so partial
+    # words ("salt") surface "Saltsjöbadens BK"
+    stmt = select(User.boat_club).where(User.boat_club.is_not(None))
+    needle = q.strip().lower()
+    if needle:
+        stmt = stmt.where(func.lower(User.boat_club).contains(needle))
+    stmt = stmt.distinct().order_by(User.boat_club).limit(limit)
+    rows = (await session.execute(stmt)).scalars().all()
+    return [r for r in rows if r]
 
 
 @router.get(

@@ -54,7 +54,9 @@ function MainLayoutContent({
     toggleOverview,
     toggleActivityLog,
     toggleNodeHealth,
+    toggleBookings,
     isDesktop,
+    isBookingsOpen,
   } = useDashboardLayout();
 
   const isHarborMaster = user?.role === "harbormaster";
@@ -96,12 +98,14 @@ function MainLayoutContent({
         <SideMenu
           isExpanded={isMenuExpanded}
           onToggle={() => setIsMenuExpanded(!isMenuExpanded)}
-          isOverviewActive={isOverviewOpen}
-          isActivityLogActive={isActivityLogOpen}
-          isNodeHealthActive={isNodeHealthOpen}
           onOverviewToggle={toggleOverview}
           onActivityLogToggle={toggleActivityLog}
           onNodeHealthToggle={toggleNodeHealth}
+          onBookingsToggle={toggleBookings}
+          isOverviewActive={isOverviewOpen}
+          isActivityLogActive={isActivityLogOpen}
+          isNodeHealthActive={isNodeHealthOpen}
+          isBookingsActive={isBookingsOpen}
         />
       )}
 

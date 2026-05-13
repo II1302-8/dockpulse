@@ -1,5 +1,6 @@
 import {
   Activity,
+  Calendar,
   HeartPulse,
   LayoutDashboard,
   Menu,
@@ -15,9 +16,11 @@ interface SideMenuProps {
   onOverviewToggle: () => void;
   onActivityLogToggle: () => void;
   onNodeHealthToggle: () => void;
+  onBookingsToggle: () => void;
   isOverviewActive: boolean;
   isActivityLogActive: boolean;
   isNodeHealthActive: boolean;
+  isBookingsActive: boolean;
 }
 
 export function SideMenu({
@@ -26,9 +29,11 @@ export function SideMenu({
   onOverviewToggle,
   onActivityLogToggle,
   onNodeHealthToggle,
+  onBookingsToggle,
   isOverviewActive,
   isActivityLogActive,
   isNodeHealthActive,
+  isBookingsActive,
 }: SideMenuProps) {
   const { marinaSlug } = useParams<{ marinaSlug: string }>();
   const settingsPath = marinaSlug ? `/${marinaSlug}/settings` : null;
@@ -57,6 +62,14 @@ export function SideMenu({
       mobileLabel: "Nodes",
       active: isNodeHealthActive,
       onClick: onNodeHealthToggle,
+    },
+    {
+      id: "bookings",
+      icon: Calendar,
+      label: "Bookings",
+      mobileLabel: "Bookings",
+      active: isBookingsActive,
+      onClick: onBookingsToggle,
     },
   ];
 

@@ -16,6 +16,8 @@ import { getHarborIdFromSlug } from "./lib/marinas";
 import { cn } from "./lib/utils";
 import { mapBerthIds } from "./svg";
 import { SvgMap } from "./svgMap";
+import { BookingsManagerPanel } from "./components/BookingsManagerPanel";
+import { useHarborBookings } from "./hooks/useBookings";
 
 export function HarborMap() {
   const contentRef = useRef<HTMLDivElement>(null);
@@ -42,9 +44,22 @@ export function HarborMap() {
     setIsActivityLogOpen,
     isNodeHealthOpen,
     setIsNodeHealthOpen,
+    isBookingsOpen,
+    setIsBookingsOpen,
     toggleOverview,
     toggleNodeHealth,
+    toggleBookings,
   } = useDashboardLayout();
+
+  // Highlight berths that have confirmed bookings when the bookings panel is open
+  const { bookings: activeBookings } = useHarborBookings(harborId || "", {
+    status: "confirmed",
+  });
+
+  const highlightedBerthIds = useMemo(() => {
+    if (!isBookingsOpen) return [];
+    return Array.from(new Set(activeBookings.map((b) => b.berth_id)));
+  }, [activeBookings, isBookingsOpen]);
 
   const [selectedBerthId, setSelectedBerthId] = useState<string | null>(null);
   const [showInitialSpinner, setShowInitialSpinner] = useState(true);
@@ -129,12 +144,12 @@ export function HarborMap() {
 
   const handleBerthClick = useCallback(
     (berthId: string) => {
-      setIsOverviewOpen(false);
       setIsActivityLogOpen(false);
       setIsNodeHealthOpen(false);
+      setIsBookingsOpen(false);
       setSelectedBerthId(berthId);
     },
-    [setIsOverviewOpen, setIsActivityLogOpen, setIsNodeHealthOpen],
+    [setIsOverviewOpen, setIsActivityLogOpen, setIsNodeHealthOpen, setIsBookingsOpen],
   );
 
   const handleCloseBerthPanel = useCallback(() => {
@@ -162,6 +177,10 @@ export function HarborMap() {
     setIsNodeHealthOpen(false);
   }, [setIsNodeHealthOpen]);
 
+  const handleCloseBookings = useCallback(() => {
+    setIsBookingsOpen(false);
+  }, [setIsBookingsOpen]);
+
   return (
     <div className="relative h-full w-full overflow-hidden border-4 border-white/70 bg-sky-50/20 font-body shadow-inner">
       <section
@@ -176,6 +195,7 @@ export function HarborMap() {
         <SvgMap
           berths={berths}
           selectedBerthId={selectedBerthId}
+          highlightedBerthIds={highlightedBerthIds}
           onBerthClickCB={handleBerthClick}
         />
       </section>
@@ -253,6 +273,15 @@ export function HarborMap() {
           key="node-health"
           isOpen={nodeHealthIsVisible}
           onCloseCB={handleCloseNodeHealth}
+        />
+      )}
+
+      {isHarborMaster && (
+        <BookingsManagerPanel
+          key="bookings-panel"
+          isOpen={isBookingsOpen}
+          onCloseCB={handleCloseBookings}
+          harborId={harborId}
         />
       )}
 

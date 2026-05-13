@@ -87,6 +87,51 @@ export function useMyBookings(
   return { bookings, isLoading, error, refetch };
 }
 
+export function useHarborBookings(
+  harborId: string,
+  options: { status?: BookingStatus; from?: string; to?: string } = {},
+): UseMyBookingsResult {
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
+
+  useEffect(() => {
+    const ac = new AbortController();
+    setIsLoading(true);
+    setError(null);
+
+    const params = new URLSearchParams();
+    if (options.status) params.append("status", options.status);
+    if (options.from) params.append("from", options.from);
+    if (options.to) params.append("to", options.to);
+
+    apiFetch(`/api/harbors/${harborId}/bookings?${params.toString()}`, {
+      signal: ac.signal,
+    })
+      .then((res) => (res.ok ? (res.json() as Promise<Booking[]>) : []))
+      .then((data) => {
+        if (!ac.signal.aborted) setBookings(data);
+      })
+      .catch((err) => {
+        if (ac.signal.aborted) return;
+        console.error("Failed to fetch harbor bookings", err);
+        setError("Could not load harbor bookings.");
+      })
+      .finally(() => {
+        if (!ac.signal.aborted) setIsLoading(false);
+      });
+
+    return () => ac.abort();
+  }, [harborId, options.status, options.from, options.to, refetchTrigger]);
+
+  function refetch() {
+    setRefetchTrigger((prev) => prev + 1);
+  }
+
+  return { bookings, isLoading, error, refetch };
+}
+
 export async function createBooking(
   berthId: string,
   form: CreateBookingForm,

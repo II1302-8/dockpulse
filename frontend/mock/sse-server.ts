@@ -570,6 +570,30 @@ async function handleBookings(req: Request, url: URL): Promise<Response | null> 
     });
   }
 
+  // GET /api/harbors/{id}/bookings
+  const harborBookingsMatch = path.match(/^\/api\/harbors\/([^/]+)\/bookings$/);
+  if (harborBookingsMatch && req.method === "GET") {
+    if (!hasAccessCookie(req)) return unauthorized();
+    const userId = getMockUserId(req);
+    // In mock, only harbormaster can see all harbor bookings
+    if (userId !== "u-mock-harbormaster") {
+      return new Response(JSON.stringify({ detail: "Forbidden" }), { status: 403, headers: { "Content-Type": "application/json" } });
+    }
+
+    const statusFilter = url.searchParams.get("status");
+    const fromFilter = url.searchParams.get("from");
+    const toFilter = url.searchParams.get("to");
+
+    const items = Array.from(mockBookings.values())
+      .filter((b) => !statusFilter || b.status === statusFilter)
+      .filter((b) => !fromFilter || b.from_date >= fromFilter)
+      .filter((b) => !toFilter || b.to_date <= toFilter);
+
+    return new Response(JSON.stringify(items), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   // DELETE /api/bookings/{id}
   const deleteMatch = path.match(/^\/api\/bookings\/([^/]+)$/);
   if (deleteMatch && req.method === "DELETE") {
@@ -578,12 +602,15 @@ async function handleBookings(req: Request, url: URL): Promise<Response | null> 
     const booking = mockBookings.get(id);
     if (!booking) return new Response(null, { status: 404 });
     
-    if (booking.visitor_id !== getMockUserId(req)) {
+    const userId = getMockUserId(req);
+    const isHM = userId === "u-mock-harbormaster";
+    
+    if (booking.visitor_id !== userId && !isHM) {
       return new Response(JSON.stringify({ detail: "Forbidden" }), { status: 403 });
     }
 
     if (booking.status === "confirmed") {
-      booking.status = "cancelled_by_visitor";
+      booking.status = isHM ? "cancelled_by_host" : "cancelled_by_visitor";
     } else {
       mockBookings.delete(id);
     }

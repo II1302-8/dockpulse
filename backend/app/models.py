@@ -71,6 +71,9 @@ class User(Base):
     phone: Mapped[str | None] = mapped_column(String)
     password_hash: Mapped[str] = mapped_column(String, nullable=False)
     boat_club: Mapped[str | None] = mapped_column(String)
+    boat_length_m: Mapped[float | None] = mapped_column(Double)
+    boat_width_m: Mapped[float | None] = mapped_column(Double)
+    boat_depth_m: Mapped[float | None] = mapped_column(Double)
     token_version: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     email_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     assignments: Mapped[list["Assignment"]] = relationship(
@@ -270,6 +273,7 @@ class Booking(Base):
     )
     boat_length_m: Mapped[float | None] = mapped_column(Double)
     boat_width_m: Mapped[float | None] = mapped_column(Double)
+    boat_depth_m: Mapped[float | None] = mapped_column(Double)
     notes: Mapped[str | None] = mapped_column(String)
     cancelled_by: Mapped[str | None] = mapped_column(
         ForeignKey("users.user_id", ondelete="SET NULL")

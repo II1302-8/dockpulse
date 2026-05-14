@@ -198,6 +198,7 @@ class BookingCreate(BaseModel):
     to_date: datetime = Field(examples=["2026-06-06T00:00:00Z"])
     boat_length_m: float | None = Field(default=None, ge=0, examples=[8.5])
     boat_width_m: float | None = Field(default=None, ge=0, examples=[3.2])
+    boat_depth_m: float | None = Field(default=None, ge=0, examples=[1.4])
     notes: str | None = Field(default=None, max_length=500, examples=["arriving late"])
 
 
@@ -215,6 +216,7 @@ class BookingOut(_BaseSchema):
     status: BookingStatus
     boat_length_m: float | None = Field(default=None, examples=[8.5])
     boat_width_m: float | None = Field(default=None, examples=[3.2])
+    boat_depth_m: float | None = Field(default=None, examples=[1.4])
     notes: str | None = Field(default=None, examples=["arriving late"])
     cancelled_by: str | None = Field(default=None, examples=["user-002"])
     cancelled_at: datetime | None = Field(
@@ -374,6 +376,9 @@ class UserOut(_BaseSchema):
     email: EmailField
     phone: str | None = Field(default=None, examples=["+46 70 123 45 67"])
     boat_club: str | None = Field(default=None, examples=["Saltsjöbadens BK"])
+    boat_length_m: float | None = Field(default=None, examples=[8.5])
+    boat_width_m: float | None = Field(default=None, examples=[3.2])
+    boat_depth_m: float | None = Field(default=None, examples=[1.4])
     role: Role
     email_verified: bool = False
     assigned_berth_id: str | None = Field(default=None, examples=["berth-001"])
@@ -397,6 +402,9 @@ class UserPatch(BaseModel):
     email: EmailFieldOpt = None
     phone: PhoneOpt = None
     boat_club: BoatClubOpt = None
+    boat_length_m: float | None = Field(default=None, ge=0)
+    boat_width_m: float | None = Field(default=None, ge=0)
+    boat_depth_m: float | None = Field(default=None, ge=0)
     password: PasswordOpt = None
     # required only when password is being changed, verified server-side
     current_password: SecretStr | None = None

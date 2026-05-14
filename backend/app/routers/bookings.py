@@ -290,6 +290,7 @@ async def create_booking(
         status="confirmed",
         boat_length_m=body.boat_length_m,
         boat_width_m=body.boat_width_m,
+        boat_depth_m=body.boat_depth_m,
         notes=body.notes,
     )
     session.add(booking)
@@ -408,9 +409,9 @@ async def get_booking(
 )
 async def cancel_booking(
     booking_id: str,
-    body: BookingCancelIn,
     session: SessionDep,
     current_user: CurrentUserDep,
+    body: BookingCancelIn | None = None,
 ):
     booking = await _load_booking(session, booking_id)
     if booking.status != "confirmed":
@@ -430,7 +431,8 @@ async def cancel_booking(
     )
     booking.cancelled_by = current_user.user_id
     booking.cancelled_at = now
-    booking.cancel_reason = body.reason if role != "visitor" else None
+    reason = body.reason if body is not None else None
+    booking.cancel_reason = reason if role != "visitor" else None
     await session.commit()
     await session.refresh(booking)
     return booking

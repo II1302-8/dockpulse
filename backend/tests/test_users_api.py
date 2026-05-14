@@ -90,6 +90,50 @@ async def test_patch_me_updates_fields(client: AsyncClient, test_user: User):
     assert data["lastname"] == "Svensson"
 
 
+async def test_patch_me_sets_boat_dims(client: AsyncClient, test_user: User):
+    token = make_token(test_user.user_id)
+    r = await client.patch(
+        "/api/users/me",
+        json={"boat_length_m": 8.5, "boat_width_m": 3.2, "boat_depth_m": 1.4},
+        cookies=_creds(token),
+    )
+    assert r.status_code == 200, r.text
+    data = r.json()
+    assert data["boat_length_m"] == 8.5
+    assert data["boat_width_m"] == 3.2
+    assert data["boat_depth_m"] == 1.4
+
+
+async def test_patch_me_clears_boat_dims_with_null(
+    client: AsyncClient, test_user: User, session: AsyncSession
+):
+    token = make_token(test_user.user_id)
+    await client.patch(
+        "/api/users/me",
+        json={"boat_length_m": 8.5},
+        cookies=_creds(token),
+    )
+    r = await client.patch(
+        "/api/users/me",
+        json={"boat_length_m": None},
+        cookies=_creds(token),
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["boat_length_m"] is None
+
+
+async def test_patch_me_rejects_negative_boat_dim(
+    client: AsyncClient, test_user: User
+):
+    token = make_token(test_user.user_id)
+    r = await client.patch(
+        "/api/users/me",
+        json={"boat_length_m": -1.0},
+        cookies=_creds(token),
+    )
+    assert r.status_code == 422
+
+
 async def test_patch_me_updates_password(
     client: AsyncClient, test_user: User, session: AsyncSession
 ):

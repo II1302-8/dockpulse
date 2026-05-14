@@ -225,6 +225,12 @@ async def update_me(
         if value is not None:
             setattr(current_user, field, value)
 
+    # boat dims accept null to clear, so honor only explicitly-set keys
+    provided = body.model_dump(exclude_unset=True)
+    for field in ("boat_length_m", "boat_width_m", "boat_depth_m"):
+        if field in provided:
+            setattr(current_user, field, provided[field])
+
     if body.password is not None:
         if body.current_password is None:
             raise HTTPException(

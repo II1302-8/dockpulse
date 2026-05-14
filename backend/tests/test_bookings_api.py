@@ -87,6 +87,8 @@ async def test_create_booking_happy_path(client, window, visitor):
             "from_date": _iso(BK_FROM),
             "to_date": _iso(BK_TO),
             "boat_length_m": 8.5,
+            "boat_width_m": 3.2,
+            "boat_depth_m": 1.4,
             "notes": "arriving late",
         },
         cookies=auth_cookies(visitor.user_id),
@@ -97,6 +99,9 @@ async def test_create_booking_happy_path(client, window, visitor):
     assert body["user_id"] == visitor.user_id
     assert body["status"] == "confirmed"
     assert body["notes"] == "arriving late"
+    assert body["boat_length_m"] == 8.5
+    assert body["boat_width_m"] == 3.2
+    assert body["boat_depth_m"] == 1.4
 
 
 async def test_create_booking_no_window_returns_409(client, seeded_berth, visitor):
@@ -289,10 +294,9 @@ async def _create(client, visitor):
 
 async def test_visitor_cancels_own(client, window, visitor):
     booking = await _create(client, visitor)
-    r = await client.request(
-        "DELETE",
+    # bare DELETE with no body, as FE sends it
+    r = await client.delete(
         f"/api/bookings/{booking['booking_id']}",
-        json={},
         cookies=auth_cookies(visitor.user_id),
     )
     assert r.status_code == 200, r.text

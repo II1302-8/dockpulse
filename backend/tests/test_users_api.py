@@ -122,9 +122,7 @@ async def test_patch_me_clears_boat_dims_with_null(
     assert r.json()["boat_length_m"] is None
 
 
-async def test_patch_me_rejects_negative_boat_dim(
-    client: AsyncClient, test_user: User
-):
+async def test_patch_me_rejects_negative_boat_dim(client: AsyncClient, test_user: User):
     token = make_token(test_user.user_id)
     r = await client.patch(
         "/api/users/me",

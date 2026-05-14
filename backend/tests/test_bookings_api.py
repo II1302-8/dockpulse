@@ -244,9 +244,7 @@ async def test_bookable_berths_excludes_overlapping(
     assert payload[0]["window_id"] == "w1"
 
 
-async def test_bookable_windows_lists_booked_subranges(
-    client, window, visitor
-):
+async def test_bookable_windows_lists_booked_subranges(client, window, visitor):
     await client.post(
         "/api/berths/b1/bookings",
         json={"from_date": _iso(BK_FROM), "to_date": _iso(BK_TO)},
@@ -270,9 +268,7 @@ async def test_list_my_bookings(client, window, visitor):
         json={"from_date": _iso(BK_FROM), "to_date": _iso(BK_TO)},
         cookies=auth_cookies(visitor.user_id),
     )
-    r = await client.get(
-        "/api/bookings/me", cookies=auth_cookies(visitor.user_id)
-    )
+    r = await client.get("/api/bookings/me", cookies=auth_cookies(visitor.user_id))
     assert r.status_code == 200
     body = r.json()
     assert body["total"] == 1
@@ -320,9 +316,7 @@ async def test_spot_owner_cancels_with_reason(client, window, visitor, spot_owne
     assert body["cancel_reason"] == "storm"
 
 
-async def test_harbormaster_cancels_with_reason(
-    client, window, visitor, harbor_master
-):
+async def test_harbormaster_cancels_with_reason(client, window, visitor, harbor_master):
     booking = await _create(client, visitor)
     r = await client.request(
         "DELETE",
@@ -400,9 +394,7 @@ async def test_list_harbor_bookings_harbormaster_only(
     assert r_forbidden.status_code == 403
 
 
-async def test_db_enforces_no_overlap_on_race(
-    session: AsyncSession, window, visitor
-):
+async def test_db_enforces_no_overlap_on_race(session: AsyncSession, window, visitor):
     # bypass the app, insert directly; EXCLUDE constraint must reject second row
     from sqlalchemy.exc import IntegrityError
 
@@ -443,9 +435,7 @@ async def test_get_booking_authorized_views(
     bid = booking["booking_id"]
 
     for who in (visitor, spot_owner, harbor_master):
-        r = await client.get(
-            f"/api/bookings/{bid}", cookies=auth_cookies(who.user_id)
-        )
+        r = await client.get(f"/api/bookings/{bid}", cookies=auth_cookies(who.user_id))
         assert r.status_code == 200, f"{who.user_id}: {r.status_code}"
 
 
@@ -458,9 +448,7 @@ async def test_create_invalid_isoformat_returns_422(client, window, visitor):
     assert r.status_code == 422
 
 
-async def test_create_uses_uuid_for_booking_id(
-    client, window, visitor, session
-):
+async def test_create_uses_uuid_for_booking_id(client, window, visitor, session):
     await _create(client, visitor)
     row = (await session.execute(select(Booking))).scalar_one()
     # uuid4 hex with dashes is 36 chars

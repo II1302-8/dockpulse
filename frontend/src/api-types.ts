@@ -882,6 +882,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/berths/{berth_id}/bookable-windows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List a berth's availability windows with booked sub-ranges */
+        get: operations["listBookableWindows"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/berths/{berth_id}/bookings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List bookings on a berth (spot-owner or harbormaster) */
+        get: operations["listBerthBookings"];
+        put?: never;
+        /** Create a booking on a berth */
+        post: operations["createBooking"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/berths/{berth_id}/bookings:preflight": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Validate a proposed booking without creating it */
+        post: operations["preflightBooking"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/berths/{berth_id}/events": {
         parameters: {
             query?: never;
@@ -894,6 +946,41 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/bookings/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the current user's bookings */
+        get: operations["listMyBookings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/bookings/{booking_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a booking by id */
+        get: operations["getBooking"];
+        put?: never;
+        post?: never;
+        /** Cancel a booking */
+        delete: operations["cancelBooking"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1031,6 +1118,40 @@ export interface paths {
         post?: never;
         /** Revoke a pending invite (harbormaster only) */
         delete: operations["deleteBerthInvite"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/harbors/{harbor_id}/bookable-berths": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List berths in a harbor bookable across a date range */
+        get: operations["listBookableBerths"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/harbors/{harbor_id}/bookings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List bookings in a harbor (harbormaster only) */
+        get: operations["listHarborBookings"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1849,6 +1970,284 @@ export interface components {
              */
             type: "berth.update";
         };
+        /** BookableBerthOut */
+        BookableBerthOut: {
+            /**
+             * Berth Id
+             * @example berth-001
+             */
+            berth_id: string;
+            /**
+             * Depth M
+             * @example 2
+             */
+            depth_m?: number | null;
+            /**
+             * Dock Id
+             * @example dock-a
+             */
+            dock_id: string;
+            /**
+             * Harbor Id
+             * @example harbor-saltsjobaden
+             */
+            harbor_id: string;
+            /**
+             * Label
+             * @example A1
+             */
+            label?: string | null;
+            /**
+             * Length M
+             * @example 8.5
+             */
+            length_m?: number | null;
+            /**
+             * Width M
+             * @example 3.2
+             */
+            width_m?: number | null;
+            /**
+             * Window From
+             * Format: date-time
+             * @example 2026-06-01T00:00:00Z
+             */
+            window_from: string;
+            /**
+             * Window Id
+             * @example win-0001
+             */
+            window_id: string;
+            /**
+             * Window To
+             * Format: date-time
+             * @example 2026-06-08T00:00:00Z
+             */
+            window_to: string;
+        };
+        /** BookableWindowOut */
+        BookableWindowOut: {
+            /**
+             * Berth Id
+             * @example berth-001
+             */
+            berth_id: string;
+            /**
+             * Booked
+             * @default []
+             */
+            booked: components["schemas"]["BookedRange"][];
+            /**
+             * From Date
+             * Format: date-time
+             * @example 2026-06-01T00:00:00Z
+             */
+            from_date: string;
+            /**
+             * Return Date
+             * Format: date-time
+             * @example 2026-06-08T00:00:00Z
+             */
+            return_date: string;
+            /**
+             * Window Id
+             * @example win-0001
+             */
+            window_id: string;
+        };
+        /** BookedRange */
+        BookedRange: {
+            /**
+             * Booking Id
+             * @example bk-0001
+             */
+            booking_id: string;
+            /**
+             * From Date
+             * Format: date-time
+             * @example 2026-06-03T00:00:00Z
+             */
+            from_date: string;
+            /**
+             * To Date
+             * Format: date-time
+             * @example 2026-06-06T00:00:00Z
+             */
+            to_date: string;
+        };
+        /** BookingCancelIn */
+        BookingCancelIn: {
+            /** Reason */
+            reason?: string | null;
+        };
+        /** BookingConflict */
+        BookingConflict: {
+            /**
+             * Booking Id
+             * @example bk-0007
+             */
+            booking_id?: string | null;
+            /** From Date */
+            from_date?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "no_window" | "overlap" | "dates_invalid";
+            /** To Date */
+            to_date?: string | null;
+        };
+        /** BookingCreate */
+        BookingCreate: {
+            /**
+             * Boat Depth M
+             * @example 1.4
+             */
+            boat_depth_m?: number | null;
+            /**
+             * Boat Length M
+             * @example 8.5
+             */
+            boat_length_m?: number | null;
+            /**
+             * Boat Width M
+             * @example 3.2
+             */
+            boat_width_m?: number | null;
+            /**
+             * From Date
+             * Format: date-time
+             * @example 2026-06-03T00:00:00Z
+             */
+            from_date: string;
+            /**
+             * Notes
+             * @example arriving late
+             */
+            notes?: string | null;
+            /**
+             * To Date
+             * Format: date-time
+             * @example 2026-06-06T00:00:00Z
+             */
+            to_date: string;
+        };
+        /** BookingList */
+        BookingList: {
+            /** Items */
+            items: components["schemas"]["BookingOut"][];
+            /**
+             * Total
+             * @example 42
+             */
+            total: number;
+        };
+        /** BookingOut */
+        BookingOut: {
+            /**
+             * Berth Id
+             * @example berth-001
+             */
+            berth_id: string;
+            /**
+             * Boat Depth M
+             * @example 1.4
+             */
+            boat_depth_m?: number | null;
+            /**
+             * Boat Length M
+             * @example 8.5
+             */
+            boat_length_m?: number | null;
+            /**
+             * Boat Width M
+             * @example 3.2
+             */
+            boat_width_m?: number | null;
+            /**
+             * Booking Id
+             * @example bk-0001
+             */
+            booking_id: string;
+            /**
+             * Cancel Reason
+             * @example storm
+             */
+            cancel_reason?: string | null;
+            /**
+             * Cancelled At
+             * @example 2026-06-02T08:00:00Z
+             */
+            cancelled_at?: string | null;
+            /**
+             * Cancelled By
+             * @example user-002
+             */
+            cancelled_by?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             * @example 2026-05-13T14:30:00Z
+             */
+            created_at: string;
+            /**
+             * From Date
+             * Format: date-time
+             * @example 2026-06-03T00:00:00Z
+             */
+            from_date: string;
+            /**
+             * Notes
+             * @example arriving late
+             */
+            notes?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "confirmed" | "cancelled_by_visitor" | "cancelled_by_host" | "completed";
+            /**
+             * To Date
+             * Format: date-time
+             * @example 2026-06-06T00:00:00Z
+             */
+            to_date: string;
+            /**
+             * User Id
+             * @example user-001
+             */
+            user_id: string;
+        };
+        /** BookingPreflightIn */
+        BookingPreflightIn: {
+            /**
+             * From Date
+             * Format: date-time
+             * @example 2026-06-03T00:00:00Z
+             */
+            from_date: string;
+            /**
+             * To Date
+             * Format: date-time
+             * @example 2026-06-06T00:00:00Z
+             */
+            to_date: string;
+        };
+        /** BookingPreflightOut */
+        BookingPreflightOut: {
+            /**
+             * Conflicts
+             * @default []
+             */
+            conflicts: components["schemas"]["BookingConflict"][];
+            /** Ok */
+            ok: boolean;
+            /**
+             * Window Id
+             * @example win-0001
+             */
+            window_id?: string | null;
+        };
         /** BulkDeleteOut */
         BulkDeleteOut: {
             /** Deleted */
@@ -2488,6 +2887,21 @@ export interface components {
              */
             boat_club?: string | null;
             /**
+             * Boat Depth M
+             * @example 1.4
+             */
+            boat_depth_m?: number | null;
+            /**
+             * Boat Length M
+             * @example 8.5
+             */
+            boat_length_m?: number | null;
+            /**
+             * Boat Width M
+             * @example 3.2
+             */
+            boat_width_m?: number | null;
+            /**
              * Email
              * Format: email
              * @example alex@example.com
@@ -2663,6 +3077,12 @@ export interface components {
              * @example Saltsjöbadens BK
              */
             boat_club?: string | null;
+            /** Boat Depth M */
+            boat_depth_m?: number | null;
+            /** Boat Length M */
+            boat_length_m?: number | null;
+            /** Boat Width M */
+            boat_width_m?: number | null;
             /** Current Password */
             current_password?: string | null;
             /**
@@ -4776,6 +5196,145 @@ export interface operations {
             };
         };
     };
+    listBookableWindows: {
+        parameters: {
+            query?: {
+                from?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path: {
+                berth_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookableWindowOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listBerthBookings: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                from?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path: {
+                berth_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    createBooking: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                berth_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BookingCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preflightBooking: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                berth_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BookingPreflightIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingPreflightOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     listBerthEvents: {
         parameters: {
             query?: {
@@ -4796,6 +5355,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EventOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listMyBookings: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                from?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    getBooking: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancelBooking: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["BookingCancelIn"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingOut"];
                 };
             };
             /** @description Validation Error */
@@ -5065,6 +5723,79 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listBookableBerths: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+                length_m?: number | null;
+                width_m?: number | null;
+                depth_m?: number | null;
+            };
+            header?: never;
+            path: {
+                harbor_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookableBerthOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    listHarborBookings: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                dock_id?: string | null;
+                from?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path: {
+                harbor_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookingList"];
+                };
             };
             /** @description Validation Error */
             422: {

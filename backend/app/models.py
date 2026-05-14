@@ -38,6 +38,13 @@ berth_status_enum = Enum("free", "occupied", name="berth_status")
 berth_invite_status_enum = Enum(
     "pending", "accepted", "expired", "revoked", "rejected", name="berth_invite_status"
 )
+booking_status_enum = Enum(
+    "confirmed",
+    "cancelled_by_visitor",
+    "cancelled_by_host",
+    "completed",
+    name="booking_status",
+)
 event_type_enum = Enum(
     "occupied",
     "freed",
@@ -64,6 +71,9 @@ class User(Base):
     phone: Mapped[str | None] = mapped_column(String)
     password_hash: Mapped[str] = mapped_column(String, nullable=False)
     boat_club: Mapped[str | None] = mapped_column(String)
+    boat_length_m: Mapped[float | None] = mapped_column(Double)
+    boat_width_m: Mapped[float | None] = mapped_column(Double)
+    boat_depth_m: Mapped[float | None] = mapped_column(Double)
     token_version: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     email_verified: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     assignments: Mapped[list["Assignment"]] = relationship(
@@ -80,6 +90,11 @@ class User(Base):
     accepted_invites: Mapped[list["BerthInvite"]] = relationship(
         back_populates="acceptor",
         foreign_keys="[BerthInvite.accepted_by]",
+    )
+    bookings: Mapped[list["Booking"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        foreign_keys="[Booking.user_id]",
     )
 
 
@@ -223,6 +238,55 @@ class Berth(AuditTimestampsMixin, Base):
     )
     berth_invites: Mapped[list["BerthInvite"]] = relationship(
         back_populates="berth", cascade="all, delete-orphan"
+    )
+    bookings: Mapped[list["Booking"]] = relationship(
+        back_populates="berth", cascade="all, delete-orphan"
+    )
+
+
+class Booking(Base):
+    __tablename__ = "bookings"
+    __table_args__ = (
+        CheckConstraint(
+            "to_date > from_date",
+            name="ck_bookings_dates",
+        ),
+        # postgres EXCLUDE constraint blocks overlapping confirmed bookings
+        # on the same berth. enforced in alembic via raw DDL (needs btree_gist)
+        Index("ix_bookings_berth_id_status", "berth_id", "status"),
+        Index("ix_bookings_user_id_status", "user_id", "status"),
+    )
+
+    booking_id: Mapped[str] = mapped_column(String, primary_key=True)
+    berth_id: Mapped[str] = mapped_column(
+        ForeignKey("berths.berth_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.user_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    from_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    to_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[str] = mapped_column(
+        booking_status_enum, nullable=False, default="confirmed"
+    )
+    boat_length_m: Mapped[float | None] = mapped_column(Double)
+    boat_width_m: Mapped[float | None] = mapped_column(Double)
+    boat_depth_m: Mapped[float | None] = mapped_column(Double)
+    notes: Mapped[str | None] = mapped_column(String)
+    cancelled_by: Mapped[str | None] = mapped_column(
+        ForeignKey("users.user_id", ondelete="SET NULL")
+    )
+    cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    cancel_reason: Mapped[str | None] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    berth: Mapped["Berth"] = relationship(back_populates="bookings")
+    user: Mapped["User"] = relationship(
+        back_populates="bookings", foreign_keys=[user_id]
     )
 
 

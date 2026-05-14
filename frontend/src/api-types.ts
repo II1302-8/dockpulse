@@ -2100,6 +2100,11 @@ export interface components {
         /** BookingCreate */
         BookingCreate: {
             /**
+             * Boat Depth M
+             * @example 1.4
+             */
+            boat_depth_m?: number | null;
+            /**
              * Boat Length M
              * @example 8.5
              */
@@ -2144,6 +2149,11 @@ export interface components {
              * @example berth-001
              */
             berth_id: string;
+            /**
+             * Boat Depth M
+             * @example 1.4
+             */
+            boat_depth_m?: number | null;
             /**
              * Boat Length M
              * @example 8.5
@@ -2877,6 +2887,21 @@ export interface components {
              */
             boat_club?: string | null;
             /**
+             * Boat Depth M
+             * @example 1.4
+             */
+            boat_depth_m?: number | null;
+            /**
+             * Boat Length M
+             * @example 8.5
+             */
+            boat_length_m?: number | null;
+            /**
+             * Boat Width M
+             * @example 3.2
+             */
+            boat_width_m?: number | null;
+            /**
              * Email
              * Format: email
              * @example alex@example.com
@@ -3052,6 +3077,12 @@ export interface components {
              * @example Saltsjöbadens BK
              */
             boat_club?: string | null;
+            /** Boat Depth M */
+            boat_depth_m?: number | null;
+            /** Boat Length M */
+            boat_length_m?: number | null;
+            /** Boat Width M */
+            boat_width_m?: number | null;
             /** Current Password */
             current_password?: string | null;
             /**
@@ -5410,9 +5441,9 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
-                "application/json": components["schemas"]["BookingCancelIn"];
+                "application/json": components["schemas"]["BookingCancelIn"] | null;
             };
         };
         responses: {

@@ -1087,23 +1087,32 @@ components:
       type: object
     BookingCreate:
       properties:
-        boat_length_m:
+        boat_depth_m:
           anyOf:
           - examples: &id019
-            - 8.5
+            - 1.4
             minimum: 0.0
             type: number
           - type: 'null'
           examples: *id019
-          title: Boat Length M
-        boat_width_m:
+          title: Boat Depth M
+        boat_length_m:
           anyOf:
           - examples: &id020
-            - 3.2
+            - 8.5
             minimum: 0.0
             type: number
           - type: 'null'
           examples: *id020
+          title: Boat Length M
+        boat_width_m:
+          anyOf:
+          - examples: &id021
+            - 3.2
+            minimum: 0.0
+            type: number
+          - type: 'null'
+          examples: *id021
           title: Boat Width M
         from_date:
           examples:
@@ -1113,12 +1122,12 @@ components:
           type: string
         notes:
           anyOf:
-          - examples: &id021
+          - examples: &id022
             - arriving late
             maxLength: 500
             type: string
           - type: 'null'
-          examples: *id021
+          examples: *id022
           title: Notes
         to_date:
           examples:
@@ -1155,21 +1164,29 @@ components:
           - berth-001
           title: Berth Id
           type: string
-        boat_length_m:
-          anyOf:
-          - examples: &id022
-            - 8.5
-            type: number
-          - type: 'null'
-          examples: *id022
-          title: Boat Length M
-        boat_width_m:
+        boat_depth_m:
           anyOf:
           - examples: &id023
-            - 3.2
+            - 1.4
             type: number
           - type: 'null'
           examples: *id023
+          title: Boat Depth M
+        boat_length_m:
+          anyOf:
+          - examples: &id024
+            - 8.5
+            type: number
+          - type: 'null'
+          examples: *id024
+          title: Boat Length M
+        boat_width_m:
+          anyOf:
+          - examples: &id025
+            - 3.2
+            type: number
+          - type: 'null'
+          examples: *id025
           title: Boat Width M
         booking_id:
           examples:
@@ -1178,28 +1195,28 @@ components:
           type: string
         cancel_reason:
           anyOf:
-          - examples: &id024
+          - examples: &id026
             - storm
             type: string
           - type: 'null'
-          examples: *id024
+          examples: *id026
           title: Cancel Reason
         cancelled_at:
           anyOf:
-          - examples: &id025
+          - examples: &id027
             - '2026-06-02T08:00:00Z'
             format: date-time
             type: string
           - type: 'null'
-          examples: *id025
+          examples: *id027
           title: Cancelled At
         cancelled_by:
           anyOf:
-          - examples: &id026
+          - examples: &id028
             - user-002
             type: string
           - type: 'null'
-          examples: *id026
+          examples: *id028
           title: Cancelled By
         created_at:
           examples:
@@ -1215,11 +1232,11 @@ components:
           type: string
         notes:
           anyOf:
-          - examples: &id027
+          - examples: &id029
             - arriving late
             type: string
           - type: 'null'
-          examples: *id027
+          examples: *id029
           title: Notes
         status:
           enum:
@@ -1282,11 +1299,11 @@ components:
           type: boolean
         window_id:
           anyOf:
-          - examples: &id028
+          - examples: &id030
             - win-0001
             type: string
           - type: 'null'
-          examples: *id028
+          examples: *id030
           title: Window Id
       required:
       - ok
@@ -1453,11 +1470,11 @@ components:
       properties:
         actor_user_id:
           anyOf:
-          - examples: &id029
+          - examples: &id031
             - user-001
             type: string
           - type: 'null'
-          examples: *id029
+          examples: *id031
           title: Actor User Id
         berth_id:
           examples:
@@ -1480,27 +1497,27 @@ components:
           type: string
         node_id:
           anyOf:
-          - examples: &id030
+          - examples: &id032
             - node-012
             type: string
           - type: 'null'
-          examples: *id030
+          examples: *id032
           title: Node Id
         sensor_raw:
           anyOf:
-          - examples: &id031
+          - examples: &id033
             - 1234
             type: integer
           - type: 'null'
-          examples: *id031
+          examples: *id033
           title: Sensor Raw
         subject_user_id:
           anyOf:
-          - examples: &id032
+          - examples: &id034
             - user-002
             type: string
           - type: 'null'
-          examples: *id032
+          examples: *id034
           title: Subject User Id
         timestamp:
           examples:
@@ -1567,12 +1584,12 @@ components:
           type: string
         last_seen:
           anyOf:
-          - examples: &id033
+          - examples: &id035
             - '2026-05-03T14:30:00Z'
             format: date-time
             type: string
           - type: 'null'
-          examples: *id033
+          examples: *id035
           title: Last Seen
         name:
           examples:
@@ -1581,12 +1598,12 @@ components:
           type: string
         provision_ttl_s:
           anyOf:
-          - examples: &id034
+          - examples: &id036
             - 180
             type: integer
           - type: 'null'
           description: Per-gateway override; null falls back to ADOPTION_TTL
-          examples: *id034
+          examples: *id036
           title: Provision Ttl S
         status:
           enum:
@@ -1862,11 +1879,11 @@ components:
           type: string
         battery_pct:
           anyOf:
-          - examples: &id035
+          - examples: &id037
             - 87
             type: integer
           - type: 'null'
-          examples: *id035
+          examples: *id037
           title: Battery Pct
         berth_id:
           examples:
@@ -1888,12 +1905,12 @@ components:
           type: string
         last_seen:
           anyOf:
-          - examples: &id036
+          - examples: &id038
             - '2026-05-03T14:30:00Z'
             format: date-time
             type: string
           - type: 'null'
-          examples: *id036
+          examples: *id038
           title: Last Seen
         mesh_unicast_addr:
           examples:
@@ -1936,11 +1953,11 @@ components:
           type: string
         battery_pct:
           anyOf:
-          - examples: &id037
+          - examples: &id039
             - 87
             type: integer
           - type: 'null'
-          examples: *id037
+          examples: *id039
           title: Battery Pct
         berth_id:
           examples:
@@ -1962,12 +1979,12 @@ components:
           type: string
         last_seen:
           anyOf:
-          - examples: &id038
+          - examples: &id040
             - '2026-05-03T14:30:00Z'
             format: date-time
             type: string
           - type: 'null'
-          examples: *id038
+          examples: *id040
           title: Last Seen
         mesh_unicast_addr:
           examples:
@@ -2329,20 +2346,44 @@ components:
       properties:
         assigned_berth_id:
           anyOf:
-          - examples: &id039
+          - examples: &id041
             - berth-001
             type: string
           - type: 'null'
-          examples: *id039
+          examples: *id041
           title: Assigned Berth Id
         boat_club:
           anyOf:
-          - examples: &id040
+          - examples: &id042
             - Saltsjöbadens BK
             type: string
           - type: 'null'
-          examples: *id040
+          examples: *id042
           title: Boat Club
+        boat_depth_m:
+          anyOf:
+          - examples: &id043
+            - 1.4
+            type: number
+          - type: 'null'
+          examples: *id043
+          title: Boat Depth M
+        boat_length_m:
+          anyOf:
+          - examples: &id044
+            - 8.5
+            type: number
+          - type: 'null'
+          examples: *id044
+          title: Boat Length M
+        boat_width_m:
+          anyOf:
+          - examples: &id045
+            - 3.2
+            type: number
+          - type: 'null'
+          examples: *id045
+          title: Boat Width M
         email:
           examples:
           - alex@example.com
@@ -2360,11 +2401,11 @@ components:
           type: string
         harbor_id:
           anyOf:
-          - examples: &id041
+          - examples: &id046
             - ksss-saltsjobaden
             type: string
           - type: 'null'
-          examples: *id041
+          examples: *id046
           title: Harbor Id
         lastname:
           examples:
@@ -2373,11 +2414,11 @@ components:
           type: string
         phone:
           anyOf:
-          - examples: &id042
+          - examples: &id047
             - +46 70 123 45 67
             type: string
           - type: 'null'
-          examples: *id042
+          examples: *id047
           title: Phone
         role:
           enum:
@@ -2575,12 +2616,12 @@ components:
       properties:
         boat_club:
           anyOf:
-          - examples: &id043
+          - examples: &id048
             - Saltsjöbadens BK
             maxLength: 100
             type: string
           - type: 'null'
-          examples: *id043
+          examples: *id048
           title: Boat Club
         email:
           examples:
@@ -2615,13 +2656,13 @@ components:
           writeOnly: true
         phone:
           anyOf:
-          - examples: &id044
+          - examples: &id049
             - +46 70 123 45 67
             maxLength: 20
             pattern: ^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$
             type: string
           - type: 'null'
-          examples: *id044
+          examples: *id049
           title: Phone
       required:
       - firstname
@@ -2634,13 +2675,31 @@ components:
       properties:
         boat_club:
           anyOf:
-          - examples: &id045
+          - examples: &id050
             - Saltsjöbadens BK
             maxLength: 100
             type: string
           - type: 'null'
-          examples: *id045
+          examples: *id050
           title: Boat Club
+        boat_depth_m:
+          anyOf:
+          - minimum: 0.0
+            type: number
+          - type: 'null'
+          title: Boat Depth M
+        boat_length_m:
+          anyOf:
+          - minimum: 0.0
+            type: number
+          - type: 'null'
+          title: Boat Length M
+        boat_width_m:
+          anyOf:
+          - minimum: 0.0
+            type: number
+          - type: 'null'
+          title: Boat Width M
         current_password:
           anyOf:
           - format: password
@@ -2650,38 +2709,38 @@ components:
           title: Current Password
         email:
           anyOf:
-          - examples: &id046
+          - examples: &id051
             - alex@example.com
             format: email
             type: string
           - type: 'null'
-          examples: *id046
+          examples: *id051
           title: Email
         firstname:
           anyOf:
-          - examples: &id047
+          - examples: &id052
             - Alex
             maxLength: 100
             minLength: 1
             pattern: ^[\p{L}\p{M}'’ .\-]+$
             type: string
           - type: 'null'
-          examples: *id047
+          examples: *id052
           title: Firstname
         lastname:
           anyOf:
-          - examples: &id048
+          - examples: &id053
             - Alex
             maxLength: 100
             minLength: 1
             pattern: ^[\p{L}\p{M}'’ .\-]+$
             type: string
           - type: 'null'
-          examples: *id048
+          examples: *id053
           title: Lastname
         password:
           anyOf:
-          - examples: &id049
+          - examples: &id054
             - correct horse battery staple
             format: password
             maxLength: 128
@@ -2689,17 +2748,17 @@ components:
             type: string
             writeOnly: true
           - type: 'null'
-          examples: *id049
+          examples: *id054
           title: Password
         phone:
           anyOf:
-          - examples: &id050
+          - examples: &id055
             - +46 70 123 45 67
             maxLength: 20
             pattern: ^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$
             type: string
           - type: 'null'
-          examples: *id050
+          examples: *id055
           title: Phone
       title: UserPatch
       type: object
@@ -5122,8 +5181,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/BookingCancelIn'
-        required: true
+              anyOf:
+              - $ref: '#/components/schemas/BookingCancelIn'
+              - type: 'null'
+              title: Body
       responses:
         '200':
           content:

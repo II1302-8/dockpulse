@@ -155,7 +155,15 @@ export function ActivityLogPage() {
     ];
 
   return (
-    <div className="flex h-full min-h-dvh flex-col overflow-hidden bg-[#F8FAFC]">
+    // inset clears the floating global header (top ~96px) and the HM sidebar
+    // (--sidebar-total-offset). bottom margin keeps clear of the mobile dock
+    <div
+      className={cn(
+        "absolute flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-[#F8FAFC] shadow-sm",
+        "top-24 right-4 bottom-4 left-4",
+        "lg:left-[calc(var(--sidebar-total-offset,16px)+16px)] lg:right-6 lg:bottom-6",
+      )}
+    >
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white/80 px-6 py-4 shadow-sm backdrop-blur-md">
         <div className="flex items-center gap-4">
           <Link

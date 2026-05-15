@@ -461,7 +461,7 @@ export function BerthDetailPanel({
                           <div className="mb-2 flex items-center justify-between">
                             <span className="text-[10px] font-bold text-brand-navy/60">
                               {fmtDateShort(window.from_date)} —{" "}
-                              {fmtDateShort(window.to_date)}
+                              {fmtDateShort(window.return_date)}
                             </span>
                           </div>
 

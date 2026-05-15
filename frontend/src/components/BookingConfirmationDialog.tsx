@@ -23,13 +23,42 @@ interface BookingConfirmationDialogProps {
   berthLength: number | null;
   berthWidth: number | null;
   berthDepth: number | null;
-  window: { window_id: string; from_date: string; to_date: string } | null;
+  window: {
+    window_id: string;
+    from_date: string;
+    return_date: string;
+  } | null;
   user: AuthUser;
   onClose: () => void;
   onBooked: () => void;
 }
 
-type PreflightState = "idle" | "loading" | "ok" | "warning" | "error";
+type PreflightState = "idle" | "loading" | "ok" | "conflict" | "error";
+
+function computeBoatFitReasons(
+  user: AuthUser,
+  berthLength: number | null,
+  berthWidth: number | null,
+  berthDepth: number | null,
+): string[] {
+  const reasons: string[] = [];
+  if (user.boat_length_m && berthLength && user.boat_length_m > berthLength) {
+    reasons.push(
+      `Boat length (${user.boat_length_m}m) exceeds berth length (${berthLength}m)`,
+    );
+  }
+  if (user.boat_width_m && berthWidth && user.boat_width_m > berthWidth) {
+    reasons.push(
+      `Boat width (${user.boat_width_m}m) exceeds berth width (${berthWidth}m)`,
+    );
+  }
+  if (user.boat_depth_m && berthDepth && user.boat_depth_m > berthDepth) {
+    reasons.push(
+      `Boat depth (${user.boat_depth_m}m) exceeds berth depth (${berthDepth}m)`,
+    );
+  }
+  return reasons;
+}
 
 export function BookingConfirmationDialog({
   open,
@@ -46,54 +75,46 @@ export function BookingConfirmationDialog({
   const { marinaSlug } = useParams<{ marinaSlug: string }>();
   const { preflightBooking, createBooking } = useBookings();
   const [preflightState, setPreflightState] = useState<PreflightState>("idle");
-  const [preflightWarnings, setPreflightWarnings] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
 
+  const fitReasons = computeBoatFitReasons(
+    user,
+    berthLength,
+    berthWidth,
+    berthDepth,
+  );
+  const mayNotFit = fitReasons.length > 0;
+
   useEffect(() => {
     if (open && window) {
+      const ac = new AbortController();
       const runPreflight = async () => {
         setPreflightState("loading");
-        setPreflightWarnings([]);
         setBookingError(null);
 
         try {
-          const result = (await preflightBooking(berthId, {
+          const result = await preflightBooking(berthId, {
             from_date: window.from_date,
-            to_date: window.to_date,
-            length_m: user.boat_length_m ?? undefined,
-            width_m: user.boat_width_m ?? undefined,
-            depth_m: user.boat_depth_m ?? undefined,
-          })) as { available: boolean; fits: boolean; reasons: string[] };
-
-          if (result.fits) {
-            setPreflightState("ok");
-          } else {
-            setPreflightState("warning");
-            setPreflightWarnings(result.reasons);
-          }
+            to_date: window.return_date,
+          });
+          if (ac.signal.aborted) return;
+          setPreflightState(result.ok ? "ok" : "conflict");
         } catch {
+          if (ac.signal.aborted) return;
           console.error("Preflight failed");
           setPreflightState("error");
         }
       };
 
       runPreflight();
-    } else if (!open) {
-      setPreflightState("idle");
-      setPreflightWarnings([]);
-      setBookingError(null);
-      setIsSubmitting(false);
+      return () => ac.abort();
     }
-  }, [
-    open,
-    window,
-    berthId,
-    preflightBooking,
-    user.boat_length_m,
-    user.boat_width_m,
-    user.boat_depth_m,
-  ]);
+    setPreflightState("idle");
+    setBookingError(null);
+    setIsSubmitting(false);
+    return undefined;
+  }, [open, window, berthId, preflightBooking]);
 
   const handleConfirm = async () => {
     if (!window) return;
@@ -101,31 +122,23 @@ export function BookingConfirmationDialog({
     setIsSubmitting(true);
     setBookingError(null);
 
-    try {
-      const result = await createBooking(berthId, {
-        from_date: window.from_date,
-        to_date: window.to_date,
-        length_m: user.boat_length_m ?? undefined,
-        width_m: user.boat_width_m ?? undefined,
-        depth_m: user.boat_depth_m ?? undefined,
-      });
+    const result = await createBooking(berthId, {
+      from_date: window.from_date,
+      to_date: window.return_date,
+    });
 
-      if (result.ok) {
-        toast.success("Berth booked!");
-        onBooked();
-      } else {
-        const errorMsg =
-          result.error?.includes("409") ||
-          result.error?.toLowerCase().includes("already booked")
-            ? "This slot was just taken by another visitor. Choose a different window below."
-            : (result.error ?? "Could not book berth. Please try again.");
-        setBookingError(errorMsg);
-      }
-    } catch {
-      setBookingError("A network error occurred. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+    if (result.ok) {
+      toast.success("Berth booked!");
+      onBooked();
+    } else if (result.kind === "conflict") {
+      setBookingError(
+        "This slot was just taken by another visitor. Pick a different window.",
+      );
+      setPreflightState("conflict");
+    } else {
+      setBookingError(result.error);
     }
+    setIsSubmitting(false);
   };
 
   const visitorBoatInfo = [
@@ -146,6 +159,11 @@ export function BookingConfirmationDialog({
   const hasNoDimensions =
     !user.boat_length_m && !user.boat_width_m && !user.boat_depth_m;
 
+  const disableConfirm =
+    preflightState === "loading" ||
+    preflightState === "conflict" ||
+    isSubmitting;
+
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
       <DialogContent className="max-w-md rounded-[32px] border-white/40 bg-white/80 p-6 shadow-2xl backdrop-blur-xl transition-all sm:rounded-[32px]">
@@ -159,9 +177,8 @@ export function BookingConfirmationDialog({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Date Range */}
           <div className="flex items-center gap-4 rounded-2xl bg-white/50 p-4 shadow-sm border border-white/60">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-blue/10 text-brand-blue">
               <Calendar className="h-5 w-5" />
             </div>
             <div className="flex-1">
@@ -173,7 +190,7 @@ export function BookingConfirmationDialog({
                   <>
                     <span>{fmtDateShort(window.from_date)}</span>
                     <span className="text-brand-navy/20">—</span>
-                    <span>{fmtDateShort(window.to_date)}</span>
+                    <span>{fmtDateShort(window.return_date)}</span>
                   </>
                 ) : (
                   "—"
@@ -182,7 +199,6 @@ export function BookingConfirmationDialog({
             </div>
           </div>
 
-          {/* Dimensions Comparison */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-brand-navy/40">
@@ -224,7 +240,7 @@ export function BookingConfirmationDialog({
                     </span>
                     <a
                       href={`/${marinaSlug}/settings`}
-                      className="text-[10px] text-blue-600 hover:underline"
+                      className="text-[10px] text-brand-blue hover:underline"
                     >
                       Add in Settings
                     </a>
@@ -241,7 +257,6 @@ export function BookingConfirmationDialog({
             </div>
           </div>
 
-          {/* Status Messages */}
           <div className="space-y-3">
             {preflightState === "loading" && (
               <div className="flex items-center gap-2 text-sm text-brand-navy/50">
@@ -250,18 +265,31 @@ export function BookingConfirmationDialog({
               </div>
             )}
 
-            {preflightState === "warning" && (
+            {mayNotFit && preflightState !== "loading" && (
               <div className="flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div className="space-y-1">
                   <p className="font-semibold">Boat may not fit</p>
                   <ul className="list-inside list-disc opacity-90">
-                    {preflightWarnings.map((w) => (
-                      <li key={w}>{w}</li>
+                    {fitReasons.map((r) => (
+                      <li key={r}>{r}</li>
                     ))}
                   </ul>
                   <p className="text-xs opacity-70 italic mt-1">
                     You can still proceed if you are certain it fits.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {preflightState === "conflict" && (
+              <div className="flex gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div>
+                  <p className="font-semibold">Window unavailable</p>
+                  <p className="opacity-90">
+                    Another booking overlaps these dates. Pick a different
+                    window.
                   </p>
                 </div>
               </div>
@@ -299,11 +327,11 @@ export function BookingConfirmationDialog({
           </Button>
           <Button
             onClick={handleConfirm}
-            disabled={preflightState === "loading" || isSubmitting}
+            disabled={disableConfirm}
             className={cn(
               "rounded-full px-8 font-semibold text-white transition-all",
-              "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-200",
-              (preflightState === "loading" || isSubmitting) && "opacity-50",
+              "bg-gradient-to-r from-brand-blue to-brand-cyan hover:opacity-90 shadow-lg shadow-brand-blue/20",
+              disableConfirm && "opacity-50",
             )}
           >
             {isSubmitting ? (

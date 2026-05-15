@@ -10,12 +10,18 @@ export type BookingStatus =
 export type Booking = {
   booking_id: string;
   berth_id: string;
-  visitor_id: string;
+  user_id: string;
   from_date: string;
   to_date: string;
   status: BookingStatus;
   created_at: string;
+  cancelled_at?: string | null;
+  cancelled_by?: string | null;
+  cancel_reason?: string | null;
+  notes?: string | null;
 };
+
+type BookingList = { items: Booking[]; total: number };
 
 export type CreateBookingForm = {
   from_date: string;
@@ -25,19 +31,26 @@ export type CreateBookingForm = {
   depth_m?: number;
 };
 
+export type BookingConflict = {
+  booking_id: string;
+  from_date: string;
+  to_date: string;
+};
+
 export type PreflightResult = {
-  available: boolean;
-  fits: boolean;
-  reasons: string[];
+  ok: boolean;
+  conflicts: BookingConflict[];
+  window_id?: string | null;
 };
 
 export type CreateResult =
   | { ok: true; booking: Booking }
-  | { ok: false; error: string };
+  | { ok: false; kind: "conflict"; error: string }
+  | { ok: false; kind: "error"; error: string };
 
 export type CancelResult = { ok: true } | { ok: false; error: string };
 
-interface UseMyBookingsResult {
+interface UseBookingsListResult {
   bookings: Booking[];
   isLoading: boolean;
   error: string | null;
@@ -47,7 +60,7 @@ interface UseMyBookingsResult {
 export function useMyBookings(
   status?: BookingStatus,
   options: { from?: string; to?: string } = {},
-): UseMyBookingsResult {
+): UseBookingsListResult {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,12 +68,6 @@ export function useMyBookings(
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: refetchTrigger is a manual trigger
   useEffect(() => {
-    if (!status) {
-      setBookings([]);
-      setIsLoading(false);
-      return;
-    }
-
     const ac = new AbortController();
     setIsLoading(true);
     setError(null);
@@ -69,11 +76,16 @@ export function useMyBookings(
     if (status) params.append("status", status);
     if (options.from) params.append("from", options.from);
     if (options.to) params.append("to", options.to);
+    const query = params.toString() ? `?${params.toString()}` : "";
 
-    apiFetch(`/api/bookings/me?${params.toString()}`, { signal: ac.signal })
-      .then((res) => (res.ok ? (res.json() as Promise<Booking[]>) : []))
+    apiFetch(`/api/bookings/me${query}`, { signal: ac.signal })
+      .then((res) =>
+        res.ok
+          ? (res.json() as Promise<BookingList>)
+          : Promise.resolve({ items: [], total: 0 } as BookingList),
+      )
       .then((data) => {
-        if (!ac.signal.aborted) setBookings(data);
+        if (!ac.signal.aborted) setBookings(data.items ?? []);
       })
       .catch((err) => {
         if (ac.signal.aborted) return;
@@ -97,7 +109,7 @@ export function useMyBookings(
 export function useHarborBookings(
   harborId: string | null,
   options: { status?: BookingStatus; from?: string; to?: string } = {},
-): UseMyBookingsResult {
+): UseBookingsListResult {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -119,13 +131,18 @@ export function useHarborBookings(
     if (options.status) params.append("status", options.status);
     if (options.from) params.append("from", options.from);
     if (options.to) params.append("to", options.to);
+    const query = params.toString() ? `?${params.toString()}` : "";
 
-    apiFetch(`/api/harbors/${harborId}/bookings?${params.toString()}`, {
+    apiFetch(`/api/harbors/${harborId}/bookings${query}`, {
       signal: ac.signal,
     })
-      .then((res) => (res.ok ? (res.json() as Promise<Booking[]>) : []))
+      .then((res) =>
+        res.ok
+          ? (res.json() as Promise<BookingList>)
+          : Promise.resolve({ items: [], total: 0 } as BookingList),
+      )
       .then((data) => {
-        if (!ac.signal.aborted) setBookings(data);
+        if (!ac.signal.aborted) setBookings(data.items ?? []);
       })
       .catch((err) => {
         if (ac.signal.aborted) return;
@@ -159,9 +176,12 @@ export async function createBooking(
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
+      const message =
+        data.detail || data.message || "Could not create booking.";
       return {
         ok: false,
-        error: data.detail || data.message || "Could not create booking.",
+        kind: res.status === 409 ? "conflict" : "error",
+        error: message,
       };
     }
 
@@ -169,7 +189,11 @@ export async function createBooking(
     return { ok: true, booking };
   } catch (err) {
     console.error("Create booking error", err);
-    return { ok: false, error: "Could not create booking. Please try again." };
+    return {
+      ok: false,
+      kind: "error",
+      error: "Could not create booking. Please try again.",
+    };
   }
 }
 
@@ -198,23 +222,20 @@ export async function preflightBooking(
   berthId: string,
   form: CreateBookingForm,
 ): Promise<PreflightResult> {
-  try {
-    const res = await apiFetch(`/api/berths/${berthId}/bookings:preflight`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
+  // spec BookingPreflightIn only carries date range
+  const body = { from_date: form.from_date, to_date: form.to_date };
+  const res = await apiFetch(`/api/berths/${berthId}/bookings:preflight`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
 
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.detail || data.message || "Preflight failed.");
-    }
-
-    return (await res.json()) as PreflightResult;
-  } catch (err) {
-    console.error("Preflight error", err);
-    throw err;
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.detail || data.message || "Preflight failed.");
   }
+
+  return (await res.json()) as PreflightResult;
 }
 
 export function useBookings() {

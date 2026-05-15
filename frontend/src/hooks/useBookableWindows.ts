@@ -1,11 +1,18 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
 
+export type BookedRange = {
+  booking_id: string;
+  from_date: string;
+  to_date: string;
+};
+
 export type BookableWindow = {
   window_id: string;
   berth_id: string;
   from_date: string;
-  to_date: string;
+  return_date: string;
+  booked?: BookedRange[];
 };
 
 interface UseBookableWindowsResult {

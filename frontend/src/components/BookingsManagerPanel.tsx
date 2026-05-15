@@ -9,6 +9,16 @@ import {
 } from "../hooks/useBookings";
 import { fmtDateTime } from "../lib/date";
 import { cn } from "../lib/utils";
+import { Button } from "./shared/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "./shared/ui/dialog";
 
 interface BookingsManagerPanelProps {
   isOpen?: boolean;
@@ -28,19 +38,17 @@ export function BookingsManagerPanel({
     status: filterStatus === "all" ? undefined : filterStatus,
   });
   const { cancelBooking } = useBookings();
+  const [pendingCancelId, setPendingCancelId] = useState<string | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
-  async function handleCancel(bookingId: string) {
-    if (
-      !confirm(
-        "Are you sure you want to cancel this booking? This will notify the visitor.",
-      )
-    ) {
-      return;
-    }
-
-    const result = await cancelBooking(bookingId);
+  async function confirmCancel() {
+    if (!pendingCancelId) return;
+    setIsCancelling(true);
+    const result = await cancelBooking(pendingCancelId);
+    setIsCancelling(false);
+    setPendingCancelId(null);
     if (result.ok) {
-      toast.success("Booking cancelled successfully.");
+      toast.success("Booking cancelled.");
       refetch();
     } else {
       toast.error(result.error);
@@ -123,13 +131,48 @@ export function BookingsManagerPanel({
             <BookingItem
               key={booking.booking_id}
               booking={booking}
-              onCancel={() => handleCancel(booking.booking_id)}
+              onCancel={() => setPendingCancelId(booking.booking_id)}
             />
           ))
         )}
       </div>
+
+      <Dialog
+        open={!!pendingCancelId}
+        onOpenChange={(open) => !open && setPendingCancelId(null)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black text-brand-navy">
+              Cancel Booking?
+            </DialogTitle>
+            <DialogDescription className="pt-2 text-slate-500">
+              The visitor will be notified. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-6 flex gap-2 sm:justify-end">
+            <DialogClose asChild>
+              <Button variant="ghost" className="font-bold">
+                Keep Booking
+              </Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              className="font-bold shadow-lg shadow-red-200"
+              onClick={confirmCancel}
+              disabled={isCancelling}
+            >
+              {isCancelling ? "Cancelling..." : "Yes, Cancel Booking"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
+}
+
+function shortenUserId(userId: string): string {
+  return userId.length > 12 ? `${userId.slice(0, 8)}…` : userId;
 }
 
 function BookingItem({
@@ -153,7 +196,9 @@ function BookingItem({
       <div className="mb-4 space-y-1">
         <p className="text-[10px] font-bold text-brand-navy/40">
           Visitor:{" "}
-          <span className="text-brand-navy/80">{booking.visitor_id}</span>
+          <span className="font-mono text-brand-navy/80">
+            {shortenUserId(booking.user_id)}
+          </span>
         </p>
         <div className="flex items-center gap-1.5 text-[9px] font-bold text-brand-navy/60">
           <Clock size={10} strokeWidth={2.5} />

@@ -91,14 +91,10 @@ function withSetCookies(
 
 function hasAccessCookie(req: Request): boolean {
   const raw = req.headers.get("cookie") ?? "";
-  const hasAccess = raw.split(";").some((c) => {
+  return raw.split(";").some((c) => {
     const [name, value] = c.trim().split("=");
     return name === "dockpulse_access" && value;
   });
-  if (!hasAccess) {
-    console.log("[MOCK] Auth Check Failed. Cookies received:", raw);
-  }
-  return hasAccess;
 }
 
 function unauthorized(): Response {
@@ -464,20 +460,21 @@ function handleBerthWindows(req: Request, url: URL): Response | null {
   const tomorrow = new Date(now.getTime() + 86400000);
   const nextWeek = new Date(now.getTime() + 86400000 * 7);
 
-  // return two windows for any berth requested
   return new Response(
     JSON.stringify([
       {
         window_id: `win-${berthId}-1`,
         berth_id: berthId,
         from_date: tomorrow.toISOString(),
-        to_date: new Date(tomorrow.getTime() + 86400000 * 2).toISOString(),
+        return_date: new Date(tomorrow.getTime() + 86400000 * 2).toISOString(),
+        booked: [],
       },
       {
         window_id: `win-${berthId}-2`,
         berth_id: berthId,
         from_date: nextWeek.toISOString(),
-        to_date: new Date(nextWeek.getTime() + 86400000 * 3).toISOString(),
+        return_date: new Date(nextWeek.getTime() + 86400000 * 3).toISOString(),
+        booked: [],
       },
     ]),
     { headers: { "Content-Type": "application/json" } },
@@ -487,7 +484,7 @@ function handleBerthWindows(req: Request, url: URL): Response | null {
 type MockBooking = {
   booking_id: string;
   berth_id: string;
-  visitor_id: string;
+  user_id: string;
   from_date: string;
   to_date: string;
   status:
@@ -506,7 +503,7 @@ const seedBookings: MockBooking[] = [
   {
     booking_id: "seed-1",
     berth_id: "ksss-saltsjobaden-pier-1-t1",
-    visitor_id: "u-mock-visitor",
+    user_id: "u-mock-visitor",
     from_date: new Date(now.getTime() + 86400000).toISOString(),
     to_date: new Date(now.getTime() + 86400000 * 2).toISOString(),
     status: "confirmed",
@@ -515,7 +512,7 @@ const seedBookings: MockBooking[] = [
   {
     booking_id: "seed-2",
     berth_id: "ksss-saltsjobaden-pier-1-t2",
-    visitor_id: "u-mock-visitor-2",
+    user_id: "u-mock-visitor-2",
     from_date: new Date(now.getTime() + 86400000 * 3).toISOString(),
     to_date: new Date(now.getTime() + 86400000 * 5).toISOString(),
     status: "confirmed",
@@ -524,7 +521,7 @@ const seedBookings: MockBooking[] = [
   {
     booking_id: "seed-3",
     berth_id: "ksss-saltsjobaden-pier-1-t3",
-    visitor_id: "u-mock-visitor-3",
+    user_id: "u-mock-visitor-3",
     from_date: new Date(now.getTime() - 86400000 * 5).toISOString(),
     to_date: new Date(now.getTime() - 86400000 * 3).toISOString(),
     status: "completed",
@@ -533,7 +530,7 @@ const seedBookings: MockBooking[] = [
   {
     booking_id: "seed-4",
     berth_id: "ksss-saltsjobaden-pier-1-t4",
-    visitor_id: "u-mock-visitor-4",
+    user_id: "u-mock-visitor-4",
     from_date: new Date(now.getTime() - 86400000 * 2).toISOString(),
     to_date: new Date(now.getTime() - 86400000).toISOString(),
     status: "cancelled_by_visitor",
@@ -570,33 +567,29 @@ async function handleBookings(
 
     const body = await req.json();
     const berthId = preflightMatch[1];
-    const berth = BERTHS.find((b) => b.berth_id === berthId) || BERTHS[0];
 
-    const reasons: string[] = [];
-    let fits = true;
+    const conflicts = Array.from(mockBookings.values())
+      .filter(
+        (b) =>
+          b.berth_id === berthId &&
+          b.status === "confirmed" &&
+          ((body.from_date >= b.from_date && body.from_date < b.to_date) ||
+            (body.to_date > b.from_date && body.to_date <= b.to_date)),
+      )
+      .map((b) => ({
+        booking_id: b.booking_id,
+        from_date: b.from_date,
+        to_date: b.to_date,
+      }));
 
-    if (body.length_m && body.length_m > (berth.length_m || 8.5)) {
-      fits = false;
-      reasons.push(
-        `Boat length (${body.length_m}m) exceeds berth length (${berth.length_m || 8.5}m)`,
-      );
-    }
-    if (body.width_m && body.width_m > (berth.width_m || 3.2)) {
-      fits = false;
-      reasons.push(
-        `Boat width (${body.width_m}m) exceeds berth width (${berth.width_m || 3.2}m)`,
-      );
-    }
-    if (body.depth_m && body.depth_m > (berth.depth_m || 2.0)) {
-      fits = false;
-      reasons.push(
-        `Boat depth (${body.depth_m}m) exceeds berth depth (${berth.depth_m || 2.0}m)`,
-      );
-    }
-
-    return new Response(JSON.stringify({ available: true, fits, reasons }), {
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        ok: conflicts.length === 0,
+        conflicts,
+        window_id: null,
+      }),
+      { headers: { "Content-Type": "application/json" } },
+    );
   }
 
   // POST /api/berths/{id}/bookings
@@ -629,7 +622,7 @@ async function handleBookings(
     const booking: MockBooking = {
       booking_id: crypto.randomUUID(),
       berth_id: berthId,
-      visitor_id: userId,
+      user_id: userId,
       from_date: body.from_date,
       to_date: body.to_date,
       status: "confirmed",
@@ -649,10 +642,10 @@ async function handleBookings(
     const statusFilter = url.searchParams.get("status");
 
     const items = Array.from(mockBookings.values())
-      .filter((b) => b.visitor_id === userId)
+      .filter((b) => b.user_id === userId)
       .filter((b) => !statusFilter || b.status === statusFilter);
 
-    return new Response(JSON.stringify(items), {
+    return new Response(JSON.stringify({ items, total: items.length }), {
       headers: { "Content-Type": "application/json" },
     });
   }
@@ -679,7 +672,7 @@ async function handleBookings(
       .filter((b) => !fromFilter || b.from_date >= fromFilter)
       .filter((b) => !toFilter || b.to_date <= toFilter);
 
-    return new Response(JSON.stringify(items), {
+    return new Response(JSON.stringify({ items, total: items.length }), {
       headers: { "Content-Type": "application/json" },
     });
   }
@@ -695,7 +688,7 @@ async function handleBookings(
     const userId = getMockUserId(req);
     const isHM = userId === "u-mock-harbormaster";
 
-    if (booking.visitor_id !== userId && !isHM) {
+    if (booking.user_id !== userId && !isHM) {
       return new Response(JSON.stringify({ detail: "Forbidden" }), {
         status: 403,
       });
@@ -703,11 +696,12 @@ async function handleBookings(
 
     if (booking.status === "confirmed") {
       booking.status = isHM ? "cancelled_by_host" : "cancelled_by_visitor";
-    } else {
-      mockBookings.delete(id);
     }
 
-    return new Response(null, { status: 204 });
+    return new Response(JSON.stringify(booking), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   return null;
@@ -717,11 +711,9 @@ Bun.serve({
   port: PORT,
   async fetch(req) {
     const url = new URL(req.url);
-    const headers: Record<string, string> = {};
-    req.headers.forEach((v: string, k: string) => {
-      headers[k] = v;
-    });
-    console.log(`[MOCK] ${req.method} ${url.pathname}`, { headers });
+    if (process.env.MOCK_VERBOSE) {
+      console.log(`[MOCK] ${req.method} ${url.pathname}`);
+    }
 
     const authResponse = await handleAuth(req, url);
     if (authResponse) return authResponse;

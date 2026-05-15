@@ -50,8 +50,8 @@ export function HarborMap() {
     toggleNodeHealth,
   } = useDashboardLayout();
 
-  // Highlight berths that have confirmed bookings when the bookings panel is open
-  const { bookings: activeBookings } = useHarborBookings(harborId || "", {
+  // highlight berths with confirmed bookings when bookings panel is open
+  const { bookings: activeBookings } = useHarborBookings(harborId, {
     status: "confirmed",
   });
 

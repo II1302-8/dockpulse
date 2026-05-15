@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { components } from "../api-types";
 import { apiFetch } from "../lib/api";
+import { usePolling } from "./usePolling";
 
 export type Alert = components["schemas"]["AlertOut"];
 
@@ -35,11 +36,8 @@ export function useActiveAlerts() {
 
   useEffect(() => {
     load();
-    const interval = window.setInterval(() => {
-      if (document.visibilityState === "visible") load();
-    }, POLL_INTERVAL_MS);
-    return () => window.clearInterval(interval);
   }, [load]);
+  usePolling(load, POLL_INTERVAL_MS);
 
   const acknowledgeAlert = useCallback(async (alertId: string) => {
     // optimistic: drop from the local list immediately

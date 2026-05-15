@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { components } from "../api-types";
+import { usePolling } from "./usePolling";
 
 type Berth = components["schemas"]["BerthOut"];
 
@@ -52,13 +53,12 @@ export function useBerthDetail(berthId: string | null) {
     setBerth(null);
     setError(null);
     fetchBerth();
-    const interval = setInterval(fetchBerth, POLL_INTERVAL_MS);
 
     return () => {
-      clearInterval(interval);
       abortRef.current?.abort();
     };
   }, [berthId, fetchBerth]);
+  usePolling(fetchBerth, POLL_INTERVAL_MS, !!berthId);
 
   return {
     berth,

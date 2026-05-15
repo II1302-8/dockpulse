@@ -11,6 +11,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import type { components } from "../api-types";
+import { usePolling } from "../hooks/usePolling";
 import { apiFetch } from "../lib/api";
 import { fmtTime } from "../lib/date";
 import { cn } from "../lib/utils";
@@ -58,12 +59,8 @@ export function NodeHealthPanel({ isOpen, onCloseCB }: NodeHealthPanelProps) {
   useEffect(() => {
     if (!isOpen || !isHarborMaster) return;
     fetchNodes();
-    // pause polling when the tab is hidden so we don't burn requests in background
-    const interval = window.setInterval(() => {
-      if (document.visibilityState === "visible") fetchNodes();
-    }, POLL_INTERVAL_MS);
-    return () => window.clearInterval(interval);
   }, [isOpen, isHarborMaster, fetchNodes]);
+  usePolling(fetchNodes, POLL_INTERVAL_MS, !!isOpen && isHarborMaster);
 
   const filteredNodes = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();

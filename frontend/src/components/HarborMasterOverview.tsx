@@ -1,7 +1,8 @@
 import { Anchor, LayoutDashboard, X, Zap } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { components } from "../api-types";
 import { useNow } from "../hooks/useNow";
+import { usePolling } from "../hooks/usePolling";
 import { isOnline } from "../lib/freshness";
 import { cn } from "../lib/utils";
 
@@ -37,25 +38,20 @@ export function HarborMasterOverview({
 
   // pull /api/health so the system-status block reflects reality instead of
   // hardcoded "Operational". 503 still returns a body, so accept !res.ok
+  const loadHealth = useCallback(async () => {
+    try {
+      const res = await fetch("/api/health", { credentials: "include" });
+      const data = (await res.json()) as HealthStatus;
+      setHealth(data);
+    } catch {
+      setHealth(null);
+    }
+  }, []);
   useEffect(() => {
     if (!isOpen) return;
-    let cancelled = false;
-    async function load() {
-      try {
-        const res = await fetch("/api/health", { credentials: "include" });
-        const data = (await res.json()) as HealthStatus;
-        if (!cancelled) setHealth(data);
-      } catch {
-        if (!cancelled) setHealth(null);
-      }
-    }
-    load();
-    const id = window.setInterval(load, HEALTH_POLL_MS);
-    return () => {
-      cancelled = true;
-      window.clearInterval(id);
-    };
-  }, [isOpen]);
+    loadHealth();
+  }, [isOpen, loadHealth]);
+  usePolling(loadHealth, HEALTH_POLL_MS, !!isOpen);
 
   // only online sensors are eligible to count as available; offline berths
   // shouldn't inflate availability the way they did when subtracted from total

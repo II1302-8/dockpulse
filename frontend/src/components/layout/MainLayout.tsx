@@ -112,7 +112,6 @@ function MainLayoutContent({
       <main
         className={cn(
           "absolute inset-0 z-[var(--z-map)] transition-all duration-500 pointer-events-auto",
-          isHarborMaster && "lg:pl-20",
         )}
       >
         <Outlet

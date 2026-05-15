@@ -280,8 +280,8 @@ async def accept_berth_invite(
         )
         .values(
             status="accepted",
-            accepted_by=current_user.user_id,
-            accepted_at=now,
+            resolved_by=current_user.user_id,
+            resolved_at=now,
         )
         .returning(BerthInvite)
     )
@@ -346,7 +346,7 @@ async def reject_berth_invite(
             BerthInvite.invite_id == invite.invite_id,
             BerthInvite.status == "pending",
         )
-        .values(status="rejected", accepted_by=current_user.user_id, accepted_at=now)
+        .values(status="rejected", resolved_by=current_user.user_id, resolved_at=now)
         .returning(BerthInvite)
     )
     rejected = result.scalar_one_or_none()
@@ -379,7 +379,11 @@ async def delete_berth_invite(
     ).scalar_one_or_none()
     if invite is None:
         raise HTTPException(status_code=404, detail="Invite not found")
-    await session.delete(invite)
+    if invite.status != "pending":
+        raise HTTPException(
+            status_code=409, detail="Only pending invites can be revoked"
+        )
+    invite.status = "revoked"
     await session.commit()
 
 

@@ -361,15 +361,12 @@ async def list_my_bookings(
         stmt = stmt.where(Booking.to_date > from_date)
     if to_date is not None:
         stmt = stmt.where(Booking.from_date < to_date)
-    stmt = stmt.order_by(Booking.from_date.desc())
 
-    items = list((await session.execute(stmt)).scalars().all())
+    items = list(
+        (await session.execute(stmt.order_by(Booking.from_date.desc()))).scalars().all()
+    )
     total = (
-        await session.scalar(
-            select(func.count(Booking.booking_id)).where(
-                Booking.user_id == current_user.user_id
-            )
-        )
+        await session.scalar(stmt.with_only_columns(func.count(Booking.booking_id)))
     ) or 0
     return BookingList(items=items, total=total)
 
@@ -457,13 +454,12 @@ async def list_berth_bookings(
         stmt = stmt.where(Booking.to_date > from_date)
     if to_date is not None:
         stmt = stmt.where(Booking.from_date < to_date)
-    stmt = stmt.order_by(Booking.from_date.desc())
-    items = list((await session.execute(stmt)).scalars().all())
 
+    items = list(
+        (await session.execute(stmt.order_by(Booking.from_date.desc()))).scalars().all()
+    )
     total = (
-        await session.scalar(
-            select(func.count(Booking.booking_id)).where(Booking.berth_id == berth_id)
-        )
+        await session.scalar(stmt.with_only_columns(func.count(Booking.booking_id)))
     ) or 0
     return BookingList(items=items, total=total)
 
@@ -499,17 +495,13 @@ async def list_harbor_bookings(
         stmt = stmt.where(Booking.to_date > from_date)
     if to_date is not None:
         stmt = stmt.where(Booking.from_date < to_date)
-    stmt = stmt.order_by(Booking.from_date.desc())
 
-    items = list((await session.execute(stmt)).scalars().all())
-
-    total_stmt = (
-        select(func.count(Booking.booking_id))
-        .join(Berth, Berth.berth_id == Booking.berth_id)
-        .join(Dock, Dock.dock_id == Berth.dock_id)
-        .where(Dock.harbor_id == harbor_id)
+    items = list(
+        (await session.execute(stmt.order_by(Booking.from_date.desc()))).scalars().all()
     )
-    total = (await session.scalar(total_stmt)) or 0
+    total = (
+        await session.scalar(stmt.with_only_columns(func.count(Booking.booking_id)))
+    ) or 0
     return BookingList(items=items, total=total)
 
 

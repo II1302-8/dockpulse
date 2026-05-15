@@ -284,7 +284,7 @@ async def test_list_invites_requires_harbormaster(
     assert r.status_code == 403
 
 
-async def test_delete_invite_removes_row(
+async def test_delete_invite_sets_revoked(
     client: AsyncClient, seeded_berth, harbor_master, captured_emails, session
 ):
     await _create_invite(client, harbor_master)
@@ -294,8 +294,8 @@ async def test_delete_invite_removes_row(
         cookies=_hm_cookies(harbor_master),
     )
     assert r.status_code == 204
-    remaining = (await session.execute(select(BerthInvite))).scalars().all()
-    assert remaining == []
+    await session.refresh(invite)
+    assert invite.status == "revoked"
 
 
 async def test_delete_invite_unknown_returns_404(

@@ -87,9 +87,9 @@ class User(Base):
         cascade="all, delete-orphan",
         foreign_keys="[BerthInvite.created_by]",
     )
-    accepted_invites: Mapped[list["BerthInvite"]] = relationship(
-        back_populates="acceptor",
-        foreign_keys="[BerthInvite.accepted_by]",
+    resolved_invites: Mapped[list["BerthInvite"]] = relationship(
+        back_populates="resolver",
+        foreign_keys="[BerthInvite.resolved_by]",
     )
     bookings: Mapped[list["Booking"]] = relationship(
         back_populates="user",
@@ -163,10 +163,10 @@ class BerthInvite(Base):
     status: Mapped[str] = mapped_column(
         berth_invite_status_enum, nullable=False, default="pending"
     )
-    accepted_by: Mapped[str | None] = mapped_column(
+    resolved_by: Mapped[str | None] = mapped_column(
         ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True
     )
-    accepted_at: Mapped[datetime | None] = mapped_column(
+    resolved_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
 
@@ -174,8 +174,8 @@ class BerthInvite(Base):
     creator: Mapped["User"] = relationship(
         back_populates="created_invites", foreign_keys=[created_by]
     )
-    acceptor: Mapped["User | None"] = relationship(
-        back_populates="accepted_invites", foreign_keys=[accepted_by]
+    resolver: Mapped["User | None"] = relationship(
+        back_populates="resolved_invites", foreign_keys=[resolved_by]
     )
 
 

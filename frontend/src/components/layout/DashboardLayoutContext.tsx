@@ -15,6 +15,8 @@ interface DashboardLayoutContextType {
   setIsActivityLogOpen: (open: boolean) => void;
   isNodeHealthOpen: boolean;
   setIsNodeHealthOpen: (open: boolean) => void;
+  isBookingsOpen: boolean;
+  setIsBookingsOpen: (open: boolean) => void;
 
   // Sidebar States
   isMenuExpanded: boolean;
@@ -28,6 +30,7 @@ interface DashboardLayoutContextType {
   toggleOverview: () => void;
   toggleActivityLog: () => void;
   toggleNodeHealth: () => void;
+  toggleBookings: () => void;
   closeAllPanels: () => void;
 }
 
@@ -45,6 +48,7 @@ export function DashboardLayoutProvider({
   const [isOverviewOpen, setIsOverviewOpen] = useState(false);
   const [isActivityLogOpen, setIsActivityLogOpen] = useState(false);
   const [isNodeHealthOpen, setIsNodeHealthOpen] = useState(false);
+  const [isBookingsOpen, setIsBookingsOpen] = useState(false);
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const [windowWidth, setWindowWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1200,
@@ -67,6 +71,7 @@ export function DashboardLayoutProvider({
     setIsOverviewOpen(false);
     setIsActivityLogOpen(false);
     setIsNodeHealthOpen(false);
+    setIsBookingsOpen(false);
   }, [location.pathname]);
 
   // Calculate Offset
@@ -84,24 +89,35 @@ export function DashboardLayoutProvider({
     setIsOverviewOpen(!isOverviewOpen);
     setIsActivityLogOpen(false);
     setIsNodeHealthOpen(false);
+    setIsBookingsOpen(false);
   };
 
   const toggleActivityLog = () => {
     setIsActivityLogOpen(!isActivityLogOpen);
     setIsOverviewOpen(false);
     setIsNodeHealthOpen(false);
+    setIsBookingsOpen(false);
   };
 
   const toggleNodeHealth = () => {
     setIsNodeHealthOpen(!isNodeHealthOpen);
     setIsOverviewOpen(false);
     setIsActivityLogOpen(false);
+    setIsBookingsOpen(false);
+  };
+
+  const toggleBookings = () => {
+    setIsBookingsOpen(!isBookingsOpen);
+    setIsOverviewOpen(false);
+    setIsActivityLogOpen(false);
+    setIsNodeHealthOpen(false);
   };
 
   const closeAllPanels = () => {
     setIsOverviewOpen(false);
     setIsActivityLogOpen(false);
     setIsNodeHealthOpen(false);
+    setIsBookingsOpen(false);
   };
 
   return (
@@ -113,6 +129,8 @@ export function DashboardLayoutProvider({
         setIsActivityLogOpen,
         isNodeHealthOpen,
         setIsNodeHealthOpen,
+        isBookingsOpen,
+        setIsBookingsOpen,
         isMenuExpanded,
         setIsMenuExpanded,
         sidebarOffset,
@@ -120,6 +138,7 @@ export function DashboardLayoutProvider({
         toggleOverview,
         toggleActivityLog,
         toggleNodeHealth,
+        toggleBookings,
         closeAllPanels,
       }}
     >

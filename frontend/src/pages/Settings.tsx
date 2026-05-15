@@ -6,6 +6,7 @@ import type {
 } from "../components/layout/MainLayout";
 import { NotificationSettings } from "../components/NotificationSettings";
 import { AvailabilitySection } from "../components/settings/AvailabilitySection";
+import { BoatDimensionsSection } from "../components/settings/BoatDimensionsSection";
 import { DangerZoneSection } from "../components/settings/DangerZoneSection";
 import { ProfileSection } from "../components/settings/ProfileSection";
 import { Button } from "../components/shared/ui/button";
@@ -52,6 +53,8 @@ function Settings() {
       </div>
 
       <ProfileSection user={user} />
+
+      {user.role !== "harbormaster" && <BoatDimensionsSection user={user} />}
 
       <NotificationSettings />
 

@@ -1,6 +1,7 @@
 import type { components } from "./api-types";
 import { useNow } from "./hooks/useNow";
 import { isOnline } from "./lib/freshness";
+import { cn } from "./lib/utils";
 import {
   horizontalPier,
   leftSideBerths,
@@ -27,6 +28,7 @@ type BerthState = "green" | "red" | "grey";
 interface SvgMapProps {
   berths: components["schemas"]["BerthOut"][];
   selectedBerthId: string | null;
+  highlightedBerthIds?: string[];
   onBerthClickCB?: (berthId: string) => void;
 }
 
@@ -108,6 +110,7 @@ const rightSlots = getSideBerthSlots(rightSideBerths, "right");
 export function SvgMap({
   berths,
   selectedBerthId,
+  highlightedBerthIds = [],
   onBerthClickCB,
 }: SvgMapProps) {
   const now = useNow();
@@ -115,6 +118,7 @@ export function SvgMap({
   const renderBerthCB = (slot: BerthSlot) => {
     const apiBerth = berths.find((b) => b.berth_id === slot.berth_id);
     const isSelected = selectedBerthId === slot.berth_id;
+    const isHighlighted = highlightedBerthIds.includes(slot.berth_id);
 
     const state: BerthState =
       apiBerth && isOnline(apiBerth.last_updated, now)
@@ -146,7 +150,11 @@ export function SvgMap({
       <g
         key={slot.id}
         data-berth-id={slot.berth_id}
-        className={`berth-group cursor-pointer outline-none ${isSelected ? "selected" : ""}`}
+        className={cn(
+          "berth-group cursor-pointer outline-none transition-all duration-300",
+          isSelected && "selected",
+          isHighlighted && "highlighted",
+        )}
         onClick={openBerthDetails}
         role="button"
         tabIndex={0}
@@ -177,8 +185,11 @@ export function SvgMap({
           width={slot.width}
           height={slot.height}
           fill={fill}
-          stroke={isSelected ? selectedStroke : "none"}
-          strokeWidth={isSelected ? 4 : 0}
+          stroke={
+            isSelected ? selectedStroke : isHighlighted ? "#0093E9" : "none"
+          }
+          strokeWidth={isSelected ? 4 : isHighlighted ? 3 : 0}
+          strokeOpacity={isHighlighted && !isSelected ? 0.6 : 1}
           className="berth-rect transition-all duration-300"
           style={{ pointerEvents: "none" }}
         />

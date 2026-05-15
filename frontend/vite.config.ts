@@ -5,7 +5,7 @@ import { defineConfig } from "vite";
 
 // https://vite.dev/config/
 const sseMockUrl = process.env.MOCK_SSE_URL;
-const apiUrl = process.env.API_URL || "http://localhost:8000";
+const apiUrl = process.env.API_URL || "http://127.0.0.1:8000";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -45,12 +45,47 @@ export default defineConfig({
       // mock server handles paths Prism can't (SSE, cookie-setting auth, adoption flow)
       ...(sseMockUrl
         ? {
-            "/api/berths/stream": sseMockUrl,
-            "/api/auth": sseMockUrl,
-            "/api/adoptions": sseMockUrl,
+            "/api/berths/stream": {
+              target: sseMockUrl,
+              changeOrigin: true,
+            },
+            "^/api/berths/.*/bookable-windows": {
+              target: sseMockUrl,
+              changeOrigin: true,
+              rewrite: (path) => path,
+            },
+            "/api/auth": {
+              target: sseMockUrl,
+              changeOrigin: true,
+            },
+            "^/api/berths/.*/bookings": {
+              target: sseMockUrl,
+              changeOrigin: true,
+              rewrite: (path) => path,
+            },
+            "^/api/harbors/.*/bookings": {
+              target: sseMockUrl,
+              changeOrigin: true,
+              rewrite: (path) => path,
+            },
+            "/api/bookings": {
+              target: sseMockUrl,
+              changeOrigin: true,
+            },
+            "/api/users": {
+              target: sseMockUrl,
+              changeOrigin: true,
+            },
+            "/api/adoptions": {
+              target: sseMockUrl,
+              changeOrigin: true,
+            },
           }
         : {}),
-      "/api": apiUrl,
+      "/api": {
+        target: apiUrl,
+        changeOrigin: true,
+      },
     },
   },
 });

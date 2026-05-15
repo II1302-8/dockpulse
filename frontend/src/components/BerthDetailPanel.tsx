@@ -1,6 +1,8 @@
 import {
   Battery,
+  CalendarDays,
   Clock,
+  Loader2,
   Mail,
   Ruler,
   Thermometer,
@@ -17,11 +19,16 @@ import {
   revokeInvite,
   useBerthInvites,
 } from "../hooks/useBerthInvites";
+import {
+  type BookableWindow,
+  useBookableWindows,
+} from "../hooks/useBookableWindows";
 import { useNow } from "../hooks/useNow";
 import { apiFetch } from "../lib/api";
 import { fmtDate, fmtDateShort, fmtDateTime } from "../lib/date";
 import { isOnline } from "../lib/freshness";
 import { cn } from "../lib/utils";
+import { BookingConfirmationDialog } from "./BookingConfirmationDialog";
 import { InviteOwnerModal } from "./InviteOwnerModal";
 import type { AuthOutletContext } from "./layout/MainLayout";
 
@@ -78,9 +85,10 @@ export function BerthDetailPanel({
   berth: liveBerth,
 }: BerthDetailPanelProps) {
   const { marinaSlug } = useParams<{ marinaSlug: string }>();
-  const { user: currentUser } = useOutletContext<AuthOutletContext>();
-
+  const { user: currentUser, openAuthDialog } =
+    useOutletContext<AuthOutletContext>();
   const isHarborMaster = currentUser?.role === "harbormaster";
+  const isVisitor = currentUser && !isHarborMaster;
 
   const harborId =
     (currentUser as { harbor_id?: string | null })?.harbor_id ??
@@ -108,6 +116,14 @@ export function BerthDetailPanel({
     email?: string;
   } | null>(null);
   const [isRevokingInvite, setIsRevokingInvite] = useState(false);
+  const [selectedWindow, setSelectedWindow] = useState<BookableWindow | null>(
+    null,
+  );
+
+  const isBerthBookable =
+    berth && isOnline(berth.last_updated, now) && berth.is_available_now;
+  const { windows: bookableWindows, isLoading: isWindowsLoading } =
+    useBookableWindows(isVisitor && isBerthBookable ? berthId : null);
 
   const tenantEmail = tenant?.email ?? null;
   const tenantFullName =
@@ -423,6 +439,66 @@ export function BerthDetailPanel({
                 ))}
               </div>
 
+              {/* Visitor Booking Section */}
+              {isVisitor && isBerthBookable && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 rounded-[24px] border border-brand-blue/10 bg-brand-blue/5 p-5 duration-500 delay-500 fill-mode-both">
+                  <div className="mb-4 flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-brand-blue/60">
+                    <CalendarDays size={12} strokeWidth={3} />
+                    Available for Booking
+                  </div>
+
+                  {isWindowsLoading ? (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="h-4 w-4 animate-spin text-brand-blue" />
+                    </div>
+                  ) : bookableWindows.length > 0 ? (
+                    <div className="space-y-3">
+                      {bookableWindows.map((window) => (
+                        <div
+                          key={window.window_id}
+                          className="group relative rounded-2xl border border-white/60 bg-white/60 p-3 transition-all hover:bg-white"
+                        >
+                          <div className="mb-2 flex items-center justify-between">
+                            <span className="text-[10px] font-bold text-brand-navy/60">
+                              {fmtDateShort(window.from_date)} —{" "}
+                              {fmtDateShort(window.return_date)}
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => setSelectedWindow(window)}
+                            className="flex w-full items-center justify-center rounded-xl bg-brand-blue py-2 text-[9px] font-black uppercase tracking-widest text-white transition-all hover:bg-brand-blue/90"
+                          >
+                            Book this window
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="py-2 text-center text-[10px] font-bold text-brand-navy/30">
+                      No bookable time slots available.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Log in prompt for non-authenticated users */}
+              {!currentUser && isBerthBookable && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 rounded-[24px] border border-brand-blue/10 bg-brand-blue/5 p-6 text-center duration-500 delay-500 fill-mode-both">
+                  <p className="mb-4 text-[11px] font-bold text-brand-navy/70">
+                    Log in to book this berth
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => openAuthDialog()}
+                    className="w-full rounded-2xl bg-brand-blue py-3 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-brand-blue/20 transition-all hover:bg-brand-blue/90"
+                  >
+                    Log In / Sign Up
+                  </button>
+                </div>
+              )}
+
               {isHarborMaster && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 rounded-[24px] border border-brand-blue/10 bg-brand-blue/5 p-5 duration-500 delay-500 fill-mode-both">
                   <div className="mb-3 flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-brand-blue/60">
@@ -605,6 +681,24 @@ export function BerthDetailPanel({
           harborId={harborId}
           onClose={() => setIsInviteOpen(false)}
           onCreated={reloadInvites}
+        />
+      )}
+
+      {selectedWindow && currentUser && (
+        <BookingConfirmationDialog
+          open={Boolean(selectedWindow)}
+          berthId={berthId}
+          berthLabel={berth?.label ?? null}
+          berthLength={berth?.length_m ?? null}
+          berthWidth={berth?.width_m ?? null}
+          berthDepth={berth?.depth_m ?? null}
+          window={selectedWindow}
+          user={currentUser}
+          onClose={() => setSelectedWindow(null)}
+          onBooked={() => {
+            setSelectedWindow(null);
+            closePanel();
+          }}
         />
       )}
 

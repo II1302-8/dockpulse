@@ -19,6 +19,9 @@ export type AuthUser = {
   email_verified?: boolean;
   assigned_berth_id?: string | null;
   harbor_id?: string | null;
+  boat_length_m?: number | null;
+  boat_width_m?: number | null;
+  boat_depth_m?: number | null;
 };
 
 export type AuthState = {

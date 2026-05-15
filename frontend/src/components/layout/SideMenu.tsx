@@ -94,8 +94,8 @@ export function SideMenu({
       {/* Desktop Sidebar (lg and up) */}
       <nav
         className={cn(
-          "hidden lg:flex fixed left-4 top-24 bottom-6 z-[var(--z-nav)] pointer-events-auto flex-col bg-white/70 backdrop-blur-2xl border border-white/60 shadow-deep rounded-[32px] transition-all duration-500 ease-in-out overflow-hidden font-body py-6",
-          isExpanded ? "w-64 px-6" : "w-20 px-4",
+          "hidden lg:flex fixed left-4 top-24 bottom-6 z-[var(--z-nav)] pointer-events-auto flex-col bg-white/70 backdrop-blur-2xl border border-white/60 shadow-deep rounded-[32px] transition-all duration-500 ease-in-out overflow-hidden font-body py-6 px-4",
+          isExpanded ? "w-64" : "w-20",
         )}
       >
         <button
@@ -103,10 +103,7 @@ export function SideMenu({
           onClick={onToggle}
           title={isExpanded ? undefined : "Expand menu"}
           aria-label={isExpanded ? "Close menu" : "Expand menu"}
-          className={cn(
-            "rounded-2xl hover:bg-[#0A2540]/5 text-[#0A2540]/60 transition-all mb-8 flex items-center group w-full h-12 flex-shrink-0",
-            isExpanded ? "px-3 gap-4" : "justify-center",
-          )}
+          className="rounded-2xl hover:bg-[#0A2540]/5 text-[#0A2540]/60 transition-all mb-8 flex items-center group w-full h-12 flex-shrink-0 px-3 gap-4"
         >
           <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
             {isExpanded ? (
@@ -142,8 +139,7 @@ export function SideMenu({
               title={isExpanded ? undefined : item.label}
               aria-label={item.label}
               className={cn(
-                "w-full flex items-center h-12 rounded-2xl transition-all group relative flex-shrink-0",
-                isExpanded ? "px-3 gap-4" : "justify-center",
+                "w-full flex items-center h-12 rounded-2xl transition-all group relative flex-shrink-0 px-3 gap-4",
                 item.active
                   ? "bg-brand-blue text-white shadow-lg shadow-brand-blue/20"
                   : "hover:bg-[#0A2540]/5 text-[#0A2540]/40 hover:text-[#0A2540]/80",
@@ -178,10 +174,7 @@ export function SideMenu({
             to={settingsPath}
             title={isExpanded ? undefined : "Settings"}
             aria-label="Settings"
-            className={cn(
-              "mt-auto flex items-center h-12 rounded-2xl hover:bg-[#0A2540]/5 text-[#0A2540]/40 hover:text-[#0A2540]/80 transition-all group w-full flex-shrink-0",
-              isExpanded ? "px-3 gap-4" : "justify-center",
-            )}
+            className="mt-auto flex items-center h-12 rounded-2xl hover:bg-[#0A2540]/5 text-[#0A2540]/40 hover:text-[#0A2540]/80 transition-all group w-full flex-shrink-0 px-3 gap-4"
           >
             <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
               <Settings

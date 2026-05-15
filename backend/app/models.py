@@ -234,7 +234,7 @@ class Berth(AuditTimestampsMixin, Base):
     events: Mapped[list["Event"]] = relationship(back_populates="berth")
     alerts: Mapped[list["Alert"]] = relationship(back_populates="berth")
     assignment: Mapped["Assignment | None"] = relationship(
-        back_populates="berth", uselist=False
+        back_populates="berth", uselist=False, cascade="all, delete-orphan"
     )
     berth_invites: Mapped[list["BerthInvite"]] = relationship(
         back_populates="berth", cascade="all, delete-orphan"

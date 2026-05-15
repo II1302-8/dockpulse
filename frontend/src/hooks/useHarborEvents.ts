@@ -34,6 +34,10 @@ export function useHarborEvents(
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // serialize so a fresh eventTypes array reference per parent render doesn't
+  // re-fire the effect when contents are unchanged
+  const eventTypesKey = eventTypes ? eventTypes.join(",") : null;
+
   const load = useCallback(async () => {
     if (!harborId || !enabled) return;
 
@@ -43,8 +47,8 @@ export function useHarborEvents(
     const params = new URLSearchParams();
     params.set("limit", String(pageSize));
     params.set("offset", String((page - 1) * pageSize));
-    if (eventTypes) {
-      for (const t of eventTypes) params.append("event_type", t);
+    if (eventTypesKey) {
+      for (const t of eventTypesKey.split(",")) params.append("event_type", t);
     }
 
     try {
@@ -62,7 +66,7 @@ export function useHarborEvents(
     } finally {
       setIsLoading(false);
     }
-  }, [harborId, enabled, page, pageSize, eventTypes]);
+  }, [harborId, enabled, page, pageSize, eventTypesKey]);
 
   useEffect(() => {
     load();

@@ -119,7 +119,9 @@ def test_verify_rejects_missing_uuid(factory_keys):
 
 def test_verify_rejects_hs256_signed_token(factory_keys):
     """A token signed with a symmetric algorithm must not authenticate."""
-    token = jwt.encode(_claim_payload(), "shared-secret", algorithm="HS256")
+    # 32-byte key dodges pyjwt's InsecureKeyLengthWarning; rejection is what
+    # we're asserting, not key strength
+    token = jwt.encode(_claim_payload(), "x" * 32, algorithm="HS256")
 
     with pytest.raises(ClaimError):
         verify_claim_jwt(token)

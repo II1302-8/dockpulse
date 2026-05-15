@@ -14,6 +14,18 @@ logger = logging.getLogger(__name__)
 DisplacementReason = Literal["hm_removed", "reassigned"]
 
 
+def _redact_email(addr: str | list[str]) -> str:
+    # keep first char + domain so ops can tell users apart without retaining
+    # full PII in aggregated log stores
+    if isinstance(addr, list):
+        return ",".join(_redact_email(a) for a in addr)
+    if "@" not in addr:
+        return "***"
+    local, _, domain = addr.partition("@")
+    head = local[0] if local else ""
+    return f"{head}***@{domain}"
+
+
 async def send_email(
     to: str | list[str],
     subject: str,
@@ -25,13 +37,15 @@ async def send_email(
         logger.info(
             "email suppressed (app_env=%s) | to=%s | subject=%s",
             settings.app_env,
-            to,
+            _redact_email(to),
             subject,
         )
         return
     if not settings.resend_api_key:
         logger.warning(
-            "RESEND_API_KEY unset, email suppressed | to=%s | subject=%s", to, subject
+            "RESEND_API_KEY unset, email suppressed | to=%s | subject=%s",
+            _redact_email(to),
+            subject,
         )
         return
     await asyncio.to_thread(_send_sync, settings, to, subject, html, idempotency_key)
@@ -108,7 +122,7 @@ def _send_sync(
         else:
             resend.Emails.send(params)
     except Exception:
-        logger.exception("Failed to send email to %s", to)
+        logger.exception("Failed to send email to %s", _redact_email(to))
 
 
 def queue_displacement_email(

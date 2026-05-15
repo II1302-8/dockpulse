@@ -34,6 +34,10 @@ def upgrade() -> None:
     )
     # invalidate every existing plaintext token; users request a fresh link
     op.execute("UPDATE user_verifications SET used = true WHERE used = false")
+    # purge those now-dead rows: we can't backfill token_hash (no plaintext)
+    # and the upcoming NOT NULL + UNIQUE would fail on null values. nothing
+    # of value is lost; affected users get a fresh link from the in-app banner
+    op.execute("DELETE FROM user_verifications WHERE token_hash IS NULL")
     # drop the plaintext column once invalidation is committed
     op.drop_index(
         "ix_user_verifications_token", table_name="user_verifications"

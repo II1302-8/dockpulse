@@ -8,6 +8,7 @@ from sqlalchemy.exc import IntegrityError
 from app.dependencies import (
     CurrentUserDep,
     SessionDep,
+    harbor_id_from_berth,
     require_harbor_authority,
 )
 from app.models import (
@@ -35,18 +36,6 @@ router = APIRouter(prefix="/api", tags=["bookings"])
 
 # statuses that hold the slot; everything else frees it
 _ACTIVE_STATUSES = ("confirmed",)
-
-
-async def _harbor_id_for_berth(session, berth_id: str) -> str:
-    row = await session.execute(
-        select(Dock.harbor_id)
-        .join(Berth, Berth.dock_id == Dock.dock_id)
-        .where(Berth.berth_id == berth_id)
-    )
-    harbor_id = row.scalar_one_or_none()
-    if harbor_id is None:
-        raise HTTPException(status_code=404, detail="Berth not found")
-    return harbor_id
 
 
 async def _load_booking(session, booking_id: str) -> Booking:
@@ -455,7 +444,7 @@ async def list_berth_bookings(
     from_date: datetime | None = Query(None, alias="from"),  # noqa: B008
     to_date: datetime | None = Query(None, alias="to"),  # noqa: B008
 ):
-    harbor_id = await _harbor_id_for_berth(session, berth_id)
+    harbor_id = await harbor_id_from_berth(berth_id, session)
     is_owner = await _is_spot_owner(session, berth_id, current_user.user_id)
     is_hm = await _is_harbormaster(session, harbor_id, current_user.user_id)
     if not (is_owner or is_hm):
@@ -531,7 +520,7 @@ async def _resolve_role(session, booking: Booking, user_id: str) -> str | None:
     """Returns 'visitor' | 'host' | None for the actor on this booking."""
     if booking.user_id == user_id:
         return "visitor"
-    harbor_id = await _harbor_id_for_berth(session, booking.berth_id)
+    harbor_id = await harbor_id_from_berth(booking.berth_id, session)
     if await _is_harbormaster(session, harbor_id, user_id):
         return "host"
     if await _is_spot_owner(session, booking.berth_id, user_id):

@@ -16,6 +16,7 @@ from app.dependencies import (
     CurrentUserDep,
     HarbormasterForHarborDep,
     SessionDep,
+    harbor_id_from_berth,
 )
 from app.email_templates import render as render_email
 from app.models import Assignment, Berth, BerthInvite, Dock, Harbor, User
@@ -59,16 +60,6 @@ def _to_out(
         status=invite.status,
         expires_at=invite.expires_at,
     )
-
-
-async def _berth_harbor_id(session, berth_id: str) -> str | None:
-    return (
-        await session.execute(
-            select(Dock.harbor_id)
-            .join(Berth, Berth.dock_id == Dock.dock_id)
-            .where(Berth.berth_id == berth_id)
-        )
-    ).scalar_one_or_none()
 
 
 @dataclass(frozen=True)
@@ -143,9 +134,7 @@ async def create_berth_invite(
 ):
     # berth must actually belong to the harbor the hm controls,
     # otherwise an hm of A could invite for a berth in B
-    berth_harbor = await _berth_harbor_id(session, body.berth_id)
-    if berth_harbor is None:
-        raise HTTPException(status_code=404, detail="Berth not found")
+    berth_harbor = await harbor_id_from_berth(body.berth_id, session)
     if berth_harbor != harbor_id:
         raise HTTPException(
             status_code=403, detail="Berth does not belong to this harbor"

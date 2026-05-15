@@ -280,8 +280,8 @@ async def accept_berth_invite(
         )
         .values(
             status="accepted",
-            accepted_by=current_user.user_id,
-            accepted_at=now,
+            resolved_by=current_user.user_id,
+            resolved_at=now,
         )
         .returning(BerthInvite)
     )

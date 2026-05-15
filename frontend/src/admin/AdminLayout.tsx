@@ -44,18 +44,21 @@ export function AdminLayout() {
   const env = detectEnv();
 
   return (
-    <div className="min-h-screen bg-brand-navy/5 flex flex-col">
+    // h-dvh + overflow-hidden on the outer pins the chrome to viewport so the
+    // <main> can be the only scroll surface. globally body has overflow-hidden
+    // (for the dashboard map), so each page must own its scroll
+    <div className="h-dvh bg-brand-navy/5 flex flex-col overflow-hidden">
       <header
         className={cn(
-          "px-6 py-2 text-xs font-black uppercase tracking-widest text-center",
+          "px-6 py-2 text-xs font-black uppercase tracking-widest text-center flex-shrink-0",
           env.bannerClass,
         )}
       >
         DockPulse Admin · {env.label}
       </header>
 
-      <div className="flex flex-1">
-        <nav className="w-56 bg-white border-r border-black/5 p-4 space-y-1">
+      <div className="flex flex-1 min-h-0">
+        <nav className="w-56 bg-white border-r border-black/5 p-4 space-y-1 overflow-y-auto flex-shrink-0">
           {NAV.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
@@ -76,7 +79,7 @@ export function AdminLayout() {
           ))}
         </nav>
 
-        <main className="flex-1 p-8 max-w-6xl">
+        <main className="flex-1 p-8 max-w-6xl overflow-y-auto">
           <Outlet />
         </main>
       </div>

@@ -63,7 +63,8 @@ async def user_managed_harbor_ids(user: User, session: AsyncSession) -> set[str]
 async def user_is_harbormaster(user: User, session: AsyncSession) -> bool:
     row = await session.execute(
         select(UserHarborRole.user_id)
-        .where(UserHarborRole.user_id == user.user_id, UserHarborRole.role == "harbormaster")
+        .where(UserHarborRole.user_id == user.user_id,
+        UserHarborRole.role == "harbormaster")
         .limit(1)
     )
     return row.scalar_one_or_none() is not None

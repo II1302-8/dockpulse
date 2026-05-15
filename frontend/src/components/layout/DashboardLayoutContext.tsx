@@ -65,9 +65,14 @@ export function DashboardLayoutProvider({
 
   const isDesktop = windowWidth >= 1024;
 
-  // close panels when route changes
-  // biome-ignore lint/correctness/useExhaustiveDependencies: pathname is the trigger, body uses none
+  // close panels only when LEAVING the dashboard (going to /settings etc).
+  // arriving on the dashboard preserves panel state set by the sidebar so
+  // clicking a panel from /settings actually opens it after navigation
   useEffect(() => {
+    const segments = location.pathname.split("/").filter(Boolean);
+    // dashboard route is /:marinaSlug (single segment); longer paths are
+    // sub-pages (settings, activity-log, etc) where panels don't render
+    if (segments.length <= 1) return;
     setIsOverviewOpen(false);
     setIsActivityLogOpen(false);
     setIsNodeHealthOpen(false);

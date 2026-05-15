@@ -7,7 +7,7 @@ import {
   Settings,
   X,
 } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { cn } from "../../lib/utils";
 
 interface SideMenuProps {
@@ -36,7 +36,23 @@ export function SideMenu({
   isBookingsActive,
 }: SideMenuProps) {
   const { marinaSlug } = useParams<{ marinaSlug: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const dashboardPath = marinaSlug ? `/${marinaSlug}` : null;
   const settingsPath = marinaSlug ? `/${marinaSlug}/settings` : null;
+  const onDashboard =
+    dashboardPath !== null && location.pathname === dashboardPath;
+
+  // panel toggles only render content on the dashboard route. when invoked
+  // from /settings (or any sub-route), navigate back first so the panel has
+  // somewhere to appear; the toggle still fires and the layout-context's
+  // close-on-leave-only effect preserves the open state across the nav
+  function panelClick(toggle: () => void) {
+    if (!onDashboard && dashboardPath !== null) {
+      navigate(dashboardPath);
+    }
+    toggle();
+  }
 
   const menuItems = [
     {
@@ -44,32 +60,32 @@ export function SideMenu({
       icon: LayoutDashboard,
       label: "Harbor Overview",
       mobileLabel: "Map",
-      active: isOverviewActive,
-      onClick: onOverviewToggle,
+      active: onDashboard && isOverviewActive,
+      onClick: () => panelClick(onOverviewToggle),
     },
     {
       id: "activity",
       icon: Activity,
       label: "Activity Log",
       mobileLabel: "Log",
-      active: isActivityLogActive,
-      onClick: onActivityLogToggle,
+      active: onDashboard && isActivityLogActive,
+      onClick: () => panelClick(onActivityLogToggle),
     },
     {
       id: "nodes",
       icon: HeartPulse,
       label: "Node Health",
       mobileLabel: "Nodes",
-      active: isNodeHealthActive,
-      onClick: onNodeHealthToggle,
+      active: onDashboard && isNodeHealthActive,
+      onClick: () => panelClick(onNodeHealthToggle),
     },
     {
       id: "bookings",
       icon: Calendar,
       label: "Bookings",
       mobileLabel: "Bookings",
-      active: isBookingsActive,
-      onClick: onBookingsToggle,
+      active: onDashboard && isBookingsActive,
+      onClick: () => panelClick(onBookingsToggle),
     },
   ];
 

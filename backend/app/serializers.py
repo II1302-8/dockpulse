@@ -5,7 +5,6 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies import user_is_harbormaster
 from app.models import Assignment, Berth, BerthAvailabilityWindow, User, UserHarborRole
 from app.schemas import AssignmentOut, BerthOut, UserOut
 
@@ -104,12 +103,10 @@ async def to_user_out(
 ) -> UserOut:
     if berth_id is None:
         berth_id = await assigned_berth_id(session, user.user_id)
-    role = "harbormaster" if await user_is_harbormaster(user, session) else "boat_owner"
-    harbor_id = (
-        await first_managed_harbor_id(session, user.user_id)
-        if role == "harbormaster"
-        else None
-    )
+    # one query covers role + managed-harbor: presence of a harbormaster row
+    # is the role bit; its harbor_id is what the FE wants for stable URLs
+    harbor_id = await first_managed_harbor_id(session, user.user_id)
+    role = "harbormaster" if harbor_id is not None else "boat_owner"
     return UserOut.model_validate(
         {
             "user_id": user.user_id,

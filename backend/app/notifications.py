@@ -1,12 +1,17 @@
 import asyncio
 import logging
+from datetime import datetime
+from typing import Literal
 
 import resend
+from fastapi import BackgroundTasks
 
 from app.config import get_settings
 from app.email_templates import render as render_email
 
 logger = logging.getLogger(__name__)
+
+DisplacementReason = Literal["hm_removed", "reassigned"]
 
 
 async def send_email(
@@ -104,6 +109,57 @@ def _send_sync(
             resend.Emails.send(params)
     except Exception:
         logger.exception("Failed to send email to %s", to)
+
+
+def queue_displacement_email(
+    background_tasks: BackgroundTasks,
+    *,
+    tenant_email: str,
+    tenant_user_id: str,
+    berth_id: str,
+    berth_label: str | None,
+    harbor_name: str,
+    reason: DisplacementReason,
+    now: datetime,
+) -> None:
+    """enqueue the 'your berth assignment has ended' email shared by
+    invite-acceptance displacement and harbormaster-driven removal"""
+    label = berth_label or berth_id
+    if reason == "hm_removed":
+        preheader = (
+            f"Your slot at berth {label} ({harbor_name}) was released "
+            "by a harbormaster."
+        )
+        body_paragraphs = [
+            "A harbormaster removed your assignment. The berth is now "
+            "free to be assigned to another owner.",
+            "If you think this was a mistake, contact your harbormaster.",
+        ]
+        key_prefix = "assignment-removed"
+    else:
+        preheader = f"Your slot at berth {label} ({harbor_name}) was reassigned."
+        body_paragraphs = [
+            "A new boat-owner accepted an invite for this berth.",
+            "If you think this was a mistake, contact your harbormaster.",
+        ]
+        key_prefix = "assignment-displaced"
+
+    background_tasks.add_task(
+        send_email,
+        to=tenant_email,
+        subject=f"Your berth assignment at {harbor_name} has ended",
+        html=render_email(
+            title="Berth assignment ended",
+            preheader=preheader,
+            intro=(
+                f"Your assignment to berth {label} at {harbor_name} has been ended."
+            ),
+            body_paragraphs=body_paragraphs,
+        ),
+        idempotency_key=(
+            f"{key_prefix}:{berth_id}:{tenant_user_id}:{int(now.timestamp())}"
+        ),
+    )
 
 
 async def send_push(user_id: str, title: str, body: str) -> None:

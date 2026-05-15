@@ -1,11 +1,13 @@
 import hmac
 import secrets
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
-from sqlalchemy import func, select, update
+from sqlalchemy import delete, func, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from app import notifications
@@ -67,6 +69,62 @@ async def _berth_harbor_id(session, berth_id: str) -> str | None:
             .where(Berth.berth_id == berth_id)
         )
     ).scalar_one_or_none()
+
+
+@dataclass(frozen=True)
+class _DisplacedHolder:
+    email: str
+    user_id: str
+    berth_label: str | None
+    harbor_name: str
+
+
+async def _release_user_prior_assignments(session: AsyncSession, user_id: str) -> None:
+    """drop every assignment held by user, flip those berths back to !is_reserved
+    so they reappear as available. one boat-owner = one berth in v1"""
+    prior_berth_ids = list(
+        (
+            await session.execute(
+                select(Assignment.berth_id).where(Assignment.user_id == user_id)
+            )
+        ).scalars()
+    )
+    if not prior_berth_ids:
+        return
+    await session.execute(delete(Assignment).where(Assignment.user_id == user_id))
+    await session.execute(
+        update(Berth)
+        .where(Berth.berth_id.in_(prior_berth_ids))
+        .values(is_reserved=False)
+    )
+
+
+async def _displace_current_holder(
+    session: AsyncSession, berth_id: str, *, exclude_user_id: str
+) -> _DisplacedHolder | None:
+    """delete any current assignment on berth_id; return the displaced holder
+    so the caller can email them, unless that holder is exclude_user_id (which
+    happens if the accepter already held this same berth)"""
+    row = (
+        await session.execute(
+            select(User.email, User.user_id, Harbor.name, Berth.label)
+            .join(Assignment, Assignment.user_id == User.user_id)
+            .join(Berth, Berth.berth_id == Assignment.berth_id)
+            .join(Dock, Dock.dock_id == Berth.dock_id)
+            .join(Harbor, Harbor.harbor_id == Dock.harbor_id)
+            .where(Assignment.berth_id == berth_id)
+        )
+    ).first()
+    await session.execute(delete(Assignment).where(Assignment.berth_id == berth_id))
+    if row is None or row[1] == exclude_user_id:
+        return None
+    email, user_id, harbor_name, berth_label = row
+    return _DisplacedHolder(
+        email=email,
+        user_id=user_id,
+        berth_label=berth_label,
+        harbor_name=harbor_name,
+    )
 
 
 @router.post(
@@ -216,6 +274,14 @@ async def accept_berth_invite(
     if not _is_active(invite, now):
         raise HTTPException(status_code=410, detail="Invite is no longer valid")
 
+    # serialize berth-level mutations against concurrent accept/remove on the
+    # same berth before any state change runs
+    await session.execute(
+        select(Berth.berth_id)
+        .where(Berth.berth_id == invite.berth_id)
+        .with_for_update()
+    )
+
     claim = await session.execute(
         update(BerthInvite)
         .where(
@@ -234,79 +300,30 @@ async def accept_berth_invite(
     if claimed is None:
         raise HTTPException(status_code=410, detail="Invite is no longer valid")
 
-    # release any prior assignment this user held (one boat-owner = one berth).
-    # flip the prior berth back to !is_reserved so it appears available again
-    prior_berth_ids = list(
-        (
-            await session.execute(
-                select(Assignment.berth_id).where(
-                    Assignment.user_id == current_user.user_id
-                )
-            )
-        ).scalars()
-    )
-    if prior_berth_ids:
-        await session.execute(
-            Assignment.__table__.delete().where(
-                Assignment.user_id == current_user.user_id
-            )
-        )
-        await session.execute(
-            Berth.__table__.update()
-            .where(Berth.berth_id.in_(prior_berth_ids))
-            .values(is_reserved=False)
-        )
-    # clear whoever previously held the target berth, capturing their email +
-    # harbor name so we can notify the displaced tenant the same way
-    # remove_berth_assignment does
-    displaced_row = (
-        await session.execute(
-            select(User.email, User.user_id, Harbor.name, Berth.label)
-            .join(Assignment, Assignment.user_id == User.user_id)
-            .join(Berth, Berth.berth_id == Assignment.berth_id)
-            .join(Dock, Dock.dock_id == Berth.dock_id)
-            .join(Harbor, Harbor.harbor_id == Dock.harbor_id)
-            .where(Assignment.berth_id == claimed.berth_id)
-        )
-    ).first()
-    await session.execute(
-        Assignment.__table__.delete().where(Assignment.berth_id == claimed.berth_id)
+    await _release_user_prior_assignments(session, current_user.user_id)
+    displaced = await _displace_current_holder(
+        session, claimed.berth_id, exclude_user_id=current_user.user_id
     )
     session.add(Assignment(berth_id=claimed.berth_id, user_id=current_user.user_id))
-    if displaced_row is not None and displaced_row[1] != current_user.user_id:
-        displaced_email, displaced_user_id, harbor_name, berth_label = displaced_row
-        label = berth_label or claimed.berth_id
-        background_tasks.add_task(
-            notifications.send_email,
-            to=displaced_email,
-            subject=f"Your berth assignment at {harbor_name} has ended",
-            html=render_email(
-                title="Berth assignment ended",
-                preheader=(
-                    f"Your slot at berth {label} ({harbor_name}) was reassigned."
-                ),
-                intro=(
-                    f"Your assignment to berth {label} at {harbor_name} has been ended."
-                ),
-                body_paragraphs=[
-                    "A new boat-owner accepted an invite for this berth.",
-                    "If you think this was a mistake, contact your harbormaster.",
-                ],
-            ),
-            idempotency_key=(
-                f"assignment-displaced:{claimed.berth_id}:{displaced_user_id}:"
-                f"{int(now.timestamp())}"
-            ),
-        )
     # owned berths are reserved-for-owner by default; the owner punches holes
     # via BerthAvailabilityWindow in the settings page when they're away
     await session.execute(
-        Berth.__table__.update()
-        .where(Berth.berth_id == claimed.berth_id)
-        .values(is_reserved=True)
+        update(Berth).where(Berth.berth_id == claimed.berth_id).values(is_reserved=True)
     )
     await session.commit()
     await session.refresh(claimed)
+
+    if displaced is not None:
+        notifications.queue_displacement_email(
+            background_tasks,
+            tenant_email=displaced.email,
+            tenant_user_id=displaced.user_id,
+            berth_id=claimed.berth_id,
+            berth_label=displaced.berth_label,
+            harbor_name=displaced.harbor_name,
+            reason="reassigned",
+            now=now,
+        )
     return _to_out(claimed)
 
 

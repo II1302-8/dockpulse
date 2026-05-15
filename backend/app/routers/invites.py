@@ -379,7 +379,9 @@ async def delete_berth_invite(
     ).scalar_one_or_none()
     if invite is None:
         raise HTTPException(status_code=404, detail="Invite not found")
-    await session.delete(invite)
+    if invite.status != "pending":
+        raise HTTPException(status_code=409, detail="Only pending invites can be revoked")
+    invite.status = "revoked"
     await session.commit()
 
 

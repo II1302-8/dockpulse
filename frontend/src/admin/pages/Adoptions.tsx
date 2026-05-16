@@ -4,6 +4,9 @@ import { Button } from "../components/Button";
 import { PageHeader } from "../components/PageHeader";
 import { Table } from "../components/Table";
 import { fmtRelative } from "../format";
+import { useAdminPoll } from "../hooks/useAdminPoll";
+
+const ADOPTIONS_POLL_MS = 5_000;
 
 interface Adoption {
   request_id: string;
@@ -48,6 +51,9 @@ export function AdoptionsPage() {
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  // adoptions churn every few seconds during a flash session
+  useAdminPoll(refresh, ADOPTIONS_POLL_MS);
 
   async function cancel(requestId: string) {
     if (!window.confirm(`Cancel pending adoption ${requestId}?`)) return;

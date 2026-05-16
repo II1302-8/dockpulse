@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { fmtDateTime } from "../../lib/date";
 import { AdminApiError, adminGet } from "../api";
+import { useAdminPoll } from "../hooks/useAdminPoll";
 
 interface OpsHealth {
   mqtt_connected: boolean;
@@ -42,30 +43,33 @@ interface Snapshot {
   };
 }
 
+const SNAPSHOT_POLL_MS = 10_000;
+
 export function SnapshotPage() {
   const [data, setData] = useState<Snapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    adminGet<Snapshot>("/snapshot")
-      .then((d) => {
-        if (!cancelled) setData(d);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setError(
-          err instanceof AdminApiError
-            ? `${err.status} — ${err.message}`
-            : err instanceof Error
-              ? err.message
-              : "Failed to load",
-        );
-      });
-    return () => {
-      cancelled = true;
-    };
+  const refresh = useCallback(async () => {
+    try {
+      const d = await adminGet<Snapshot>("/snapshot");
+      setData(d);
+      setError(null);
+    } catch (err) {
+      setError(
+        err instanceof AdminApiError
+          ? `${err.status} — ${err.message}`
+          : err instanceof Error
+            ? err.message
+            : "Failed to load",
+      );
+    }
   }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  useAdminPoll(refresh, SNAPSHOT_POLL_MS);
 
   if (error) {
     return (

@@ -11,6 +11,7 @@ interface Node {
   gateway_id: string;
   status: string;
   adopted_at: string | null;
+  mesh_orphan: boolean;
 }
 
 interface Snapshot {
@@ -123,12 +124,28 @@ export function NodesPage() {
           head={["Node", "Berth", "Gateway", "Status", "Adopted", ""]}
           rows={nodes.map((n) => ({
             key: n.node_id,
-            tone: n.status === "decommissioned" ? "warn" : "default",
+            tone: n.mesh_orphan
+              ? "danger"
+              : n.status === "decommissioned"
+                ? "warn"
+                : "default",
             cells: [
               n.node_id,
               n.berth_id,
               n.gateway_id,
-              n.status,
+              n.mesh_orphan ? (
+                <span key="status" className="flex items-center gap-2">
+                  {n.status}
+                  <span
+                    className="rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-red-700"
+                    title="Decommission completed locally but the node never ack'd the Config Node Reset. Hard-reset the physical sensor to clear its mesh state."
+                  >
+                    mesh-orphan
+                  </span>
+                </span>
+              ) : (
+                n.status
+              ),
               fmtRelative(n.adopted_at),
               n.status === "decommissioned" ? (
                 <Button

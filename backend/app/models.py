@@ -400,6 +400,12 @@ class Node(AuditTimestampsMixin, Base):
     adopted_by_user_id: Mapped[str | None] = mapped_column(
         ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True, index=True
     )
+    # set when a decommission completed locally on the gateway but the node
+    # never ack'd the Config Node Reset (status=orphan from gateway). the
+    # physical sensor may still hold mesh keys; operator should hard-reset it
+    mesh_orphan: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false"), default=False
+    )
 
 
 class AdoptionRequest(Base):

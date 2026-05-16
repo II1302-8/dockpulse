@@ -27,6 +27,7 @@ class SnapshotNode(BaseModel):
     gateway_id: str
     status: str = Field(examples=["provisioned"])
     adopted_at: datetime | None = None
+    mesh_orphan: bool = False
 
 
 class SnapshotPending(BaseModel):
@@ -109,6 +110,7 @@ async def snapshot(session: SessionDep) -> dict:
                 "gateway_id": n.gateway_id,
                 "status": n.status,
                 "adopted_at": n.adopted_at.isoformat() if n.adopted_at else None,
+                "mesh_orphan": n.mesh_orphan,
             }
             for n in nodes
         ],

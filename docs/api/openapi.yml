@@ -1926,6 +1926,10 @@ components:
           - type: 'null'
           examples: *id038
           title: Last Seen
+        mesh_orphan:
+          default: false
+          title: Mesh Orphan
+          type: boolean
         mesh_unicast_addr:
           examples:
           - '0x0042'
@@ -2000,6 +2004,10 @@ components:
           - type: 'null'
           examples: *id040
           title: Last Seen
+        mesh_orphan:
+          default: false
+          title: Mesh Orphan
+          type: boolean
         mesh_unicast_addr:
           examples:
           - '0x0042'
@@ -2221,6 +2229,10 @@ components:
         gateway_id:
           title: Gateway Id
           type: string
+        mesh_orphan:
+          default: false
+          title: Mesh Orphan
+          type: boolean
         node_id:
           title: Node Id
           type: string

@@ -55,6 +55,7 @@ def _to_health_out(node: Node, berth: Berth | None, now: datetime) -> dict:
         "health": _derive_health(node.status, last_seen, now),
         "battery_pct": battery_pct,
         "last_seen": last_seen,
+        "mesh_orphan": node.mesh_orphan,
     }
 
 

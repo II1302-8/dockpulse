@@ -319,6 +319,9 @@ class NodeOut(_BaseSchema):
     mesh_unicast_addr: str = Field(examples=["0x0042"])
     status: NodeStatus
     adopted_at: datetime = Field(examples=["2026-05-03T14:00:00Z"])
+    # true after a decom where the node didn't ack the Config Node Reset.
+    # operator hint to hard-reset the physical device
+    mesh_orphan: bool = False
 
 
 class NodeHealthOut(_BaseSchema):
@@ -331,6 +334,7 @@ class NodeHealthOut(_BaseSchema):
     health: NodeHealth
     battery_pct: int | None = Field(default=None, examples=[87])
     last_seen: datetime | None = Field(default=None, examples=["2026-05-03T14:30:00Z"])
+    mesh_orphan: bool = False
 
 
 class NodeDetailOut(NodeHealthOut):

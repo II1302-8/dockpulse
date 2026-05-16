@@ -2636,6 +2636,11 @@ export interface components {
              */
             last_seen?: string | null;
             /**
+             * Mesh Orphan
+             * @default false
+             */
+            mesh_orphan: boolean;
+            /**
              * Mesh Unicast Addr
              * @example 0x0042
              */
@@ -2689,6 +2694,11 @@ export interface components {
              * @example 2026-05-03T14:30:00Z
              */
             last_seen?: string | null;
+            /**
+             * Mesh Orphan
+             * @default false
+             */
+            mesh_orphan: boolean;
             /**
              * Mesh Unicast Addr
              * @example 0x0042
@@ -2822,6 +2832,11 @@ export interface components {
             berth_id: string;
             /** Gateway Id */
             gateway_id: string;
+            /**
+             * Mesh Orphan
+             * @default false
+             */
+            mesh_orphan: boolean;
             /** Node Id */
             node_id: string;
             /**

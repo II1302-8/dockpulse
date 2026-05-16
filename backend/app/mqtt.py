@@ -212,7 +212,7 @@ async def _handle_decommission_resp(
     request_id = payload.get("req_id")
     status = payload.get("status")
     node_id = payload.get("node_id")
-    if not isinstance(request_id, str) or status not in ("ok", "err"):
+    if not isinstance(request_id, str) or status not in ("ok", "orphan", "err"):
         logger.warning("invalid decommission/resp payload: %s", payload)
         return
 
@@ -223,6 +223,25 @@ async def _handle_decommission_resp(
             node_id,
             gateway_id,
         )
+        return
+
+    if status == "orphan":
+        attempts = payload.get("attempts")
+        logger.warning(
+            "decommission/resp orphan req=%s node=%s gw=%s attempts=%s "
+            "(node never ack'd Config Node Reset; may still be on mesh)",
+            request_id,
+            node_id,
+            gateway_id,
+            attempts,
+        )
+        # decom status stays "decommissioned" in DB (slot is free for re-adopt)
+        # but flag the node so admin UI can prompt for a physical reset
+        if isinstance(node_id, str):
+            node = await session.get(Node, node_id)
+            if node is not None and node.gateway_id == gateway_id:
+                node.mesh_orphan = True
+                await session.commit()
         return
 
     code = payload.get("code", "unknown")

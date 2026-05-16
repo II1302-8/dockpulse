@@ -27,6 +27,7 @@ async def adoption_setup(
         mesh_uuid="abcd" * 8,
         serial_number="DP-N-1",
         claim_jti="jti-1",
+        node_id="node-req-1",
         gateway_id="gw1",
         berth_id="b1",
         expires_at=now,
@@ -69,6 +70,9 @@ async def test_provision_resp_ok_creates_node_and_finalizes_request(
     node = (
         await session.execute(select(Node).where(Node.berth_id == "b1"))
     ).scalar_one()
+    # Node.node_id is the pre-minted request.node_id, so the gateway's
+    # persisted copy and the DB row line up without a round-trip
+    assert node.node_id == "node-req-1"
     assert node.mesh_uuid == "abcd" * 8
     assert node.serial_number == "DP-N-1"
     assert node.status == "provisioned"

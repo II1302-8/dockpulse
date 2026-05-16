@@ -430,6 +430,10 @@ class AdoptionRequest(Base):
     mesh_uuid: Mapped[str] = mapped_column(String, nullable=False)
     serial_number: Mapped[str] = mapped_column(String, nullable=False)
     claim_jti: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    # pre-minted Node.node_id so the gateway can persist it from provision/req
+    # and echo in status; finalize.complete_adoption_ok creates the Node row
+    # with this exact id
+    node_id: Mapped[str] = mapped_column(String, nullable=False)
     gateway_id: Mapped[str] = mapped_column(
         ForeignKey("gateways.gateway_id"), nullable=False, index=True
     )

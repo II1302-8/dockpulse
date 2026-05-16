@@ -164,6 +164,7 @@ async def create_adoption(
                 oob=oob,
                 ttl_s=int(ttl.total_seconds()),
                 berth_id=body.berth_id,
+                node_id=existing.node_id,
             )
         except (MqttNotConnectedError, aiomqtt.MqttError) as exc:
             raise HTTPException(
@@ -178,6 +179,7 @@ async def create_adoption(
         mesh_uuid=claim.mesh_uuid,
         serial_number=claim.serial_number,
         claim_jti=claim.jti,
+        node_id=str(uuid.uuid4()),
         gateway_id=body.gateway_id,
         berth_id=body.berth_id,
         expires_at=now + ttl,
@@ -204,6 +206,7 @@ async def create_adoption(
             oob=oob,
             ttl_s=int(ttl.total_seconds()),
             berth_id=body.berth_id,
+            node_id=request.node_id,
         )
     except (MqttNotConnectedError, aiomqtt.MqttError) as exc:
         # broker unreachable, sweeper will expire the pending row at TTL

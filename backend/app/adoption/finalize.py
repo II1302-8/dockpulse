@@ -5,7 +5,6 @@ a provisioning attempt
 """
 
 import logging
-import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy import select
@@ -75,8 +74,9 @@ async def complete_adoption_ok(
         await session.execute(select(Node).where(Node.mesh_uuid == request.mesh_uuid))
     ).scalar_one_or_none()
     if existing is None:
+        # node_id pre-minted at provision/req so gateway already persists it
         node = Node(
-            node_id=str(uuid.uuid4()),
+            node_id=request.node_id,
             mesh_uuid=request.mesh_uuid,
             serial_number=request.serial_number,
             berth_id=request.berth_id,

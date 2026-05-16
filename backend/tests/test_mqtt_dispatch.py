@@ -113,6 +113,7 @@ async def test_publish_provision_req_raises_when_disconnected():
             oob="ff" * 16,
             ttl_s=60,
             berth_id="berth-1",
+            node_id="node-1",
         )
 
 

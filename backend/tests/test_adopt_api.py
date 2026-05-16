@@ -431,6 +431,7 @@ async def test_get_adoption_requires_harbormaster(
             mesh_uuid="dddd" * 8,
             serial_number="DP-N-X",
             claim_jti="x-jti",
+            node_id="node-req-x",
             gateway_id="gw1",
             berth_id="b1",
             expires_at=now + timedelta(seconds=60),

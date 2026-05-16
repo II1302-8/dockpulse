@@ -23,6 +23,7 @@ def _make_request(
         mesh_uuid=mesh_uuid,
         serial_number=f"sn-{request_id}",
         claim_jti=f"jti-{request_id}",
+        node_id=f"node-{request_id}",
         gateway_id=gateway_id,
         berth_id="b1",
         expires_at=now + expires_in,

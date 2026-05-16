@@ -9,8 +9,9 @@ backend can ship it to the gateway in provision/req. Firmware persists
 the value and echoes it back in every status/heartbeat, restoring the
 identity check that was disabled in the prior hotfix.
 
-Pre-alpha demo: no live rows to backfill, so the column is added NOT
-NULL straight away.
+Add nullable, backfill existing rows with a fresh uuid (the gateway
+never received them so the value is purely a placeholder), then promote
+to NOT NULL. Postgres 13+ has gen_random_uuid() built in, no pgcrypto.
 """
 
 from collections.abc import Sequence
@@ -28,8 +29,13 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     op.add_column(
         "adoption_requests",
-        sa.Column("node_id", sa.String(), nullable=False),
+        sa.Column("node_id", sa.String(), nullable=True),
     )
+    op.execute(
+        "UPDATE adoption_requests SET node_id = gen_random_uuid()::text "
+        "WHERE node_id IS NULL"
+    )
+    op.alter_column("adoption_requests", "node_id", nullable=False)
 
 
 def downgrade() -> None:

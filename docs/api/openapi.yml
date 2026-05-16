@@ -1554,8 +1554,8 @@ components:
           title: Claim Exp
           type: integer
         claim_jti:
-          maxLength: 36
-          minLength: 36
+          maxLength: 64
+          minLength: 8
           title: Claim Jti
           type: string
         mesh_uuid:

@@ -26,7 +26,8 @@ class FactoryDeviceIn(BaseModel):
     serial_number: str = Field(min_length=1, max_length=64)
     mesh_uuid: str = Field(min_length=32, max_length=32, pattern="^[0-9a-f]{32}$")
     oob_hex: str = Field(min_length=32, max_length=32, pattern="^[0-9a-f]{32}$")
-    claim_jti: str = Field(min_length=36, max_length=36)
+    # 16-hex (uppercase) is the current factory format, 36-char UUID legacy
+    claim_jti: str = Field(min_length=8, max_length=64)
     claim_exp: int = Field(gt=0, description="unix seconds")
 
 

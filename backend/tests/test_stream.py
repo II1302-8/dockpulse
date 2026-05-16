@@ -109,14 +109,16 @@ async def test_unsubscribe_after_context_exit(session, seeded_berth):
     assert broadcaster.subscriber_count() == 0
 
 
-async def test_berth_stream_first_frame_is_snapshot(session, seeded_berth):
+async def test_berth_stream_first_frame_is_snapshot(
+    session, seeded_berth, harbor_master
+):
     from app.routers.berths import stream_berths
 
     class _Req:
         async def is_disconnected(self):
             return False
 
-    response = await stream_berths(_Req(), session, harbor_id="h1")  # type: ignore[arg-type]
+    response = await stream_berths(_Req(), session, harbor_master, harbor_id="h1")  # type: ignore[arg-type]
     gen = response.body_iterator
     try:
         frame = await asyncio.wait_for(gen.__anext__(), timeout=1.0)
@@ -128,7 +130,30 @@ async def test_berth_stream_first_frame_is_snapshot(session, seeded_berth):
         await gen.aclose()
 
 
-async def test_berth_stream_loop_drops_non_berth_events(session, seeded_berth):
+async def test_berth_stream_redacts_telemetry_for_anon(session, seeded_berth):
+    from app.routers.berths import stream_berths
+
+    class _Req:
+        async def is_disconnected(self):
+            return False
+
+    # anonymous (current_user=None) gets sensor_raw/battery_pct/assignment nulled
+    response = await stream_berths(_Req(), session, None, harbor_id="h1")  # type: ignore[arg-type]
+    gen = response.body_iterator
+    try:
+        frame = await asyncio.wait_for(gen.__anext__(), timeout=1.0)
+        payload = json.loads(frame["data"])
+        for b in payload["berths"]:
+            assert b["sensor_raw"] is None
+            assert b["battery_pct"] is None
+            assert b["assignment"] is None
+    finally:
+        await gen.aclose()
+
+
+async def test_berth_stream_loop_drops_non_berth_events(
+    session, seeded_berth, harbor_master
+):
     # broadcaster fans every event to every queue, route must drop non-berth
     from app.routers.berths import stream_berths
 
@@ -136,7 +161,7 @@ async def test_berth_stream_loop_drops_non_berth_events(session, seeded_berth):
         async def is_disconnected(self):
             return False
 
-    response = await stream_berths(_Req(), session, harbor_id="h1")  # type: ignore[arg-type]
+    response = await stream_berths(_Req(), session, harbor_master, harbor_id="h1")  # type: ignore[arg-type]
     gen = response.body_iterator
 
     snapshot = await asyncio.wait_for(gen.__anext__(), timeout=1.0)

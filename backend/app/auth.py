@@ -165,6 +165,29 @@ async def get_current_user(
     return user
 
 
+async def get_optional_user(
+    session: Annotated[AsyncSession, Depends(get_session)],
+    cookie_token: Annotated[str | None, Depends(_cookie_scheme)] = None,
+) -> User | None:
+    """Best-effort variant of get_current_user — returns None when no
+    cookie / bad cookie / no matching user. Use on endpoints that have
+    a public read but want to upgrade the response when the caller is
+    logged in (e.g. strip telemetry/PII for anonymous viewers).
+    """
+    if not cookie_token:
+        return None
+    try:
+        payload = _decode_access(cookie_token)
+        user_id: str = payload["sub"]
+        token_version: int = payload["ver"]
+    except (HTTPException, KeyError):
+        return None
+    user = await session.get(User, user_id)
+    if user is None or user.token_version != token_version:
+        return None
+    return user
+
+
 async def require_csrf(request: Request) -> None:
     # raw header/cookie reads so this dep doesn't pollute openapi parameters
     if request.method in {"GET", "HEAD", "OPTIONS"}:

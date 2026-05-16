@@ -37,13 +37,22 @@ def _is_available_now(berth: Berth, has_active_window: bool) -> bool:
     return not (berth.is_reserved and not has_active_window)
 
 
-def serialize_berth(berth: Berth, *, has_active_window: bool) -> BerthOut:
+def serialize_berth(
+    berth: Berth, *, has_active_window: bool, include_member_fields: bool = True
+) -> BerthOut:
+    # member-only fields: telemetry leaks operational state (battery, raw
+    # sensor distance) and assignment.user_id is PII. anonymous callers
+    # still get status/is_available_now/dims so visitor browse works
     assignment = (
         AssignmentOut(
             berth_id=berth.assignment.berth_id,
             user_id=berth.assignment.user_id,
         )
-        if "assignment" in berth.__dict__ and berth.assignment is not None
+        if (
+            include_member_fields
+            and "assignment" in berth.__dict__
+            and berth.assignment is not None
+        )
         else None
     )
     return BerthOut(
@@ -56,18 +65,28 @@ def serialize_berth(berth: Berth, *, has_active_window: bool) -> BerthOut:
         status=berth.status,  # type: ignore[arg-type]
         is_reserved=berth.is_reserved,
         is_available_now=_is_available_now(berth, has_active_window),
-        sensor_raw=berth.sensor_raw,
-        battery_pct=berth.battery_pct,
+        sensor_raw=berth.sensor_raw if include_member_fields else None,
+        battery_pct=berth.battery_pct if include_member_fields else None,
         last_updated=berth.last_updated,
         assignment=assignment,
     )
 
 
 async def serialize_berths(
-    session: AsyncSession, berths: list[Berth]
+    session: AsyncSession,
+    berths: list[Berth],
+    *,
+    include_member_fields: bool = True,
 ) -> list[BerthOut]:
     active = await berths_with_active_windows(session, [b.berth_id for b in berths])
-    return [serialize_berth(b, has_active_window=b.berth_id in active) for b in berths]
+    return [
+        serialize_berth(
+            b,
+            has_active_window=b.berth_id in active,
+            include_member_fields=include_member_fields,
+        )
+        for b in berths
+    ]
 
 
 async def assigned_berth_id(session: AsyncSession, user_id: str) -> str | None:

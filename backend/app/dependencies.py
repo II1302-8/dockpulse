@@ -4,11 +4,13 @@ from fastapi import Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth import get_current_user
+from app.auth import get_current_user, get_optional_user
 from app.db import get_session
 from app.models import (
     AdoptionRequest,
+    Assignment,
     Berth,
+    Booking,
     Dock,
     Gateway,
     Node,
@@ -18,6 +20,7 @@ from app.models import (
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 CurrentUserDep = Annotated[User, Depends(get_current_user)]
+OptionalUserDep = Annotated[User | None, Depends(get_optional_user)]
 
 
 async def require_harbor_authority(
@@ -33,6 +36,45 @@ async def require_harbor_authority(
     if row.scalar_one_or_none() is None:
         raise HTTPException(status_code=403, detail="Not authorized for this harbor")
     return user
+
+
+async def is_harbor_member(
+    user: User | None, harbor_id: str, session: AsyncSession
+) -> bool:
+    """Membership = harbormaster role, OR Assignment in the harbor, OR
+    Booking (any status) in the harbor. Used to decide whether to expose
+    telemetry/PII (sensor_raw, battery_pct, assignment user_id) on the
+    otherwise-public berth read paths. Anonymous callers always see the
+    redacted view.
+    """
+    if user is None:
+        return False
+    hm = await session.execute(
+        select(UserHarborRole.user_id).where(
+            UserHarborRole.user_id == user.user_id,
+            UserHarborRole.harbor_id == harbor_id,
+            UserHarborRole.role == "harbormaster",
+        )
+    )
+    if hm.scalar_one_or_none() is not None:
+        return True
+    assigned = await session.execute(
+        select(Assignment.berth_id)
+        .join(Berth, Berth.berth_id == Assignment.berth_id)
+        .join(Dock, Dock.dock_id == Berth.dock_id)
+        .where(Assignment.user_id == user.user_id, Dock.harbor_id == harbor_id)
+        .limit(1)
+    )
+    if assigned.scalar_one_or_none() is not None:
+        return True
+    booked = await session.execute(
+        select(Booking.booking_id)
+        .join(Berth, Berth.berth_id == Booking.berth_id)
+        .join(Dock, Dock.dock_id == Berth.dock_id)
+        .where(Booking.user_id == user.user_id, Dock.harbor_id == harbor_id)
+        .limit(1)
+    )
+    return booked.scalar_one_or_none() is not None
 
 
 async def require_any_harbormaster(user: CurrentUserDep, session: SessionDep) -> User:

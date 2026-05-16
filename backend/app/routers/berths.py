@@ -12,7 +12,9 @@ from app import broadcaster, notifications
 from app.dependencies import (
     CurrentUserDep,
     HarbormasterForBerthDep,
+    OptionalUserDep,
     SessionDep,
+    is_harbor_member,
 )
 from app.models import (
     Assignment,
@@ -47,6 +49,7 @@ SSE_PING_SECONDS = 15
 )
 async def list_berths(
     session: SessionDep,
+    current_user: OptionalUserDep,
     harbor_id: str | None = Query(
         None, description="harbor scope (required if dock_id omitted)"
     ),
@@ -73,7 +76,22 @@ async def list_berths(
     if status:
         stmt = stmt.where(Berth.status == status)
     result = await session.execute(stmt)
-    return await serialize_berths(session, list(result.scalars().all()))
+    berths = list(result.scalars().all())
+    # resolve harbor_id from dock_id when caller only passed the latter so the
+    # membership check has something to key on
+    effective_harbor_id = harbor_id
+    if effective_harbor_id is None and berths:
+        effective_harbor_id = next(
+            (b.dock.harbor_id for b in berths if "dock" in b.__dict__),
+            None,
+        )
+        if effective_harbor_id is None:
+            dock_row = await session.execute(
+                select(Dock.harbor_id).where(Dock.dock_id == dock_id)
+            )
+            effective_harbor_id = dock_row.scalar_one_or_none()
+    is_member = await is_harbor_member(current_user, effective_harbor_id or "", session)
+    return await serialize_berths(session, berths, include_member_fields=is_member)
 
 
 @router.get(
@@ -101,8 +119,13 @@ async def list_berths(
 async def stream_berths(
     request: Request,
     session: SessionDep,
+    current_user: OptionalUserDep,
     harbor_id: str = Query(..., description="harbor scope (required)"),
 ):
+    # public read so visitors can browse availability before logging in.
+    # anonymous + non-member callers get a redacted payload with telemetry
+    # (battery, sensor_raw) and assignment user_id stripped
+    is_member = await is_harbor_member(current_user, harbor_id, session)
     # scope snapshot + live frames to one harbor so visitors can't subscribe
     # to other tenants' berth updates
     stmt = (
@@ -122,7 +145,9 @@ async def stream_berths(
                 .options(selectinload(Berth.assignment))
             )
             berths = list((await session.execute(stmt2)).scalars().all())
-            out = await serialize_berths(session, berths)
+            out = await serialize_berths(
+                session, berths, include_member_fields=is_member
+            )
             snapshot = BerthSnapshotEvent(berths=out).model_dump(mode="json")
             yield {"event": snapshot["type"], "data": json.dumps(snapshot)}
             while True:
@@ -137,7 +162,21 @@ async def stream_berths(
                     continue
                 if event.get("berth", {}).get("berth_id") not in scoped_ids:
                     continue
-                yield {"event": event["type"], "data": json.dumps(event)}
+                if not is_member:
+                    # strip telemetry/PII before sending to anon viewers.
+                    # `event["berth"]` is the already-serialized BerthOut dict
+                    # produced by publish_berth_update with member fields set;
+                    # null them out per-event so we don't leak via deltas
+                    redacted = dict(event)
+                    redacted["berth"] = {
+                        **event["berth"],
+                        "sensor_raw": None,
+                        "battery_pct": None,
+                        "assignment": None,
+                    }
+                    yield {"event": redacted["type"], "data": json.dumps(redacted)}
+                else:
+                    yield {"event": event["type"], "data": json.dumps(event)}
 
     return EventSourceResponse(event_gen(), ping=SSE_PING_SECONDS)
 

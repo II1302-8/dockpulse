@@ -4767,6 +4767,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
+      security:
+      - APIKeyCookie: []
       summary: List berths in a single harbor
       tags:
       - berths
@@ -4882,6 +4884,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
+      security:
+      - APIKeyCookie: []
       summary: Subscribe to live berth updates via Server-Sent Events
       tags:
       - berths

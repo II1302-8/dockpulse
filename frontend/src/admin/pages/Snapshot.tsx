@@ -1,6 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { fmtDateTime } from "../../lib/date";
 import { AdminApiError, adminGet } from "../api";
+
+interface OpsHealth {
+  mqtt_connected: boolean;
+  sse_subscribers: number;
+  pending_adoptions: number;
+  pending_gateways: number;
+  alerts_last_24h: number;
+  stale_berths: number;
+  checked_at: string;
+}
+
+const OPS_POLL_MS = 10_000;
 
 interface Snapshot {
   gateways: Array<{
@@ -70,6 +82,8 @@ export function SnapshotPage() {
     <div className="space-y-6">
       <h1 className="text-3xl font-black text-brand-navy">Snapshot</h1>
 
+      <OpsHealthCard />
+
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Stat
           label="Gateways online"
@@ -135,6 +149,87 @@ export function SnapshotPage() {
         )}
       </Section>
     </div>
+  );
+}
+
+function OpsHealthCard() {
+  const [health, setHealth] = useState<OpsHealth | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const cancelRef = useRef(false);
+
+  useEffect(() => {
+    cancelRef.current = false;
+    async function tick() {
+      try {
+        const data = await adminGet<OpsHealth>("/ops");
+        if (!cancelRef.current) {
+          setHealth(data);
+          setErr(null);
+        }
+      } catch (e) {
+        if (!cancelRef.current) {
+          setErr(e instanceof Error ? e.message : "ops fetch failed");
+        }
+      }
+    }
+    tick();
+    const id = setInterval(tick, OPS_POLL_MS);
+    return () => {
+      cancelRef.current = true;
+      clearInterval(id);
+    };
+  }, []);
+
+  if (err) {
+    return (
+      <div className="p-4 rounded-2xl bg-red-500/5 border border-red-500/20 text-red-700 text-sm">
+        Ops health unavailable: {err}
+      </div>
+    );
+  }
+  if (!health) {
+    return (
+      <div className="text-brand-navy/50 text-sm">Loading ops health…</div>
+    );
+  }
+
+  return (
+    <section>
+      <h2 className="text-sm font-black uppercase tracking-widest text-brand-navy/60 mb-2 flex items-center gap-2">
+        Live ops health
+        <span className="text-[10px] font-normal normal-case tracking-normal text-brand-navy/40">
+          updated {fmtDateTime(health.checked_at)}
+        </span>
+      </h2>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <Stat
+          label="MQTT broker"
+          value={health.mqtt_connected ? "online" : "offline"}
+          tone={health.mqtt_connected ? "ok" : "warn"}
+        />
+        <Stat label="SSE clients" value={health.sse_subscribers} />
+        <Stat
+          label="Adoptions pending"
+          value={health.pending_adoptions}
+          tone={health.pending_adoptions > 5 ? "warn" : "ok"}
+        />
+        <Stat
+          label="Pending gateways"
+          value={health.pending_gateways}
+          tone={health.pending_gateways > 0 ? "warn" : "ok"}
+        />
+        <Stat
+          label="Alerts (24h)"
+          value={health.alerts_last_24h}
+          tone={health.alerts_last_24h > 0 ? "warn" : "ok"}
+        />
+        <Stat
+          label="Stale berths"
+          value={health.stale_berths}
+          tone={health.stale_berths > 0 ? "warn" : "ok"}
+        />
+      </div>
+    </section>
   );
 }
 

@@ -413,6 +413,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/ops": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Live broker/SSE/backlog counters for the ops dashboard */
+        get: operations["adminOpsHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/snapshot": {
         parameters: {
             query?: never;
@@ -2809,6 +2826,26 @@ export interface components {
             /** Notify Departure */
             notify_departure?: boolean | null;
         };
+        /** OpsHealth */
+        OpsHealth: {
+            /** Alerts Last 24H */
+            alerts_last_24h: number;
+            /**
+             * Checked At
+             * Format: date-time
+             */
+            checked_at: string;
+            /** Mqtt Connected */
+            mqtt_connected: boolean;
+            /** Pending Adoptions */
+            pending_adoptions: number;
+            /** Pending Gateways */
+            pending_gateways: number;
+            /** Sse Subscribers */
+            sse_subscribers: number;
+            /** Stale Berths */
+            stale_berths: number;
+        };
         /** PasswordResetConfirm */
         PasswordResetConfirm: {
             /** Invite Token */
@@ -4296,6 +4333,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ResendDecommissionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminOpsHealth: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpsHealth"];
                 };
             };
             /** @description Validation Error */

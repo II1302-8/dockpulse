@@ -18,6 +18,7 @@ from app.routers.admin.gateways import router as gateways_router
 from app.routers.admin.harbors import router as harbors_router
 from app.routers.admin.invites import router as invites_router
 from app.routers.admin.nodes import router as nodes_router
+from app.routers.admin.ops import router as ops_router
 from app.routers.admin.snapshot import router as snapshot_router
 from app.routers.admin.users import router as users_router
 
@@ -28,6 +29,7 @@ router = APIRouter(
 )
 
 for _sub in (
+    ops_router,
     snapshot_router,
     harbors_router,
     docks_router,

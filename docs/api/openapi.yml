@@ -2138,6 +2138,40 @@ components:
           title: Notify Departure
       title: NotificationPrefsPatch
       type: object
+    OpsHealth:
+      properties:
+        alerts_last_24h:
+          title: Alerts Last 24H
+          type: integer
+        checked_at:
+          format: date-time
+          title: Checked At
+          type: string
+        mqtt_connected:
+          title: Mqtt Connected
+          type: boolean
+        pending_adoptions:
+          title: Pending Adoptions
+          type: integer
+        pending_gateways:
+          title: Pending Gateways
+          type: integer
+        sse_subscribers:
+          title: Sse Subscribers
+          type: integer
+        stale_berths:
+          title: Stale Berths
+          type: integer
+      required:
+      - mqtt_connected
+      - sse_subscribers
+      - pending_adoptions
+      - pending_gateways
+      - alerts_last_24h
+      - stale_berths
+      - checked_at
+      title: OpsHealth
+      type: object
     PasswordResetConfirm:
       properties:
         invite_token:
@@ -4053,6 +4087,34 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       summary: Resend Decommission
+      tags:
+      - admin
+  /api/admin/ops:
+    get:
+      operationId: adminOpsHealth
+      parameters:
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpsHealth'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Live broker/SSE/backlog counters for the ops dashboard
       tags:
       - admin
   /api/admin/snapshot:

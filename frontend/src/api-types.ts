@@ -4898,10 +4898,10 @@ export interface operations {
     };
     listBerths: {
         parameters: {
-            query: {
-                /** @description harbor scope (required) */
-                harbor_id: string;
-                /** @description filter by dock */
+            query?: {
+                /** @description harbor scope (required if dock_id omitted) */
+                harbor_id?: string | null;
+                /** @description filter by dock; implies harbor scope on its own */
                 dock_id?: string | null;
                 /** @description filter by status */
                 status?: string | null;

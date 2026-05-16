@@ -47,21 +47,28 @@ SSE_PING_SECONDS = 15
 )
 async def list_berths(
     session: SessionDep,
-    harbor_id: str = Query(..., description="harbor scope (required)"),
-    dock_id: str | None = Query(None, description="filter by dock"),
+    harbor_id: str | None = Query(
+        None, description="harbor scope (required if dock_id omitted)"
+    ),
+    dock_id: str | None = Query(
+        None, description="filter by dock; implies harbor scope on its own"
+    ),
     status: str | None = Query(
         None, pattern="^(free|occupied)$", description="filter by status"
     ),
 ):
-    # required harbor scope so visitor views can't enumerate other tenants'
-    # berths or subscribe to live updates across the whole deployment
+    # require SOME scope so callers can't enumerate every tenant's berths.
+    # dock_id alone is sufficient because dock → harbor is 1:N
+    if harbor_id is None and dock_id is None:
+        raise HTTPException(status_code=400, detail="harbor_id or dock_id is required")
     stmt = (
         select(Berth)
         .join(Dock, Dock.dock_id == Berth.dock_id)
-        .where(Dock.harbor_id == harbor_id)
         .options(selectinload(Berth.assignment))
     )
-    if dock_id:
+    if harbor_id is not None:
+        stmt = stmt.where(Dock.harbor_id == harbor_id)
+    if dock_id is not None:
         stmt = stmt.where(Berth.dock_id == dock_id)
     if status:
         stmt = stmt.where(Berth.status == status)

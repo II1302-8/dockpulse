@@ -4569,15 +4569,17 @@ paths:
     get:
       operationId: listBerths
       parameters:
-      - description: harbor scope (required)
+      - description: harbor scope (required if dock_id omitted)
         in: query
         name: harbor_id
-        required: true
+        required: false
         schema:
-          description: harbor scope (required)
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: harbor scope (required if dock_id omitted)
           title: Harbor Id
-          type: string
-      - description: filter by dock
+      - description: filter by dock; implies harbor scope on its own
         in: query
         name: dock_id
         required: false
@@ -4585,7 +4587,7 @@ paths:
           anyOf:
           - type: string
           - type: 'null'
-          description: filter by dock
+          description: filter by dock; implies harbor scope on its own
           title: Dock Id
       - description: filter by status
         in: query

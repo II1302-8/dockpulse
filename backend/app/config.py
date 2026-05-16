@@ -33,7 +33,6 @@ class Settings(BaseSettings):
     mqtt_tls_cert: str | None = None
     mqtt_tls_key: str | None = None
     mqtt_port: int | None = None
-    factory_pubkey: str | None = None
     # gates side effects that must not run outside prod (real email, etc)
     app_env: Literal["dev", "staging", "prod"] = "dev"
     resend_api_key: str | None = None
@@ -113,36 +112,6 @@ class Settings(BaseSettings):
             raise ValueError("APP_BASE_URL must start with http:// or https://")
         self.app_base_url = self.app_base_url.rstrip("/")
         return self
-
-    @field_validator("factory_pubkey", mode="before")
-    @classmethod
-    def _decode_pubkey(cls, v: object) -> object:
-        # accept three input shapes from env so every deploy target
-        # works regardless of dotenv-parser quirks:
-        #   1. real PEM with newlines (works on Compose v2.24+)
-        #   2. single-line with literal "\n" separators (older Compose)
-        #   3. base64-encoded PEM (Komodo, Coolify, anything that
-        #      tokenises on whitespace or chokes on dashes)
-        if not isinstance(v, str) or not v:
-            return v
-        if v.lstrip().startswith("-----BEGIN"):
-            if "\\n" in v:
-                return v.replace("\\n", "\n")
-            return v
-        # base64: decode and trust the PEM loader to validate. tolerate
-        # whitespace/newlines that some platforms inject mid-string
-        import base64
-        import binascii
-
-        try:
-            decoded = base64.b64decode("".join(v.split()), validate=True).decode()
-        except (binascii.Error, UnicodeDecodeError) as err:
-            raise ValueError(
-                "FACTORY_PUBKEY is neither a PEM nor valid base64"
-            ) from err
-        if not decoded.lstrip().startswith("-----BEGIN"):
-            raise ValueError("FACTORY_PUBKEY base64 did not decode to a PEM")
-        return decoded
 
 
 @lru_cache

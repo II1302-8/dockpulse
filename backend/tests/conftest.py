@@ -31,7 +31,6 @@ from tests._helpers import (
     DEFAULT_JTI,
     DEFAULT_SERIAL,
     hash_password,
-    make_factory_keys,
     make_qr_and_register,
 )
 
@@ -190,17 +189,9 @@ async def boat_owner(session: AsyncSession) -> User:
     return user
 
 
-@pytest.fixture
-def factory_pubkey(monkeypatch) -> str:
-    # returns priv pem after setting FACTORY_PUBKEY env
-    priv_pem, pub_pem = make_factory_keys()
-    monkeypatch.setenv("FACTORY_PUBKEY", pub_pem)
-    return priv_pem
-
-
 @pytest_asyncio.fixture
-async def adopt_qr(session: AsyncSession, factory_pubkey: str):
-    """Yields a coroutine that builds a base45 COSE QR string and seeds
+async def adopt_qr(session: AsyncSession):
+    """Yields a coroutine that builds a `serial:jti` QR string and seeds
     the matching FactoryDevice row. Tests pass `jti=` to differentiate
     rows in scenarios that retry or duplicate adoptions."""
 
@@ -212,7 +203,6 @@ async def adopt_qr(session: AsyncSession, factory_pubkey: str):
     ) -> str:
         return await make_qr_and_register(
             session,
-            factory_pubkey,
             serial=serial,
             jti=jti,
             exp_offset_s=exp_offset_s,

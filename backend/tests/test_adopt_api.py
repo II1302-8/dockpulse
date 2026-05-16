@@ -12,7 +12,6 @@ from tests._helpers import (
     DEFAULT_OOB,
     DEFAULT_SERIAL,
     DEFAULT_UUID,
-    make_factory_keys,
     make_qr_payload,
     seed_factory_device,
 )
@@ -80,43 +79,28 @@ async def test_adopt_rejects_boat_owner(
     assert r.status_code == 403
 
 
-def _qr_invalid_base45(_priv: str) -> str:
-    # contains '!' which is outside the base45 alphabet
-    return "!!! not base45 !!!"
-
-
-def _qr_bad_signature(_priv: str) -> str:
-    # signed by a different key than the one the backend trusts
-    other_priv, _ = make_factory_keys()
-    return make_qr_payload(other_priv)
-
-
-def _qr_expired(priv: str) -> str:
-    return make_qr_payload(priv, exp_offset_s=-60)
-
-
 @pytest.mark.parametrize(
-    "qr_factory",
+    "bad",
     [
-        pytest.param(_qr_invalid_base45, id="invalid_base45"),
-        pytest.param(_qr_bad_signature, id="bad_signature"),
-        pytest.param(_qr_expired, id="expired"),
+        pytest.param("!!! not a sticker !!!", id="malformed"),
+        pytest.param("noseparator", id="no_separator"),
+        pytest.param(":only-jti", id="empty_serial"),
+        pytest.param("only-serial:", id="empty_jti"),
     ],
 )
 async def test_adopt_rejects_malformed_qr(
-    qr_factory,
+    bad: str,
     client: AsyncClient,
     session: AsyncSession,
     harbor_master: User,
     harbor_world,
-    factory_pubkey,
 ):
     # seed the canonical FactoryDevice so the failure can only come from
     # the QR itself, not a missing serial lookup
     await seed_factory_device(session)
     r = await client.post(
         "/api/adoptions",
-        json=_adopt_body(qr_factory(factory_pubkey)),
+        json=_adopt_body(bad),
         cookies=_creds(harbor_master.user_id),
     )
     assert r.status_code == 400
@@ -128,11 +112,10 @@ async def test_adopt_rejects_unknown_serial(
     client: AsyncClient,
     harbor_master: User,
     harbor_world,
-    factory_pubkey,
 ):
-    # serial signed in the QR but FactoryDevice never registered (factory-flash
-    # POST didn't reach the backend)
-    qr = make_qr_payload(factory_pubkey, serial="DP-N-UNREGISTERED")
+    # serial present in QR but FactoryDevice never registered (factory-flash
+    # PUT didn't reach the backend)
+    qr = make_qr_payload(serial="DP-N-UNREGISTERED")
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr),
@@ -146,12 +129,28 @@ async def test_adopt_rejects_jti_mismatch(
     session: AsyncSession,
     harbor_master: User,
     harbor_world,
-    factory_pubkey,
 ):
-    # FactoryDevice has one jti; the QR was signed with a different one
-    # (e.g. an old sticker after a re-roll)
+    # FactoryDevice has one jti; the QR carries a different one (old sticker
+    # after a re-roll)
     await seed_factory_device(session, jti=DEFAULT_JTI)
-    qr = make_qr_payload(factory_pubkey, jti=_new_jti())
+    qr = make_qr_payload(jti=_new_jti())
+    r = await client.post(
+        "/api/adoptions",
+        json=_adopt_body(qr),
+        cookies=_creds(harbor_master.user_id),
+    )
+    assert r.status_code == 400
+
+
+async def test_adopt_rejects_expired_sticker(
+    client: AsyncClient,
+    session: AsyncSession,
+    harbor_master: User,
+    harbor_world,
+):
+    # claim_exp in factory_devices is past, sticker is unusable
+    await seed_factory_device(session, exp_offset_s=-60)
+    qr = make_qr_payload()
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr),

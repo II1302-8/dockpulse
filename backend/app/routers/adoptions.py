@@ -60,10 +60,8 @@ async def create_adoption(
     response: Response,
 ):
     claim = _verify_claim(body.qr_payload)
-    # uuid + oob are resolved from FactoryDevice (populated at flash time)
-    # rather than carried in the QR so the sticker stays scan-friendly small.
-    # claim signature still binds serial+jti+exp, so a forged QR can't pick
-    # someone else's serial
+    # name + nonce lookup, real auth is the PB-ADV OOB handshake. cf access
+    # gates who can register devices so the trust boundary is at PUT-time
     device = await session.get(FactoryDevice, claim.serial_number)
     if device is None:
         raise HTTPException(
@@ -71,6 +69,8 @@ async def create_adoption(
         )
     if device.claim_jti != claim.jti:
         raise HTTPException(status_code=400, detail="Claim jti mismatch")
+    if device.claim_exp <= datetime.now(UTC):
+        raise HTTPException(status_code=400, detail="Sticker expired")
     oob = device.oob_hex
     mesh_uuid = device.mesh_uuid
 

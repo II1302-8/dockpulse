@@ -4,24 +4,12 @@ from __future__ import annotations
 
 import os
 import time
-import uuid
 from datetime import UTC, datetime
 
-import base45
-import cbor2
 import jwt
 from argon2 import PasswordHasher
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from cryptography.hazmat.primitives.serialization import (
-    Encoding,
-    NoEncryption,
-    PrivateFormat,
-    PublicFormat,
-)
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.adoption.cose import encode_sign1
 from app.models import FactoryDevice
 
 AUTH_JWT_ALGORITHM = "HS256"
@@ -58,38 +46,14 @@ def auth_cookies(user_id: str, token_version: int = 0) -> dict[str, str]:
     }
 
 
-def make_factory_keys() -> tuple[str, str]:
-    priv = Ed25519PrivateKey.generate()
-    priv_pem = priv.private_bytes(
-        Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()
-    ).decode()
-    pub_pem = (
-        priv.public_key()
-        .public_bytes(Encoding.PEM, PublicFormat.SubjectPublicKeyInfo)
-        .decode()
-    )
-    return priv_pem, pub_pem
-
-
-def _priv_from_pem(priv_pem: str) -> Ed25519PrivateKey:
-    priv = serialization.load_pem_private_key(priv_pem.encode(), password=None)
-    if not isinstance(priv, Ed25519PrivateKey):
-        raise ValueError("priv_pem must be Ed25519")
-    return priv
-
-
 def make_qr_payload(
-    priv_pem: str,
     *,
     serial: str = DEFAULT_SERIAL,
     jti: str = DEFAULT_JTI,
-    exp_offset_s: int = 3600,
 ) -> str:
-    """Build a COSE_Sign1-over-Ed25519 claim, base45-encoded for a QR."""
-    exp = int(time.time()) + exp_offset_s
-    payload = cbor2.dumps({1: serial, 2: uuid.UUID(jti).bytes, 3: exp})
-    cose_blob = encode_sign1(payload, _priv_from_pem(priv_pem))
-    return base45.b45encode(cose_blob).decode()
+    # sticker is name + replay-protection token, the OOB inside factory_nvs
+    # is the real auth via PB-ADV
+    return f"{serial}:{jti}"
 
 
 async def seed_factory_device(
@@ -118,14 +82,13 @@ async def seed_factory_device(
 
 async def make_qr_and_register(
     session: AsyncSession,
-    priv_pem: str,
     *,
     serial: str = DEFAULT_SERIAL,
     jti: str = DEFAULT_JTI,
     exp_offset_s: int = 3600,
 ) -> str:
-    """Builds the base45 COSE QR AND seeds the matching FactoryDevice row."""
+    """Builds the plaintext serial:jti QR AND seeds the matching row."""
     await seed_factory_device(
         session, serial=serial, jti=jti, exp_offset_s=exp_offset_s
     )
-    return make_qr_payload(priv_pem, serial=serial, jti=jti, exp_offset_s=exp_offset_s)
+    return make_qr_payload(serial=serial, jti=jti)

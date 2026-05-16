@@ -161,18 +161,21 @@ async def test_unicast_addr_mismatch_raises(session, seeded_berth):
         )
 
 
-async def test_node_id_mismatch_raises(session, seeded_berth):
-    # registered node_id is n1; sensor claims it's n2 → reject as rogue
+async def test_payload_node_id_is_informational(session, seeded_berth):
+    # firmware sends its own node label (e.g. "node-001"), never the
+    # backend-minted uuid. accept the reading and stamp the Event with the
+    # db-canonical node_id; unicast addr + gateway cn pin identity
     await _seed_node(session, unicast="0x0042", node_id="n1")
-    with pytest.raises(ValueError, match="node_id mismatch"):
-        await process_sensor_reading(
-            session,
-            berth_id="b1",
-            node_id="n2",
-            mesh_unicast_addr="0x0042",
-            occupied=True,
-            sensor_raw=500,
-        )
+    event = await process_sensor_reading(
+        session,
+        berth_id="b1",
+        node_id="node-001",
+        mesh_unicast_addr="0x0042",
+        occupied=True,
+        sensor_raw=500,
+    )
+    assert event is not None
+    assert event.node_id == "n1"
 
 
 async def test_unicast_addr_no_registered_node_accepts(session, seeded_berth):

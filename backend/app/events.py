@@ -141,7 +141,9 @@ async def process_sensor_reading(
     if berth is None:
         raise ValueError(f"Unknown berth: {berth_id}")
 
-    # reject rogue nodes publishing to a berth they aren't bound to
+    # reject rogue nodes publishing to a berth they aren't bound to.
+    # payload node_id is informational, gateway has no path to learn the
+    # backend-minted uuid; identity is pinned by unicast addr + gateway cn
     registered = await session.execute(
         select(Node).where(Node.berth_id == berth_id, Node.status != "decommissioned")
     )
@@ -156,11 +158,6 @@ async def process_sensor_reading(
             raise ValueError(
                 f"gateway mismatch for berth {berth_id}: "
                 f"node.gateway={node.gateway_id} topic.gateway={expected_gateway_id}"
-            )
-        if node.node_id != node_id:
-            raise ValueError(
-                f"node_id mismatch for berth {berth_id}: "
-                f"registered={node.node_id} got={node_id}"
             )
 
     prev_status = berth.status
@@ -180,10 +177,13 @@ async def process_sensor_reading(
             await publish_berth_update(session, berth)
         return None
 
+    # prefer DB-canonical node_id over payload (firmware sends a sentinel
+    # like "node-001" since it never learns its adoption-time uuid)
+    event_node_id = node.node_id if node is not None else node_id
     event = Event(
         event_id=str(uuid.uuid4()),
         berth_id=berth_id,
-        node_id=node_id,
+        node_id=event_node_id,
         event_type="occupied" if occupied else "freed",
         sensor_raw=sensor_raw,
         mesh_unicast_addr=mesh_unicast_addr,

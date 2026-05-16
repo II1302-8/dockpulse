@@ -5,16 +5,21 @@ device. backend looks up uuid+oob by serial during adoption so the QR
 can carry only serial+jti+exp and stay small enough for a 25mm sticker.
 """
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+from typing import Annotated, Literal
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from app.dependencies import SessionDep
 from app.models import FactoryDevice
 
 router = APIRouter()
+
+# expiring-soon window matches tools/factory_flash_helpers.EXPIRY_WARN_DAYS
+_EXPIRING_SOON_DAYS = 30
 
 
 class FactoryDeviceIn(BaseModel):
@@ -28,6 +33,17 @@ class FactoryDeviceIn(BaseModel):
 class FactoryDeviceOut(BaseModel):
     serial_number: str
     registered_at: datetime
+
+
+class FactoryDeviceRowOut(BaseModel):
+    serial_number: str
+    mesh_uuid: str
+    claim_jti: str
+    claim_exp: datetime
+    registered_at: datetime
+
+
+ExpiryBucket = Literal["all", "expired", "expiring_soon", "healthy"]
 
 
 @router.put(
@@ -76,3 +92,45 @@ async def upsert_factory_device(
         "serial_number": device.serial_number,
         "registered_at": device.registered_at,
     }
+
+
+@router.get(
+    "/factory-devices",
+    response_model=list[FactoryDeviceRowOut],
+    operation_id="adminListFactoryDevices",
+    summary="List factory-registered devices, filterable by claim expiry",
+)
+async def list_factory_devices(
+    session: SessionDep,
+    expiry: Annotated[
+        ExpiryBucket,
+        Query(description="claim_exp bucket: all / expired / expiring_soon / healthy"),
+    ] = "all",
+) -> list[FactoryDevice]:
+    now = datetime.now(UTC)
+    soon = now + timedelta(days=_EXPIRING_SOON_DAYS)
+    stmt = select(FactoryDevice).order_by(FactoryDevice.claim_exp.asc())
+    if expiry == "expired":
+        stmt = stmt.where(FactoryDevice.claim_exp <= now)
+    elif expiry == "expiring_soon":
+        stmt = stmt.where(
+            FactoryDevice.claim_exp > now, FactoryDevice.claim_exp <= soon
+        )
+    elif expiry == "healthy":
+        stmt = stmt.where(FactoryDevice.claim_exp > soon)
+    rows = (await session.execute(stmt)).scalars().all()
+    return list(rows)
+
+
+@router.delete(
+    "/factory-devices/{serial}",
+    operation_id="adminDeleteFactoryDevice",
+    status_code=204,
+    summary="Revoke a factory-registered device (invalidates the sticker)",
+)
+async def delete_factory_device(serial: str, session: SessionDep) -> None:
+    device = await session.get(FactoryDevice, serial)
+    if device is None:
+        raise HTTPException(status_code=404, detail="factory device not found")
+    await session.delete(device)
+    await session.commit()

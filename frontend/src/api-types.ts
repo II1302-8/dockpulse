@@ -250,6 +250,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/factory-devices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List factory-registered devices, filterable by claim expiry */
+        get: operations["adminListFactoryDevices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/factory-devices/{serial}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Register or update a factory-flashed device */
+        put: operations["adminUpsertFactoryDevice"];
+        post?: never;
+        /** Revoke a factory-registered device (invalidates the sticker) */
+        delete: operations["adminDeleteFactoryDevice"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/gateways": {
         parameters: {
             query?: never;
@@ -2408,6 +2443,51 @@ export interface components {
              */
             timestamp: string;
         };
+        /** FactoryDeviceIn */
+        FactoryDeviceIn: {
+            /**
+             * Claim Exp
+             * @description unix seconds
+             */
+            claim_exp: number;
+            /** Claim Jti */
+            claim_jti: string;
+            /** Mesh Uuid */
+            mesh_uuid: string;
+            /** Oob Hex */
+            oob_hex: string;
+            /** Serial Number */
+            serial_number: string;
+        };
+        /** FactoryDeviceOut */
+        FactoryDeviceOut: {
+            /**
+             * Registered At
+             * Format: date-time
+             */
+            registered_at: string;
+            /** Serial Number */
+            serial_number: string;
+        };
+        /** FactoryDeviceRowOut */
+        FactoryDeviceRowOut: {
+            /**
+             * Claim Exp
+             * Format: date-time
+             */
+            claim_exp: string;
+            /** Claim Jti */
+            claim_jti: string;
+            /** Mesh Uuid */
+            mesh_uuid: string;
+            /**
+             * Registered At
+             * Format: date-time
+             */
+            registered_at: string;
+            /** Serial Number */
+            serial_number: string;
+        };
         /** GatewayCreate */
         GatewayCreate: {
             /** Dock Id */
@@ -3781,6 +3861,108 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["AdminEventList"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminListFactoryDevices: {
+        parameters: {
+            query?: {
+                /** @description claim_exp bucket: all / expired / expiring_soon / healthy */
+                expiry?: "all" | "expired" | "expiring_soon" | "healthy";
+            };
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactoryDeviceRowOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminUpsertFactoryDevice: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                serial: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FactoryDeviceIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FactoryDeviceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminDeleteFactoryDevice: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                serial: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

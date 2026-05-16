@@ -5,6 +5,7 @@ import { AlertsPage } from "./pages/Alerts";
 import { BerthsPage } from "./pages/Berths";
 import { DocksPage } from "./pages/Docks";
 import { EventsPage } from "./pages/Events";
+import { FactoryDevicesPage } from "./pages/FactoryDevices";
 import { GatewaysPage } from "./pages/Gateways";
 import { HarborsPage } from "./pages/Harbors";
 import { InvitesPage } from "./pages/Invites";
@@ -23,6 +24,7 @@ export function AdminApp() {
         <Route path="gateways" element={<GatewaysPage />} />
         <Route path="nodes" element={<NodesPage />} />
         <Route path="adoptions" element={<AdoptionsPage />} />
+        <Route path="factory-devices" element={<FactoryDevicesPage />} />
         <Route path="alerts" element={<AlertsPage />} />
         <Route path="events" element={<EventsPage />} />
         <Route path="invites" element={<InvitesPage />} />

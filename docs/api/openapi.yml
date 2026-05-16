@@ -1597,6 +1597,33 @@ components:
       - registered_at
       title: FactoryDeviceOut
       type: object
+    FactoryDeviceRowOut:
+      properties:
+        claim_exp:
+          format: date-time
+          title: Claim Exp
+          type: string
+        claim_jti:
+          title: Claim Jti
+          type: string
+        mesh_uuid:
+          title: Mesh Uuid
+          type: string
+        registered_at:
+          format: date-time
+          title: Registered At
+          type: string
+        serial_number:
+          title: Serial Number
+          type: string
+      required:
+      - serial_number
+      - mesh_uuid
+      - claim_jti
+      - claim_exp
+      - registered_at
+      title: FactoryDeviceRowOut
+      type: object
     GatewayCreate:
       properties:
         dock_id:
@@ -3574,7 +3601,81 @@ paths:
       summary: List Events
       tags:
       - admin
+  /api/admin/factory-devices:
+    get:
+      operationId: adminListFactoryDevices
+      parameters:
+      - description: 'claim_exp bucket: all / expired / expiring_soon / healthy'
+        in: query
+        name: expiry
+        required: false
+        schema:
+          default: all
+          description: 'claim_exp bucket: all / expired / expiring_soon / healthy'
+          enum:
+          - all
+          - expired
+          - expiring_soon
+          - healthy
+          title: Expiry
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/FactoryDeviceRowOut'
+                title: Response Adminlistfactorydevices
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: List factory-registered devices, filterable by claim expiry
+      tags:
+      - admin
   /api/admin/factory-devices/{serial}:
+    delete:
+      operationId: adminDeleteFactoryDevice
+      parameters:
+      - in: path
+        name: serial
+        required: true
+        schema:
+          title: Serial
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '204':
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Revoke a factory-registered device (invalidates the sticker)
+      tags:
+      - admin
     put:
       operationId: adminUpsertFactoryDevice
       parameters:

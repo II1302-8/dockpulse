@@ -1,4 +1,5 @@
-// stream endpoint is unauthenticated, request_id is the secret
+// stream endpoint requires harbormaster auth on the originating harbor
+// (backend enforces via require_harbormaster_for_adoption_request)
 import { useEffect, useState } from "react";
 import type { components } from "../api-types";
 
@@ -21,6 +22,8 @@ export function useAdoptionStream(
   const [request, setRequest] = useState<AdoptionRequest | null>(null);
   const [state, setState] = useState<StreamState>("closed");
   const [phase, setPhase] = useState<string | null>(null);
+  // bumped to force a fresh EventSource after stream.stale
+  const [generation, setGeneration] = useState(0);
 
   useEffect(() => {
     if (!requestId) {
@@ -29,6 +32,7 @@ export function useAdoptionStream(
       setState("closed");
       return;
     }
+    void generation;
     setState("connecting");
     setRequest(null);
     setPhase(null);
@@ -36,7 +40,8 @@ export function useAdoptionStream(
     const es = new EventSource(url);
     es.onopen = () => setState("open");
     es.onerror = () => {
-      // EventSource fires error on close too, treat as closed if readyState=2
+      // EventSource fires error on close too, treat as closed if readyState=2.
+      // an auth failure (401/403) also lands here without status visibility
       setState(es.readyState === EventSource.CLOSED ? "closed" : "error");
     };
     es.addEventListener("adoption.update", (ev: MessageEvent) => {
@@ -56,11 +61,16 @@ export function useAdoptionStream(
         const payload = JSON.parse(ev.data) as AdoptionStateEvent;
         setPhase(payload.state);
       } catch {
-        // advisory; bad payload is non-fatal
+        // advisory, bad payload is non-fatal
       }
     });
+    // server signalled it had to drop an event for us, re-open for resync
+    es.addEventListener("stream.stale", () => {
+      es.close();
+      setGeneration((g) => g + 1);
+    });
     return () => es.close();
-  }, [requestId]);
+  }, [requestId, generation]);
 
   return { request, state, phase };
 }

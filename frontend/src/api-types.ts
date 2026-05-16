@@ -42,6 +42,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/adoptions/{request_id}/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Wipe an adoption request + its node so the QR can be re-scanned */
+        post: operations["adminResetAdoption"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/alerts": {
         parameters: {
             query?: never;
@@ -1602,6 +1619,13 @@ export interface components {
              * @enum {string}
              */
             status: "pending" | "ok" | "err";
+        };
+        /** AdoptionResetOut */
+        AdoptionResetOut: {
+            /** Deleted Node Id */
+            deleted_node_id?: string | null;
+            /** Request Id */
+            request_id: string;
         };
         /** AdoptionStateEvent */
         AdoptionStateEvent: {
@@ -3207,6 +3231,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AdoptionCancelOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminResetAdoption: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdoptionResetOut"];
                 };
             };
             /** @description Validation Error */

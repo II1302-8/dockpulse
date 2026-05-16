@@ -62,6 +62,26 @@ export function AdoptionsPage() {
     }
   }
 
+  async function resetClaim(requestId: string) {
+    if (
+      !window.confirm(
+        `Reset ${requestId}? This deletes the request + its node so the QR can be re-scanned.`,
+      )
+    )
+      return;
+    setBusyId(requestId);
+    try {
+      await adminPost<{ deleted_node_id: string | null }>(
+        `/adoptions/${encodeURIComponent(requestId)}/reset`,
+      );
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Reset failed");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   async function bulkDelete(status: "err" | "pending" | "ok" | "all") {
     const label =
       status === "all" ? "ALL adoption requests" : `all ${status} rows`;
@@ -186,6 +206,16 @@ export function AdoptionsPage() {
                   tooltip="Mark as err:cancelled (frees claim_jti after sweeper prune)"
                 >
                   {busyId === a.request_id ? "Cancelling" : "Cancel"}
+                </Button>
+              ) : a.status === "ok" ? (
+                <Button
+                  key="reset"
+                  variant="danger"
+                  disabled={busyId === a.request_id}
+                  onClick={() => resetClaim(a.request_id)}
+                  tooltip="Wipe request + node so this QR can be scanned again"
+                >
+                  {busyId === a.request_id ? "Resetting" : "Reset"}
                 </Button>
               ) : (
                 <span key="dash" className="text-brand-navy/30">

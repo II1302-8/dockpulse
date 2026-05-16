@@ -17,6 +17,7 @@ from sqlalchemy.orm import selectinload
 
 from app.db import get_sessionmaker
 from app.models import (
+    AdoptionRequest,
     Alert,
     Assignment,
     Berth,
@@ -239,6 +240,25 @@ def decommission_node(
 
 
 @app.command()
+def reset_claim(
+    ref: Annotated[
+        str,
+        typer.Argument(
+            help="claim_jti, serial number, or mesh_uuid that identifies the claim"
+        ),
+    ],
+    yes: Annotated[bool, typer.Option("--yes", "-y", help="Skip confirmation")] = False,
+):
+    """Dev-only: wipe a claim so its QR can be scanned again.
+
+    Deletes the matching AdoptionRequest row plus any Node provisioned from
+    the same claim. Prod still treats claims as single-use; this is a local
+    helper for re-running the adoption flow during testing.
+    """
+    asyncio.run(_reset_claim(ref, yes))
+
+
+@app.command()
 def create_event(
     berth_id: Annotated[str, typer.Argument(help="Berth ID")],
     event_type: Annotated[EventType, typer.Argument(help="Event type")],
@@ -414,6 +434,47 @@ async def _decommission_node(node_id: str) -> None:
     typer.echo(
         f"Marked {node_id} decommissioned in DB. "
         "Gateway not notified — use API endpoint or republish from harbormaster UI"
+    )
+
+
+async def _reset_claim(ref: str, yes: bool) -> None:
+    async with get_sessionmaker()() as session:
+        # try claim_jti first, then serial_number, then mesh_uuid
+        req = (
+            await session.execute(
+                select(AdoptionRequest).where(
+                    (AdoptionRequest.claim_jti == ref)
+                    | (AdoptionRequest.serial_number == ref)
+                    | (AdoptionRequest.mesh_uuid == ref)
+                )
+            )
+        ).scalar_one_or_none()
+        if req is None:
+            typer.echo(f"Error: no AdoptionRequest matching '{ref}'", err=True)
+            raise typer.Exit(1)
+        node = (
+            await session.execute(select(Node).where(Node.mesh_uuid == req.mesh_uuid))
+        ).scalar_one_or_none()
+
+        if not yes:
+            extras = (
+                f" + node {node.node_id} (status={node.status})"
+                if node is not None
+                else ""
+            )
+            prompt = (
+                f"Delete AdoptionRequest {req.request_id} "
+                f"(jti={req.claim_jti}){extras}?"
+            )
+            typer.confirm(prompt, abort=True)
+
+        if node is not None:
+            await session.delete(node)
+        await session.delete(req)
+        await session.commit()
+    typer.echo(
+        f"Reset claim {req.claim_jti}. QR can now be scanned again."
+        + (f" (also dropped node {node.node_id})" if node is not None else "")
     )
 
 

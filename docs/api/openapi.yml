@@ -341,6 +341,20 @@ components:
       - created_at
       title: AdoptionRequestOut
       type: object
+    AdoptionResetOut:
+      properties:
+        deleted_node_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Deleted Node Id
+        request_id:
+          title: Request Id
+          type: string
+      required:
+      - request_id
+      title: AdoptionResetOut
+      type: object
     AdoptionStateEvent:
       properties:
         request_id:
@@ -2900,6 +2914,40 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       summary: Cancel Adoption
+      tags:
+      - admin
+  /api/admin/adoptions/{request_id}/reset:
+    post:
+      operationId: adminResetAdoption
+      parameters:
+      - in: path
+        name: request_id
+        required: true
+        schema:
+          title: Request Id
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdoptionResetOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Wipe an adoption request + its node so the QR can be re-scanned
       tags:
       - admin
   /api/admin/alerts:

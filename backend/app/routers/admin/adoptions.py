@@ -9,7 +9,7 @@ from sqlalchemy import delete, select
 from app.adoption.finalize import complete_adoption_err
 from app.adoption.sweeper import prune_old_errors, sweep_once
 from app.dependencies import SessionDep
-from app.models import AdoptionRequest
+from app.models import AdoptionRequest, Node
 
 router = APIRouter()
 
@@ -42,6 +42,11 @@ class BulkDeleteOut(BaseModel):
 class SweeperRunOut(BaseModel):
     expired: int
     pruned: int
+
+
+class AdoptionResetOut(BaseModel):
+    request_id: str
+    deleted_node_id: str | None = None
 
 
 @router.get(
@@ -121,6 +126,30 @@ async def bulk_delete_adoptions(session: SessionDep, status: str = "err") -> dic
         )
     await session.commit()
     return {"deleted": result.rowcount or 0, "status_filter": status}
+
+
+@router.post(
+    "/adoptions/{request_id}/reset",
+    response_model=AdoptionResetOut,
+    operation_id="adminResetAdoption",
+    summary="Wipe an adoption request + its node so the QR can be re-scanned",
+)
+async def reset_adoption(request_id: str, session: SessionDep) -> AdoptionResetOut:
+    # mirrors `dpcli reset-claim` for hands-on recovery during testing or after
+    # decommissioning a sensor. removes the AdoptionRequest row (frees the
+    # UNIQUE claim_jti) plus any Node provisioned from the same mesh_uuid
+    request = await session.get(AdoptionRequest, request_id)
+    if request is None:
+        raise HTTPException(status_code=404, detail="Adoption request not found")
+    node = (
+        await session.execute(select(Node).where(Node.mesh_uuid == request.mesh_uuid))
+    ).scalar_one_or_none()
+    deleted_node_id = node.node_id if node is not None else None
+    if node is not None:
+        await session.delete(node)
+    await session.delete(request)
+    await session.commit()
+    return AdoptionResetOut(request_id=request_id, deleted_node_id=deleted_node_id)
 
 
 @router.post(

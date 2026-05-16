@@ -1546,6 +1546,57 @@ components:
       - timestamp
       title: EventOut
       type: object
+    FactoryDeviceIn:
+      properties:
+        claim_exp:
+          description: unix seconds
+          exclusiveMinimum: 0.0
+          title: Claim Exp
+          type: integer
+        claim_jti:
+          maxLength: 36
+          minLength: 36
+          title: Claim Jti
+          type: string
+        mesh_uuid:
+          maxLength: 32
+          minLength: 32
+          pattern: ^[0-9a-f]{32}$
+          title: Mesh Uuid
+          type: string
+        oob_hex:
+          maxLength: 32
+          minLength: 32
+          pattern: ^[0-9a-f]{32}$
+          title: Oob Hex
+          type: string
+        serial_number:
+          maxLength: 64
+          minLength: 1
+          title: Serial Number
+          type: string
+      required:
+      - serial_number
+      - mesh_uuid
+      - oob_hex
+      - claim_jti
+      - claim_exp
+      title: FactoryDeviceIn
+      type: object
+    FactoryDeviceOut:
+      properties:
+        registered_at:
+          format: date-time
+          title: Registered At
+          type: string
+        serial_number:
+          title: Serial Number
+          type: string
+      required:
+      - serial_number
+      - registered_at
+      title: FactoryDeviceOut
+      type: object
     GatewayCreate:
       properties:
         dock_id:
@@ -3521,6 +3572,46 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       summary: List Events
+      tags:
+      - admin
+  /api/admin/factory-devices/{serial}:
+    put:
+      operationId: adminUpsertFactoryDevice
+      parameters:
+      - in: path
+        name: serial
+        required: true
+        schema:
+          title: Serial
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FactoryDeviceIn'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FactoryDeviceOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Register or update a factory-flashed device
       tags:
       - admin
   /api/admin/gateways:

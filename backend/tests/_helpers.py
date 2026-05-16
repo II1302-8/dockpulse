@@ -1,14 +1,17 @@
-"""shared test helpers, pure functions only"""
+"""shared test helpers, pure functions only (DB-touching helpers are async)"""
 
 from __future__ import annotations
 
-import base64
-import json
 import os
 import time
+import uuid
+from datetime import UTC, datetime
 
+import base45
+import cbor2
 import jwt
 from argon2 import PasswordHasher
+from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import (
     Encoding,
@@ -16,10 +19,17 @@ from cryptography.hazmat.primitives.serialization import (
     PrivateFormat,
     PublicFormat,
 )
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.adoption.claims import ALGORITHM as FACTORY_JWT_ALGORITHM
+from app.adoption.cose import encode_sign1
+from app.models import FactoryDevice
 
 AUTH_JWT_ALGORITHM = "HS256"
+
+DEFAULT_SERIAL = "DP-N-000123"
+DEFAULT_UUID = "0123456789abcdef0123456789abcdef"
+DEFAULT_OOB = "00112233445566778899aabbccddeeff"
+DEFAULT_JTI = "00000000-0000-4000-8000-000000000001"
 
 _ph = PasswordHasher()
 
@@ -61,20 +71,61 @@ def make_factory_keys() -> tuple[str, str]:
     return priv_pem, pub_pem
 
 
-def make_qr_payload(priv_pem: str, **claim_overrides) -> str:
-    now = int(time.time())
-    claim = {
-        "iss": "factory",
-        "sub": "DP-N-000123",
-        "uuid": "0123456789abcdef0123456789abcdef",
-        "oob": "00112233445566778899aabbccddeeff",
-        "jti": "claim-jti-1",
-        "iat": now,
-        "exp": now + 3600,
-    }
-    claim.update(claim_overrides)
-    token = jwt.encode(claim, priv_pem, algorithm=FACTORY_JWT_ALGORITHM)
-    # uuid + oob both live inside the JWT, sn kept for log readability
-    qr = {"v": 2, "sn": claim["sub"], "jwt": token}
-    raw = json.dumps(qr).encode()
-    return base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
+def _priv_from_pem(priv_pem: str) -> Ed25519PrivateKey:
+    priv = serialization.load_pem_private_key(priv_pem.encode(), password=None)
+    if not isinstance(priv, Ed25519PrivateKey):
+        raise ValueError("priv_pem must be Ed25519")
+    return priv
+
+
+def make_qr_payload(
+    priv_pem: str,
+    *,
+    serial: str = DEFAULT_SERIAL,
+    jti: str = DEFAULT_JTI,
+    exp_offset_s: int = 3600,
+) -> str:
+    """Build a COSE_Sign1-over-Ed25519 claim, base45-encoded for a QR."""
+    exp = int(time.time()) + exp_offset_s
+    payload = cbor2.dumps({1: serial, 2: uuid.UUID(jti).bytes, 3: exp})
+    cose_blob = encode_sign1(payload, _priv_from_pem(priv_pem))
+    return base45.b45encode(cose_blob).decode()
+
+
+async def seed_factory_device(
+    session: AsyncSession,
+    *,
+    serial: str = DEFAULT_SERIAL,
+    jti: str = DEFAULT_JTI,
+    uuid_hex: str = DEFAULT_UUID,
+    oob_hex: str = DEFAULT_OOB,
+    exp_offset_s: int = 3600,
+) -> None:
+    now = datetime.now(UTC)
+    exp = datetime.fromtimestamp(time.time() + exp_offset_s, tz=UTC)
+    session.add(
+        FactoryDevice(
+            serial_number=serial,
+            mesh_uuid=uuid_hex,
+            oob_hex=oob_hex,
+            claim_jti=jti,
+            claim_exp=exp,
+            registered_at=now,
+        )
+    )
+    await session.commit()
+
+
+async def make_qr_and_register(
+    session: AsyncSession,
+    priv_pem: str,
+    *,
+    serial: str = DEFAULT_SERIAL,
+    jti: str = DEFAULT_JTI,
+    exp_offset_s: int = 3600,
+) -> str:
+    """Builds the base45 COSE QR AND seeds the matching FactoryDevice row."""
+    await seed_factory_device(
+        session, serial=serial, jti=jti, exp_offset_s=exp_offset_s
+    )
+    return make_qr_payload(priv_pem, serial=serial, jti=jti, exp_offset_s=exp_offset_s)

@@ -459,6 +459,24 @@ class AdoptionRequest(Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class FactoryDevice(Base):
+    """factory-flashed sensor record. backend resolves serial -> uuid+oob
+    here so the QR can omit both fields and stay scan-friendly small.
+    populated by tools/factory-flash.py via POST /api/admin/factory-devices
+    at flash time"""
+
+    __tablename__ = "factory_devices"
+
+    serial_number: Mapped[str] = mapped_column(String, primary_key=True)
+    mesh_uuid: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    oob_hex: Mapped[str] = mapped_column(String, nullable=False)
+    claim_jti: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    claim_exp: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    registered_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+
 class UserNotificationPrefs(Base):
     __tablename__ = "user_notification_prefs"
 

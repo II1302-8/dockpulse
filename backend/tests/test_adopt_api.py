@@ -1,23 +1,23 @@
-import base64
-import json
-import time
+import uuid
+from datetime import UTC, datetime, timedelta
 
-import jwt
 import pytest
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.adoption.claims import ALGORITHM
 from app.models import AdoptionRequest, Berth, Dock, Gateway, Harbor, Node, User
 from tests._helpers import (
-    auth_cookies as _creds,
-)
-from tests._helpers import (
+    DEFAULT_JTI,
+    DEFAULT_OOB,
+    DEFAULT_SERIAL,
+    DEFAULT_UUID,
     make_factory_keys,
+    make_qr_payload,
+    seed_factory_device,
 )
 from tests._helpers import (
-    make_qr_payload as _make_qr_payload,
+    auth_cookies as _creds,
 )
 
 
@@ -27,14 +27,18 @@ def _adopt_body(qr: str, **overrides) -> dict:
     return body
 
 
+def _new_jti() -> str:
+    return str(uuid.uuid4())
+
+
 async def test_adopt_happy_path_creates_pending_request(
     client: AsyncClient,
     session: AsyncSession,
     harbor_master: User,
     harbor_world,
-    factory_pubkey,
+    adopt_qr,
 ):
-    qr = _make_qr_payload(factory_pubkey)
+    qr = await adopt_qr()
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr),
@@ -43,8 +47,8 @@ async def test_adopt_happy_path_creates_pending_request(
     assert r.status_code == 202
     body = r.json()
     assert body["status"] == "pending"
-    assert body["serial_number"] == "DP-N-000123"
-    assert body["mesh_uuid"] == "0123456789abcdef0123456789abcdef"
+    assert body["serial_number"] == DEFAULT_SERIAL
+    assert body["mesh_uuid"] == DEFAULT_UUID
     assert body["gateway_id"] == "gw1"
     assert body["berth_id"] == "b1"
     assert body["request_id"]
@@ -52,11 +56,11 @@ async def test_adopt_happy_path_creates_pending_request(
     stored = await session.get(AdoptionRequest, body["request_id"])
     assert stored is not None
     assert stored.status == "pending"
-    assert stored.claim_jti == "claim-jti-1"
+    assert stored.claim_jti == DEFAULT_JTI
 
 
-async def test_adopt_requires_auth(client: AsyncClient, harbor_world, factory_pubkey):
-    qr = _make_qr_payload(factory_pubkey)
+async def test_adopt_requires_auth(client: AsyncClient, harbor_world, adopt_qr):
+    qr = await adopt_qr()
     r = await client.post("/api/adoptions", json=_adopt_body(qr))
     assert r.status_code == 401
 
@@ -65,9 +69,9 @@ async def test_adopt_rejects_boat_owner(
     client: AsyncClient,
     boat_owner: User,
     harbor_world,
-    factory_pubkey,
+    adopt_qr,
 ):
-    qr = _make_qr_payload(factory_pubkey)
+    qr = await adopt_qr()
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr),
@@ -76,73 +80,27 @@ async def test_adopt_rejects_boat_owner(
     assert r.status_code == 403
 
 
-def _signed_claim(priv: str, **overrides) -> tuple[dict, str]:
-    now = int(time.time())
-    claim = {
-        "iss": "factory",
-        "sub": "DP-N-000123",
-        "uuid": "0123456789abcdef0123456789abcdef",
-        "oob": "00112233445566778899aabbccddeeff",
-        "jti": "claim-jti-malformed",
-        "iat": now,
-        "exp": now + 3600,
-    }
-    claim.update(overrides)
-    return claim, jwt.encode(claim, priv, algorithm=ALGORITHM)
-
-
-def _b64(qr_dict: dict) -> str:
-    return base64.urlsafe_b64encode(json.dumps(qr_dict).encode()).rstrip(b"=").decode()
-
-
-def _qr_invalid_encoding(_priv: str) -> str:
-    return "!!! not base64 !!!"
-
-
-def _qr_without_jwt(_priv: str) -> str:
-    return _b64({"v": 2, "sn": "X"})
+def _qr_invalid_base45(_priv: str) -> str:
+    # contains '!' which is outside the base45 alphabet
+    return "!!! not base45 !!!"
 
 
 def _qr_bad_signature(_priv: str) -> str:
+    # signed by a different key than the one the backend trusts
     other_priv, _ = make_factory_keys()
-    return _make_qr_payload(other_priv)
+    return make_qr_payload(other_priv)
 
 
-def _qr_jwt_missing_oob(priv: str) -> str:
-    """factory tool would always sign oob, manually elide here to test
-    the required-claims gate in claims.py."""
-    now = int(time.time())
-    claim = {
-        "iss": "factory",
-        "sub": "DP-N-000123",
-        "uuid": "0123456789abcdef0123456789abcdef",
-        "jti": "claim-no-oob",
-        "iat": now,
-        "exp": now + 3600,
-    }
-    token = jwt.encode(claim, priv, algorithm=ALGORITHM)
-    return _b64({"v": 2, "sn": claim["sub"], "jwt": token})
-
-
-def _qr_jwt_oob_bad_format(priv: str) -> str:
-    _claim, token = _signed_claim(priv, oob="not-hex-and-too-short")
-    return _b64({"v": 2, "sn": "DP-N-000123", "jwt": token})
-
-
-def _qr_non_base64(_priv: str) -> str:
-    # contains chars outside the urlsafe-base64 alphabet
-    return "!!!not-base64!!!"
+def _qr_expired(priv: str) -> str:
+    return make_qr_payload(priv, exp_offset_s=-60)
 
 
 @pytest.mark.parametrize(
     "qr_factory",
     [
-        pytest.param(_qr_invalid_encoding, id="invalid_encoding"),
-        pytest.param(_qr_without_jwt, id="without_jwt"),
+        pytest.param(_qr_invalid_base45, id="invalid_base45"),
         pytest.param(_qr_bad_signature, id="bad_signature"),
-        pytest.param(_qr_jwt_missing_oob, id="jwt_missing_oob"),
-        pytest.param(_qr_jwt_oob_bad_format, id="jwt_oob_bad_format"),
-        pytest.param(_qr_non_base64, id="non_base64"),
+        pytest.param(_qr_expired, id="expired"),
     ],
 )
 async def test_adopt_rejects_malformed_qr(
@@ -153,6 +111,9 @@ async def test_adopt_rejects_malformed_qr(
     harbor_world,
     factory_pubkey,
 ):
+    # seed the canonical FactoryDevice so the failure can only come from
+    # the QR itself, not a missing serial lookup
+    await seed_factory_device(session)
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr_factory(factory_pubkey)),
@@ -163,16 +124,52 @@ async def test_adopt_rejects_malformed_qr(
     assert rows == []
 
 
-async def test_adopt_rejects_oversize_qr_payload(
+async def test_adopt_rejects_unknown_serial(
+    client: AsyncClient,
+    harbor_master: User,
+    harbor_world,
+    factory_pubkey,
+):
+    # serial signed in the QR but FactoryDevice never registered (factory-flash
+    # POST didn't reach the backend)
+    qr = make_qr_payload(factory_pubkey, serial="DP-N-UNREGISTERED")
+    r = await client.post(
+        "/api/adoptions",
+        json=_adopt_body(qr),
+        cookies=_creds(harbor_master.user_id),
+    )
+    assert r.status_code == 400
+
+
+async def test_adopt_rejects_jti_mismatch(
     client: AsyncClient,
     session: AsyncSession,
     harbor_master: User,
     harbor_world,
     factory_pubkey,
 ):
+    # FactoryDevice has one jti; the QR was signed with a different one
+    # (e.g. an old sticker after a re-roll)
+    await seed_factory_device(session, jti=DEFAULT_JTI)
+    qr = make_qr_payload(factory_pubkey, jti=_new_jti())
+    r = await client.post(
+        "/api/adoptions",
+        json=_adopt_body(qr),
+        cookies=_creds(harbor_master.user_id),
+    )
+    assert r.status_code == 400
+
+
+async def test_adopt_rejects_oversize_qr_payload(
+    client: AsyncClient,
+    session: AsyncSession,
+    harbor_master: User,
+    harbor_world,
+    adopt_qr,
+):
     """Pydantic max_length caps the payload before our handler runs.
     FastAPI surfaces validation errors as 422."""
-    huge = _make_qr_payload(factory_pubkey) + ("A" * 5000)
+    huge = (await adopt_qr()) + ("A" * 5000)
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(huge),
@@ -184,9 +181,9 @@ async def test_adopt_rejects_oversize_qr_payload(
 
 
 async def test_adopt_returns_404_for_unknown_gateway(
-    client: AsyncClient, harbor_master: User, harbor_world, factory_pubkey
+    client: AsyncClient, harbor_master: User, harbor_world, adopt_qr
 ):
-    qr = _make_qr_payload(factory_pubkey)
+    qr = await adopt_qr()
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr, gateway_id="nope"),
@@ -196,9 +193,9 @@ async def test_adopt_returns_404_for_unknown_gateway(
 
 
 async def test_adopt_returns_404_for_unknown_berth(
-    client: AsyncClient, harbor_master: User, harbor_world, factory_pubkey
+    client: AsyncClient, harbor_master: User, harbor_world, adopt_qr
 ):
-    qr = _make_qr_payload(factory_pubkey)
+    qr = await adopt_qr()
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr, berth_id="nope"),
@@ -212,16 +209,14 @@ async def test_adopt_rejects_gateway_dock_mismatch(
     session: AsyncSession,
     harbor_master: User,
     harbor_world,
-    factory_pubkey,
+    adopt_qr,
 ):
-    from app.models import Berth
-
     session.add(Dock(dock_id="d2", harbor_id="h1", name="Other Dock"))
     await session.commit()
     session.add(Berth(berth_id="b2", dock_id="d2", status="free"))
     await session.commit()
 
-    qr = _make_qr_payload(factory_pubkey)
+    qr = await adopt_qr()
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr, berth_id="b2"),
@@ -235,10 +230,8 @@ async def test_adopt_rejects_berth_with_active_node(
     session: AsyncSession,
     harbor_master: User,
     harbor_world,
-    factory_pubkey,
+    adopt_qr,
 ):
-    from datetime import UTC, datetime
-
     session.add(
         Node(
             node_id="n1",
@@ -255,7 +248,7 @@ async def test_adopt_rejects_berth_with_active_node(
     )
     await session.commit()
 
-    qr = _make_qr_payload(factory_pubkey)
+    qr = await adopt_qr()
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr),
@@ -265,11 +258,12 @@ async def test_adopt_rejects_berth_with_active_node(
 
 
 async def test_adopt_idempotent_while_pending(
-    client: AsyncClient, harbor_master: User, harbor_world, factory_pubkey
+    client: AsyncClient, harbor_master: User, harbor_world, adopt_qr
 ):
     """Reposting same claim while pending returns the existing row, not 409.
     Lets retries on flaky networks land cleanly without tripping the unique."""
-    qr = _make_qr_payload(factory_pubkey, jti="reused-jti")
+    jti = _new_jti()
+    qr = await adopt_qr(jti=jti)
     creds = _creds(harbor_master.user_id)
 
     first = await client.post("/api/adoptions", json=_adopt_body(qr), cookies=creds)
@@ -285,13 +279,14 @@ async def test_adopt_recycles_err_row_on_retry(
     session: AsyncSession,
     harbor_master: User,
     harbor_world,
-    factory_pubkey,
+    adopt_qr,
     published_provision_reqs,
 ):
     """Re-pasting the same QR after a failed adoption recycles the err row
     and re-fires provisioning. The QR sticker is single-use so the user
     has no other path to retry."""
-    qr = _make_qr_payload(factory_pubkey, jti="recyclable-err")
+    jti = _new_jti()
+    qr = await adopt_qr(jti=jti)
     creds = _creds(harbor_master.user_id)
 
     first = await client.post("/api/adoptions", json=_adopt_body(qr), cookies=creds)
@@ -321,10 +316,11 @@ async def test_adopt_rejects_reused_jti_when_already_ok(
     session: AsyncSession,
     harbor_master: User,
     harbor_world,
-    factory_pubkey,
+    adopt_qr,
 ):
     """Successful adoptions are terminal; reposting same claim is a real bug."""
-    qr = _make_qr_payload(factory_pubkey, jti="reused-ok")
+    jti = _new_jti()
+    qr = await adopt_qr(jti=jti)
     creds = _creds(harbor_master.user_id)
 
     first = await client.post("/api/adoptions", json=_adopt_body(qr), cookies=creds)
@@ -344,9 +340,9 @@ async def test_adopt_persists_creator(
     session: AsyncSession,
     harbor_master: User,
     harbor_world,
-    factory_pubkey,
+    adopt_qr,
 ):
-    qr = _make_qr_payload(factory_pubkey)
+    qr = await adopt_qr()
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr),
@@ -355,7 +351,7 @@ async def test_adopt_persists_creator(
     assert r.status_code == 202
 
     result = await session.execute(
-        select(AdoptionRequest).where(AdoptionRequest.claim_jti == "claim-jti-1")
+        select(AdoptionRequest).where(AdoptionRequest.claim_jti == DEFAULT_JTI)
     )
     request = result.scalar_one()
     assert request.created_by_user_id == harbor_master.user_id
@@ -366,13 +362,13 @@ async def test_adopt_rejects_offline_gateway(
     session: AsyncSession,
     harbor_master: User,
     harbor_world,
-    factory_pubkey,
+    adopt_qr,
 ):
     gateway = await session.get(Gateway, "gw1")
     gateway.status = "offline"
     await session.commit()
 
-    qr = _make_qr_payload(factory_pubkey)
+    qr = await adopt_qr()
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr),
@@ -385,9 +381,9 @@ async def test_get_adoption_returns_request(
     client: AsyncClient,
     harbor_master: User,
     harbor_world,
-    factory_pubkey,
+    adopt_qr,
 ):
-    qr = _make_qr_payload(factory_pubkey)
+    qr = await adopt_qr()
     create = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr),
@@ -422,8 +418,6 @@ async def test_get_adoption_requires_harbormaster(
     harbor_world,
 ):
     # seed a real request so resolver doesn't 404 before role check fires
-    from datetime import UTC, datetime, timedelta
-
     now = datetime.now(UTC)
     session.add(
         AdoptionRequest(
@@ -458,7 +452,7 @@ async def test_adopt_rejects_foreign_harbor(
     session: AsyncSession,
     harbor_master: User,
     harbor_world,
-    factory_pubkey,
+    adopt_qr,
 ):
     session.add_all(
         [
@@ -480,7 +474,7 @@ async def test_adopt_rejects_foreign_harbor(
     )
     await session.commit()
 
-    qr = _make_qr_payload(factory_pubkey)
+    qr = await adopt_qr()
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr, berth_id="b-foreign", gateway_id="gw-foreign"),
@@ -494,10 +488,10 @@ async def test_adopt_publishes_provision_req(
     client: AsyncClient,
     harbor_master: User,
     harbor_world,
-    factory_pubkey,
+    adopt_qr,
     published_provision_reqs: list[dict],
 ):
-    qr = _make_qr_payload(factory_pubkey)
+    qr = await adopt_qr()
     r = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr),
@@ -507,8 +501,8 @@ async def test_adopt_publishes_provision_req(
     assert len(published_provision_reqs) == 1
     call = published_provision_reqs[0]
     assert call["gateway_id"] == "gw1"
-    assert call["mesh_uuid"] == "0123456789abcdef0123456789abcdef"
-    assert call["oob"] == "00112233445566778899aabbccddeeff"
+    assert call["mesh_uuid"] == DEFAULT_UUID
+    assert call["oob"] == DEFAULT_OOB
     assert call["ttl_s"] == 180
     assert call["berth_id"] == r.json()["berth_id"]
     assert call["request_id"] == r.json()["request_id"]
@@ -519,9 +513,9 @@ async def test_cancel_pending_request_marks_err_cancelled(
     session: AsyncSession,
     harbor_master: User,
     harbor_world,
-    factory_pubkey,
+    adopt_qr,
 ):
-    qr = _make_qr_payload(factory_pubkey)
+    qr = await adopt_qr()
     create = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr),
@@ -549,9 +543,9 @@ async def test_cancel_terminal_request_is_idempotent(
     session: AsyncSession,
     harbor_master: User,
     harbor_world,
-    factory_pubkey,
+    adopt_qr,
 ):
-    qr = _make_qr_payload(factory_pubkey)
+    qr = await adopt_qr()
     create = await client.post(
         "/api/adoptions",
         json=_adopt_body(qr),

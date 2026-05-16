@@ -13,6 +13,7 @@ from app.routers.admin.alerts import router as alerts_router
 from app.routers.admin.berths import router as berths_router
 from app.routers.admin.docks import router as docks_router
 from app.routers.admin.events import router as events_router
+from app.routers.admin.factory_devices import router as factory_devices_router
 from app.routers.admin.gateways import router as gateways_router
 from app.routers.admin.harbors import router as harbors_router
 from app.routers.admin.invites import router as invites_router
@@ -34,6 +35,7 @@ for _sub in (
     gateways_router,
     nodes_router,
     adoptions_router,
+    factory_devices_router,
     users_router,
     alerts_router,
     events_router,

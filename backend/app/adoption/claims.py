@@ -1,90 +1,96 @@
-"""Verifies factory-signed claim JWTs from node QR codes"""
+"""Verifies factory-signed claim blobs from node QR codes.
 
+QR payload is base45-encoded COSE_Sign1 (Ed25519). Map keys are
+single-byte ints to keep the binary compact:
+
+    {1: serial_bytes, 2: jti_bytes(16), 3: exp_unix_int}
+
+uuid + oob are NOT in the QR; backend looks them up by serial via the
+FactoryDevice table populated at factory-flash time. This keeps the QR
+small enough to fit on a 25mm sticker without losing scan margin.
+"""
+
+import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 
-import jwt
+import base45
+import cbor2
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
+from app.adoption.cose import CoseError, decode_and_verify_sign1
 from app.config import get_settings
 
-ALGORITHM = "EdDSA"
-ISSUER = "factory"
-
-# 16 bytes hex-encoded, matches BLE-mesh static OOB
-OOB_HEX_LEN = 32
+# CBOR payload keys; integers keep the blob compact
+_K_SERIAL = 1
+_K_JTI = 2
+_K_EXP = 3
 
 
 class ClaimError(Exception):
-    """Claim JWT was malformed, unsigned, expired, or had bad fields"""
+    """claim blob was malformed, mis-signed, or expired"""
 
 
 @dataclass(frozen=True)
 class FactoryClaim:
     serial_number: str
-    mesh_uuid: str
-    oob_hex: str
     jti: str
-    issued_at: datetime
     expires_at: datetime
 
 
-def _factory_pubkey() -> str:
-    pubkey = get_settings().factory_pubkey
-    if not pubkey:
+def _factory_pubkey() -> Ed25519PublicKey:
+    pem = get_settings().factory_pubkey
+    if not pem:
         raise ClaimError("FACTORY_PUBKEY not configured")
-    return pubkey
-
-
-def _is_hex(s: str, length: int) -> bool:
-    if len(s) != length:
-        return False
     try:
-        int(s, 16)
-    except ValueError:
-        return False
-    return True
+        key = serialization.load_pem_public_key(pem.encode())
+    except (ValueError, TypeError) as err:
+        raise ClaimError(f"FACTORY_PUBKEY not valid PEM: {err}") from err
+    if not isinstance(key, Ed25519PublicKey):
+        raise ClaimError("FACTORY_PUBKEY is not Ed25519")
+    return key
 
 
-def verify_claim_jwt(token: str) -> FactoryClaim:
-    """Decode and verify a factory-signed claim JWT
+def verify_claim(token: str) -> FactoryClaim:
+    """Decode base45 -> COSE_Sign1 -> verify Ed25519.
 
-    Raises ClaimError on any failure: bad signature, expired, missing claim,
-    wrong issuer, wrong algorithm. Both uuid and oob are part of the signed
-    payload, so clients cannot tamper with either without invalidating the
-    signature.
+    Raises ClaimError on any failure: bad encoding, bad signature, expired,
+    missing field. Caller resolves serial -> FactoryDevice for uuid/oob.
     """
     try:
-        payload = jwt.decode(
-            token,
-            _factory_pubkey(),
-            algorithms=[ALGORITHM],
-            issuer=ISSUER,
-            options={"require": ["exp", "iat", "iss", "sub", "jti", "uuid", "oob"]},
-        )
-    except jwt.ExpiredSignatureError as err:
-        raise ClaimError("claim expired") from err
-    except jwt.MissingRequiredClaimError as err:
-        raise ClaimError(f"claim missing required field: {err.claim}") from err
-    except jwt.InvalidIssuerError as err:
-        raise ClaimError("claim issuer is not 'factory'") from err
-    except jwt.InvalidAlgorithmError as err:
-        raise ClaimError("claim signed with unsupported algorithm") from err
-    except jwt.PyJWTError as err:
-        raise ClaimError(f"claim invalid: {err}") from err
+        cose_blob = base45.b45decode(token)
+    except ValueError as err:
+        raise ClaimError(f"bad base45: {err}") from err
 
-    mesh_uuid = payload.get("uuid")
-    if not isinstance(mesh_uuid, str) or not mesh_uuid:
-        raise ClaimError("claim 'uuid' must be a non-empty string")
+    try:
+        payload_bytes = decode_and_verify_sign1(cose_blob, _factory_pubkey())
+    except CoseError as err:
+        raise ClaimError(str(err)) from err
 
-    oob_hex = payload.get("oob")
-    if not isinstance(oob_hex, str) or not _is_hex(oob_hex, OOB_HEX_LEN):
-        raise ClaimError(f"claim 'oob' must be {OOB_HEX_LEN} hex chars")
+    try:
+        payload = cbor2.loads(payload_bytes)
+    except cbor2.CBORDecodeError as err:
+        raise ClaimError(f"bad CBOR payload: {err}") from err
+    if not isinstance(payload, dict):
+        raise ClaimError("payload not a map")
+
+    serial = payload.get(_K_SERIAL)
+    jti = payload.get(_K_JTI)
+    exp = payload.get(_K_EXP)
+    if not isinstance(serial, str) or not serial:
+        raise ClaimError("serial missing or wrong type")
+    if not isinstance(jti, bytes) or len(jti) != 16:
+        raise ClaimError("jti must be 16 raw bytes")
+    if not isinstance(exp, int):
+        raise ClaimError("exp must be unix-int")
+
+    expires_at = datetime.fromtimestamp(exp, tz=UTC)
+    if expires_at <= datetime.now(UTC):
+        raise ClaimError("claim expired")
 
     return FactoryClaim(
-        serial_number=payload["sub"],
-        mesh_uuid=mesh_uuid,
-        oob_hex=oob_hex,
-        jti=payload["jti"],
-        issued_at=datetime.fromtimestamp(payload["iat"]),
-        expires_at=datetime.fromtimestamp(payload["exp"]),
+        serial_number=serial,
+        jti=str(uuid.UUID(bytes=jti)),
+        expires_at=expires_at,
     )

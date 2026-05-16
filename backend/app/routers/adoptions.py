@@ -1,6 +1,4 @@
 import asyncio
-import base64
-import binascii
 import json
 import uuid
 from datetime import UTC, datetime, timedelta
@@ -12,7 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sse_starlette.sse import EventSourceResponse
 
 from app import broadcaster
-from app.adoption.claims import ClaimError, FactoryClaim, verify_claim_jwt
+from app.adoption.claims import ClaimError, FactoryClaim, verify_claim
 from app.adoption.finalize import complete_adoption_err
 from app.config import get_settings
 from app.dependencies import (
@@ -22,7 +20,7 @@ from app.dependencies import (
     require_harbor_authority,
     require_harbormaster_for_adoption_request,
 )
-from app.models import AdoptionRequest, Berth, Gateway, Node
+from app.models import AdoptionRequest, Berth, FactoryDevice, Gateway, Node
 from app.mqtt import MqttNotConnectedError, publish_provision_req
 from app.rate_limit import limiter
 from app.schemas import (
@@ -39,34 +37,9 @@ ADOPTION_TTL = timedelta(seconds=180)
 SSE_PING_SECONDS = 15
 
 
-def _decode_qr_payload(payload: str) -> dict:
-    """Decode base64url-encoded JSON from a QR fragment.
-
-    Treats decode and JSON failures as 400. Pydantic's max_length on the
-    field caps the input size before we get here, so this only handles
-    the parse-error surface.
-    """
-    padded = payload + "=" * (-len(payload) % 4)
-    # urlsafe variant has no validate flag, translate to std then b64decode
-    # with validate=True so non-alphabet chars are rejected, not stripped
+def _verify_claim(payload: str) -> FactoryClaim:
     try:
-        as_std = padded.translate(str.maketrans({"-": "+", "_": "/"}))
-        decoded = base64.b64decode(as_std, validate=True)
-    except (binascii.Error, ValueError) as err:
-        raise HTTPException(status_code=400, detail="Invalid QR encoding") from err
-    try:
-        # UnicodeDecodeError subclasses ValueError, caught alongside
-        data = json.loads(decoded)
-    except (json.JSONDecodeError, UnicodeDecodeError) as err:
-        raise HTTPException(status_code=400, detail="Invalid QR JSON") from err
-    if not isinstance(data, dict) or "jwt" not in data:
-        raise HTTPException(status_code=400, detail="QR missing 'jwt' field")
-    return data
-
-
-def _verify_claim(qr: dict) -> FactoryClaim:
-    try:
-        return verify_claim_jwt(qr["jwt"])
+        return verify_claim(payload)
     except ClaimError as err:
         raise HTTPException(status_code=400, detail=f"Invalid claim: {err}") from err
 
@@ -86,11 +59,20 @@ async def create_adoption(
     session: SessionDep,
     response: Response,
 ):
-    qr = _decode_qr_payload(body.qr_payload)
-    claim = _verify_claim(qr)
-    # oob comes from the signed claim, tampering with the outer QR field
-    # has no effect since backend only reads the signed value
-    oob = claim.oob_hex
+    claim = _verify_claim(body.qr_payload)
+    # uuid + oob are resolved from FactoryDevice (populated at flash time)
+    # rather than carried in the QR so the sticker stays scan-friendly small.
+    # claim signature still binds serial+jti+exp, so a forged QR can't pick
+    # someone else's serial
+    device = await session.get(FactoryDevice, claim.serial_number)
+    if device is None:
+        raise HTTPException(
+            status_code=400, detail="Unknown serial; device never factory-registered"
+        )
+    if device.claim_jti != claim.jti:
+        raise HTTPException(status_code=400, detail="Claim jti mismatch")
+    oob = device.oob_hex
+    mesh_uuid = device.mesh_uuid
 
     # role + harbor authority before any other lookups
     harbor_id = await harbor_id_from_berth(body.berth_id, session)
@@ -160,7 +142,7 @@ async def create_adoption(
             await publish_provision_req(
                 gateway_id=body.gateway_id,
                 request_id=existing.request_id,
-                mesh_uuid=claim.mesh_uuid,
+                mesh_uuid=mesh_uuid,
                 oob=oob,
                 ttl_s=int(ttl.total_seconds()),
                 berth_id=body.berth_id,
@@ -176,7 +158,7 @@ async def create_adoption(
 
     request = AdoptionRequest(
         request_id=str(uuid.uuid4()),
-        mesh_uuid=claim.mesh_uuid,
+        mesh_uuid=mesh_uuid,
         serial_number=claim.serial_number,
         claim_jti=claim.jti,
         node_id=str(uuid.uuid4()),
@@ -202,7 +184,7 @@ async def create_adoption(
         await publish_provision_req(
             gateway_id=body.gateway_id,
             request_id=request.request_id,
-            mesh_uuid=claim.mesh_uuid,
+            mesh_uuid=mesh_uuid,
             oob=oob,
             ttl_s=int(ttl.total_seconds()),
             berth_id=body.berth_id,

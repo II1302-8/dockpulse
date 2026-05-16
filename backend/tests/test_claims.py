@@ -1,11 +1,20 @@
 import time
+import uuid
 from datetime import UTC, datetime
 
-import jwt
+import base45
+import cbor2
 import pytest
 
-from app.adoption.claims import ALGORITHM, ClaimError, verify_claim_jwt
-from tests._helpers import make_factory_keys
+from app.adoption.claims import ClaimError, verify_claim
+from app.adoption.cose import encode_sign1
+from tests._helpers import (
+    DEFAULT_JTI,
+    DEFAULT_SERIAL,
+    _priv_from_pem,
+    make_factory_keys,
+    make_qr_payload,
+)
 
 
 @pytest.fixture
@@ -15,136 +24,94 @@ def factory_keys(monkeypatch):
     return priv_pem, pub_pem
 
 
-def _claim_payload(**overrides) -> dict:
-    now = int(time.time())
-    base = {
-        "iss": "factory",
-        "sub": "DP-N-000123",
-        "uuid": "0123456789abcdef0123456789abcdef",
-        "oob": "00112233445566778899aabbccddeeff",
-        "jti": "claim-jti-1",
-        "iat": now,
-        "exp": now + 3600,
-    }
-    base.update(overrides)
-    return base
-
-
 def test_verify_returns_claim_on_valid_token(factory_keys):
     priv, _ = factory_keys
-    token = jwt.encode(_claim_payload(), priv, algorithm=ALGORITHM)
+    qr = make_qr_payload(priv)
 
-    claim = verify_claim_jwt(token)
+    claim = verify_claim(qr)
 
-    assert claim.serial_number == "DP-N-000123"
-    assert claim.mesh_uuid == "0123456789abcdef0123456789abcdef"
-    assert claim.oob_hex == "00112233445566778899aabbccddeeff"
-    assert claim.jti == "claim-jti-1"
-    assert claim.expires_at > datetime.now(UTC).replace(tzinfo=None)
+    assert claim.serial_number == DEFAULT_SERIAL
+    assert claim.jti == DEFAULT_JTI
+    assert claim.expires_at > datetime.now(UTC)
 
 
-def test_verify_rejects_missing_oob(factory_keys):
-    priv, _ = factory_keys
-    payload = _claim_payload()
-    del payload["oob"]
-    token = jwt.encode(payload, priv, algorithm=ALGORITHM)
-
-    with pytest.raises(ClaimError, match="oob"):
-        verify_claim_jwt(token)
-
-
-def test_verify_rejects_oob_wrong_length(factory_keys):
-    priv, _ = factory_keys
-    token = jwt.encode(_claim_payload(oob="deadbeef"), priv, algorithm=ALGORITHM)
-
-    with pytest.raises(ClaimError, match="oob"):
-        verify_claim_jwt(token)
-
-
-def test_verify_rejects_oob_non_hex(factory_keys):
-    priv, _ = factory_keys
-    token = jwt.encode(_claim_payload(oob="GG" * 16), priv, algorithm=ALGORITHM)
-
-    with pytest.raises(ClaimError, match="oob"):
-        verify_claim_jwt(token)
+def test_verify_rejects_bad_base45(factory_keys):
+    with pytest.raises(ClaimError, match="base45"):
+        verify_claim("!! not base45 !!")
 
 
 def test_verify_rejects_bad_signature(factory_keys):
     other_priv, _ = make_factory_keys()
-    token = jwt.encode(_claim_payload(), other_priv, algorithm=ALGORITHM)
+    qr = make_qr_payload(other_priv)
 
-    with pytest.raises(ClaimError):
-        verify_claim_jwt(token)
+    with pytest.raises(ClaimError, match="signature"):
+        verify_claim(qr)
 
 
-def test_verify_rejects_expired_token(factory_keys):
+def test_verify_rejects_expired_claim(factory_keys):
     priv, _ = factory_keys
-    expired = _claim_payload(
-        iat=int(time.time()) - 7200,
-        exp=int(time.time()) - 3600,
-    )
-    token = jwt.encode(expired, priv, algorithm=ALGORITHM)
+    qr = make_qr_payload(priv, exp_offset_s=-60)
 
     with pytest.raises(ClaimError, match="expired"):
-        verify_claim_jwt(token)
+        verify_claim(qr)
 
 
-def test_verify_rejects_wrong_issuer(factory_keys):
+def test_verify_rejects_non_cose_blob(factory_keys):
+    # base45-encode a plain CBOR int — valid base45 + valid CBOR but not a COSE_Sign1
+    not_cose = base45.b45encode(cbor2.dumps(42)).decode()
+
+    with pytest.raises(ClaimError, match="COSE_Sign1"):
+        verify_claim(not_cose)
+
+
+def test_verify_rejects_wrong_alg(factory_keys):
     priv, _ = factory_keys
-    token = jwt.encode(_claim_payload(iss="attacker"), priv, algorithm=ALGORITHM)
+    # build a Sign1 manually with alg=ES256 (-7) instead of EdDSA (-8)
+    payload = cbor2.dumps(
+        {1: DEFAULT_SERIAL, 2: uuid.UUID(DEFAULT_JTI).bytes, 3: int(time.time()) + 3600}
+    )
+    protected = cbor2.dumps({1: -7})
+    fake_blob = cbor2.dumps(cbor2.CBORTag(18, [protected, {}, payload, b"\x00" * 64]))
+    qr = base45.b45encode(fake_blob).decode()
 
-    with pytest.raises(ClaimError, match="issuer"):
-        verify_claim_jwt(token)
+    with pytest.raises(ClaimError, match="EdDSA"):
+        verify_claim(qr)
 
 
-def test_verify_rejects_missing_required_claim(factory_keys):
+def test_verify_rejects_missing_serial(factory_keys):
     priv, _ = factory_keys
-    payload = _claim_payload()
-    del payload["jti"]
-    token = jwt.encode(payload, priv, algorithm=ALGORITHM)
+    payload = cbor2.dumps({2: uuid.UUID(DEFAULT_JTI).bytes, 3: int(time.time()) + 3600})
+    blob = encode_sign1(payload, _priv_from_pem(priv))
+    qr = base45.b45encode(blob).decode()
+
+    with pytest.raises(ClaimError, match="serial"):
+        verify_claim(qr)
+
+
+def test_verify_rejects_missing_jti(factory_keys):
+    priv, _ = factory_keys
+    payload = cbor2.dumps({1: DEFAULT_SERIAL, 3: int(time.time()) + 3600})
+    blob = encode_sign1(payload, _priv_from_pem(priv))
+    qr = base45.b45encode(blob).decode()
 
     with pytest.raises(ClaimError, match="jti"):
-        verify_claim_jwt(token)
+        verify_claim(qr)
 
 
-def test_verify_rejects_missing_uuid(factory_keys):
+def test_verify_rejects_missing_exp(factory_keys):
     priv, _ = factory_keys
-    payload = _claim_payload()
-    del payload["uuid"]
-    token = jwt.encode(payload, priv, algorithm=ALGORITHM)
+    payload = cbor2.dumps({1: DEFAULT_SERIAL, 2: uuid.UUID(DEFAULT_JTI).bytes})
+    blob = encode_sign1(payload, _priv_from_pem(priv))
+    qr = base45.b45encode(blob).decode()
 
-    with pytest.raises(ClaimError, match="uuid"):
-        verify_claim_jwt(token)
-
-
-def test_verify_rejects_hs256_signed_token(factory_keys):
-    """A token signed with a symmetric algorithm must not authenticate."""
-    # 32-byte key dodges pyjwt's InsecureKeyLengthWarning; rejection is what
-    # we're asserting, not key strength
-    token = jwt.encode(_claim_payload(), "x" * 32, algorithm="HS256")
-
-    with pytest.raises(ClaimError):
-        verify_claim_jwt(token)
+    with pytest.raises(ClaimError, match="exp"):
+        verify_claim(qr)
 
 
 def test_verify_raises_when_pubkey_not_configured(monkeypatch):
     monkeypatch.delenv("FACTORY_PUBKEY", raising=False)
     priv, _ = make_factory_keys()
-    token = jwt.encode(_claim_payload(), priv, algorithm=ALGORITHM)
+    qr = make_qr_payload(priv)
 
     with pytest.raises(ClaimError, match="FACTORY_PUBKEY"):
-        verify_claim_jwt(token)
-
-
-def test_verify_rejects_token_not_yet_valid(factory_keys):
-    """Tokens with iat/nbf in the future are rejected by PyJWT defaults."""
-    priv, _ = factory_keys
-    future = _claim_payload(
-        iat=int(time.time()) + 3600,
-        nbf=int(time.time()) + 3600,
-        exp=int(time.time()) + 7200,
-    )
-    token = jwt.encode(future, priv, algorithm=ALGORITHM)
-
-    with pytest.raises(ClaimError):
-        verify_claim_jwt(token)
+        verify_claim(qr)

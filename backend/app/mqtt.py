@@ -459,7 +459,14 @@ async def mqtt_listener() -> None:
                 await client.subscribe(DECOMMISSION_RESP_TOPIC)
                 await client.subscribe(GATEWAY_STATUS_TOPIC)
                 async for message in client.messages:
-                    await _handle_message(message)
+                    # handler bug must not flap the broker connection
+                    try:
+                        await _handle_message(message)
+                    except Exception:
+                        logger.exception(
+                            "mqtt handler crashed for topic=%s, skipping",
+                            message.topic.value,
+                        )
         except aiomqtt.MqttError as e:
             _connected = False
             _client = None

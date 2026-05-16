@@ -109,6 +109,49 @@ async def test_unsubscribe_after_context_exit(session, seeded_berth):
     assert broadcaster.subscriber_count() == 0
 
 
+async def test_publish_isolates_per_subscriber_failures(session, seeded_berth):
+    """one full queue must not shadow delivery to other subscribers"""
+    async with broadcaster.subscribe() as healthy, broadcaster.subscribe() as full:
+        # fill `full` to maxsize
+        for _ in range(broadcaster.QUEUE_MAXSIZE):
+            full.put_nowait({"type": "noise"})
+        await process_sensor_reading(
+            session,
+            berth_id="b1",
+            node_id="n1",
+            mesh_unicast_addr="0x0042",
+            occupied=True,
+            sensor_raw=500,
+        )
+        # healthy gets the real event
+        delivered = await asyncio.wait_for(healthy.get(), timeout=1.0)
+        assert delivered["type"] == "berth.update"
+
+
+async def test_publish_emits_stale_marker_when_queue_full(session, seeded_berth):
+    async with broadcaster.subscribe() as queue:
+        # fill to maxsize so the next publish must drop the event
+        for _ in range(broadcaster.QUEUE_MAXSIZE):
+            queue.put_nowait({"type": "noise"})
+        await process_sensor_reading(
+            session,
+            berth_id="b1",
+            node_id="n1",
+            mesh_unicast_addr="0x0042",
+            occupied=True,
+            sensor_raw=500,
+        )
+        # broadcaster evicts one item and pushes a stale marker so the
+        # consumer gets a wake-up to refetch
+        seen = []
+        while True:
+            try:
+                seen.append(queue.get_nowait())
+            except asyncio.QueueEmpty:
+                break
+        assert any(e.get("type") == broadcaster.STALE_EVENT_TYPE for e in seen)
+
+
 async def test_berth_stream_first_frame_is_snapshot(
     session, seeded_berth, harbor_master
 ):

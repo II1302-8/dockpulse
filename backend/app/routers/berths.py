@@ -77,8 +77,7 @@ async def list_berths(
         stmt = stmt.where(Berth.status == status)
     result = await session.execute(stmt)
     berths = list(result.scalars().all())
-    # resolve harbor_id from dock_id when caller only passed the latter so the
-    # membership check has something to key on
+    # membership check keys on harbor_id, resolve from dock_id if needed
     effective_harbor_id = harbor_id
     if effective_harbor_id is None and berths:
         effective_harbor_id = next(
@@ -122,12 +121,10 @@ async def stream_berths(
     current_user: OptionalUserDep,
     harbor_id: str = Query(..., description="harbor scope (required)"),
 ):
-    # public read so visitors can browse availability before logging in.
-    # anonymous + non-member callers get a redacted payload with telemetry
-    # (battery, sensor_raw) and assignment user_id stripped
+    # public read so visitors browse availability without login.
+    # anon/non-member sees a payload with telemetry + assignment stripped
     is_member = await is_harbor_member(current_user, harbor_id, session)
-    # scope snapshot + live frames to one harbor so visitors can't subscribe
-    # to other tenants' berth updates
+    # scope snapshot + live frames so anon can't subscribe to other tenants
     stmt = (
         select(Berth.berth_id)
         .join(Dock, Dock.dock_id == Berth.dock_id)
@@ -157,16 +154,18 @@ async def stream_berths(
                     event = await asyncio.wait_for(queue.get(), timeout=1.0)
                 except TimeoutError:
                     continue
+                etype = event.get("type")
+                # pass stale-hints through so client knows to refetch
+                if etype == broadcaster.STALE_EVENT_TYPE:
+                    yield {"event": etype, "data": json.dumps(event)}
+                    continue
                 # broadcaster fans every event to every queue, drop non-berth
-                if event.get("type") != "berth.update":
+                if etype != "berth.update":
                     continue
                 if event.get("berth", {}).get("berth_id") not in scoped_ids:
                     continue
                 if not is_member:
-                    # strip telemetry/PII before sending to anon viewers.
-                    # `event["berth"]` is the already-serialized BerthOut dict
-                    # produced by publish_berth_update with member fields set;
-                    # null them out per-event so we don't leak via deltas
+                    # null telemetry/PII per-event so anon callers can't read deltas
                     redacted = dict(event)
                     redacted["berth"] = {
                         **event["berth"],

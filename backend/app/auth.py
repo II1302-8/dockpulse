@@ -169,11 +169,8 @@ async def get_optional_user(
     session: Annotated[AsyncSession, Depends(get_session)],
     cookie_token: Annotated[str | None, Depends(_cookie_scheme)] = None,
 ) -> User | None:
-    """Best-effort variant of get_current_user — returns None when no
-    cookie / bad cookie / no matching user. Use on endpoints that have
-    a public read but want to upgrade the response when the caller is
-    logged in (e.g. strip telemetry/PII for anonymous viewers).
-    """
+    # soft variant for public-read endpoints that upgrade the payload
+    # when the caller happens to be logged in
     if not cookie_token:
         return None
     try:

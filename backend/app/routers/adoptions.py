@@ -258,6 +258,9 @@ async def stream_adoption(request_id: str, request: Request, session: SessionDep
                 except TimeoutError:
                     continue
                 etype = event.get("type")
+                if etype == broadcaster.STALE_EVENT_TYPE:
+                    yield {"event": etype, "data": json.dumps(event)}
+                    continue
                 if etype == "adoption.state":
                     if event.get("request_id") != request_id:
                         continue

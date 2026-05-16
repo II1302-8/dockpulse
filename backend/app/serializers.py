@@ -40,9 +40,7 @@ def _is_available_now(berth: Berth, has_active_window: bool) -> bool:
 def serialize_berth(
     berth: Berth, *, has_active_window: bool, include_member_fields: bool = True
 ) -> BerthOut:
-    # member-only fields: telemetry leaks operational state (battery, raw
-    # sensor distance) and assignment.user_id is PII. anonymous callers
-    # still get status/is_available_now/dims so visitor browse works
+    # gate telemetry (battery, sensor_raw) + assignment.user_id behind membership
     assignment = (
         AssignmentOut(
             berth_id=berth.assignment.berth_id,

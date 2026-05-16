@@ -41,12 +41,8 @@ async def require_harbor_authority(
 async def is_harbor_member(
     user: User | None, harbor_id: str, session: AsyncSession
 ) -> bool:
-    """Membership = harbormaster role, OR Assignment in the harbor, OR
-    Booking (any status) in the harbor. Used to decide whether to expose
-    telemetry/PII (sensor_raw, battery_pct, assignment user_id) on the
-    otherwise-public berth read paths. Anonymous callers always see the
-    redacted view.
-    """
+    # membership = harbormaster role / Assignment / Booking (any status).
+    # gates telemetry + assignment.user_id on otherwise-public berth reads
     if user is None:
         return False
     hm = await session.execute(

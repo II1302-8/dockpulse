@@ -1,5 +1,5 @@
 import { Activity, BatteryLow, X } from "lucide-react";
-import { useEffect, useState } from "react";
+
 import type { components } from "../api-types";
 import { useNow } from "../hooks/useNow";
 import { isOnline } from "../lib/freshness";
@@ -19,13 +19,6 @@ export function HarborOverview({
   onCloseCB,
 }: HarborOverviewProps) {
   const now = useNow();
-  const [hasOpened, setHasOpened] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) {
-      setHasOpened(true);
-    }
-  }, [isOpen]);
 
   const onlineBerths = berths.filter((berth) =>
     isOnline(berth.last_updated, now),
@@ -47,41 +40,17 @@ export function HarborOverview({
 
   const allClear = lowBatteryNodes.length === 0 && offlineCount === 0;
 
-  function closePanel() {
-    onCloseCB?.();
-  }
-
-  function handleCloseClick(event: React.MouseEvent<HTMLButtonElement>) {
-    event.preventDefault();
-    event.stopPropagation();
-    closePanel();
-  }
-
-  function handleClosePointerDown(
-    event: React.PointerEvent<HTMLButtonElement>,
-  ) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
-
-  function handleClosePointerUp(event: React.PointerEvent<HTMLButtonElement>) {
-    event.preventDefault();
-    event.stopPropagation();
-    closePanel();
-  }
-
   return (
     <section
       className={cn(
-        "isolate pointer-events-auto fixed z-[110] flex flex-col overflow-hidden",
+        "isolate fixed z-[110] flex flex-col overflow-hidden",
         "border border-white/40 bg-white/40 shadow-deep backdrop-blur-xl rounded-[32px] p-0 font-body",
-        "inset-x-0 bottom-0 max-h-[88dvh] pb-[env(safe-area-inset-bottom)] rounded-t-[32px] rounded-b-none",
+        "inset-x-0 bottom-0 h-[88dvh] pb-[env(safe-area-inset-bottom)] rounded-t-[32px] rounded-b-none",
         "lg:bottom-auto lg:right-auto lg:left-8 lg:top-32 lg:w-72 lg:max-h-[calc(100vh-160px)] lg:rounded-[32px] lg:rounded-b-[32px]",
+        "transition-all duration-500 ease-in-out",
         isOpen
-          ? "pointer-events-auto animate-in fade-in slide-in-from-bottom-6 duration-500 fill-mode-both lg:slide-in-from-left-8"
-          : hasOpened
-            ? "pointer-events-none animate-out fade-out duration-300 fill-mode-both slide-out-to-bottom-6 lg:slide-out-to-left-8"
-            : "pointer-events-none opacity-0",
+          ? "pointer-events-auto opacity-100 translate-y-0 lg:translate-x-0"
+          : "pointer-events-none opacity-0 translate-y-8 lg:translate-y-0 lg:-translate-x-8",
       )}
     >
       <div
@@ -101,9 +70,12 @@ export function HarborOverview({
 
         <button
           type="button"
-          onPointerDown={handleClosePointerDown}
-          onPointerUp={handleClosePointerUp}
-          onClick={handleCloseClick}
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={(e) => {
+            e.stopPropagation();
+            if (e.pointerType === "touch") onCloseCB?.();
+          }}
+          onClick={onCloseCB}
           className="pointer-events-auto relative z-[130] flex h-14 w-14 shrink-0 touch-manipulation items-center justify-center rounded-full bg-[#0A2540]/5 text-[#0A2540]/60 transition-all hover:scale-110 hover:bg-[#0A2540]/10 active:scale-95"
           aria-label="Close harbor overview"
         >

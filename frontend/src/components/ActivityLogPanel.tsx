@@ -6,7 +6,7 @@ import {
   Flag,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import type { components } from "../api-types";
 import { useActiveAlerts } from "../hooks/useActiveAlerts";
@@ -33,60 +33,23 @@ export function ActivityLogPanel({
   const { marinaSlug } = useParams<{ marinaSlug: string }>();
   const { events, isLoaded } = useActivityLog(berths, PANEL_LIMIT);
   const { alerts, acknowledgeAlert } = useActiveAlerts();
-  const isFirstLoad = useRef(true);
   const [activeTab, setActiveTab] = useState<Tab>("activity");
   const [filterType, setFilterType] = useState<string>("all");
-
-  useEffect(() => {
-    if (isLoaded) {
-      const timer = setTimeout(() => {
-        isFirstLoad.current = false;
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [isLoaded]);
-
-  const activeOpen = isOpen && isLoaded;
   const filteredEvents = events.filter((e) => {
     if (filterType === "all") return true;
     return e.type === filterType;
   });
 
-  function closePanel() {
-    onCloseCB();
-  }
-
-  function handleCloseClick(event: React.MouseEvent<HTMLButtonElement>) {
-    event.preventDefault();
-    event.stopPropagation();
-    closePanel();
-  }
-
-  function handleClosePointerDown(
-    event: React.PointerEvent<HTMLButtonElement>,
-  ) {
-    event.preventDefault();
-    event.stopPropagation();
-  }
-
-  function handleClosePointerUp(event: React.PointerEvent<HTMLButtonElement>) {
-    event.preventDefault();
-    event.stopPropagation();
-    closePanel();
-  }
-
   return (
     <section
       className={cn(
         "isolate fixed border border-white/60 bg-white/70 shadow-deep backdrop-blur-2xl",
-        "inset-x-0 bottom-0 max-h-[88dvh] pb-[env(safe-area-inset-bottom)] rounded-t-[32px] rounded-b-none",
-        "lg:bottom-auto lg:right-auto lg:left-[var(--sidebar-total-offset,32px)] lg:top-32 lg:w-80 lg:max-h-[calc(100vh-160px)] lg:rounded-b-[32px]",
+        "inset-x-0 bottom-0 h-[88dvh] pb-[env(safe-area-inset-bottom)] rounded-t-[32px] rounded-b-none",
+        "lg:bottom-auto lg:right-auto lg:left-[var(--sidebar-total-offset,32px)] lg:top-32 lg:w-80 lg:h-[520px] lg:max-h-[calc(100vh-160px)] lg:rounded-b-[32px]",
         "z-[var(--z-panel)] flex flex-col overflow-hidden rounded-[32px] p-6 font-body transition-all duration-500 ease-in-out",
-        (!isLoaded || isFirstLoad.current) &&
-          "pointer-events-none opacity-0 transition-none",
-        activeOpen
-          ? "pointer-events-auto translate-y-0 opacity-100 lg:translate-x-0"
-          : "pointer-events-none translate-y-[150%] opacity-0 lg:-translate-x-[150%] lg:translate-y-0",
+        isOpen
+          ? "pointer-events-auto opacity-100 translate-y-0 lg:translate-x-0"
+          : "pointer-events-none opacity-0 translate-y-8 lg:translate-y-0 lg:-translate-x-8",
       )}
     >
       <header className="mb-4 flex items-center justify-between">
@@ -112,9 +75,12 @@ export function ActivityLogPanel({
         <button
           type="button"
           aria-label="Close activity log"
-          onPointerDown={handleClosePointerDown}
-          onPointerUp={handleClosePointerUp}
-          onClick={handleCloseClick}
+          onClick={onCloseCB}
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={(e) => {
+            e.stopPropagation();
+            if (e.pointerType === "touch") onCloseCB();
+          }}
           className="pointer-events-auto relative z-[130] grid h-10 w-10 touch-manipulation cursor-pointer place-items-center rounded-full bg-[#0A2540]/5 text-[#0A2540]/60 transition-colors active:scale-95 active:bg-[#0A2540]/15"
         >
           <X size={16} strokeWidth={3} />
@@ -183,7 +149,11 @@ export function ActivityLogPanel({
       )}
 
       <ul className="custom-scrollbar -mx-2 flex-1 space-y-2 overflow-y-auto px-2">
-        {activeTab === "alerts" ? (
+        {!isLoaded ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-blue/20 border-t-brand-blue" />
+          </div>
+        ) : activeTab === "alerts" ? (
           alerts.length === 0 ? (
             <li className="flex flex-col items-center justify-center py-12 text-center opacity-40">
               <div className="mb-3 grid h-14 w-14 place-items-center rounded-full bg-emerald-50 text-emerald-500">

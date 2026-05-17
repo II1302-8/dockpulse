@@ -79,9 +79,16 @@ export function HarborMap() {
   const activityLogIsVisible = isActivityLogOpen;
   const nodeHealthIsVisible = isNodeHealthOpen;
 
-  // overview is small enough to leave the map pannable; activity/nodeHealth
-  // panels still pause panzoom because they fill the gutter on mobile
-  const isMapBlocked = activityLogIsVisible || nodeHealthIsVisible;
+  // on mobile every panel covers the full viewport so panzoom must be paused
+  // whenever any panel is open — otherwise its passive=false touch listeners
+  // swallow pointerdown and prevent click from reaching the close button.
+  // on desktop, overview and bookings leave the map visible but we still pause
+  // to keep touch behaviour consistent across breakpoints.
+  const isMapBlocked =
+    activityLogIsVisible ||
+    nodeHealthIsVisible ||
+    overviewIsVisible ||
+    isBookingsOpen;
 
   useEffect(() => {
     const contentElement = contentRef.current;

@@ -59,12 +59,12 @@ export function BookingsManagerPanel({
     <section
       className={cn(
         "isolate fixed border border-white/60 bg-white/70 shadow-deep backdrop-blur-2xl",
-        "inset-x-0 bottom-0 max-h-[88dvh] pb-[env(safe-area-inset-bottom)] rounded-t-[32px] rounded-b-none",
-        "lg:bottom-auto lg:right-auto lg:left-[var(--sidebar-total-offset,32px)] lg:top-32 lg:w-96 lg:max-h-[calc(100vh-160px)] lg:rounded-b-[32px]",
+        "inset-x-0 bottom-0 h-[88dvh] pb-[env(safe-area-inset-bottom)] rounded-t-[32px] rounded-b-none",
+        "lg:bottom-auto lg:right-auto lg:left-[var(--sidebar-total-offset,32px)] lg:top-32 lg:w-96 lg:h-[520px] lg:max-h-[calc(100vh-160px)] lg:rounded-b-[32px]",
         "z-[var(--z-panel)] flex flex-col overflow-hidden rounded-[32px] p-6 font-body transition-all duration-500 ease-in-out",
         isOpen
-          ? "pointer-events-auto translate-y-0 opacity-100 lg:translate-x-0"
-          : "pointer-events-none translate-y-[150%] opacity-0 lg:-translate-x-[150%] lg:translate-y-0",
+          ? "pointer-events-auto opacity-100 translate-y-0 lg:translate-x-0"
+          : "pointer-events-none opacity-0 translate-y-8 lg:translate-y-0 lg:-translate-x-8",
       )}
     >
       <header className="mb-4 flex items-center justify-between">
@@ -78,13 +78,12 @@ export function BookingsManagerPanel({
           type="button"
           aria-label="Close bookings panel"
           onClick={onCloseCB}
-          // ios drops click after backdrop-blur stacking, pointerup fallback
+          onPointerDown={(e) => e.stopPropagation()}
           onPointerUp={(e) => {
-            if (e.pointerType !== "touch") return;
-            e.preventDefault();
-            onCloseCB?.();
+            e.stopPropagation();
+            if (e.pointerType === "touch") onCloseCB();
           }}
-          className="pointer-events-auto grid h-10 w-10 place-items-center rounded-full bg-[#0A2540]/5 text-[#0A2540]/60 transition-colors hover:bg-[#0A2540]/10"
+          className="touch-manipulation pointer-events-auto grid h-10 w-10 place-items-center rounded-full bg-[#0A2540]/5 text-[#0A2540]/60 transition-colors hover:bg-[#0A2540]/10"
         >
           <X size={16} strokeWidth={3} />
         </button>

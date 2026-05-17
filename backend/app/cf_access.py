@@ -28,8 +28,15 @@ class AccessAuthError(Exception):
 
 @dataclass(frozen=True)
 class AccessIdentity:
-    email: str
-    sub: str  # cf user id
+    # email is None for service-token assertions (factory-flash, CI, etc.)
+    email: str | None
+    sub: str  # cf user id or service-token client id
+    # set on service-token assertions to the token's display name
+    service_token: str | None = None
+
+    @property
+    def display(self) -> str:
+        return self.email or f"service:{self.service_token or self.sub}"
 
 
 _jwks_clients: dict[str, PyJWKClient] = {}
@@ -72,9 +79,13 @@ def verify_assertion(token: str) -> AccessIdentity:
         raise AccessAuthError(f"invalid assertion: {err}") from err
 
     email = payload.get("email")
+    common_name = payload.get("common_name")
+    # service-token assertions carry common_name + no email, human SSO carries
+    # email + no common_name; require at least one
     if not isinstance(email, str) or not email:
-        raise AccessAuthError("assertion missing email claim")
-
+        if not isinstance(common_name, str) or not common_name:
+            raise AccessAuthError("assertion missing email or common_name claim")
+        return AccessIdentity(email=None, sub=payload["sub"], service_token=common_name)
     return AccessIdentity(email=email, sub=payload["sub"])
 
 

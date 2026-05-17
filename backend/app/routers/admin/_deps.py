@@ -31,7 +31,7 @@ async def require_cf_access(
         identity = verify_assertion(cf_jwt)
     except AccessAuthError as err:
         raise HTTPException(status_code=401, detail=str(err)) from err
-    logger.info("admin request from %s", identity.email)
+    logger.info("admin request from %s", identity.display)
     return identity
 
 

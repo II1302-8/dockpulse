@@ -48,6 +48,7 @@ export function HarborMap() {
     setIsBookingsOpen,
     toggleOverview,
     toggleNodeHealth,
+    isDesktop,
   } = useDashboardLayout();
 
   // highlight berths with confirmed bookings when bookings panel is open
@@ -82,13 +83,14 @@ export function HarborMap() {
   // on mobile every panel covers the full viewport so panzoom must be paused
   // whenever any panel is open — otherwise its passive=false touch listeners
   // swallow pointerdown and prevent click from reaching the close button.
-  // on desktop, overview and bookings leave the map visible but we still pause
-  // to keep touch behaviour consistent across breakpoints.
-  const isMapBlocked =
-    activityLogIsVisible ||
-    nodeHealthIsVisible ||
-    overviewIsVisible ||
-    isBookingsOpen;
+  // on desktop, only the large activity/nodeHealth panels block the map,
+  // while overview and bookings panels are small enough to leave the map fully interactive.
+  const isMapBlocked = isDesktop
+    ? activityLogIsVisible || nodeHealthIsVisible
+    : activityLogIsVisible ||
+      nodeHealthIsVisible ||
+      overviewIsVisible ||
+      isBookingsOpen;
 
   useEffect(() => {
     const contentElement = contentRef.current;

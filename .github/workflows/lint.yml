@@ -37,7 +37,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
-      - run: uvx pre-commit run --all-files hadolint-docker
+      - name: Install hadolint
+        run: |
+          sudo curl -sL -o /usr/local/bin/hadolint \
+            https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64
+          sudo chmod +x /usr/local/bin/hadolint
+      - run: uvx pre-commit run --all-files hadolint
 
   actionlint:
     name: Actionlint

@@ -8,6 +8,8 @@ type BerthSnapshot = components["schemas"]["BerthSnapshotEvent"];
 // EventSource won't auto-retry on clean server close, schedule own backoff
 const RETRY_BASE_MS = 1000;
 const RETRY_MAX_MS = 30_000;
+// quiet the reconnect banner unless the outage actually persists past this
+const ERROR_SURFACE_MS = 2500;
 
 export function useBerthsStream(harborId: string | null) {
   const [berthsById, setBerthsById] = useState<Map<string, Berth>>(new Map());
@@ -17,6 +19,7 @@ export function useBerthsStream(harborId: string | null) {
   const [generation, setGeneration] = useState(0);
   const sourceRef = useRef<EventSource | null>(null);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const errorTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const retryAttemptRef = useRef(0);
 
   useEffect(() => {
@@ -45,10 +48,18 @@ export function useBerthsStream(harborId: string | null) {
       }, delay);
     };
 
+    const cancelPendingError = () => {
+      if (errorTimerRef.current) {
+        clearTimeout(errorTimerRef.current);
+        errorTimerRef.current = null;
+      }
+    };
+
     source.addEventListener("berth.snapshot", (e) => {
       try {
         const msg = JSON.parse((e as MessageEvent).data) as BerthSnapshot;
         setBerthsById(new Map(msg.berths.map((b) => [b.berth_id, b])));
+        cancelPendingError();
         setError(null);
         setIsLoading(false);
         // fresh snapshot = healthy, reset backoff
@@ -80,11 +91,15 @@ export function useBerthsStream(harborId: string | null) {
 
     source.onerror = () => {
       if (source.readyState === EventSource.CLOSED) {
-        // browser gave up, schedule our own retry with bootstrap-on-success
-        setError("Stream connection closed, retrying...");
+        // delay the banner so brief tab-switch closes don't flash a warning,
+        // cancel if the reconnect succeeds before the timer fires
+        if (!errorTimerRef.current) {
+          errorTimerRef.current = setTimeout(() => {
+            errorTimerRef.current = null;
+            setError("Stream connection closed, retrying...");
+          }, ERROR_SURFACE_MS);
+        }
         scheduleRetry();
-      } else if (source.readyState === EventSource.CONNECTING) {
-        setError("Stream reconnecting");
       }
     };
 
@@ -95,8 +110,23 @@ export function useBerthsStream(harborId: string | null) {
         clearTimeout(retryTimerRef.current);
         retryTimerRef.current = null;
       }
+      cancelPendingError();
     };
   }, [generation, harborId]);
+
+  // when the tab regains focus, force a fresh reconnect, ios safari often
+  // closes the EventSource silently on tab hide so without this the page
+  // sits showing stale data until the next user action
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      retryAttemptRef.current = 0;
+      setGeneration((g) => g + 1);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, []);
 
   const refetchACB = useCallback(() => {
     setIsLoading(true);

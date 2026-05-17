@@ -213,7 +213,7 @@ export function HarborMap() {
   }, [setIsBookingsOpen]);
 
   return (
-    <div className="relative h-full w-full overflow-hidden border-4 border-white/70 bg-sky-50/20 font-body shadow-inner">
+    <div className="relative h-full w-full overflow-hidden bg-sky-50/20 font-body">
       <section
         ref={contentRef}
         aria-label="Harbor interactive map"
@@ -230,8 +230,6 @@ export function HarborMap() {
           onBerthClickCB={handleBerthClick}
         />
       </section>
-
-      <div className="pointer-events-none absolute inset-0 z-20 rounded-[2rem] border border-brand-blue/20" />
 
       {showInitialSpinner && (
         <div className="absolute inset-0 z-[80] flex flex-col items-center justify-center gap-4 bg-[#F4F9FF]/80 backdrop-blur-md">
@@ -251,7 +249,13 @@ export function HarborMap() {
           <button
             type="button"
             onClick={refetchACB}
-            className="rounded-full bg-[#0A2540] px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-[#0093E9]"
+            // ios drops click after backdrop-blur stacking, pointerup fallback
+            onPointerUp={(e) => {
+              if (e.pointerType !== "touch") return;
+              e.preventDefault();
+              refetchACB();
+            }}
+            className="touch-manipulation rounded-full bg-[#0A2540] px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-[#0093E9]"
           >
             Retry
           </button>

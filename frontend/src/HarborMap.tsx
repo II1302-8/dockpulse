@@ -83,7 +83,9 @@ export function HarborMap() {
   // panels still pause panzoom because they fill the gutter on mobile
   const isMapBlocked = activityLogIsVisible || nodeHealthIsVisible;
 
-  const shouldShowMapLegend = !isMapBlocked && !selectedBerthId;
+  // hide legend whenever any sheet is open, on mobile they cover the legend area
+  const shouldShowMapLegend =
+    !isMapBlocked && !selectedBerthId && !overviewIsVisible && !isBookingsOpen;
 
   useEffect(() => {
     const contentElement = contentRef.current;
@@ -261,7 +263,7 @@ export function HarborMap() {
           type="button"
           onClick={toggleOverview}
           data-map-control
-          className="pointer-events-auto fixed left-5 bottom-[calc(env(safe-area-inset-bottom)+7rem)] z-40 flex items-center gap-2 rounded-2xl border border-white/60 bg-white/70 px-3 py-2.5 text-xs font-black uppercase tracking-[0.18em] text-brand-navy shadow-deep backdrop-blur-2xl transition-all hover:bg-white/90 active:scale-95 lg:left-6 lg:top-32 lg:bottom-auto lg:rounded-full lg:px-4 lg:z-[var(--z-map-content)]"
+          className="pointer-events-auto fixed left-5 bottom-[calc(env(safe-area-inset-bottom)+1.25rem)] z-[var(--z-controls)] flex items-center gap-2 rounded-2xl border border-white/60 bg-white/70 px-3 py-2.5 text-xs font-black uppercase tracking-[0.18em] text-brand-navy shadow-deep backdrop-blur-2xl transition-all hover:bg-white/90 active:scale-95 touch-manipulation lg:left-6 lg:top-32 lg:bottom-auto lg:rounded-full lg:px-4 lg:z-[var(--z-map-content)]"
           aria-label="Open harbor overview"
         >
           <LayoutDashboard
@@ -269,7 +271,8 @@ export function HarborMap() {
             strokeWidth={2.5}
             className="text-brand-blue"
           />
-          Harbor Overview
+          <span className="lg:hidden">Overview</span>
+          <span className="hidden lg:inline">Harbor Overview</span>
         </button>
       )}
 
@@ -314,7 +317,7 @@ export function HarborMap() {
         />
       )}
 
-      {shouldShowMapLegend && <MapLegend />}
+      {shouldShowMapLegend && <MapLegend hasBottomDock={isHarborMaster} />}
       <NorthArrow />
 
       {selectedBerthId && (

@@ -78,7 +78,7 @@ export function ActivityLogPanel({
   return (
     <section
       className={cn(
-        "fixed border border-white/60 bg-white/70 shadow-deep backdrop-blur-2xl",
+        "isolate fixed border border-white/60 bg-white/70 shadow-deep backdrop-blur-2xl",
         "inset-x-0 bottom-0 max-h-[88dvh] pb-[env(safe-area-inset-bottom)] rounded-t-[32px] rounded-b-none",
         "lg:bottom-auto lg:right-auto lg:left-[var(--sidebar-total-offset,32px)] lg:top-32 lg:w-80 lg:max-h-[calc(100vh-160px)]",
         "z-[var(--z-panel)] flex flex-col overflow-hidden rounded-[32px] p-6 font-body transition-all duration-500 ease-in-out",

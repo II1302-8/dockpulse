@@ -65,7 +65,7 @@ export function HarborOverview({
   return (
     <section
       className={cn(
-        "fixed z-[110] flex flex-col overflow-hidden border border-white/60 bg-white/70 p-6 font-body shadow-deep backdrop-blur-2xl transition-all duration-500 ease-in-out",
+        "isolate fixed z-[110] flex flex-col overflow-hidden border border-white/60 bg-white/70 p-6 font-body shadow-deep backdrop-blur-2xl transition-all duration-500 ease-in-out",
         "inset-x-0 bottom-0 max-h-[88dvh] pb-[env(safe-area-inset-bottom)] rounded-t-[32px]",
         "lg:bottom-auto lg:right-auto lg:left-8 lg:top-32 lg:w-72 lg:max-h-[calc(100vh-160px)] lg:rounded-[32px] lg:inset-x-auto",
         isOpen

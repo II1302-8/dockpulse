@@ -53,10 +53,12 @@ services:
     logging: *loki-logging
 
   cloudflared-admin:
-    # admin.staging.dockpulse.xyz over cf zero trust, mirrors prod's tunnel
+    # admin-staging.dockpulse.xyz over cf zero trust, mirrors prod's tunnel.
+    # flat subdomain because universal SSL only covers one level deep,
+    # admin.staging.dockpulse.xyz would need advanced certificate manager.
     # set up in cf dashboard:
-    #   admin.staging.dockpulse.xyz/api/*  -> http://backend:8000
-    #   admin.staging.dockpulse.xyz/*      -> http://frontend:5173
+    #   admin-staging.dockpulse.xyz/api/*  -> http://backend:8000
+    #   admin-staging.dockpulse.xyz/*      -> http://frontend:5173
     # cf access app on this hostname enforces auth, backend rechecks via JWT
     container_name: dockpulse-staging-cloudflared-admin
     image: cloudflare/cloudflared:latest

@@ -16,9 +16,9 @@ import { NavLink, Outlet } from "react-router-dom";
 import { cn } from "../lib/utils";
 import { detectEnv } from "./env";
 
-// admin host mounts spa at root, other hosts under /admin
+// admin host (admin.* or admin-*) mounts spa at root, other hosts under /admin
 const BASE =
-  typeof window !== "undefined" && window.location.hostname.startsWith("admin.")
+  typeof window !== "undefined" && /^admin[.-]/.test(window.location.hostname)
     ? ""
     : "/admin";
 

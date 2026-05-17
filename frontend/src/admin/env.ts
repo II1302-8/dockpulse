@@ -17,7 +17,7 @@ export function detectEnv(): EnvInfo {
       bannerClass: "bg-red-600 text-white",
     };
   }
-  if (host === "admin.staging.dockpulse.xyz") {
+  if (host === "admin-staging.dockpulse.xyz") {
     return {
       env: "staging",
       label: "STAGING",

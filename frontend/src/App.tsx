@@ -74,10 +74,9 @@ const AdminApp = lazy(() =>
   import("./admin/AdminApp").then((m) => ({ default: m.AdminApp })),
 );
 
-// admin.* hostname forks the entire app to admin-only (no public routes)
+// admin.* or admin-* hostname forks the entire app to admin-only
 const isAdminHost =
-  typeof window !== "undefined" &&
-  window.location.hostname.startsWith("admin.");
+  typeof window !== "undefined" && /^admin[.-]/.test(window.location.hostname);
 
 // admin route exists in dev so localhost:5173/admin works during bun dev,
 // stays hidden on prod public hosts so staging.dockpulse.xyz/admin 404s

@@ -43,21 +43,26 @@ const ROWS = [
 
 export function MapLegend({
   hasBottomDock = false,
+  shiftLeft = false,
 }: {
   hasBottomDock?: boolean;
+  shiftLeft?: boolean;
 }) {
   return (
-    // z below panels on mobile so bottom-sheet covers the legend cleanly
+    // flat, integrated vertical legend that sits directly on the page for a clean and discrete look
     <aside
       aria-label="Berth status legend"
       className={cn(
-        "pointer-events-none fixed right-5 z-40 rounded-2xl border border-white/60 bg-white/70 px-3 py-2.5 shadow-deep backdrop-blur-2xl lg:bottom-6 lg:right-6 lg:z-[120]",
+        "pointer-events-none fixed z-40 flex flex-col items-start gap-2 font-body transition-all duration-500 ease-in-out",
+        shiftLeft
+          ? "right-5 md:right-[504px] lg:right-[376px]"
+          : "right-5 lg:right-6",
         hasBottomDock
-          ? "bottom-[calc(env(safe-area-inset-bottom)+7rem)]"
-          : "bottom-[calc(env(safe-area-inset-bottom)+1.25rem)]",
+          ? "bottom-[calc(env(safe-area-inset-bottom)+7.5rem)]"
+          : "bottom-[calc(env(safe-area-inset-bottom)+1.75rem)]",
       )}
     >
-      <div className="mb-2 flex items-center gap-1.5">
+      <div className="flex items-center gap-1.5">
         <Info size={11} strokeWidth={2.5} className="text-brand-blue" />
         <span className="text-xs font-black uppercase tracking-[0.18em] text-brand-navy/60">
           Berth Status

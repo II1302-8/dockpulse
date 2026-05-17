@@ -83,10 +83,6 @@ export function HarborMap() {
   // panels still pause panzoom because they fill the gutter on mobile
   const isMapBlocked = activityLogIsVisible || nodeHealthIsVisible;
 
-  // hide legend whenever any sheet is open, on mobile they cover the legend area
-  const shouldShowMapLegend =
-    !isMapBlocked && !selectedBerthId && !overviewIsVisible && !isBookingsOpen;
-
   useEffect(() => {
     const contentElement = contentRef.current;
     if (!contentElement) return;
@@ -262,7 +258,7 @@ export function HarborMap() {
         </div>
       )}
 
-      {!isHarborMaster && !isOverviewOpen && !selectedBerthId && (
+      {!isHarborMaster && !isOverviewOpen && (
         <button
           type="button"
           onClick={toggleOverview}
@@ -327,7 +323,10 @@ export function HarborMap() {
         />
       )}
 
-      {shouldShowMapLegend && <MapLegend hasBottomDock={isHarborMaster} />}
+      <MapLegend
+        hasBottomDock={isHarborMaster}
+        shiftLeft={isHarborMaster && !!selectedBerthId}
+      />
       <NorthArrow />
 
       {selectedBerthId && (

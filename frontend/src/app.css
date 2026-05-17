@@ -55,7 +55,7 @@
   --z-map-content: 10;
   --z-controls: 40;
   --z-nav: 80;
-  --z-panel: 50;
+  --z-panel: 110;
   --z-detail: 60;
   --z-overlay: 100;
   --z-top: 200;
@@ -121,7 +121,26 @@
 @layer base {
   * {
     @apply border-border;
+    scrollbar-color: rgba(10, 37, 64, 0.15) transparent;
+    scrollbar-width: thin;
   }
+
+  /* Global scrollbar styling to achieve transparent tracks and premium thumbs */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(10, 37, 64, 0.15);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(10, 37, 64, 0.3);
+  }
+
   /* match body bg so ios safari nav-bar reveal area stays one colour */
   html {
     background-color: #f4f9ff;

@@ -9,7 +9,6 @@ import {
   DashboardLayoutProvider,
   useDashboardLayout,
 } from "./DashboardLayoutContext";
-import { Footer } from "./Footer";
 import { Header } from "./Header";
 import { SideMenu } from "./SideMenu";
 
@@ -55,7 +54,6 @@ function MainLayoutContent({
     toggleActivityLog,
     toggleNodeHealth,
     toggleBookings,
-    isDesktop,
     isBookingsOpen,
   } = useDashboardLayout();
 
@@ -111,7 +109,7 @@ function MainLayoutContent({
 
       <main
         className={cn(
-          "absolute inset-0 z-[var(--z-map)] transition-all duration-500 pointer-events-auto",
+          "absolute inset-0 transition-all duration-500 pointer-events-auto overflow-y-auto",
         )}
       >
         <Outlet
@@ -133,8 +131,6 @@ function MainLayoutContent({
         lockEmail={authDialogOptions.lockEmail}
         defaultTab={authDialogOptions.defaultTab}
       />
-
-      {!isDesktop && isHarborMaster ? null : <Footer />}
 
       <VerifyEmailBanner />
 

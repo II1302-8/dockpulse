@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Activity, BatteryLow, X } from "lucide-react";
 import type { components } from "../api-types";
 import { useNow } from "../hooks/useNow";
@@ -18,6 +19,13 @@ export function HarborOverview({
   onCloseCB,
 }: HarborOverviewProps) {
   const now = useNow();
+  const [hasOpened, setHasOpened] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setHasOpened(true);
+    }
+  }, [isOpen]);
 
   const onlineBerths = berths.filter((berth) =>
     isOnline(berth.last_updated, now),
@@ -65,35 +73,49 @@ export function HarborOverview({
   return (
     <section
       className={cn(
-        "isolate fixed z-[110] flex flex-col overflow-hidden border border-white/60 bg-white/70 p-6 font-body shadow-deep backdrop-blur-2xl transition-all duration-500 ease-in-out",
+        "isolate pointer-events-auto fixed z-[110] flex flex-col overflow-hidden",
+        "border border-white/40 bg-white/40 shadow-deep backdrop-blur-xl rounded-[32px] p-0 font-body",
         "inset-x-0 bottom-0 max-h-[88dvh] pb-[env(safe-area-inset-bottom)] rounded-t-[32px] rounded-b-none",
-        "lg:bottom-auto lg:right-auto lg:left-8 lg:top-32 lg:w-72 lg:max-h-[calc(100vh-160px)] lg:rounded-[32px] lg:rounded-b-[32px] lg:inset-x-auto",
+        "lg:bottom-auto lg:right-auto lg:left-8 lg:top-32 lg:w-72 lg:max-h-[calc(100vh-160px)] lg:rounded-[32px] lg:rounded-b-[32px]",
         isOpen
-          ? "pointer-events-auto translate-y-0 opacity-100 lg:translate-x-0"
-          : "pointer-events-none translate-y-[150%] opacity-0 lg:-translate-x-[150%] lg:translate-y-0",
+          ? "pointer-events-auto animate-in fade-in slide-in-from-bottom-6 duration-500 fill-mode-both lg:slide-in-from-left-8"
+          : hasOpened
+            ? "pointer-events-none animate-out fade-out duration-300 fill-mode-both slide-out-to-bottom-6 lg:slide-out-to-left-8"
+            : "pointer-events-none opacity-0"
       )}
     >
-      <header className="mb-4 flex items-center justify-between animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100 fill-mode-both">
-        <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[#0A2540]/40">
-          Harbor Overview
-        </h2>
+      <div className={cn(
+        "flex items-center justify-between border-b border-black/5 p-6",
+        isOpen && "animate-in fade-in duration-500 delay-100 fill-mode-both"
+      )}>
+        <div>
+          <h2 className="text-sm font-black uppercase tracking-tight text-[#0A2540]">
+            Harbor Overview
+          </h2>
+          <p className="text-xs font-bold uppercase tracking-widest text-[#0A2540]/40">
+            Live Status
+          </p>
+        </div>
 
         <button
           type="button"
           onPointerDown={handleClosePointerDown}
           onPointerUp={handleClosePointerUp}
           onClick={handleCloseClick}
-          className="pointer-events-auto relative z-[130] touch-manipulation rounded-full bg-[#0A2540]/5 p-2 text-[#0A2540]/60 transition-colors hover:bg-[#0A2540]/10 active:scale-95"
+          className="pointer-events-auto relative z-[130] flex h-14 w-14 shrink-0 touch-manipulation items-center justify-center rounded-full bg-[#0A2540]/5 text-[#0A2540]/60 transition-all hover:scale-110 hover:bg-[#0A2540]/10 active:scale-95"
           aria-label="Close harbor overview"
         >
-          <X size={14} strokeWidth={3} />
+          <X size={22} strokeWidth={3} />
         </button>
-      </header>
+      </div>
 
-      <div className="custom-scrollbar space-y-4 overflow-y-auto pr-2">
+      <div className="custom-scrollbar flex-1 space-y-4 overflow-y-auto p-6">
         {/* parent section already blurs the page; inner blur was redundant
           and cost a full compositor pass per frame */}
-        <article className="rounded-[24px] border border-white/50 bg-white/90 p-5 shadow-subtle transition-all duration-300 hover:shadow-md animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both">
+        <article className={cn(
+          "rounded-[24px] border border-white/50 bg-white/90 p-5 shadow-subtle transition-all duration-300 hover:shadow-md",
+          isOpen && "animate-in fade-in duration-500 delay-200 fill-mode-both"
+        )}>
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#0093E9]">
               <Activity size={12} strokeWidth={3} />
@@ -134,7 +156,10 @@ export function HarborOverview({
           )}
         </article>
 
-        <article className="rounded-[24px] border border-white/50 bg-white/90 p-4 shadow-subtle animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both">
+        <article className={cn(
+          "rounded-[24px] border border-white/50 bg-white/90 p-4 shadow-subtle",
+          isOpen && "animate-in fade-in duration-500 delay-300 fill-mode-both"
+        )}>
           <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#0A2540]/50">
             <BatteryLow size={12} strokeWidth={3} />
             Node Alerts

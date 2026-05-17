@@ -352,18 +352,34 @@ export function BerthDetailPanel({
         </div>
 
         <div className="custom-scrollbar flex-1 overflow-y-auto p-6">
-          {isLoading ? (
+          {isLoading && !berth ? (
             <div className="space-y-6">
-              <div className="h-20 w-full animate-pulse rounded-2xl bg-slate-100" />
-              <div className="h-10 w-24 animate-pulse rounded-full bg-slate-100" />
+              {/* Identification skeleton */}
+              <div className="space-y-2">
+                <div className="h-3 w-20 animate-pulse rounded bg-[#0A2540]/5" />
+                <div className="h-10 w-32 animate-pulse rounded-2xl bg-[#0A2540]/5" />
+              </div>
 
+              {/* Status skeleton */}
+              <div className="space-y-2">
+                <div className="h-3 w-24 animate-pulse rounded bg-[#0A2540]/5" />
+                <div className="h-8 w-36 animate-pulse rounded-full bg-[#0A2540]/5" />
+              </div>
+
+              {/* Dimension cards skeleton */}
               <div className="grid grid-cols-3 gap-3">
-                <div className="h-12 animate-pulse rounded-xl bg-slate-100" />
-                <div className="h-12 animate-pulse rounded-xl bg-slate-100" />
-                <div className="h-12 animate-pulse rounded-xl bg-slate-100" />
+                <div className="h-14 animate-pulse rounded-[20px] bg-[#0A2540]/5" />
+                <div className="h-14 animate-pulse rounded-[20px] bg-[#0A2540]/5" />
+                <div className="h-14 animate-pulse rounded-[20px] bg-[#0A2540]/5" />
+              </div>
+
+              {/* A beautiful generic loading skeleton for additional details */}
+              <div className="h-28 animate-pulse rounded-[24px] border border-black/5 bg-[#0A2540]/5 p-5 flex flex-col justify-between">
+                <div className="h-3 w-28 rounded bg-[#0A2540]/10" />
+                <div className="h-8 w-full rounded-xl bg-[#0A2540]/10" />
               </div>
             </div>
-          ) : error ? (
+          ) : error && !berth ? (
             <div className="animate-in zoom-in-95 rounded-2xl border border-red-500/10 bg-red-500/5 p-4 text-xs font-bold text-red-500 duration-300">
               Error: {error}
             </div>

@@ -1,5 +1,5 @@
 import { Anchor, LayoutDashboard, X, Zap } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { components } from "../api-types";
 import { useNow } from "../hooks/useNow";
 import { usePolling } from "../hooks/usePolling";
@@ -25,16 +25,14 @@ export function HarborMasterOverview({
   onOpenNodeHealth,
 }: HarborMasterOverviewProps) {
   const now = useNow();
-  const isFirstLoad = useRef(true);
   const [health, setHealth] = useState<HealthStatus | null>(null);
+  const [hasOpened, setHasOpened] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      isFirstLoad.current = false;
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, []);
+    if (isOpen) {
+      setHasOpened(true);
+    }
+  }, [isOpen]);
 
   // pull /api/health so the system-status block reflects reality instead of
   // hardcoded "Operational". 503 still returns a body, so accept !res.ok
@@ -90,25 +88,37 @@ export function HarborMasterOverview({
   return (
     <section
       className={cn(
-        "isolate fixed z-[110] flex flex-col overflow-hidden rounded-[32px] border border-white/60 bg-white/70 p-6 font-body shadow-deep backdrop-blur-2xl transition-all duration-500 ease-in-out",
+        "isolate pointer-events-auto fixed z-[110] flex flex-col overflow-hidden",
+        "border border-white/40 bg-white/40 shadow-deep backdrop-blur-xl rounded-[32px] p-0 font-body",
         "inset-x-0 bottom-0 max-h-[88dvh] pb-[env(safe-area-inset-bottom)] rounded-t-[32px] rounded-b-none",
         "lg:bottom-auto lg:right-auto lg:left-[var(--sidebar-total-offset,32px)] lg:top-32 lg:w-80 lg:max-h-[calc(100vh-160px)] lg:rounded-b-[32px]",
-        isFirstLoad.current && "pointer-events-none opacity-0 transition-none",
         isOpen
-          ? "pointer-events-auto translate-y-0 opacity-100 lg:translate-x-0"
-          : "pointer-events-none translate-y-[150%] opacity-0 lg:-translate-x-[150%] lg:translate-y-0",
+          ? "pointer-events-auto animate-in fade-in slide-in-from-bottom-6 duration-500 fill-mode-both lg:slide-in-from-left-8"
+          : hasOpened
+            ? "pointer-events-none animate-out fade-out duration-300 fill-mode-both slide-out-to-bottom-6 lg:slide-out-to-left-8"
+            : "pointer-events-none opacity-0"
       )}
     >
-      <header className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <LayoutDashboard
-            size={16}
-            className="text-brand-blue"
-            strokeWidth={2.5}
-          />
-          <h2 className="text-xs font-black uppercase tracking-[0.2em] text-[#0A2540]/40">
-            Harbor Master HUD
-          </h2>
+      <div className={cn(
+        "flex items-center justify-between border-b border-black/5 p-6",
+        isOpen && "animate-in fade-in duration-500 delay-100 fill-mode-both"
+      )}>
+        <div className="flex items-center gap-3">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand-blue/10">
+            <LayoutDashboard
+              className="text-brand-blue"
+              size={20}
+              strokeWidth={2.5}
+            />
+          </div>
+          <div>
+            <h2 className="text-sm font-black uppercase tracking-tight text-brand-navy">
+              Harbor Master HUD
+            </h2>
+            <p className="text-xs font-bold uppercase tracking-widest text-brand-navy/40">
+              System Overview
+            </p>
+          </div>
         </div>
 
         <button
@@ -117,14 +127,17 @@ export function HarborMasterOverview({
           onPointerDown={handleClosePointerDown}
           onPointerUp={handleClosePointerUp}
           onClick={handleCloseClick}
-          className="pointer-events-auto relative z-[130] grid h-10 w-10 touch-manipulation cursor-pointer place-items-center rounded-full bg-[#0A2540]/5 text-[#0A2540]/60 transition-colors active:scale-95 active:bg-[#0A2540]/15"
+          className="pointer-events-auto relative z-[130] flex h-14 w-14 shrink-0 touch-manipulation items-center justify-center rounded-full bg-brand-navy/5 text-brand-navy/60 transition-all hover:scale-110 hover:bg-brand-navy/10 active:scale-95"
         >
-          <X size={16} strokeWidth={3} />
+          <X size={22} strokeWidth={3} />
         </button>
-      </header>
+      </div>
 
-      <div className="custom-scrollbar no-scrollbar flex-1 space-y-6 overflow-y-auto pr-2">
-        <div className="space-y-1">
+      <div className="custom-scrollbar flex-1 space-y-6 overflow-y-auto p-6">
+        <div className={cn(
+          "space-y-1",
+          isOpen && "animate-in fade-in duration-500 delay-200 fill-mode-both"
+        )}>
           <div className="mb-2 flex items-end justify-between">
             <span className="text-xs font-black uppercase tracking-widest text-brand-navy/30">
               Live Occupancy
@@ -143,7 +156,10 @@ export function HarborMasterOverview({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className={cn(
+          "grid grid-cols-2 gap-4",
+          isOpen && "animate-in fade-in duration-500 delay-300 fill-mode-both"
+        )}>
           <div className="rounded-3xl border border-white/50 bg-white/80 p-4 shadow-subtle">
             <div className="mb-2 flex items-center gap-2 text-emerald-500">
               <Anchor size={14} strokeWidth={2.5} />
@@ -165,15 +181,10 @@ export function HarborMasterOverview({
               onClick={onOpenNodeHealth}
               className="rounded-3xl border border-white/50 bg-white/80 p-4 text-left shadow-subtle transition-all hover:-translate-y-0.5 hover:border-brand-blue/30 hover:shadow-md"
             >
-              <div className="mb-2 flex items-center justify-between gap-2 text-brand-blue">
-                <div className="flex items-center gap-2">
-                  <Zap size={14} strokeWidth={2.5} />
-                  <span className="text-xs font-black uppercase tracking-widest opacity-60">
-                    Active
-                  </span>
-                </div>
-                <span className="text-xs font-black uppercase tracking-widest opacity-40">
-                  Open →
+              <div className="mb-2 flex items-center gap-2 text-brand-blue">
+                <Zap size={14} strokeWidth={2.5} />
+                <span className="text-xs font-black uppercase tracking-widest opacity-60">
+                  Active
                 </span>
               </div>
 
@@ -197,7 +208,10 @@ export function HarborMasterOverview({
           )}
         </div>
 
-        <div className="border-t border-[#0A2540]/5 pt-6">
+        <div className={cn(
+          "border-t border-[#0A2540]/5 pt-6",
+          isOpen && "animate-in fade-in duration-500 delay-400 fill-mode-both"
+        )}>
           <h3 className="mb-4 text-xs font-black uppercase tracking-widest text-brand-navy/30">
             System Status
           </h3>

@@ -1,15 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { extractQrPayload, validateQrPayload } from "./qr";
 
-// helper, build base64url(json) the same way the firmware emits QR bodies
-function b64url(obj: unknown): string {
-  return btoa(JSON.stringify(obj))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
-
-const validPayload = b64url({ jwt: "stub.jwt.token" });
+const validPayload = "DP-N-000123:94FF01A87262C5D8";
 
 describe("extractQrPayload", () => {
   test("returns bare payload unchanged", () => {
@@ -41,16 +33,20 @@ describe("extractQrPayload", () => {
     );
   });
 
-  test("returns trimmed input on malformed URL", () => {
-    // not http-prefixed, treated as bare
-    const garbage = "not-a-url";
-    expect(extractQrPayload(garbage)).toBe(garbage);
+  test("returns trimmed input on non-url garbage", () => {
+    expect(extractQrPayload("not-a-url")).toBe("not-a-url");
   });
 });
 
 describe("validateQrPayload", () => {
-  test("accepts base64url JSON with jwt field", () => {
+  test("accepts SERIAL:JTI", () => {
     expect(validateQrPayload(validPayload)).toEqual({ ok: true });
+  });
+
+  test("accepts legacy 36-char UUID jti", () => {
+    expect(
+      validateQrPayload("DP-N-000123:00000000-0000-4000-8000-000000000001"),
+    ).toEqual({ ok: true });
   });
 
   test("rejects empty string", () => {
@@ -60,49 +56,12 @@ describe("validateQrPayload", () => {
     });
   });
 
-  test("rejects non-base64url alphabet (spaces, slash, plus)", () => {
-    expect(validateQrPayload("has spaces").ok).toBe(false);
-    expect(validateQrPayload("has/slash").ok).toBe(false);
-    expect(validateQrPayload("has+plus").ok).toBe(false);
+  test("rejects payloads without a colon separator", () => {
+    expect(validateQrPayload("DP-N-000123_94FF01A87262C5D8").ok).toBe(false);
   });
 
-  test("rejects payload missing jwt field", () => {
-    const noJwt = b64url({ foo: "bar" });
-    expect(validateQrPayload(noJwt)).toEqual({
-      ok: false,
-      reason: "QR missing 'jwt' field",
-    });
-  });
-
-  test("rejects payload whose jwt is not a string", () => {
-    const badJwt = b64url({ jwt: 123 });
-    expect(validateQrPayload(badJwt)).toEqual({
-      ok: false,
-      reason: "QR missing 'jwt' field",
-    });
-  });
-
-  test("rejects base64url that decodes to non-JSON", () => {
-    const notJson = btoa("hello world")
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "");
-    expect(validateQrPayload(notJson)).toEqual({
-      ok: false,
-      reason: "QR content is not valid base64url JSON",
-    });
-  });
-
-  test("rejects base64url that decodes to JSON null", () => {
-    const nullJson = b64url(null);
-    expect(validateQrPayload(nullJson)).toEqual({
-      ok: false,
-      reason: "QR missing 'jwt' field",
-    });
-  });
-
-  test("accepts payload with extra fields alongside jwt", () => {
-    const extra = b64url({ jwt: "x.y.z", v: 1, kid: "abc" });
-    expect(validateQrPayload(extra)).toEqual({ ok: true });
+  test("rejects whitespace or unsupported characters", () => {
+    expect(validateQrPayload("DP N:94FF01A87262C5D8").ok).toBe(false);
+    expect(validateQrPayload("DP-N-000123:short").ok).toBe(false);
   });
 });

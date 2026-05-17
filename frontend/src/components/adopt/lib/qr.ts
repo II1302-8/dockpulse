@@ -1,4 +1,4 @@
-// raw QR may be the bare base64url payload, or wrapped in a https://…?p=<payload> url
+// raw QR may be the bare serial:jti payload, or wrapped in a https://…?p=<payload> url
 export function extractQrPayload(raw: string): string {
   const trimmed = raw.trim();
   if (!/^https?:\/\//i.test(trimmed)) return trimmed;
@@ -18,26 +18,17 @@ export function extractQrPayload(raw: string): string {
 
 export type QrValidation = { ok: true } | { ok: false; reason: string };
 
+// sticker format: SERIAL:JTI (both >=1 char, jti is 16 uppercase hex by
+// default but backend accepts any 8..64-char string for legacy compat)
+const STICKER_RE = /^[A-Za-z0-9_.-]{1,64}:[A-Za-z0-9-]{8,64}$/;
+
 export function validateQrPayload(raw: string): QrValidation {
   if (!raw) return { ok: false, reason: "Empty payload" };
-  // base64url alphabet: A-Z a-z 0-9 - _ (padding optional)
-  if (!/^[A-Za-z0-9_-]+={0,2}$/.test(raw)) {
-    return { ok: false, reason: "Not a base64url payload (try rescanning)" };
+  if (!STICKER_RE.test(raw)) {
+    return {
+      ok: false,
+      reason: "Expected SERIAL:JTI (try rescanning the sticker)",
+    };
   }
-  try {
-    const padded = raw + "=".repeat((4 - (raw.length % 4)) % 4);
-    const b64 = padded.replace(/-/g, "+").replace(/_/g, "/");
-    const decoded = atob(b64);
-    const parsed = JSON.parse(decoded);
-    if (
-      !parsed ||
-      typeof parsed !== "object" ||
-      typeof parsed.jwt !== "string"
-    ) {
-      return { ok: false, reason: "QR missing 'jwt' field" };
-    }
-    return { ok: true };
-  } catch {
-    return { ok: false, reason: "QR content is not valid base64url JSON" };
-  }
+  return { ok: true };
 }

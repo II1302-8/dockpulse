@@ -92,7 +92,7 @@ export function QrStep({
         <textarea
           aria-label="QR payload"
           className="w-full h-32 p-3 font-mono text-xs rounded-2xl border border-black/10 bg-white focus:outline-none focus:border-brand-blue resize-none"
-          placeholder="Paste base64url QR payload here"
+          placeholder="Paste sticker contents here (SERIAL:JTI)"
           value={value}
           onChange={(e) => onChange(extractQrPayload(e.target.value))}
         />

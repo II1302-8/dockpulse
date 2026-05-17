@@ -21,11 +21,8 @@ const sampleGateway = {
   last_seen: null,
 };
 
-// minimal valid QR payload: base64url JSON containing a jwt field
-const validQrPayload = btoa(JSON.stringify({ jwt: "stub.jwt.token" }))
-  .replace(/\+/g, "-")
-  .replace(/\//g, "_")
-  .replace(/=+$/, "");
+// minimal valid QR payload: plaintext SERIAL:JTI sticker contents
+const validQrPayload = "DP-N-000123:94FF01A87262C5D8";
 
 const sampleBerth = {
   berth_id: "b1",

@@ -96,13 +96,15 @@ export function HarborMasterOverview({
           ? "pointer-events-auto animate-in fade-in slide-in-from-bottom-6 duration-500 fill-mode-both lg:slide-in-from-left-8"
           : hasOpened
             ? "pointer-events-none animate-out fade-out duration-300 fill-mode-both slide-out-to-bottom-6 lg:slide-out-to-left-8"
-            : "pointer-events-none opacity-0"
+            : "pointer-events-none opacity-0",
       )}
     >
-      <div className={cn(
-        "flex items-center justify-between border-b border-black/5 p-6",
-        isOpen && "animate-in fade-in duration-500 delay-100 fill-mode-both"
-      )}>
+      <div
+        className={cn(
+          "flex items-center justify-between border-b border-black/5 p-6",
+          isOpen && "animate-in fade-in duration-500 delay-100 fill-mode-both",
+        )}
+      >
         <div className="flex items-center gap-3">
           <div className="grid h-10 w-10 place-items-center rounded-xl bg-brand-blue/10">
             <LayoutDashboard
@@ -134,10 +136,13 @@ export function HarborMasterOverview({
       </div>
 
       <div className="custom-scrollbar flex-1 space-y-6 overflow-y-auto p-6">
-        <div className={cn(
-          "space-y-1",
-          isOpen && "animate-in fade-in duration-500 delay-200 fill-mode-both"
-        )}>
+        <div
+          className={cn(
+            "space-y-1",
+            isOpen &&
+              "animate-in fade-in duration-500 delay-200 fill-mode-both",
+          )}
+        >
           <div className="mb-2 flex items-end justify-between">
             <span className="text-xs font-black uppercase tracking-widest text-brand-navy/30">
               Live Occupancy
@@ -156,10 +161,13 @@ export function HarborMasterOverview({
           </div>
         </div>
 
-        <div className={cn(
-          "grid grid-cols-2 gap-4",
-          isOpen && "animate-in fade-in duration-500 delay-300 fill-mode-both"
-        )}>
+        <div
+          className={cn(
+            "grid grid-cols-2 gap-4",
+            isOpen &&
+              "animate-in fade-in duration-500 delay-300 fill-mode-both",
+          )}
+        >
           <div className="rounded-3xl border border-white/50 bg-white/80 p-4 shadow-subtle">
             <div className="mb-2 flex items-center gap-2 text-emerald-500">
               <Anchor size={14} strokeWidth={2.5} />
@@ -208,10 +216,13 @@ export function HarborMasterOverview({
           )}
         </div>
 
-        <div className={cn(
-          "border-t border-[#0A2540]/5 pt-6",
-          isOpen && "animate-in fade-in duration-500 delay-400 fill-mode-both"
-        )}>
+        <div
+          className={cn(
+            "border-t border-[#0A2540]/5 pt-6",
+            isOpen &&
+              "animate-in fade-in duration-500 delay-400 fill-mode-both",
+          )}
+        >
           <h3 className="mb-4 text-xs font-black uppercase tracking-widest text-brand-navy/30">
             System Status
           </h3>

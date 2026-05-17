@@ -339,6 +339,12 @@ export function BerthDetailPanel({
             type="button"
             aria-label="Close berth details"
             onClick={handleCloseClick}
+            // ios drops click after backdrop-blur stacking quirks, pointerup as fallback
+            onPointerUp={(e) => {
+              if (e.pointerType !== "touch") return;
+              e.preventDefault();
+              closePanel();
+            }}
             className="pointer-events-auto relative z-[130] flex h-14 w-14 shrink-0 touch-manipulation items-center justify-center rounded-full bg-brand-navy/5 text-brand-navy/60 transition-all hover:scale-110 hover:bg-brand-navy/10 active:scale-95"
           >
             <X size={22} strokeWidth={3} />

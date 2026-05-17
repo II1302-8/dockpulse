@@ -78,6 +78,12 @@ export function BookingsManagerPanel({
           type="button"
           aria-label="Close bookings panel"
           onClick={onCloseCB}
+          // ios drops click after backdrop-blur stacking, pointerup fallback
+          onPointerUp={(e) => {
+            if (e.pointerType !== "touch") return;
+            e.preventDefault();
+            onCloseCB?.();
+          }}
           className="pointer-events-auto grid h-10 w-10 place-items-center rounded-full bg-[#0A2540]/5 text-[#0A2540]/60 transition-colors hover:bg-[#0A2540]/10"
         >
           <X size={16} strokeWidth={3} />

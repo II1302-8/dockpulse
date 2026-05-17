@@ -262,6 +262,12 @@ export function HarborMap() {
         <button
           type="button"
           onClick={toggleOverview}
+          // ios drops click after backdrop-blur stacking quirks, pointerup as fallback
+          onPointerUp={(e) => {
+            if (e.pointerType !== "touch") return;
+            e.preventDefault();
+            toggleOverview();
+          }}
           data-map-control
           className="isolate pointer-events-auto fixed left-5 bottom-[calc(env(safe-area-inset-bottom)+1.25rem)] z-[var(--z-controls)] flex items-center gap-2 rounded-2xl border border-white/60 bg-white/70 px-3 py-2.5 text-xs font-black uppercase tracking-[0.18em] text-brand-navy shadow-deep backdrop-blur-2xl transition-all hover:bg-white/90 active:scale-95 touch-manipulation lg:left-6 lg:top-32 lg:bottom-auto lg:rounded-full lg:px-4 lg:z-[var(--z-map-content)]"
           aria-label="Open harbor overview"

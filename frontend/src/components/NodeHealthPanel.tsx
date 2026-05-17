@@ -121,6 +121,12 @@ export function NodeHealthPanel({ isOpen, onCloseCB }: NodeHealthPanelProps) {
         <button
           type="button"
           onClick={onCloseCB}
+          // ios drops click after backdrop-blur stacking, pointerup fallback
+          onPointerUp={(e) => {
+            if (e.pointerType !== "touch") return;
+            e.preventDefault();
+            onCloseCB?.();
+          }}
           className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-brand-navy/5 text-brand-navy/60 transition-all hover:scale-110 hover:bg-brand-navy/10 active:scale-95"
           aria-label="Close panel"
         >

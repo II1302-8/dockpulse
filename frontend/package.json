@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:mock": "bunx concurrently -k \"API_URL=http://localhost:4010 MOCK_SSE_URL=http://localhost:4011 vite\" \"bunx @stoplight/prism-cli mock ../docs/api/openapi.yml\" \"bun run mock/sse-server.ts\"",
+    "dev:mock": "bunx concurrently -k \"API_URL=http://localhost:4010 MOCK_SSE_URL=http://localhost:4011 vite\" \"bunx @stoplight/prism-cli mock --errors=false ../docs/api/openapi.yml\" \"bun run mock/sse-server.ts\"",
     "build": "vite build",
     "preview": "vite preview",
     "check": "tsc -p tsconfig.app.json && tsc -p tsconfig.node.json",
@@ -13,7 +13,7 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "gen:api": "openapi-typescript ../docs/api/openapi.yml -o src/api-types.ts",
-    "test": "bunx concurrently -k -s first -n prism,vitest \"bunx @stoplight/prism-cli mock ../docs/api/openapi.yml -p 4010\" \"vitest run\"",
+    "test": "bunx concurrently -k -s first -n prism,vitest \"bunx @stoplight/prism-cli mock --errors=false ../docs/api/openapi.yml -p 4010\" \"vitest run\"",
     "test:watch": "vitest"
   },
   "dependencies": {

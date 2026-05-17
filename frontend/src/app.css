@@ -122,14 +122,19 @@
   * {
     @apply border-border;
   }
-  /* match body bg so ios safari nav-bar reveal area stays one colour, also overflow-hidden so wave pseudoelements can't trigger initial zoom-out */
+  /* match body bg so ios safari nav-bar reveal area stays one colour, clamp to viewport width so fixed bottom dock + offscreen wave pseudos can't widen the layout viewport on iphone */
   html {
     background-color: #f4f9ff;
-    overflow: hidden;
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
   }
   body {
     @apply antialiased font-body text-foreground overflow-hidden min-h-dvh relative;
     background-color: #f4f9ff;
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
   }
 
   /* kills safari's 300ms tap-delay + ios gray flash so press feedback

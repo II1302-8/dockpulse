@@ -314,7 +314,7 @@ export function BerthDetailPanel({
           "border border-white/40 bg-white/40 shadow-deep backdrop-blur-xl",
           "rounded-[32px] p-0 font-body",
           // clear the mobile bottom dock + home indicator on short viewports
-          "bottom-[calc(env(safe-area-inset-bottom)+7rem)] left-6 right-6 max-h-[55dvh]",
+          "inset-x-0 bottom-0 max-h-[88dvh] pb-[env(safe-area-inset-bottom)] rounded-t-[32px] rounded-b-none",
           "md:left-auto md:right-8 md:max-w-md",
           "lg:top-32 lg:right-8 lg:bottom-auto lg:w-80",
           "animate-in fade-in slide-in-from-bottom-6 duration-500 fill-mode-both lg:slide-in-from-right-8",

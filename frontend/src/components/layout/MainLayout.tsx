@@ -85,7 +85,7 @@ function MainLayoutContent({
       : user?.email?.slice(0, 2).toUpperCase();
 
   return (
-    <div className="bg-transparent duration-1000 font-body min-h-dvh overflow-x-hidden relative transition-colors w-full">
+    <div className="bg-transparent duration-1000 font-body h-dvh w-full relative transition-colors overflow-hidden">
       <Header
         isLoggedIn={Boolean(user)}
         isLoggingOut={isLoggingOut}

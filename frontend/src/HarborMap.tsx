@@ -89,15 +89,6 @@ export function HarborMap() {
     const contentElement = contentRef.current;
     if (!contentElement) return;
 
-    // touch-only devices: panzoom swallows pointerdown -> tap on berth
-    // never fires. let browser handle pinch-zoom natively, skip panzoom init
-    const isTouchOnly =
-      typeof window !== "undefined" &&
-      window.matchMedia?.("(hover: none) and (pointer: coarse)").matches;
-    if (isTouchOnly) {
-      return;
-    }
-
     const instance = panzoom(contentElement, {
       maxZoom: 8,
       minZoom: 0.35,
@@ -129,7 +120,37 @@ export function HarborMap() {
 
     panzoomRef.current = instance;
 
+    // panzoom's touch path doesn't honour beforeMouseDown so taps on a berth
+    // get eaten as a no-op drag. detect a real tap (<10px movement, <400ms)
+    // and synthesize the click ourselves
+    let downX = 0;
+    let downY = 0;
+    let downAt = 0;
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.pointerType !== "touch") return;
+      downX = e.clientX;
+      downY = e.clientY;
+      downAt = Date.now();
+    };
+    const onPointerUp = (e: PointerEvent) => {
+      if (e.pointerType !== "touch" || !downAt) return;
+      const dx = Math.abs(e.clientX - downX);
+      const dy = Math.abs(e.clientY - downY);
+      const dt = Date.now() - downAt;
+      downAt = 0;
+      if (dx > 10 || dy > 10 || dt > 400) return;
+      const target = e.target as Element | null;
+      const berth = target?.closest("[data-berth-id]");
+      if (berth) {
+        berth.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      }
+    };
+    contentElement.addEventListener("pointerdown", onPointerDown);
+    contentElement.addEventListener("pointerup", onPointerUp);
+
     return () => {
+      contentElement.removeEventListener("pointerdown", onPointerDown);
+      contentElement.removeEventListener("pointerup", onPointerUp);
       instance.dispose();
       panzoomRef.current = null;
     };
@@ -195,8 +216,8 @@ export function HarborMap() {
         ref={contentRef}
         aria-label="Harbor interactive map"
         className={cn(
-          "absolute inset-0 z-10 h-full w-full cursor-grab active:cursor-grabbing",
-          "md:touch-none",
+          // touch-none everywhere lets panzoom own pinch/pan, browser won't fight
+          "absolute inset-0 z-10 h-full w-full cursor-grab active:cursor-grabbing touch-none",
           isMapBlocked && "pointer-events-none",
         )}
       >

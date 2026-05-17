@@ -89,6 +89,15 @@ export function HarborMap() {
     const contentElement = contentRef.current;
     if (!contentElement) return;
 
+    // touch-only devices: panzoom swallows pointerdown -> tap on berth
+    // never fires. let browser handle pinch-zoom natively, skip panzoom init
+    const isTouchOnly =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(hover: none) and (pointer: coarse)").matches;
+    if (isTouchOnly) {
+      return;
+    }
+
     const instance = panzoom(contentElement, {
       maxZoom: 8,
       minZoom: 0.35,

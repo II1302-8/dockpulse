@@ -42,9 +42,10 @@ const ROWS = [
 
 export function MapLegend() {
   return (
+    // z below panels on mobile so bottom-sheet covers the legend cleanly
     <aside
       aria-label="Berth status legend"
-      className="pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom)+7rem)] right-5 z-[120] rounded-2xl border border-white/60 bg-white/70 px-3 py-2.5 shadow-deep backdrop-blur-2xl lg:bottom-6 lg:right-6"
+      className="pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom)+7rem)] right-5 z-40 rounded-2xl border border-white/60 bg-white/70 px-3 py-2.5 shadow-deep backdrop-blur-2xl lg:bottom-6 lg:right-6 lg:z-[120]"
     >
       <div className="mb-2 flex items-center gap-1.5">
         <Info size={11} strokeWidth={2.5} className="text-brand-blue" />

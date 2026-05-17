@@ -122,6 +122,11 @@
   * {
     @apply border-border;
   }
+  /* match body bg so ios safari nav-bar reveal area stays one colour, also overflow-hidden so wave pseudoelements can't trigger initial zoom-out */
+  html {
+    background-color: #f4f9ff;
+    overflow: hidden;
+  }
   body {
     @apply antialiased font-body text-foreground overflow-hidden min-h-dvh relative;
     background-color: #f4f9ff;

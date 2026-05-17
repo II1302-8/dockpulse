@@ -4,11 +4,14 @@ import {
   HeartPulse,
   LayoutDashboard,
   Menu,
+  ScanLine,
   Settings,
   X,
 } from "lucide-react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { cn } from "../../lib/utils";
+import { AdoptNodeModal } from "../AdoptNodeModal";
 
 interface SideMenuProps {
   isExpanded: boolean;
@@ -42,6 +45,8 @@ export function SideMenu({
   const settingsPath = marinaSlug ? `/${marinaSlug}/settings` : null;
   const onDashboard =
     dashboardPath !== null && location.pathname === dashboardPath;
+
+  const [adoptOpen, setAdoptOpen] = useState(false);
 
   // panel toggles only render content on the dashboard route. when invoked
   // from /settings (or any sub-route), navigate back first so the panel has
@@ -169,12 +174,37 @@ export function SideMenu({
           ))}
         </div>
 
+        {/* Adopt Node Action (Desktop Sidebar Bottom) */}
+        <button
+          type="button"
+          onClick={() => setAdoptOpen(true)}
+          title={isExpanded ? undefined : "Adopt Node"}
+          aria-label="Adopt Node"
+          className="mt-auto flex items-center h-12 rounded-2xl hover:bg-[#0A2540]/5 text-[#0A2540]/40 hover:text-[#0A2540]/80 transition-all group w-full flex-shrink-0 px-3 gap-4"
+        >
+          <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
+            <ScanLine
+              size={22}
+              strokeWidth={2.5}
+              className="transition-transform group-hover:scale-110"
+            />
+          </div>
+          <span
+            className={cn(
+              "font-black text-[11px] uppercase tracking-widest whitespace-nowrap transition-all duration-300 overflow-hidden",
+              isExpanded ? "opacity-100 w-auto" : "opacity-0 w-0",
+            )}
+          >
+            Adopt Node
+          </span>
+        </button>
+
         {settingsPath && (
           <Link
             to={settingsPath}
             title={isExpanded ? undefined : "Settings"}
             aria-label="Settings"
-            className="mt-auto flex items-center h-12 rounded-2xl hover:bg-[#0A2540]/5 text-[#0A2540]/40 hover:text-[#0A2540]/80 transition-all group w-full flex-shrink-0 px-3 gap-4"
+            className="mt-2 flex items-center h-12 rounded-2xl hover:bg-[#0A2540]/5 text-[#0A2540]/40 hover:text-[#0A2540]/80 transition-all group w-full flex-shrink-0 px-3 gap-4"
           >
             <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
               <Settings
@@ -225,6 +255,17 @@ export function SideMenu({
           </button>
         ))}
 
+        {/* Adopt Node Mobile Action */}
+        <button
+          type="button"
+          onClick={() => setAdoptOpen(true)}
+          title="Adopt Node"
+          aria-label="Adopt Node"
+          className="flex items-center justify-center w-14 h-14 rounded-full text-[#0A2540]/40 hover:text-[#0A2540]/80 transition-all"
+        >
+          <ScanLine size={20} strokeWidth={2.5} />
+        </button>
+
         {settingsPath && (
           <Link
             to={settingsPath}
@@ -236,6 +277,8 @@ export function SideMenu({
           </Link>
         )}
       </nav>
+
+      <AdoptNodeModal open={adoptOpen} onClose={() => setAdoptOpen(false)} />
     </>
   );
 }

@@ -66,8 +66,13 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=backend
-          cache-to: type=gha,mode=max,scope=backend
+          # cache temporarily disabled, ghcr image was corrupted (null bytes
+          # in sqlalchemy/_elements_constructors.py) and the gha cache kept
+          # replaying the bad layer. revert these three lines after one
+          # successful rebuild lands on ghcr.
+          no-cache: true
+          # cache-from: type=gha,scope=backend
+          # cache-to: type=gha,mode=max,scope=backend
 
   frontend:
     name: Frontend

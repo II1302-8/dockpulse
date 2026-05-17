@@ -52,7 +52,7 @@ export function BerthStep({
                 <div className="text-xs font-black text-brand-navy">
                   {b.label || b.berth_id}
                 </div>
-                <div className="text-[9px] font-mono text-brand-navy/40 truncate">
+                <div className="text-xs font-mono text-brand-navy/40 truncate">
                   {b.berth_id}
                 </div>
               </button>

@@ -41,7 +41,7 @@ const PASSWORD_MAX = 128;
 const fieldInputClass =
   "bg-white/50 border-black/5 rounded-2xl h-12 px-4 font-bold text-sm focus:ring-2 focus:ring-brand-blue/20 transition-all";
 const fieldLabelClass =
-  "text-[10px] font-black uppercase tracking-widest text-brand-navy/60 ml-1";
+  "text-xs font-black uppercase tracking-widest text-brand-navy/60 ml-1";
 
 async function getErrorMessage(
   res: Response,
@@ -283,7 +283,7 @@ export function AuthDialog({
                     setError(null);
                   }}
                   className={cn(
-                    "flex-1 h-10 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
+                    "flex-1 h-10 rounded-full text-xs font-black uppercase tracking-widest transition-all",
                     authTab === tab
                       ? "bg-white shadow-sm text-brand-navy"
                       : "text-brand-navy/40 hover:text-brand-navy/70",
@@ -356,7 +356,7 @@ export function AuthDialog({
                   setAuthTab("forgot");
                   setError(null);
                 }}
-                className="block ml-auto text-[10px] font-black uppercase tracking-widest text-brand-blue hover:text-brand-navy transition-colors"
+                className="block ml-auto text-xs font-black uppercase tracking-widest text-brand-blue hover:text-brand-navy transition-colors"
               >
                 Forgot password?
               </button>
@@ -364,7 +364,7 @@ export function AuthDialog({
               <p
                 role="alert"
                 aria-live="assertive"
-                className="text-red-500 text-[10px] font-bold text-center min-h-[1.25rem]"
+                className="text-red-500 text-xs font-bold text-center min-h-[1.25rem]"
               >
                 {error ?? ""}
               </p>
@@ -373,7 +373,7 @@ export function AuthDialog({
                 type="submit"
                 disabled={isSubmitting || !loginReady}
                 aria-busy={isSubmitting}
-                className="w-full h-12 bg-gradient-to-r from-brand-blue to-brand-cyan text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-brand-blue/20 hover:shadow-xl hover:shadow-brand-blue/40 transition-all active:scale-[0.98] mt-2"
+                className="w-full h-12 bg-gradient-to-r from-brand-blue to-brand-cyan text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-brand-blue/20 hover:shadow-xl hover:shadow-brand-blue/40 transition-all active:scale-[0.98] mt-2"
               >
                 {isSubmitting && (
                   <Loader2
@@ -478,7 +478,7 @@ export function AuthDialog({
                     id="signup-password-hint"
                     aria-live="polite"
                     className={cn(
-                      "text-[9px] font-bold uppercase tracking-widest ml-1",
+                      "text-xs font-bold uppercase tracking-widest ml-1",
                       passwordLength === 0
                         ? "text-brand-navy/30"
                         : passwordValid
@@ -516,7 +516,7 @@ export function AuthDialog({
                   <p
                     id="signup-confirm-hint"
                     aria-live="polite"
-                    className="text-red-500 text-[9px] font-bold uppercase tracking-widest ml-1 min-h-[1rem]"
+                    className="text-red-500 text-xs font-bold uppercase tracking-widest ml-1 min-h-[1rem]"
                   >
                     {passwordMismatch ? "Passwords do not match" : ""}
                   </p>
@@ -526,7 +526,7 @@ export function AuthDialog({
               <p
                 role="alert"
                 aria-live="assertive"
-                className="text-red-500 text-[10px] font-bold text-center min-h-[1.25rem]"
+                className="text-red-500 text-xs font-bold text-center min-h-[1.25rem]"
               >
                 {error ?? ""}
               </p>
@@ -535,7 +535,7 @@ export function AuthDialog({
                 type="submit"
                 disabled={isSubmitting || !signupReady}
                 aria-busy={isSubmitting}
-                className="w-full h-12 bg-gradient-to-r from-brand-blue to-brand-cyan text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-brand-blue/20 hover:shadow-xl hover:shadow-brand-blue/40 transition-all active:scale-[0.98] mt-2"
+                className="w-full h-12 bg-gradient-to-r from-brand-blue to-brand-cyan text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-brand-blue/20 hover:shadow-xl hover:shadow-brand-blue/40 transition-all active:scale-[0.98] mt-2"
               >
                 {isSubmitting && (
                   <Loader2

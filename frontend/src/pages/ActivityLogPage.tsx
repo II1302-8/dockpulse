@@ -182,7 +182,7 @@ export function ActivityLogPage() {
               <h1 className="text-xl font-black tracking-tight text-slate-900">
                 Harbor Activity
               </h1>
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
                 {marinaName} Log
               </p>
             </div>
@@ -270,16 +270,16 @@ export function ActivityLogPage() {
             <table className="w-full min-w-[640px] border-collapse text-left">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/50">
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                  <th className="px-6 py-4 text-xs font-black uppercase tracking-[0.2em] text-slate-400">
                     Timestamp
                   </th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                  <th className="px-6 py-4 text-xs font-black uppercase tracking-[0.2em] text-slate-400">
                     Berth
                   </th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                  <th className="px-6 py-4 text-xs font-black uppercase tracking-[0.2em] text-slate-400">
                     Event
                   </th>
-                  <th className="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                  <th className="px-6 py-4 text-xs font-black uppercase tracking-[0.2em] text-slate-400">
                     Actor / subject
                   </th>
                 </tr>
@@ -311,7 +311,7 @@ export function ActivityLogPage() {
                               },
                             )}
                           </span>
-                          <span className="text-[10px] font-medium text-slate-400">
+                          <span className="text-xs font-medium text-slate-400">
                             {new Date(event.timestamp).toLocaleDateString(
                               "sv-SE",
                               { month: "short", day: "numeric" },
@@ -327,7 +327,7 @@ export function ActivityLogPage() {
                       <td className="whitespace-nowrap px-6 py-5">
                         <span
                           className={cn(
-                            "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest",
+                            "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black uppercase tracking-widest",
                             isAlert
                               ? "bg-amber-50 text-amber-700"
                               : isAudit
@@ -353,7 +353,7 @@ export function ActivityLogPage() {
                             )}
                             {event.subject_user_id && (
                               <div className="flex items-center gap-1 text-slate-400">
-                                <span className="text-[9px] uppercase">
+                                <span className="text-xs uppercase">
                                   → subject
                                 </span>
                                 <span className="font-mono">

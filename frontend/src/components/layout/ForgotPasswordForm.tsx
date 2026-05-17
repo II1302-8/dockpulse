@@ -9,7 +9,7 @@ const fieldInputClass =
   "bg-white/50 border-black/5 rounded-2xl h-12 px-4 font-bold text-sm focus:ring-2 focus:ring-brand-blue/20 transition-all";
 
 const fieldLabelClass =
-  "text-[10px] font-black uppercase tracking-widest text-brand-navy/60 ml-1";
+  "text-xs font-black uppercase tracking-widest text-brand-navy/60 ml-1";
 
 interface ForgotPasswordFormProps {
   onBackToLogin: () => void;
@@ -83,7 +83,7 @@ export function ForgotPasswordForm({ onBackToLogin }: ForgotPasswordFormProps) {
       <p
         role="status"
         aria-live="polite"
-        className="text-emerald-600 text-[10px] font-bold text-center min-h-[1.25rem]"
+        className="text-emerald-600 text-xs font-bold text-center min-h-[1.25rem]"
       >
         {message ?? ""}
       </p>
@@ -91,7 +91,7 @@ export function ForgotPasswordForm({ onBackToLogin }: ForgotPasswordFormProps) {
       <p
         role="alert"
         aria-live="assertive"
-        className="text-red-500 text-[10px] font-bold text-center min-h-[1.25rem]"
+        className="text-red-500 text-xs font-bold text-center min-h-[1.25rem]"
       >
         {error ?? ""}
       </p>
@@ -100,7 +100,7 @@ export function ForgotPasswordForm({ onBackToLogin }: ForgotPasswordFormProps) {
         type="submit"
         disabled={isSubmitting || !emailReady}
         aria-busy={isSubmitting}
-        className="w-full h-12 bg-gradient-to-r from-brand-blue to-brand-cyan text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-brand-blue/20 hover:shadow-xl hover:shadow-brand-blue/40 transition-all active:scale-[0.98]"
+        className="w-full h-12 bg-gradient-to-r from-brand-blue to-brand-cyan text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-brand-blue/20 hover:shadow-xl hover:shadow-brand-blue/40 transition-all active:scale-[0.98]"
       >
         {isSubmitting && (
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -111,7 +111,7 @@ export function ForgotPasswordForm({ onBackToLogin }: ForgotPasswordFormProps) {
       <button
         type="button"
         onClick={onBackToLogin}
-        className="w-full text-[10px] font-black uppercase tracking-widest text-brand-blue hover:text-brand-navy transition-colors"
+        className="w-full text-xs font-black uppercase tracking-widest text-brand-blue hover:text-brand-navy transition-colors"
       >
         Back to login
       </button>

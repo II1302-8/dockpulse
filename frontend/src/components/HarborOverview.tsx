@@ -93,12 +93,12 @@ export function HarborOverview({
       <div className="custom-scrollbar space-y-4 overflow-y-auto pr-2">
         <article className="rounded-[24px] border border-white/50 bg-white/80 p-5 shadow-subtle backdrop-blur-md transition-all duration-300 hover:shadow-md animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both">
           <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#0093E9]">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#0093E9]">
               <Activity size={12} strokeWidth={3} />
               Live Status
             </div>
 
-            <span className="rounded-full border border-[#0093E9]/20 bg-[#0093E9]/10 px-2 py-0.5 text-[10px] font-black text-[#0093E9]">
+            <span className="rounded-full border border-[#0093E9]/20 bg-[#0093E9]/10 px-2 py-0.5 text-xs font-black text-[#0093E9]">
               {availabilityRate.toFixed(0)}%
             </span>
           </div>
@@ -110,7 +110,7 @@ export function HarborOverview({
               {onlineBerths.length}
             </span>
 
-            <span className="text-[9px] font-bold uppercase tracking-widest text-[#0A2540]/40">
+            <span className="text-xs font-bold uppercase tracking-widest text-[#0A2540]/40">
               Berths available
             </span>
           </div>
@@ -126,14 +126,14 @@ export function HarborOverview({
           </div>
 
           {offlineCount > 0 && (
-            <div className="mt-3 text-[10px] font-bold text-[#0A2540]/50">
+            <div className="mt-3 text-xs font-bold text-[#0A2540]/50">
               {offlineCount} sensor{offlineCount === 1 ? "" : "s"} offline
             </div>
           )}
         </article>
 
         <article className="rounded-[24px] border border-white/30 bg-white/40 p-4 shadow-subtle backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both">
-          <div className="mb-3 flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-[#0A2540]/50">
+          <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#0A2540]/50">
             <BatteryLow size={12} strokeWidth={3} />
             Node Alerts
           </div>
@@ -141,7 +141,7 @@ export function HarborOverview({
           {allClear ? (
             <div className="flex items-center gap-2 rounded-xl border border-emerald-500/10 bg-emerald-500/5 p-2">
               <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-              <span className="text-[10px] font-bold text-emerald-600/80">
+              <span className="text-xs font-bold text-emerald-600/80">
                 All Systems Online
               </span>
             </div>
@@ -149,10 +149,10 @@ export function HarborOverview({
             <div className="space-y-2">
               {offlineCount > 0 && (
                 <div className="flex items-center justify-between rounded-xl border border-[#0A2540]/10 bg-[#0A2540]/5 p-2">
-                  <span className="text-[10px] font-bold text-[#0A2540]">
+                  <span className="text-xs font-bold text-[#0A2540]">
                     Offline sensors
                   </span>
-                  <span className="text-[10px] font-black text-[#0A2540]/70">
+                  <span className="text-xs font-black text-[#0A2540]/70">
                     {offlineCount}
                   </span>
                 </div>
@@ -163,10 +163,10 @@ export function HarborOverview({
                   key={node.berth_id}
                   className="flex items-center justify-between rounded-xl border border-red-500/10 bg-red-500/5 p-2"
                 >
-                  <span className="text-[10px] font-bold text-[#0A2540]">
+                  <span className="text-xs font-bold text-[#0A2540]">
                     {node.label || node.berth_id}
                   </span>
-                  <span className="text-[10px] font-black text-red-500">
+                  <span className="text-xs font-black text-red-500">
                     {node.battery_pct}%
                   </span>
                 </div>

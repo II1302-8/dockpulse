@@ -115,7 +115,7 @@ export function ProgressStep({
             </p>
           )}
           {status === "err" && phase && (
-            <p className="text-[10px] font-mono text-brand-navy/50 mt-1">
+            <p className="text-xs font-mono text-brand-navy/50 mt-1">
               failed at {humanizePhase(phase)}
             </p>
           )}
@@ -141,14 +141,14 @@ export function ProgressStep({
             type="button"
             onClick={handleCancel}
             disabled={cancelling}
-            className="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-red-500/5 hover:bg-red-500/10 text-red-600 transition-all disabled:opacity-50"
+            className="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-xs bg-red-500/5 hover:bg-red-500/10 text-red-600 transition-all disabled:opacity-50"
           >
             {cancelling ? "Cancelling" : "Cancel"}
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-brand-navy/5 hover:bg-brand-navy/10 text-brand-navy transition-all"
+            className="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-xs bg-brand-navy/5 hover:bg-brand-navy/10 text-brand-navy transition-all"
           >
             Hide
           </button>
@@ -160,7 +160,7 @@ export function ProgressStep({
             onClick={onRetry}
             disabled={retrying}
             className={cn(
-              "flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-all",
+              "flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all",
               "bg-gradient-to-r from-brand-blue to-brand-cyan text-white shadow-lg shadow-brand-blue/20",
               "hover:shadow-xl hover:shadow-brand-blue/40 hover:-translate-y-0.5",
               "active:translate-y-0 disabled:opacity-50 disabled:grayscale disabled:hover:translate-y-0",
@@ -176,7 +176,7 @@ export function ProgressStep({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-brand-navy/5 hover:bg-brand-navy/10 text-brand-navy transition-all"
+            className="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest text-xs bg-brand-navy/5 hover:bg-brand-navy/10 text-brand-navy transition-all"
           >
             Close
           </button>
@@ -185,7 +185,7 @@ export function ProgressStep({
         <button
           type="button"
           onClick={onClose}
-          className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-brand-navy/5 hover:bg-brand-navy/10 text-brand-navy transition-all"
+          className="w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs bg-brand-navy/5 hover:bg-brand-navy/10 text-brand-navy transition-all"
         >
           Done
         </button>

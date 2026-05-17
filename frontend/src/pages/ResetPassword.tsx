@@ -15,7 +15,7 @@ const fieldInputClass =
   "bg-white/50 border-black/5 rounded-2xl h-12 px-4 font-bold text-sm focus:ring-2 focus:ring-brand-blue/20 transition-all";
 
 const fieldLabelClass =
-  "text-[10px] font-black uppercase tracking-widest text-brand-navy/60 ml-1";
+  "text-xs font-black uppercase tracking-widest text-brand-navy/60 ml-1";
 
 async function getErrorMessage(
   res: Response,
@@ -135,7 +135,7 @@ export function ResetPassword() {
 
               <p
                 className={cn(
-                  "text-[9px] font-bold uppercase tracking-widest ml-1",
+                  "text-xs font-bold uppercase tracking-widest ml-1",
                   passwordLength === 0
                     ? "text-brand-navy/30"
                     : passwordValid
@@ -166,7 +166,7 @@ export function ResetPassword() {
                 className={fieldInputClass}
               />
 
-              <p className="text-red-500 text-[9px] font-bold uppercase tracking-widest ml-1 min-h-[1rem]">
+              <p className="text-red-500 text-xs font-bold uppercase tracking-widest ml-1 min-h-[1rem]">
                 {passwordMismatch ? "Passwords do not match" : ""}
               </p>
             </div>
@@ -175,7 +175,7 @@ export function ResetPassword() {
           <p
             role="alert"
             aria-live="assertive"
-            className="text-red-500 text-[10px] font-bold text-center min-h-[1.25rem]"
+            className="text-red-500 text-xs font-bold text-center min-h-[1.25rem]"
           >
             {error ?? ""}
           </p>
@@ -184,7 +184,7 @@ export function ResetPassword() {
             type="submit"
             disabled={isSubmitting || !formReady}
             aria-busy={isSubmitting}
-            className="w-full h-12 bg-gradient-to-r from-brand-blue to-brand-cyan text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-brand-blue/20 hover:shadow-xl hover:shadow-brand-blue/40 transition-all active:scale-[0.98]"
+            className="w-full h-12 bg-gradient-to-r from-brand-blue to-brand-cyan text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-brand-blue/20 hover:shadow-xl hover:shadow-brand-blue/40 transition-all active:scale-[0.98]"
           >
             {isSubmitting && (
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -196,7 +196,7 @@ export function ResetPassword() {
 
         <Link
           to="/saltsjobaden?login=1"
-          className="mt-5 block text-center text-[10px] font-black uppercase tracking-widest text-brand-blue hover:text-brand-navy transition-colors"
+          className="mt-5 block text-center text-xs font-black uppercase tracking-widest text-brand-blue hover:text-brand-navy transition-colors"
         >
           Back to login
         </Link>

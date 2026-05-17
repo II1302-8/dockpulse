@@ -240,7 +240,7 @@ export function BookingConfirmationDialog({
                     </span>
                     <a
                       href={`/${marinaSlug}/settings`}
-                      className="text-[10px] text-brand-blue hover:underline"
+                      className="text-xs text-brand-blue hover:underline"
                     >
                       Add in Settings
                     </a>

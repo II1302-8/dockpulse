@@ -173,7 +173,7 @@ function StepDots({ current }: { current: Step }) {
   const order: Step[] = ["gateway", "berth", "qr", "progress"];
   const idx = order.indexOf(current);
   return (
-    <p className="text-[9px] font-bold text-brand-navy/40 uppercase tracking-widest mt-1">
+    <p className="text-xs font-bold text-brand-navy/40 uppercase tracking-widest mt-1">
       Step {idx + 1} of {order.length} · {current}
     </p>
   );

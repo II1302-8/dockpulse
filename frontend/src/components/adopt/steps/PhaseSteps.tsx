@@ -98,7 +98,7 @@ export function PhaseSteps({
               </span>
               <span
                 className={cn(
-                  "text-[10px] font-bold uppercase tracking-widest transition-colors",
+                  "text-xs font-bold uppercase tracking-widest transition-colors",
                   done && "text-emerald-700",
                   active && "text-brand-blue text-[11px]",
                   failed && "text-red-700",
@@ -115,7 +115,7 @@ export function PhaseSteps({
                 className={cn(
                   "pointer-events-none absolute left-9 top-1/2 -translate-y-1/2 z-30",
                   "px-2.5 py-1 rounded-md bg-brand-navy text-white",
-                  "text-[10px] normal-case tracking-normal font-medium leading-tight",
+                  "text-xs normal-case tracking-normal font-medium leading-tight",
                   "max-w-[260px] whitespace-normal shadow-lg",
                   "opacity-0 -translate-x-1 transition-all duration-150 delay-100 ease-out",
                   "group-hover:opacity-100 group-hover:translate-x-0 group-focus-visible:opacity-100",

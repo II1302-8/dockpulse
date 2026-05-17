@@ -59,7 +59,7 @@ export function GatewayStep({
                 <div className="text-sm font-black text-brand-navy truncate">
                   {g.name}
                 </div>
-                <div className="text-[10px] font-mono text-brand-navy/50">
+                <div className="text-xs font-mono text-brand-navy/50">
                   {g.gateway_id} · dock {g.dock_id}
                 </div>
               </div>

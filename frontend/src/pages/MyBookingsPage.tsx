@@ -133,7 +133,7 @@ export function MyBookingsPage() {
                   <div className="flex items-center justify-between gap-4 md:justify-end">
                     <span
                       className={cn(
-                        "rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider",
+                        "rounded-full px-3 py-1 text-xs font-black uppercase tracking-wider",
                         isConfirmed && "bg-emerald-50 text-emerald-600",
                         isCancelled && "bg-slate-100 text-slate-500",
                         isCompleted && "bg-brand-blue/10 text-brand-blue",

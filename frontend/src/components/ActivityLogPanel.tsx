@@ -126,7 +126,7 @@ export function ActivityLogPanel({
           type="button"
           onClick={() => setActiveTab("activity")}
           className={cn(
-            "flex h-9 flex-1 items-center justify-center gap-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
+            "flex h-9 flex-1 items-center justify-center gap-2 rounded-full text-xs font-black uppercase tracking-widest transition-all",
             activeTab === "activity"
               ? "bg-white text-brand-navy shadow-sm"
               : "text-brand-navy/40 hover:text-brand-navy/70",
@@ -139,7 +139,7 @@ export function ActivityLogPanel({
           type="button"
           onClick={() => setActiveTab("alerts")}
           className={cn(
-            "relative flex h-9 flex-1 items-center justify-center gap-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
+            "relative flex h-9 flex-1 items-center justify-center gap-2 rounded-full text-xs font-black uppercase tracking-widest transition-all",
             activeTab === "alerts"
               ? "bg-white text-amber-600 shadow-sm"
               : "text-brand-navy/40 hover:text-brand-navy/70",
@@ -163,7 +163,7 @@ export function ActivityLogPanel({
                 type="button"
                 onClick={() => setFilterType(t)}
                 className={cn(
-                  "rounded-full px-3 py-1.5 text-[9px] font-black uppercase tracking-widest transition-colors",
+                  "rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-widest transition-colors",
                   filterType === t
                     ? "bg-brand-blue text-white"
                     : "bg-[#0A2540]/5 text-[#0A2540]/60 hover:bg-[#0A2540]/10",
@@ -189,10 +189,10 @@ export function ActivityLogPanel({
               <div className="mb-3 grid h-14 w-14 place-items-center rounded-full bg-emerald-50 text-emerald-500">
                 <CheckCircle2 size={28} />
               </div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-brand-navy">
+              <p className="text-xs font-black uppercase tracking-widest text-brand-navy">
                 No active alerts
               </p>
-              <p className="mt-1 text-[9px] font-bold text-brand-navy/40">
+              <p className="mt-1 text-xs font-bold text-brand-navy/40">
                 Everything looks clear
               </p>
             </li>
@@ -204,7 +204,7 @@ export function ActivityLogPanel({
               >
                 <div className="absolute left-0 top-0 h-full w-1 bg-amber-400" />
                 <div className="mb-2 flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-amber-600">
+                  <span className="text-xs font-black uppercase tracking-widest text-amber-600">
                     Berth {alert.berth_id}
                   </span>
                   <span className="text-[8px] font-bold text-amber-500/60">
@@ -215,13 +215,13 @@ export function ActivityLogPanel({
                   {alert.message}
                 </p>
                 <div className="flex items-center justify-between border-t border-amber-200/30 pt-3">
-                  <span className="text-[9px] font-black uppercase tracking-wider text-amber-500/70">
+                  <span className="text-xs font-black uppercase tracking-wider text-amber-500/70">
                     {alert.type.replace(/_/g, " ")}
                   </span>
                   <button
                     type="button"
                     onClick={() => acknowledgeAlert(alert.alert_id)}
-                    className="flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-white shadow-md shadow-amber-500/20 transition-all hover:bg-amber-600 active:scale-95"
+                    className="flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1.5 text-xs font-black uppercase tracking-widest text-white shadow-md shadow-amber-500/20 transition-all hover:bg-amber-600 active:scale-95"
                   >
                     <CheckCircle2 size={10} strokeWidth={3} />
                     Acknowledge
@@ -233,7 +233,7 @@ export function ActivityLogPanel({
         ) : filteredEvents.length === 0 ? (
           <li className="flex flex-col items-center justify-center py-12 text-center">
             <Clock size={28} className="mb-2 text-brand-navy/10" />
-            <p className="text-[10px] font-bold uppercase tracking-widest text-brand-navy/30">
+            <p className="text-xs font-bold uppercase tracking-widest text-brand-navy/30">
               Waiting for activity...
             </p>
           </li>
@@ -252,7 +252,7 @@ export function ActivityLogPanel({
                   {fmtTime(ev.timestamp)}
                 </span>
               </div>
-              <p className="mt-1 text-[10px] font-bold text-brand-navy/60">
+              <p className="mt-1 text-xs font-bold text-brand-navy/60">
                 {ev.details}
               </p>
             </li>

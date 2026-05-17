@@ -4,7 +4,7 @@ export function NotFound() {
   return (
     <div className="min-h-screen bg-brand-navy/5 flex items-center justify-center p-6">
       <div className="text-center space-y-3">
-        <p className="text-[10px] font-black uppercase tracking-widest text-brand-navy/40">
+        <p className="text-xs font-black uppercase tracking-widest text-brand-navy/40">
           404
         </p>
         <h1 className="text-3xl font-black text-brand-navy">Page not found</h1>

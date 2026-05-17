@@ -1,0 +1,19 @@
+{
+  "name": "DockPulse",
+  "short_name": "DockPulse",
+  "description": "Marine berth-management dashboard",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0A2540",
+  "theme_color": "#0A2540",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    }
+  ]
+}

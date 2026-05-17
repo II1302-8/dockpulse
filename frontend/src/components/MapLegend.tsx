@@ -48,7 +48,7 @@ export function MapLegend() {
     >
       <div className="mb-2 flex items-center gap-1.5">
         <Info size={11} strokeWidth={2.5} className="text-brand-blue" />
-        <span className="text-[9px] font-black uppercase tracking-[0.18em] text-brand-navy/60">
+        <span className="text-xs font-black uppercase tracking-[0.18em] text-brand-navy/60">
           Berth Status
         </span>
       </div>
@@ -59,7 +59,7 @@ export function MapLegend() {
             <span className="flex h-4 w-4 items-center justify-center">
               {row.icon}
             </span>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-brand-navy/60">
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-navy/60">
               {row.label}
             </span>
           </li>

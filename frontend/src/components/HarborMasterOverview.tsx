@@ -126,7 +126,7 @@ export function HarborMasterOverview({
       <div className="custom-scrollbar no-scrollbar flex-1 space-y-6 overflow-y-auto pr-2">
         <div className="space-y-1">
           <div className="mb-2 flex items-end justify-between">
-            <span className="text-[10px] font-black uppercase tracking-widest text-brand-navy/30">
+            <span className="text-xs font-black uppercase tracking-widest text-brand-navy/30">
               Live Occupancy
             </span>
 
@@ -147,7 +147,7 @@ export function HarborMasterOverview({
           <div className="rounded-3xl border border-white/50 bg-white/80 p-4 shadow-subtle">
             <div className="mb-2 flex items-center gap-2 text-emerald-500">
               <Anchor size={14} strokeWidth={2.5} />
-              <span className="text-[9px] font-black uppercase tracking-widest opacity-60">
+              <span className="text-xs font-black uppercase tracking-widest opacity-60">
                 Available
               </span>
             </div>
@@ -168,11 +168,11 @@ export function HarborMasterOverview({
               <div className="mb-2 flex items-center justify-between gap-2 text-brand-blue">
                 <div className="flex items-center gap-2">
                   <Zap size={14} strokeWidth={2.5} />
-                  <span className="text-[9px] font-black uppercase tracking-widest opacity-60">
+                  <span className="text-xs font-black uppercase tracking-widest opacity-60">
                     Active
                   </span>
                 </div>
-                <span className="text-[9px] font-black uppercase tracking-widest opacity-40">
+                <span className="text-xs font-black uppercase tracking-widest opacity-40">
                   Open →
                 </span>
               </div>
@@ -185,7 +185,7 @@ export function HarborMasterOverview({
             <div className="rounded-3xl border border-white/50 bg-white/80 p-4 shadow-subtle">
               <div className="mb-2 flex items-center gap-2 text-brand-blue">
                 <Zap size={14} strokeWidth={2.5} />
-                <span className="text-[9px] font-black uppercase tracking-widest opacity-60">
+                <span className="text-xs font-black uppercase tracking-widest opacity-60">
                   Active
                 </span>
               </div>
@@ -198,7 +198,7 @@ export function HarborMasterOverview({
         </div>
 
         <div className="border-t border-[#0A2540]/5 pt-6">
-          <h3 className="mb-4 text-[9px] font-black uppercase tracking-widest text-brand-navy/30">
+          <h3 className="mb-4 text-xs font-black uppercase tracking-widest text-brand-navy/30">
             System Status
           </h3>
 
@@ -243,12 +243,12 @@ export function HarborMasterOverview({
                   key={s.label}
                   className="group flex items-center justify-between"
                 >
-                  <span className="text-[10px] font-bold text-brand-navy/60 transition-colors group-hover:text-brand-navy">
+                  <span className="text-xs font-bold text-brand-navy/60 transition-colors group-hover:text-brand-navy">
                     {s.label}
                   </span>
 
                   <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-black uppercase tracking-tighter text-brand-navy/30">
+                    <span className="text-xs font-black uppercase tracking-tighter text-brand-navy/30">
                       {s.status}
                     </span>
                     <div className={cn("h-1.5 w-1.5 rounded-full", s.color)} />

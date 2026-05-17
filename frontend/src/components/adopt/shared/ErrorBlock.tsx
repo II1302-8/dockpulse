@@ -18,7 +18,7 @@ export function ErrorBlock({
           <button
             type="button"
             onClick={onAction}
-            className="mt-2 text-[10px] font-bold uppercase tracking-widest text-red-700 hover:underline"
+            className="mt-2 text-xs font-bold uppercase tracking-widest text-red-700 hover:underline"
           >
             {actionLabel}
           </button>

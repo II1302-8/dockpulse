@@ -97,7 +97,7 @@ function Header({
 
       <div className="hidden min-w-0 items-center gap-2 border-l border-brand-navy/10 pl-3 sm:flex md:pl-4">
         <div className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-500 glow-emerald" />
-        <span className="truncate text-[9px] font-black uppercase tracking-[0.2em] text-brand-navy/30">
+        <span className="truncate text-xs font-black uppercase tracking-[0.2em] text-brand-navy/30">
           {marinaName}
         </span>
       </div>

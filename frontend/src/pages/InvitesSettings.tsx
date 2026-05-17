@@ -124,7 +124,7 @@ function InvitesSettings() {
       ) : (
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-[10px] font-black uppercase tracking-widest text-brand-navy/60">
+            <thead className="bg-slate-50 text-xs font-black uppercase tracking-widest text-brand-navy/60">
               <tr>
                 <th className="px-4 py-3">Berth</th>
                 <th className="px-4 py-3">Invitee</th>
@@ -150,7 +150,7 @@ function InvitesSettings() {
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`rounded-full px-2 py-1 text-[10px] font-black uppercase tracking-widest ${statusBadgeClass(
+                        className={`rounded-full px-2 py-1 text-xs font-black uppercase tracking-widest ${statusBadgeClass(
                           invite.status,
                         )}`}
                       >
@@ -164,7 +164,7 @@ function InvitesSettings() {
                             type="button"
                             disabled={isBusy}
                             onClick={() => handleResend(invite)}
-                            className="rounded-full bg-brand-blue/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-brand-blue transition-colors hover:bg-brand-blue/20 disabled:opacity-50"
+                            className="rounded-full bg-brand-blue/10 px-3 py-1.5 text-xs font-black uppercase tracking-widest text-brand-blue transition-colors hover:bg-brand-blue/20 disabled:opacity-50"
                           >
                             Resend
                           </button>
@@ -179,7 +179,7 @@ function InvitesSettings() {
                           </button>
                         </div>
                       ) : (
-                        <span className="text-[10px] font-bold text-brand-navy/30">
+                        <span className="text-xs font-bold text-brand-navy/30">
                           —
                         </span>
                       )}

@@ -17,7 +17,7 @@ export function ModeTab({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex-1 px-4 py-3 rounded-xl flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest transition-all border",
+        "flex-1 px-4 py-3 rounded-xl flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest transition-all border",
         active
           ? "bg-brand-blue text-white border-brand-blue"
           : "bg-white text-brand-navy/60 border-black/10 hover:border-brand-blue/40",

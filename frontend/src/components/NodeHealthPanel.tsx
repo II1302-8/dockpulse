@@ -113,7 +113,7 @@ export function NodeHealthPanel({ isOpen, onCloseCB }: NodeHealthPanelProps) {
               Node Health
             </h2>
           </div>
-          <p className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40">
+          <p className="text-xs font-bold uppercase tracking-widest text-brand-navy/40">
             Sensor Network Diagnostics
           </p>
         </div>
@@ -172,7 +172,7 @@ export function NodeHealthPanel({ isOpen, onCloseCB }: NodeHealthPanelProps) {
           </div>
         ) : sortedNodes.length === 0 ? (
           <div className="py-12 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-brand-navy/20">
+            <p className="text-xs font-bold uppercase tracking-widest text-brand-navy/20">
               No nodes found
             </p>
           </div>
@@ -200,7 +200,7 @@ export function NodeHealthPanel({ isOpen, onCloseCB }: NodeHealthPanelProps) {
                       <span className="text-[11px] font-black text-brand-navy">
                         {node.serial_number}
                       </span>
-                      <span className="rounded-lg bg-brand-blue/10 px-2 py-0.5 text-[9px] font-bold text-brand-blue">
+                      <span className="rounded-lg bg-brand-blue/10 px-2 py-0.5 text-xs font-bold text-brand-blue">
                         {node.berth_id || "Unassigned"}
                       </span>
                     </div>
@@ -217,7 +217,7 @@ export function NodeHealthPanel({ isOpen, onCloseCB }: NodeHealthPanelProps) {
                       />
                       <span
                         className={cn(
-                          "text-[9px] font-bold uppercase tracking-widest",
+                          "text-xs font-bold uppercase tracking-widest",
                           node.health === "online"
                             ? "text-emerald-600"
                             : node.health === "stale"
@@ -263,7 +263,7 @@ export function NodeHealthPanel({ isOpen, onCloseCB }: NodeHealthPanelProps) {
                           />
                           <span
                             className={cn(
-                              "text-[10px] font-black tracking-tighter",
+                              "text-xs font-black tracking-tighter",
                               isBatteryLow ? "text-red-600" : "text-brand-navy",
                             )}
                           >
@@ -283,7 +283,7 @@ export function NodeHealthPanel({ isOpen, onCloseCB }: NodeHealthPanelProps) {
                     ) : (
                       <div className="flex items-center gap-1.5 text-brand-navy/20">
                         <Clock size={12} strokeWidth={2.5} />
-                        <span className="text-[10px] font-bold">N/A</span>
+                        <span className="text-xs font-bold">N/A</span>
                       </div>
                     )}
                   </div>

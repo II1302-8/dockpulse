@@ -70,7 +70,7 @@ export function QrStep({
               <div className="text-sm font-black text-brand-navy">
                 QR captured
               </div>
-              <div className="text-[10px] font-mono text-brand-navy/50 truncate">
+              <div className="text-xs font-mono text-brand-navy/50 truncate">
                 {value.length} chars · {value.slice(0, 24)}…
               </div>
             </div>
@@ -80,7 +80,7 @@ export function QrStep({
                 onChange("");
                 setScanError(null);
               }}
-              className="ml-auto text-[10px] font-black uppercase tracking-widest text-brand-navy/60 hover:text-brand-navy"
+              className="ml-auto text-xs font-black uppercase tracking-widest text-brand-navy/60 hover:text-brand-navy"
             >
               Rescan
             </button>
@@ -95,6 +95,11 @@ export function QrStep({
           placeholder="Paste sticker contents here (SERIAL:JTI)"
           value={value}
           onChange={(e) => onChange(extractQrPayload(e.target.value))}
+          // iOS mangles SERIAL:JTI without these
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          inputMode="text"
         />
       )}
       {scanError && <ErrorBlock message={scanError} />}
@@ -107,7 +112,7 @@ export function QrStep({
         disabled={!valid || submitting}
         onClick={onSubmit}
         className={cn(
-          "w-full py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-3 transition-all",
+          "w-full py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-3 transition-all",
           "bg-gradient-to-r from-brand-blue to-brand-cyan text-white shadow-lg shadow-brand-blue/20",
           "hover:shadow-xl hover:shadow-brand-blue/40 hover:-translate-y-0.5",
           "active:translate-y-0 disabled:opacity-50 disabled:grayscale disabled:hover:translate-y-0",

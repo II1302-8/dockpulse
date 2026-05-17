@@ -155,7 +155,7 @@ export function InviteOwnerModal({
             <div>
               <label
                 htmlFor="invite-email"
-                className="mb-3 block text-[10px] font-black uppercase tracking-widest text-brand-navy/50"
+                className="mb-3 block text-xs font-black uppercase tracking-widest text-brand-navy/50"
               >
                 Invitee — search known users or type any email
               </label>
@@ -227,7 +227,7 @@ export function InviteOwnerModal({
               type="button"
               disabled={isSubmitting}
               onClick={handleClose}
-              className="h-14 rounded-2xl border border-slate-200 px-4 text-[10px] font-black uppercase tracking-widest text-brand-navy/60 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-14 rounded-2xl border border-slate-200 px-4 text-xs font-black uppercase tracking-widest text-brand-navy/60 transition-all hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Cancel
             </button>
@@ -236,7 +236,7 @@ export function InviteOwnerModal({
               type="submit"
               disabled={isSubmitting || !email.trim()}
               className={cn(
-                "flex h-14 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-brand-blue to-brand-cyan px-4 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-brand-blue/20 transition-all",
+                "flex h-14 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-brand-blue to-brand-cyan px-4 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-brand-blue/20 transition-all",
                 "disabled:cursor-not-allowed disabled:opacity-50",
               )}
             >

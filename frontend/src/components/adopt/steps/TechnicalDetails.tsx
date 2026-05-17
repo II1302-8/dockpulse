@@ -29,13 +29,13 @@ export function TechnicalDetails({
   if (rows.length === 0) return null;
   return (
     <details className="group rounded-xl border border-brand-navy/10 bg-brand-navy/[0.02] open:bg-brand-navy/[0.04]">
-      <summary className="cursor-pointer list-none px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-brand-navy/50 hover:text-brand-navy/80 select-none flex items-center justify-between">
+      <summary className="cursor-pointer list-none px-4 py-2 text-xs font-bold uppercase tracking-widest text-brand-navy/50 hover:text-brand-navy/80 select-none flex items-center justify-between">
         <span>Technical details</span>
         <span className="text-brand-navy/30 group-open:rotate-180 transition-transform">
           ▾
         </span>
       </summary>
-      <dl className="px-4 pb-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[10px]">
+      <dl className="px-4 pb-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs">
         {rows.map(([label, value]) => (
           <div key={label} className="contents">
             <dt className="text-brand-navy/50 font-bold uppercase tracking-widest whitespace-nowrap">

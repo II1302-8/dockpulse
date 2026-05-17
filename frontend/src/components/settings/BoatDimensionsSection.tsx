@@ -77,13 +77,14 @@ export function BoatDimensionsSection({ user }: BoatDimensionsSectionProps) {
           <div className="space-y-2">
             <Label
               htmlFor="boat-length"
-              className="text-[10px] font-black uppercase tracking-widest text-brand-navy/60"
+              className="text-xs font-black uppercase tracking-widest text-brand-navy/60"
             >
               Length (m)
             </Label>
             <Input
               id="boat-length"
               type="number"
+              inputMode="decimal"
               step="0.1"
               min="0"
               placeholder="0.0"
@@ -96,13 +97,14 @@ export function BoatDimensionsSection({ user }: BoatDimensionsSectionProps) {
           <div className="space-y-2">
             <Label
               htmlFor="boat-width"
-              className="text-[10px] font-black uppercase tracking-widest text-brand-navy/60"
+              className="text-xs font-black uppercase tracking-widest text-brand-navy/60"
             >
               Width (m)
             </Label>
             <Input
               id="boat-width"
               type="number"
+              inputMode="decimal"
               step="0.1"
               min="0"
               placeholder="0.0"
@@ -115,13 +117,14 @@ export function BoatDimensionsSection({ user }: BoatDimensionsSectionProps) {
           <div className="space-y-2">
             <Label
               htmlFor="boat-depth"
-              className="text-[10px] font-black uppercase tracking-widest text-brand-navy/60"
+              className="text-xs font-black uppercase tracking-widest text-brand-navy/60"
             >
               Depth (m)
             </Label>
             <Input
               id="boat-depth"
               type="number"
+              inputMode="decimal"
               step="0.1"
               min="0"
               placeholder="0.0"

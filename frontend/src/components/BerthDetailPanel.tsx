@@ -330,7 +330,7 @@ export function BerthDetailPanel({
               Berth Detail
             </h2>
 
-            <p className="text-[9px] font-bold uppercase tracking-widest text-brand-navy/40">
+            <p className="text-xs font-bold uppercase tracking-widest text-brand-navy/40">
               Live Telemetry
             </p>
           </div>
@@ -364,7 +364,7 @@ export function BerthDetailPanel({
           ) : berth ? (
             <div className="space-y-6" key={berth.berth_id}>
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both">
-                <span className="mb-1 block text-[9px] font-bold uppercase tracking-widest text-brand-navy/40">
+                <span className="mb-1 block text-xs font-bold uppercase tracking-widest text-brand-navy/40">
                   Identification
                 </span>
 
@@ -374,13 +374,13 @@ export function BerthDetailPanel({
               </div>
 
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both">
-                <span className="mb-2 block text-[9px] font-bold uppercase tracking-widest text-brand-navy/40">
+                <span className="mb-2 block text-xs font-bold uppercase tracking-widest text-brand-navy/40">
                   Current Status
                 </span>
 
                 <div
                   className={cn(
-                    "inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[10px] font-bold uppercase tracking-wider",
+                    "inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-wider",
                     !isOnline(berth.last_updated, now)
                       ? "border-slate-500/20 bg-slate-500/10 text-slate-500"
                       : !berth.is_available_now
@@ -442,7 +442,7 @@ export function BerthDetailPanel({
               {/* Visitor Booking Section */}
               {isVisitor && isBerthBookable && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 rounded-[24px] border border-brand-blue/10 bg-brand-blue/5 p-5 duration-500 delay-500 fill-mode-both">
-                  <div className="mb-4 flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-brand-blue/60">
+                  <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand-blue/60">
                     <CalendarDays size={12} strokeWidth={3} />
                     Available for Booking
                   </div>
@@ -459,7 +459,7 @@ export function BerthDetailPanel({
                           className="group relative rounded-2xl border border-white/60 bg-white/60 p-3 transition-all hover:bg-white"
                         >
                           <div className="mb-2 flex items-center justify-between">
-                            <span className="text-[10px] font-bold text-brand-navy/60">
+                            <span className="text-xs font-bold text-brand-navy/60">
                               {fmtDateShort(window.from_date)} —{" "}
                               {fmtDateShort(window.return_date)}
                             </span>
@@ -468,7 +468,7 @@ export function BerthDetailPanel({
                           <button
                             type="button"
                             onClick={() => setSelectedWindow(window)}
-                            className="flex w-full items-center justify-center rounded-xl bg-brand-blue py-2 text-[9px] font-black uppercase tracking-widest text-white transition-all hover:bg-brand-blue/90"
+                            className="flex w-full items-center justify-center rounded-xl bg-brand-blue py-2 text-xs font-black uppercase tracking-widest text-white transition-all hover:bg-brand-blue/90"
                           >
                             Book this window
                           </button>
@@ -476,7 +476,7 @@ export function BerthDetailPanel({
                       ))}
                     </div>
                   ) : (
-                    <p className="py-2 text-center text-[10px] font-bold text-brand-navy/30">
+                    <p className="py-2 text-center text-xs font-bold text-brand-navy/30">
                       No bookable time slots available.
                     </p>
                   )}
@@ -492,7 +492,7 @@ export function BerthDetailPanel({
                   <button
                     type="button"
                     onClick={() => openAuthDialog()}
-                    className="w-full rounded-2xl bg-brand-blue py-3 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-brand-blue/20 transition-all hover:bg-brand-blue/90"
+                    className="w-full rounded-2xl bg-brand-blue py-3 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-brand-blue/20 transition-all hover:bg-brand-blue/90"
                   >
                     Log In / Sign Up
                   </button>
@@ -501,12 +501,12 @@ export function BerthDetailPanel({
 
               {isHarborMaster && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 rounded-[24px] border border-brand-blue/10 bg-brand-blue/5 p-5 duration-500 delay-500 fill-mode-both">
-                  <div className="mb-3 flex items-center gap-2 text-[9px] font-bold uppercase tracking-widest text-brand-blue/60">
+                  <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand-blue/60">
                     <Clock size={12} strokeWidth={3} />
                     Node Check-in
                   </div>
 
-                  <span className="block w-fit rounded-xl border border-brand-blue/10 bg-white/60 px-3 py-1.5 font-mono text-[10px] font-bold text-brand-navy shadow-sm">
+                  <span className="block w-fit rounded-xl border border-brand-blue/10 bg-white/60 px-3 py-1.5 font-mono text-xs font-bold text-brand-navy shadow-sm">
                     {fmtDateTime(berth.last_updated) || "Never"}
                   </span>
                 </div>
@@ -514,7 +514,7 @@ export function BerthDetailPanel({
 
               {isHarborMaster && berth.assignment && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 mt-6 border-t border-black/5 pt-6 duration-500 delay-550 fill-mode-both">
-                  <span className="mb-3 block text-[9px] font-bold uppercase tracking-widest text-brand-navy/40">
+                  <span className="mb-3 block text-xs font-bold uppercase tracking-widest text-brand-navy/40">
                     Ownership Details
                   </span>
 
@@ -533,7 +533,7 @@ export function BerthDetailPanel({
                       </p>
 
                       {tenantEmail && (
-                        <p className="truncate text-[9px] font-bold text-brand-navy/40">
+                        <p className="truncate text-xs font-bold text-brand-navy/40">
                           {tenantEmail}
                         </p>
                       )}
@@ -544,7 +544,7 @@ export function BerthDetailPanel({
                     <button
                       type="button"
                       onClick={openRemoveTenantDialog}
-                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-red-500/15 bg-red-500/5 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-red-500 transition-all hover:bg-red-500/10 active:scale-[0.98]"
+                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-red-500/15 bg-red-500/5 px-4 py-3 text-xs font-black uppercase tracking-widest text-red-500 transition-all hover:bg-red-500/10 active:scale-[0.98]"
                     >
                       <Trash2 size={14} strokeWidth={3} />
                       Remove Tenant
@@ -556,12 +556,12 @@ export function BerthDetailPanel({
               {isHarborMaster && berth.battery_pct != null && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-600 fill-mode-both">
                   <div className="mb-3 flex items-center justify-between">
-                    <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-brand-navy/50">
+                    <span className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-brand-navy/50">
                       <Battery size={12} strokeWidth={3} />
                       Node Battery
                     </span>
 
-                    <span className="text-[10px] font-black tracking-tighter text-brand-navy">
+                    <span className="text-xs font-black tracking-tighter text-brand-navy">
                       {berth.battery_pct}%
                     </span>
                   </div>
@@ -582,7 +582,7 @@ export function BerthDetailPanel({
 
               {isHarborMaster && (
                 <div className="animate-in fade-in slide-in-from-bottom-4 mt-6 border-t border-black/5 pt-6 duration-500 delay-750 fill-mode-both">
-                  <span className="mb-4 block text-[9px] font-bold uppercase tracking-widest text-brand-navy/40">
+                  <span className="mb-4 block text-xs font-bold uppercase tracking-widest text-brand-navy/40">
                     Recent Activity
                   </span>
 
@@ -591,7 +591,7 @@ export function BerthDetailPanel({
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-brand-blue/30 border-t-brand-blue" />
                     </div>
                   ) : events.length === 0 ? (
-                    <p className="py-4 text-center text-[10px] font-bold uppercase tracking-widest text-brand-navy/20">
+                    <p className="py-4 text-center text-xs font-bold uppercase tracking-widest text-brand-navy/20">
                       No recent events
                     </p>
                   ) : (
@@ -629,7 +629,7 @@ export function BerthDetailPanel({
               )}
             </div>
           ) : (
-            <div className="py-12 text-center text-[10px] font-bold uppercase tracking-widest text-brand-navy/20">
+            <div className="py-12 text-center text-xs font-bold uppercase tracking-widest text-brand-navy/20">
               No berth found
             </div>
           )}
@@ -640,13 +640,13 @@ export function BerthDetailPanel({
             {pendingInviteForBerth && (
               <div className="mb-4 flex items-start justify-between gap-4 rounded-2xl border border-amber-500/20 bg-amber-50 p-4">
                 <div className="min-w-0 space-y-1.5">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-amber-700/70">
+                  <p className="text-xs font-black uppercase tracking-widest text-amber-700/70">
                     Pending invite
                   </p>
                   <p className="truncate text-xs font-bold text-amber-900">
                     {pendingInviteForBerth.email}
                   </p>
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-amber-700/60">
+                  <p className="text-xs font-bold uppercase tracking-widest text-amber-700/60">
                     Expires {fmtDate(pendingInviteForBerth.expires_at)}
                   </p>
                 </div>
@@ -654,7 +654,7 @@ export function BerthDetailPanel({
                   type="button"
                   onClick={handleRevokeInvite}
                   disabled={isRevokingInvite}
-                  className="shrink-0 rounded-full bg-amber-500/10 px-4 py-2 text-[9px] font-black uppercase tracking-widest text-amber-700 transition-colors hover:bg-amber-500/20 disabled:opacity-50"
+                  className="shrink-0 rounded-full bg-amber-500/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-amber-700 transition-colors hover:bg-amber-500/20 disabled:opacity-50"
                 >
                   {isRevokingInvite ? "..." : "Revoke"}
                 </button>
@@ -665,7 +665,7 @@ export function BerthDetailPanel({
               type="button"
               onClick={() => setIsInviteOpen(true)}
               disabled={!harborId || Boolean(pendingInviteForBerth)}
-              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-brand-blue to-brand-cyan py-4 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-brand-blue/20 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-blue/40 active:translate-y-0 disabled:grayscale disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-brand-blue to-brand-cyan py-4 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-brand-blue/20 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-blue/40 active:translate-y-0 disabled:grayscale disabled:opacity-50"
             >
               <Mail size={16} strokeWidth={3} />
               Invite Owner
@@ -736,7 +736,7 @@ export function BerthDetailPanel({
             </p>
 
             <div className="mt-6 rounded-2xl bg-slate-50 p-5">
-              <p className="text-[10px] font-black uppercase tracking-widest text-brand-navy/40">
+              <p className="text-xs font-black uppercase tracking-widest text-brand-navy/40">
                 Tenant
               </p>
 

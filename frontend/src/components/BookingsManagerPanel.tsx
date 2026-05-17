@@ -99,7 +99,7 @@ export function BookingsManagerPanel({
             type="button"
             onClick={() => setFilterStatus(s)}
             className={cn(
-              "rounded-full px-3 py-1.5 text-[9px] font-black uppercase tracking-widest transition-colors",
+              "rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-widest transition-colors",
               filterStatus === s
                 ? "bg-brand-blue text-white"
                 : "bg-[#0A2540]/5 text-[#0A2540]/60 hover:bg-[#0A2540]/10",
@@ -116,13 +116,13 @@ export function BookingsManagerPanel({
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-blue/20 border-t-brand-blue" />
           </div>
         ) : error ? (
-          <p className="py-12 text-center text-[10px] font-bold text-red-500">
+          <p className="py-12 text-center text-xs font-bold text-red-500">
             {error}
           </p>
         ) : bookings.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Calendar size={28} className="mb-2 text-brand-navy/10" />
-            <p className="text-[10px] font-bold uppercase tracking-widest text-brand-navy/30">
+            <p className="text-xs font-bold uppercase tracking-widest text-brand-navy/30">
               No bookings found
             </p>
           </div>
@@ -194,13 +194,13 @@ function BookingItem({
       </div>
 
       <div className="mb-4 space-y-1">
-        <p className="text-[10px] font-bold text-brand-navy/40">
+        <p className="text-xs font-bold text-brand-navy/40">
           Visitor:{" "}
           <span className="font-mono text-brand-navy/80">
             {shortenUserId(booking.user_id)}
           </span>
         </p>
-        <div className="flex items-center gap-1.5 text-[9px] font-bold text-brand-navy/60">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-brand-navy/60">
           <Clock size={10} strokeWidth={2.5} />
           <span>{fmtDateTime(booking.from_date)}</span>
           <span className="text-brand-navy/20">→</span>
@@ -212,7 +212,7 @@ function BookingItem({
         <button
           type="button"
           onClick={onCancel}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-50 py-2 text-[9px] font-black uppercase tracking-widest text-red-600 transition-all hover:bg-red-100 active:scale-[0.98]"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-50 py-2 text-xs font-black uppercase tracking-widest text-red-600 transition-all hover:bg-red-100 active:scale-[0.98]"
         >
           <Trash2 size={12} strokeWidth={2.5} />
           Cancel Booking

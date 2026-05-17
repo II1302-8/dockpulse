@@ -261,7 +261,7 @@ export function HarborMap() {
           type="button"
           onClick={toggleOverview}
           data-map-control
-          className="pointer-events-auto fixed left-6 top-28 z-[var(--z-map-content)] flex items-center gap-2 rounded-full border border-white/60 bg-white/70 px-4 py-2.5 text-xs font-black uppercase tracking-[0.18em] text-brand-navy shadow-deep backdrop-blur-2xl transition-all hover:bg-white/90 active:scale-95 lg:top-32"
+          className="pointer-events-auto fixed left-5 bottom-[calc(env(safe-area-inset-bottom)+7rem)] z-40 flex items-center gap-2 rounded-2xl border border-white/60 bg-white/70 px-3 py-2.5 text-xs font-black uppercase tracking-[0.18em] text-brand-navy shadow-deep backdrop-blur-2xl transition-all hover:bg-white/90 active:scale-95 lg:left-6 lg:top-32 lg:bottom-auto lg:rounded-full lg:px-4 lg:z-[var(--z-map-content)]"
           aria-label="Open harbor overview"
         >
           <LayoutDashboard

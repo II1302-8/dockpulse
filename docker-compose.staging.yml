@@ -52,6 +52,26 @@ services:
     networks: [internal]
     logging: *loki-logging
 
+  cloudflared-admin:
+    # admin.staging.dockpulse.xyz over cf zero trust, mirrors prod's tunnel
+    # set up in cf dashboard:
+    #   admin.staging.dockpulse.xyz/api/*  -> http://backend:8000
+    #   admin.staging.dockpulse.xyz/*      -> http://frontend:5173
+    # cf access app on this hostname enforces auth, backend rechecks via JWT
+    container_name: dockpulse-staging-cloudflared-admin
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_ADMIN_TUNNEL_TOKEN_STAGING}
+    depends_on:
+      frontend:
+        condition: service_started
+      backend:
+        condition: service_started
+    networks: [internal]
+    logging: *loki-logging
+
   fake-publisher:
     container_name: dockpulse-staging-fake-publisher
     image: ghcr.io/astral-sh/uv:python3.12-bookworm-slim

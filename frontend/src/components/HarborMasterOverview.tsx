@@ -61,7 +61,7 @@ export function HarborMasterOverview({
         "isolate fixed z-[110] flex flex-col overflow-hidden",
         "border border-white/40 bg-white/40 shadow-deep backdrop-blur-xl rounded-[32px] p-0 font-body",
         "inset-x-0 bottom-0 h-[88dvh] pb-[env(safe-area-inset-bottom)] rounded-t-[32px] rounded-b-none",
-        "lg:bottom-auto lg:right-auto lg:left-[var(--sidebar-total-offset,32px)] lg:top-32 lg:w-80 lg:max-h-[calc(100vh-160px)] lg:rounded-b-[32px]",
+        "lg:bottom-auto lg:right-auto lg:left-[var(--sidebar-total-offset,32px)] lg:top-32 lg:w-80 lg:h-auto lg:max-h-[calc(100vh-160px)] lg:rounded-b-[32px]",
         "transition-all duration-500 ease-in-out",
         isOpen
           ? "pointer-events-auto opacity-100 translate-y-0 lg:translate-x-0"

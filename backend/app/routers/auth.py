@@ -344,12 +344,31 @@ async def refresh_session(
     "/logout",
     status_code=204,
     operation_id="logout",
-    summary="Invalidate all tokens for the current user",
+    summary="Log this device out (other devices keep their session)",
 )
-async def logout(current_user: CurrentUserDep, session: SessionDep, response: Response):
-    current_user.token_version += 1
-    session.add(current_user)
-    await _revoke_all_refresh_tokens_for(current_user.user_id, session)
+async def logout(
+    current_user: CurrentUserDep,
+    session: SessionDep,
+    response: Response,
+    refresh_cookie: Annotated[str | None, Cookie(alias=REFRESH_COOKIE)] = None,
+):
+    # revoke only the refresh row tied to this device's cookie so other
+    # devices stay logged in. access token expires within its short TTL.
+    # password change + replay detection still bump token_version to kill
+    # everything everywhere
+    if refresh_cookie:
+        try:
+            payload = jwt.decode(
+                refresh_cookie, get_settings().secret_key, algorithms=[ALGORITHM]
+            )
+            jti = payload.get("jti")
+            if isinstance(jti, str):
+                row = await session.get(RefreshToken, jti)
+                if row is not None and row.user_id == current_user.user_id:
+                    row.revoked_at = datetime.now(UTC)
+        except jwt.PyJWTError:
+            # malformed cookie, nothing to revoke
+            pass
     await session.commit()
     clear_session_cookies(response)
 

@@ -338,11 +338,16 @@ async def test_logout_returns_204(client: AsyncClient, test_user: User):
     assert r.status_code == 204
 
 
-async def test_logout_invalidates_token(client: AsyncClient, test_user: User):
+async def test_logout_keeps_access_revokes_refresh(
+    client: AsyncClient, test_user: User
+):
+    # per-device logout: this device's refresh is killed, the short-lived
+    # access token stays valid for its remaining TTL. other devices keep
+    # their own sessions (token_version no longer bumped on plain logout)
     token = make_token(test_user.user_id)
     await client.post("/api/auth/logout", cookies=_creds(token))
     r = await client.get("/api/users/me", cookies=_creds(token))
-    assert r.status_code == 401
+    assert r.status_code == 200
 
 
 async def test_logout_requires_auth(client: AsyncClient):

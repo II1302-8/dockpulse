@@ -4676,12 +4676,27 @@ paths:
   /api/auth/logout:
     post:
       operationId: logout
+      parameters:
+      - in: cookie
+        name: dockpulse_refresh
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Dockpulse Refresh
       responses:
         '204':
           description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
       security:
       - APIKeyCookie: []
-      summary: Invalidate all tokens for the current user
+      summary: Log this device out (other devices keep their session)
       tags:
       - auth
   /api/auth/me:

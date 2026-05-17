@@ -201,3 +201,49 @@ async def test_logout_clears_cookies_and_revokes_refresh(
     assert client.cookies.get(ACCESS_COOKIE, "") == ""
     rows = (await session.execute(select(RefreshToken))).scalars().all()
     assert all(row.revoked_at is not None for row in rows)
+
+
+async def test_logout_one_device_keeps_other_alive(
+    client: AsyncClient,
+    session: AsyncSession,
+):
+    """per-device logout: device A logs out, device B's refresh token survives"""
+    from httpx import ASGITransport
+
+    from app.db import get_session
+    from app.main import app
+
+    await _register_user(session)
+    # device A logs in via the shared httpx client
+    await client.post(
+        "/api/auth/login",
+        json={"email": "cora@example.com", "password": "supersecret"},
+    )
+    # device B logs in via its own client so it has its own cookie jar
+    transport = ASGITransport(app=app)
+
+    async def _override():
+        yield session
+
+    app.dependency_overrides[get_session] = _override
+    async with AsyncClient(transport=transport, base_url="http://test") as client_b:
+        await client_b.post(
+            "/api/auth/login",
+            json={"email": "cora@example.com", "password": "supersecret"},
+        )
+        device_b_refresh = client_b.cookies.get(REFRESH_COOKIE)
+        assert device_b_refresh
+
+        # device A logs out
+        await client.post("/api/auth/logout")
+
+        # device B's refresh row stays alive
+        device_b_jti = jwt.decode(
+            device_b_refresh,
+            get_settings().secret_key,
+            algorithms=[ALGORITHM],
+        )["jti"]
+        device_b_row = await session.get(RefreshToken, device_b_jti)
+        assert device_b_row is not None
+        assert device_b_row.revoked_at is None
+    app.dependency_overrides.clear()

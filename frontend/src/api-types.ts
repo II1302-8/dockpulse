@@ -683,7 +683,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Invalidate all tokens for the current user */
+        /** Log this device out (other devices keep their session) */
         post: operations["logout"];
         delete?: never;
         options?: never;
@@ -4957,7 +4957,9 @@ export interface operations {
             query?: never;
             header?: never;
             path?: never;
-            cookie?: never;
+            cookie?: {
+                dockpulse_refresh?: string | null;
+            };
         };
         requestBody?: never;
         responses: {
@@ -4967,6 +4969,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

@@ -7,7 +7,11 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["frontend/**/*", "!frontend/src/api-types.ts"]
+    "includes": [
+      "frontend/**/*",
+      "!frontend/src/api-types.ts",
+      "!frontend/**/*.html"
+    ]
   },
   "formatter": {
     "enabled": true,

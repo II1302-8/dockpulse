@@ -91,7 +91,9 @@ export function HarborOverview({
       </header>
 
       <div className="custom-scrollbar space-y-4 overflow-y-auto pr-2">
-        <article className="rounded-[24px] border border-white/50 bg-white/80 p-5 shadow-subtle backdrop-blur-md transition-all duration-300 hover:shadow-md animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both">
+        {/* parent section already blurs the page; inner blur was redundant
+          and cost a full compositor pass per frame */}
+        <article className="rounded-[24px] border border-white/50 bg-white/90 p-5 shadow-subtle transition-all duration-300 hover:shadow-md animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200 fill-mode-both">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#0093E9]">
               <Activity size={12} strokeWidth={3} />
@@ -132,7 +134,7 @@ export function HarborOverview({
           )}
         </article>
 
-        <article className="rounded-[24px] border border-white/30 bg-white/40 p-4 shadow-subtle backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both">
+        <article className="rounded-[24px] border border-white/50 bg-white/90 p-4 shadow-subtle animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300 fill-mode-both">
           <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#0A2540]/50">
             <BatteryLow size={12} strokeWidth={3} />
             Node Alerts

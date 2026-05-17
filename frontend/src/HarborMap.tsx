@@ -232,7 +232,7 @@ export function HarborMap() {
       </section>
 
       {showInitialSpinner && (
-        <div className="absolute inset-0 z-[80] flex flex-col items-center justify-center gap-4 bg-[#F4F9FF]/80 backdrop-blur-md">
+        <div className="absolute inset-0 z-[80] flex flex-col items-center justify-center gap-4 bg-[#F4F9FF]/95">
           <div className="h-12 w-12 animate-spin rounded-full border-4 border-[#0093E9]/20 border-t-[#0093E9]" />
           <p className="animate-pulse text-xs font-black uppercase tracking-widest text-[#0A2540]/60">
             Initialising Marina HUD...

@@ -17,6 +17,18 @@
   </head>
   <body>
     <div id="app"></div>
+    <script>
+      // pauses body wave animations when tab is hidden; toggled on <html>
+      // so css can suspend animation-play-state without touching react
+      (function () {
+        var root = document.documentElement;
+        function sync() {
+          root.classList.toggle("waves-paused", document.hidden);
+        }
+        document.addEventListener("visibilitychange", sync);
+        sync();
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

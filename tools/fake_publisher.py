@@ -38,12 +38,15 @@ def _node_id_for(berth_id: str) -> str:
 
 
 def build_status_payload(node_id: str, berth_id: str, occupied: bool) -> dict:
+    # mesh_unicast_addr is a 16-bit address; derive a stable fake one from node_id
+    addr = abs(hash(node_id)) % 0xFFFE + 1
     return {
         "node_id": node_id,
         "berth_id": berth_id,
         "occupied": occupied,
         "sensor_raw": random.randint(0, 1023),
         "battery_pct": random.randint(20, 100),
+        "mesh_unicast_addr": f"{addr:04x}",
         "timestamp": datetime.now(UTC).isoformat(),
     }
 

@@ -1,6 +1,27 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../lib/api";
 
+export function useBookedBerthIds(harborId: string | null): string[] {
+  const [ids, setIds] = useState<string[]>([]);
+  useEffect(() => {
+    if (!harborId) {
+      setIds([]);
+      return;
+    }
+    const ac = new AbortController();
+    apiFetch(`/api/harbors/${harborId}/booked-berths`, { signal: ac.signal })
+      .then((r) =>
+        r.ok ? (r.json() as Promise<string[]>) : Promise.resolve([]),
+      )
+      .then((data) => {
+        if (!ac.signal.aborted) setIds(data);
+      })
+      .catch(() => {});
+    return () => ac.abort();
+  }, [harborId]);
+  return ids;
+}
+
 export type BookingStatus =
   | "confirmed"
   | "cancelled_by_visitor"

@@ -13,7 +13,7 @@ import { MapLegend } from "./components/MapLegend";
 import { NodeHealthPanel } from "./components/NodeHealthPanel";
 import { NorthArrow } from "./components/NorthArrow";
 import { useBerthsStream } from "./hooks/useBerthsStream";
-import { useHarborBookings } from "./hooks/useBookings";
+import { useBookedBerthIds, useHarborBookings } from "./hooks/useBookings";
 import { getHarborIdFromSlug } from "./lib/marinas";
 import { cn } from "./lib/utils";
 import { mapBerthIds } from "./svg";
@@ -51,11 +51,15 @@ export function HarborMap() {
     isDesktop,
   } = useDashboardLayout();
 
-  // highlight berths with confirmed bookings when bookings panel is open
+  // public endpoint — works for all users, drives the red "booked" state on the map
+  const bookedBerthIds = useBookedBerthIds(harborId);
+
+  // HM-only: full booking list used to highlight berths in the bookings panel
   const { bookings: activeBookings } = useHarborBookings(harborId, {
     status: "confirmed",
   });
 
+  // highlight berths with confirmed bookings when bookings panel is open
   const highlightedBerthIds = useMemo(() => {
     if (!isBookingsOpen) return [];
     return Array.from(new Set(activeBookings.map((b) => b.berth_id)));
@@ -232,6 +236,7 @@ export function HarborMap() {
           berths={berths}
           selectedBerthId={selectedBerthId}
           highlightedBerthIds={highlightedBerthIds}
+          bookedBerthIds={bookedBerthIds}
           onBerthClickCB={handleBerthClick}
         />
       </section>

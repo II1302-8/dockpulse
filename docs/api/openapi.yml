@@ -5926,6 +5926,46 @@ paths:
       summary: List berths in a harbor bookable across a date range
       tags:
       - bookings
+  /api/harbors/{harbor_id}/booked-berths:
+    get:
+      operationId: listBookedBerthIds
+      parameters:
+      - in: path
+        name: harbor_id
+        required: true
+        schema:
+          title: Harbor Id
+          type: string
+      - description: Date to check, defaults to today
+        in: query
+        name: 'on'
+        required: false
+        schema:
+          anyOf:
+          - format: date
+            type: string
+          - type: 'null'
+          description: Date to check, defaults to today
+          title: 'On'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                items:
+                  type: string
+                title: Response Listbookedberthids
+                type: array
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: List berth IDs with an active confirmed booking on a given date (public)
+      tags:
+      - bookings
   /api/harbors/{harbor_id}/bookings:
     get:
       operationId: listHarborBookings

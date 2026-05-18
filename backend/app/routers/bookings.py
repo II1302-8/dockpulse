@@ -1,5 +1,5 @@
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, time
 
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import func, select
@@ -462,6 +462,35 @@ async def list_berth_bookings(
         await session.scalar(stmt.with_only_columns(func.count(Booking.booking_id)))
     ) or 0
     return BookingList(items=items, total=total)
+
+
+@router.get(
+    "/harbors/{harbor_id}/booked-berths",
+    response_model=list[str],
+    operation_id="listBookedBerthIds",
+    summary="List berth IDs with an active confirmed booking on a given date (public)",
+)
+async def list_booked_berth_ids(
+    harbor_id: str,
+    session: SessionDep,
+    on: date | None = Query(None, description="Date to check, defaults to today"),  # noqa: B008
+):
+    check_date = on or date.today()
+    day_start = datetime.combine(check_date, time.min, tzinfo=UTC)
+    day_end = datetime.combine(check_date, time.max, tzinfo=UTC)
+    stmt = (
+        select(Booking.berth_id)
+        .join(Berth, Berth.berth_id == Booking.berth_id)
+        .join(Dock, Dock.dock_id == Berth.dock_id)
+        .where(
+            Dock.harbor_id == harbor_id,
+            Booking.status == "confirmed",
+            Booking.from_date <= day_end,
+            Booking.to_date >= day_start,
+        )
+        .distinct()
+    )
+    return list((await session.execute(stmt)).scalars().all())
 
 
 @router.get(

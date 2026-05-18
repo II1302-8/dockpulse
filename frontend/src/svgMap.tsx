@@ -29,6 +29,7 @@ interface SvgMapProps {
   berths: components["schemas"]["BerthOut"][];
   selectedBerthId: string | null;
   highlightedBerthIds?: string[];
+  bookedBerthIds?: string[];
   onBerthClickCB?: (berthId: string) => void;
 }
 
@@ -111,6 +112,7 @@ export function SvgMap({
   berths,
   selectedBerthId,
   highlightedBerthIds = [],
+  bookedBerthIds = [],
   onBerthClickCB,
 }: SvgMapProps) {
   const now = useNow();
@@ -120,9 +122,11 @@ export function SvgMap({
     const isSelected = selectedBerthId === slot.berth_id;
     const isHighlighted = highlightedBerthIds.includes(slot.berth_id);
 
+    const isBooked = bookedBerthIds.includes(slot.berth_id);
+
     const state: BerthState =
       apiBerth && isOnline(apiBerth.last_updated, now)
-        ? apiBerth.is_available_now
+        ? apiBerth.is_available_now && !isBooked
           ? "green"
           : "red"
         : "grey";

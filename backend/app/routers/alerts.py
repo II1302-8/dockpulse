@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
-from sqlalchemy import select, update
+from sqlalchemy import select
 
 from app.dependencies import (
     AnyHarbormasterDep,
@@ -40,11 +40,10 @@ async def list_alerts(
         .join(Berth, Berth.berth_id == Alert.berth_id)
         .join(Dock, Dock.dock_id == Berth.dock_id)
         .where(Dock.harbor_id.in_(managed))
-        .order_by(Alert.timestamp.desc())
-        .limit(limit)
     )
     if acknowledged is not None:
         stmt = stmt.where(Alert.acknowledged == acknowledged)
+    stmt = stmt.order_by(Alert.timestamp.desc()).limit(limit)
     rows = (await session.execute(stmt)).scalars().all()
     return rows
 
@@ -78,11 +77,7 @@ async def acknowledge_alert(
 
     # idempotent: re-acknowledging a row just returns the existing state
     if not row.acknowledged:
-        await session.execute(
-            update(Alert)
-            .where(Alert.alert_id == alert_id)
-            .values(acknowledged=True, updated_at=datetime.now(UTC))
-        )
+        row.acknowledged = True
+        row.updated_at = datetime.now(UTC)
         await session.commit()
-        await session.refresh(row)
     return row

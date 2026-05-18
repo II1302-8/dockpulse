@@ -82,9 +82,10 @@ async def patch_gateway(
     gw = await session.get(Gateway, gateway_id)
     if gw is None:
         raise HTTPException(status_code=404, detail="Gateway not found")
-    if body.name is not None:
+    provided = body.model_fields_set
+    if "name" in provided and body.name is not None:
         gw.name = body.name
-    if body.provision_ttl_s is not None:
+    if "provision_ttl_s" in provided:
         gw.provision_ttl_s = body.provision_ttl_s
     if body.dock_id is not None and body.dock_id != gw.dock_id:
         if await session.get(Dock, body.dock_id) is None:

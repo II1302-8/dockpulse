@@ -73,11 +73,14 @@ async def patch_harbor(harbor_id: str, body: HarborPatch, session: SessionDep) -
     h = await session.get(Harbor, harbor_id)
     if h is None:
         raise HTTPException(status_code=404, detail="Harbor not found")
-    if body.name is not None:
+    provided = body.model_fields_set
+    # NOT NULL in DB, only update when a real value was given
+    if "name" in provided and body.name is not None:
         h.name = body.name
-    if body.lat is not None:
+    # nullable in DB, explicit null clears the value
+    if "lat" in provided:
         h.lat = body.lat
-    if body.lng is not None:
+    if "lng" in provided:
         h.lng = body.lng
     await session.commit()
     return {"harbor_id": h.harbor_id, "name": h.name, "lat": h.lat, "lng": h.lng}

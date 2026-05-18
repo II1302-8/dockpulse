@@ -120,10 +120,14 @@ async def patch_berth(berth_id: str, body: BerthPatch, session: SessionDep) -> d
     b = await session.get(Berth, berth_id)
     if b is None:
         raise HTTPException(status_code=404, detail="Berth not found")
-    for field in ("label", "length_m", "width_m", "depth_m", "is_reserved"):
-        v = getattr(body, field)
-        if v is not None:
-            setattr(b, field, v)
+    provided = body.model_fields_set
+    # nullable in DB, explicit null clears the value
+    for field in ("label", "length_m", "width_m", "depth_m"):
+        if field in provided:
+            setattr(b, field, getattr(body, field))
+    # NOT NULL in DB, only update when a real value was given
+    if "is_reserved" in provided and body.is_reserved is not None:
+        b.is_reserved = body.is_reserved
     await session.commit()
     return {
         "berth_id": b.berth_id,

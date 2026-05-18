@@ -48,6 +48,7 @@ async def send_email(
             subject,
         )
         return
+    resend.api_key = settings.resend_api_key
     await asyncio.to_thread(_send_sync, settings, to, subject, html, idempotency_key)
 
 
@@ -109,7 +110,6 @@ def _send_sync(
     html: str,
     idempotency_key: str | None,
 ) -> None:
-    resend.api_key = settings.resend_api_key
     params: resend.Emails.SendParams = {
         "from": settings.email_from,
         "to": [to] if isinstance(to, str) else to,

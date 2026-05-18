@@ -37,6 +37,16 @@ app.add_typer(berth_app, name="berth")
 _ph = PasswordHasher()
 _console = Console()
 
+# Demo constants
+DEMO_PASSWORD = "demo123"
+DEMO_HARBOR_ID = "h1"
+DEMO_USERS = (
+    ("harbormaster@dockpulse.com", "Harbor", "Master"),
+    ("boatowner@dockpulse.com", "Boat", "Owner"),
+    ("visitor@dockpulse.com", "Visitor", "Booker"),
+)
+DEMO_HARBORMASTER_EMAIL = DEMO_USERS[0][0]
+
 
 # mirror DB enums in app/models.py so bad input fails before hitting Postgres
 class EventType(StrEnum):
@@ -283,6 +293,21 @@ def create_alert(
 def seed_db():
     """Insert a default harbor/dock/berths for local development."""
     asyncio.run(_seed_db())
+
+
+@app.command()
+def demo(
+    password: Annotated[
+        str,
+        typer.Option(help="Password applied to all demo users", show_default=False),
+    ] = DEMO_PASSWORD,
+    harbor_id: Annotated[
+        str,
+        typer.Option(help="Harbor ID where demo harbormaster will be granted access"),
+    ] = DEMO_HARBOR_ID,
+):
+    """Create the three demo users used in presentations."""
+    asyncio.run(_demo_users(password, harbor_id))
 
 
 async def _create_user(
@@ -906,3 +931,71 @@ async def _seed_db() -> None:
         await session.commit()
 
     typer.echo(f"Seeded harbor {harbor_id} / dock {dock_id} / berths b1–b5")
+
+
+async def _demo_users(password: str, harbor_id: str) -> None:
+    harbormaster_user: User | None = None
+
+    async with get_sessionmaker()() as session:
+        for email, firstname, lastname in DEMO_USERS:
+            existing = await session.execute(select(User).where(User.email == email))
+            user = existing.scalar_one_or_none()
+            if user is not None:
+                typer.echo(f"[skip] user already exists: {email}")
+                if email == DEMO_HARBORMASTER_EMAIL:
+                    harbormaster_user = user
+                continue
+
+            user = User(
+                user_id=str(uuid.uuid4()),
+                firstname=firstname,
+                lastname=lastname,
+                email=email,
+                password_hash=_ph.hash(password),
+            )
+            session.add(user)
+            typer.echo(f"[create] {email}")
+            if email == DEMO_HARBORMASTER_EMAIL:
+                harbormaster_user = user
+
+        harbor = await session.get(Harbor, harbor_id)
+        if harbor is None:
+            typer.echo(
+                f"Error: no harbor with id {harbor_id}. "
+                "Run seed-db or pass --harbor-id.",
+                err=True,
+            )
+            raise typer.Exit(1)
+
+        if harbormaster_user is None:
+            typer.echo("Error: demo harbormaster user not found", err=True)
+            raise typer.Exit(1)
+
+        role_row = (
+            await session.execute(
+                select(UserHarborRole).where(
+                    UserHarborRole.user_id == harbormaster_user.user_id,
+                    UserHarborRole.harbor_id == harbor_id,
+                    UserHarborRole.role == "harbormaster",
+                )
+            )
+        ).scalar_one_or_none()
+        if role_row is None:
+            session.add(
+                UserHarborRole(
+                    user_id=harbormaster_user.user_id,
+                    harbor_id=harbor_id,
+                    role="harbormaster",
+                )
+            )
+            typer.echo(
+                f"[grant] {DEMO_HARBORMASTER_EMAIL} -> harbormaster on {harbor_id}"
+            )
+        else:
+            typer.echo(
+                f"[skip] {DEMO_HARBORMASTER_EMAIL} already harbormaster on {harbor_id}"
+            )
+
+        await session.commit()
+
+    typer.echo("Demo users are ready (with harbormaster privileges)")

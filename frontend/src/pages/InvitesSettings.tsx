@@ -122,7 +122,7 @@ function InvitesSettings() {
           No invites yet.
         </p>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs font-black uppercase tracking-widest text-brand-navy/60">
               <tr>

@@ -148,7 +148,7 @@ export function ActivityLogPanel({
         </div>
       )}
 
-      <ul className="custom-scrollbar -mx-2 flex-1 space-y-2 overflow-y-auto px-2">
+      <ul className="custom-scrollbar -mx-2 flex-1 space-y-2 overflow-y-auto px-2 pb-24 lg:pb-0">
         {!isLoaded ? (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand-blue/20 border-t-brand-blue" />

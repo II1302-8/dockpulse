@@ -351,7 +351,7 @@ export function BerthDetailPanel({
           </button>
         </div>
 
-        <div className="custom-scrollbar flex-1 overflow-y-auto p-6">
+        <div className="custom-scrollbar flex-1 overflow-y-auto p-6 pb-28 lg:pb-6">
           {isLoading && !berth ? (
             <div className="space-y-6">
               {/* Identification skeleton */}
@@ -655,45 +655,45 @@ export function BerthDetailPanel({
               No berth found
             </div>
           )}
-        </div>
 
-        {canInviteOwner && (
-          <div className="animate-in fade-in slide-in-from-top-4 border-t border-black/5 bg-white/20 p-6 duration-500 delay-700 fill-mode-both">
-            {pendingInviteForBerth && (
-              <div className="mb-4 flex items-start justify-between gap-4 rounded-2xl border border-amber-500/20 bg-amber-50 p-4">
-                <div className="min-w-0 space-y-1.5">
-                  <p className="text-xs font-black uppercase tracking-widest text-amber-700/70">
-                    Pending invite
-                  </p>
-                  <p className="truncate text-xs font-bold text-amber-900">
-                    {pendingInviteForBerth.email}
-                  </p>
-                  <p className="text-xs font-bold uppercase tracking-widest text-amber-700/60">
-                    Expires {fmtDate(pendingInviteForBerth.expires_at)}
-                  </p>
+          {canInviteOwner && (
+            <div className="mt-6 animate-in fade-in slide-in-from-top-4 border-t border-black/5 bg-white/20 p-6 duration-500 delay-700 fill-mode-both">
+              {pendingInviteForBerth && (
+                <div className="mb-4 flex items-start justify-between gap-4 rounded-2xl border border-amber-500/20 bg-amber-50 p-4">
+                  <div className="min-w-0 space-y-1.5">
+                    <p className="text-xs font-black uppercase tracking-widest text-amber-700/70">
+                      Pending invite
+                    </p>
+                    <p className="truncate text-xs font-bold text-amber-900">
+                      {pendingInviteForBerth.email}
+                    </p>
+                    <p className="text-xs font-bold uppercase tracking-widest text-amber-700/60">
+                      Expires {fmtDate(pendingInviteForBerth.expires_at)}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRevokeInvite}
+                    disabled={isRevokingInvite}
+                    className="shrink-0 rounded-full bg-amber-500/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-amber-700 transition-colors hover:bg-amber-500/20 disabled:opacity-50"
+                  >
+                    {isRevokingInvite ? "..." : "Revoke"}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleRevokeInvite}
-                  disabled={isRevokingInvite}
-                  className="shrink-0 rounded-full bg-amber-500/10 px-4 py-2 text-xs font-black uppercase tracking-widest text-amber-700 transition-colors hover:bg-amber-500/20 disabled:opacity-50"
-                >
-                  {isRevokingInvite ? "..." : "Revoke"}
-                </button>
-              </div>
-            )}
+              )}
 
-            <button
-              type="button"
-              onClick={() => setIsInviteOpen(true)}
-              disabled={!harborId || Boolean(pendingInviteForBerth)}
-              className="flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-brand-blue to-brand-cyan py-4 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-brand-blue/20 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-blue/40 active:translate-y-0 disabled:grayscale disabled:opacity-50"
-            >
-              <Mail size={16} strokeWidth={3} />
-              Invite Owner
-            </button>
-          </div>
-        )}
+              <button
+                type="button"
+                onClick={() => setIsInviteOpen(true)}
+                disabled={!harborId || Boolean(pendingInviteForBerth)}
+                className="flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-brand-blue to-brand-cyan py-4 text-xs font-black uppercase tracking-widest text-white shadow-lg shadow-brand-blue/20 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-brand-blue/40 active:translate-y-0 disabled:grayscale disabled:opacity-50"
+              >
+                <Mail size={16} strokeWidth={3} />
+                Invite Owner
+              </button>
+            </div>
+          )}
+        </div>
       </aside>
 
       {berth && harborId && (

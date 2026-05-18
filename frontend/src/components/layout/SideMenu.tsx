@@ -229,7 +229,7 @@ export function SideMenu({
       <nav
         className={cn(
           // safe-area-inset-bottom keeps the dock above the home indicator
-          "lg:hidden fixed bottom-[calc(env(safe-area-inset-bottom)+1.5rem)] left-1/2 -translate-x-1/2 z-[var(--z-nav)] pointer-events-auto w-[90%] max-w-sm h-16 bg-white/80 backdrop-blur-3xl border border-white/60 shadow-deep rounded-full flex items-center justify-around px-2 font-body",
+          "lg:hidden fixed bottom-[calc(env(safe-area-inset-bottom)+1.5rem)] left-1/2 -translate-x-1/2 z-[var(--z-top)] pointer-events-auto w-[90%] max-w-sm h-16 bg-white/80 backdrop-blur-3xl border border-white/60 shadow-deep rounded-full flex items-center justify-around px-2 font-body",
         )}
       >
         {menuItems.map((item) => (

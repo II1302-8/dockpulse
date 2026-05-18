@@ -161,7 +161,7 @@ export function NodeHealthPanel({ isOpen, onCloseCB }: NodeHealthPanelProps) {
         </button>
       </div>
 
-      <div className="custom-scrollbar flex-1 space-y-3 overflow-y-auto pr-1">
+      <div className="custom-scrollbar flex-1 space-y-3 overflow-y-auto pr-1 pb-24 lg:pb-0">
         {error ? (
           <div className="rounded-2xl border border-red-500/10 bg-red-500/5 p-4 text-xs font-bold text-red-500">
             {error}

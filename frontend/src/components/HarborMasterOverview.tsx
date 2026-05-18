@@ -107,7 +107,7 @@ export function HarborMasterOverview({
         </button>
       </div>
 
-      <div className="custom-scrollbar flex-1 space-y-6 overflow-y-auto p-6">
+      <div className="custom-scrollbar flex-1 space-y-6 overflow-y-auto p-6 pb-28 lg:pb-6">
         <div
           className={cn(
             "space-y-1",

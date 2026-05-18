@@ -160,7 +160,7 @@ export function ActivityLogPage() {
     <div
       className={cn(
         "absolute flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-[#F8FAFC] shadow-sm",
-        "top-24 right-4 bottom-4 left-4",
+        "top-24 right-4 bottom-28 left-4",
         "lg:left-[calc(var(--sidebar-total-offset,16px)+16px)] lg:right-6 lg:bottom-6",
       )}
     >

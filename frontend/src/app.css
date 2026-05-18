@@ -158,6 +158,18 @@
   }
   body {
     @apply antialiased font-body text-foreground overflow-hidden min-h-dvh relative;
+    /* same gradient as html so the wave pseudos (z-index -1/-2) blend into a soft overlay instead of painting raw on html-bg with hard edges */
+    background:
+      radial-gradient(
+        ellipse at 20% 15%,
+        rgba(0, 147, 233, 0.18) 0%,
+        transparent 55%
+      ),
+      radial-gradient(
+        ellipse at 85% 90%,
+        rgba(0, 229, 255, 0.2) 0%,
+        transparent 55%
+      );
   }
 
   /* ios zooms on input focus when font-size < 16px and never zooms back. pointer:coarse targets touch devices only so desktop keeps its design tokens */

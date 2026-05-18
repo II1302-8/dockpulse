@@ -19,6 +19,24 @@ from app.schemas import AdoptionRequestOut
 logger = logging.getLogger(__name__)
 
 
+def _apply_node_fields(
+    node: Node,
+    request: AdoptionRequest,
+    *,
+    mesh_unicast_addr: str,
+    dev_key_fp: str,
+    now: datetime,
+) -> None:
+    node.serial_number = request.serial_number
+    node.berth_id = request.berth_id
+    node.gateway_id = request.gateway_id
+    node.mesh_unicast_addr = mesh_unicast_addr
+    node.dev_key_fp = dev_key_fp
+    node.status = "provisioned"
+    node.adopted_at = now
+    node.adopted_by_user_id = request.created_by_user_id
+
+
 def publish_adoption_update(request: AdoptionRequest) -> None:
     payload = {
         "type": "adoption.update",
@@ -75,29 +93,16 @@ async def complete_adoption_ok(
     ).scalar_one_or_none()
     if existing is None:
         # node_id pre-minted at provision/req so gateway already persists it
-        node = Node(
-            node_id=request.node_id,
-            mesh_uuid=request.mesh_uuid,
-            serial_number=request.serial_number,
-            berth_id=request.berth_id,
-            gateway_id=request.gateway_id,
-            mesh_unicast_addr=mesh_unicast_addr,
-            dev_key_fp=dev_key_fp,
-            status="provisioned",
-            adopted_at=now,
-            adopted_by_user_id=request.created_by_user_id,
-        )
+        node = Node(node_id=request.node_id, mesh_uuid=request.mesh_uuid)
         session.add(node)
     else:
-        existing.serial_number = request.serial_number
-        existing.berth_id = request.berth_id
-        existing.gateway_id = request.gateway_id
-        existing.mesh_unicast_addr = mesh_unicast_addr
-        existing.dev_key_fp = dev_key_fp
-        existing.status = "provisioned"
-        existing.adopted_at = now
-        existing.adopted_by_user_id = request.created_by_user_id
         node = existing
+    _apply_node_fields(
+        node, request,
+        mesh_unicast_addr=mesh_unicast_addr,
+        dev_key_fp=dev_key_fp,
+        now=now,
+    )
 
     try:
         await session.commit()

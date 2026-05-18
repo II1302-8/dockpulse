@@ -16,6 +16,7 @@ from app.dependencies import (
     SessionDep,
     is_harbor_member,
 )
+from app.events import load_berth_with_assignment as _load_berth_with_assignment
 from app.models import (
     Assignment,
     Berth,
@@ -178,16 +179,6 @@ async def stream_berths(
                     yield {"event": event["type"], "data": json.dumps(event)}
 
     return EventSourceResponse(event_gen(), ping=SSE_PING_SECONDS)
-
-
-async def _load_berth_with_assignment(session, berth_id: str) -> Berth | None:
-    stmt = (
-        select(Berth)
-        .options(selectinload(Berth.assignment))
-        .where(Berth.berth_id == berth_id)
-    )
-    result = await session.execute(stmt)
-    return result.scalar_one_or_none()
 
 
 async def _load_berth_out(session, berth_id: str) -> BerthOut | None:

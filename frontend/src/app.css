@@ -141,13 +141,8 @@
     background: rgba(10, 37, 64, 0.3);
   }
 
-  /* match body bg so ios safari nav-bar reveal area stays one colour */
+  /* gradient on html, not body, so ios safari url-bar reveal + bottom safe area show the marine bg instead of a flat gray strip */
   html {
-    background-color: #f4f9ff;
-  }
-  body {
-    @apply antialiased font-body text-foreground overflow-hidden min-h-dvh relative;
-    /* marine radial gradient is the dashboard's actual look, the wave pseudos sit on top for slow animation. flat #f4f9ff was too uniform and reads as plain gray on small screens */
     background:
       radial-gradient(
         ellipse at 20% 15%,
@@ -160,6 +155,18 @@
         transparent 55%
       ),
       #eaf4ff;
+  }
+  body {
+    @apply antialiased font-body text-foreground overflow-hidden min-h-dvh relative;
+  }
+
+  /* ios zooms on input focus when font-size < 16px and never zooms back. pointer:coarse targets touch devices only so desktop keeps its design tokens */
+  @media (pointer: coarse) {
+    input,
+    select,
+    textarea {
+      font-size: 16px;
+    }
   }
 
   /* kills safari's 300ms tap-delay + ios gray flash so press feedback

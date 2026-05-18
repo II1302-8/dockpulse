@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from sqlalchemy import (
     Boolean,
@@ -524,9 +525,7 @@ class UserHarborRole(Base):
         primary_key=True,
         index=True,
     )
-    role: Mapped[str] = mapped_column(
-        String, primary_key=True
-    )  # mapped_column(berth_role_enum, primary_key=True)
+    role: Mapped[Literal["harbormaster"]] = mapped_column(String, primary_key=True)
 
 
 class RefreshToken(Base):

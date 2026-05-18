@@ -98,7 +98,7 @@ async def snapshot(session: SessionDep) -> dict:
                 "dock_id": g.dock_id,
                 "name": g.name,
                 "status": g.status,
-                "last_seen": g.last_seen.isoformat() if g.last_seen else None,
+                "last_seen": g.last_seen,
                 "provision_ttl_s": g.provision_ttl_s,
             }
             for g in gateways
@@ -109,7 +109,7 @@ async def snapshot(session: SessionDep) -> dict:
                 "berth_id": n.berth_id,
                 "gateway_id": n.gateway_id,
                 "status": n.status,
-                "adopted_at": n.adopted_at.isoformat() if n.adopted_at else None,
+                "adopted_at": n.adopted_at,
                 "mesh_orphan": n.mesh_orphan,
             }
             for n in nodes
@@ -117,8 +117,8 @@ async def snapshot(session: SessionDep) -> dict:
         "pending_gateways": [
             {
                 "gateway_id": p.gateway_id,
-                "first_seen_at": p.first_seen_at.isoformat(),
-                "last_seen_at": p.last_seen_at.isoformat(),
+                "first_seen_at": p.first_seen_at,
+                "last_seen_at": p.last_seen_at,
                 "attempts": p.attempts,
             }
             for p in pending_gateways

@@ -81,15 +81,10 @@ async def list_berths(
     # membership check keys on harbor_id, resolve from dock_id if needed
     effective_harbor_id = harbor_id
     if effective_harbor_id is None and berths:
-        effective_harbor_id = next(
-            (b.dock.harbor_id for b in berths if "dock" in b.__dict__),
-            None,
+        dock_row = await session.execute(
+            select(Dock.harbor_id).where(Dock.dock_id == dock_id)
         )
-        if effective_harbor_id is None:
-            dock_row = await session.execute(
-                select(Dock.harbor_id).where(Dock.dock_id == dock_id)
-            )
-            effective_harbor_id = dock_row.scalar_one_or_none()
+        effective_harbor_id = dock_row.scalar_one_or_none()
     is_member = await is_harbor_member(current_user, effective_harbor_id or "", session)
     return await serialize_berths(session, berths, include_member_fields=is_member)
 
@@ -125,13 +120,6 @@ async def stream_berths(
     # public read so visitors browse availability without login.
     # anon/non-member sees a payload with telemetry + assignment stripped
     is_member = await is_harbor_member(current_user, harbor_id, session)
-    # scope snapshot + live frames so anon can't subscribe to other tenants
-    stmt = (
-        select(Berth.berth_id)
-        .join(Dock, Dock.dock_id == Berth.dock_id)
-        .where(Dock.harbor_id == harbor_id)
-    )
-    scoped_ids = {r for r in (await session.execute(stmt)).scalars().all()}
 
     async def event_gen():
         # subscribe before snapshot so updates between them aren't lost
@@ -143,6 +131,8 @@ async def stream_berths(
                 .options(selectinload(Berth.assignment))
             )
             berths = list((await session.execute(stmt2)).scalars().all())
+            # scope live frames to this harbor's berths at connection time
+            scoped_ids = {b.berth_id for b in berths}
             out = await serialize_berths(
                 session, berths, include_member_fields=is_member
             )
@@ -241,9 +231,6 @@ async def list_berth_events(
     _: HarbormasterForBerthDep,
     limit: int = Query(100, ge=1, le=1000),
 ):
-    berth = await session.get(Berth, berth_id)
-    if not berth:
-        raise HTTPException(status_code=404, detail="Berth not found")
     result = await session.execute(
         select(Event)
         .where(Event.berth_id == berth_id)

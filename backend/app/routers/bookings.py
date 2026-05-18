@@ -350,7 +350,9 @@ async def preflight_booking(
 async def list_my_bookings(
     session: SessionDep,
     current_user: CurrentUserDep,
-    status: str | None = Query(None),  # noqa: B008
+    status: str | None = Query(  # noqa: B008
+        None, pattern="^(confirmed|cancelled_by_visitor|cancelled_by_host|completed)$"
+    ),
     from_date: datetime | None = Query(None, alias="from"),  # noqa: B008
     to_date: datetime | None = Query(None, alias="to"),  # noqa: B008
 ):
@@ -434,7 +436,9 @@ async def list_berth_bookings(
     berth_id: str,
     session: SessionDep,
     current_user: CurrentUserDep,
-    status: str | None = Query(None),  # noqa: B008
+    status: str | None = Query(  # noqa: B008
+        None, pattern="^(confirmed|cancelled_by_visitor|cancelled_by_host|completed)$"
+    ),
     from_date: datetime | None = Query(None, alias="from"),  # noqa: B008
     to_date: datetime | None = Query(None, alias="to"),  # noqa: B008
 ):
@@ -468,7 +472,9 @@ async def list_harbor_bookings(
     harbor_id: str,
     session: SessionDep,
     current_user: CurrentUserDep,
-    status: str | None = Query(None),  # noqa: B008
+    status: str | None = Query(  # noqa: B008
+        None, pattern="^(confirmed|cancelled_by_visitor|cancelled_by_host|completed)$"
+    ),
     dock_id: str | None = Query(None),  # noqa: B008
     from_date: datetime | None = Query(None, alias="from"),  # noqa: B008
     to_date: datetime | None = Query(None, alias="to"),  # noqa: B008

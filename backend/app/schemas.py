@@ -35,6 +35,7 @@ EventType = Literal[
 BookingStatus = Literal[
     "confirmed", "cancelled_by_visitor", "cancelled_by_host", "completed"
 ]
+InviteStatus = Literal["pending", "accepted", "expired", "revoked", "rejected"]
 
 
 # --- shared input field annotations ---
@@ -129,7 +130,7 @@ class BerthInviteOut(_BaseSchema):
     harbor_id: str = Field(examples=["harbor-001"])
     harbor_name: str | None = Field(default=None, examples=["Saltsjöbaden"])
     email: EmailField
-    status: str = Field(examples=["pending"])
+    status: InviteStatus
     expires_at: datetime = Field()
 
 

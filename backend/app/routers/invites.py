@@ -397,7 +397,10 @@ async def list_berth_invites(
     harbor_id: str,
     session: SessionDep,
     hm: HarbormasterForHarborDep,
-    status: str | None = None,
+    status: str | None = Query(  # noqa: B008
+        default=None,
+        pattern="^(pending|accepted|expired|revoked|rejected)$",
+    ),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ):

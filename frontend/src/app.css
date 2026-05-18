@@ -192,7 +192,7 @@
     width: 90vw;
     height: 90vh;
     background: radial-gradient(
-      circle at 50% 50%,
+      circle closest-side at 50% 50%,
       rgba(0, 147, 233, 0.4) 0%,
       rgba(0, 147, 233, 0.2) 40%,
       transparent 70%
@@ -212,7 +212,7 @@
     width: 80vw;
     height: 80vh;
     background: radial-gradient(
-      circle at 50% 50%,
+      circle closest-side at 50% 50%,
       rgba(0, 229, 255, 0.4) 0%,
       rgba(0, 229, 255, 0.2) 40%,
       transparent 70%

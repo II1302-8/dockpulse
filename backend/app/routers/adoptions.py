@@ -156,7 +156,7 @@ async def create_adoption(
         response.status_code = 200
         return existing
 
-    request = AdoptionRequest(
+    adoption = AdoptionRequest(
         request_id=str(uuid.uuid4()),
         mesh_uuid=mesh_uuid,
         serial_number=claim.serial_number,
@@ -169,7 +169,7 @@ async def create_adoption(
         created_by_user_id=current_user.user_id,
         created_at=now,
     )
-    session.add(request)
+    session.add(adoption)
     try:
         await session.commit()
     except IntegrityError as err:
@@ -178,17 +178,17 @@ async def create_adoption(
             status_code=409, detail="Claim has already been used"
         ) from err
 
-    await session.refresh(request)
+    await session.refresh(adoption)
 
     try:
         await publish_provision_req(
             gateway_id=body.gateway_id,
-            request_id=request.request_id,
+            request_id=adoption.request_id,
             mesh_uuid=mesh_uuid,
             oob=oob,
             ttl_s=int(ttl.total_seconds()),
             berth_id=body.berth_id,
-            node_id=request.node_id,
+            node_id=adoption.node_id,
         )
     except (MqttNotConnectedError, aiomqtt.MqttError) as exc:
         # broker unreachable, sweeper will expire the pending row at TTL
@@ -196,7 +196,7 @@ async def create_adoption(
             status_code=503,
             detail=f"provision/req not delivered to gateway: {exc}",
         ) from exc
-    return request
+    return adoption
 
 
 @router.get(

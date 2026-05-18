@@ -141,7 +141,7 @@
     background: rgba(10, 37, 64, 0.3);
   }
 
-  /* gradient on html, not body, so ios safari url-bar reveal + bottom safe area show the marine bg instead of a flat gray strip */
+  /* gradient on html, not body, so ios safari url-bar reveal + bottom safe area show the marine bg instead of a flat gray strip. base #d6e8fa is the marine that the radial blobs blend toward in the middle, so safe-area chrome zones (where the radials don't reach) still read as blue and not pale gray */
   html {
     background:
       radial-gradient(
@@ -154,7 +154,7 @@
         rgba(0, 229, 255, 0.2) 0%,
         transparent 55%
       ),
-      #eaf4ff;
+      #d6e8fa;
   }
   body {
     @apply antialiased font-body text-foreground overflow-hidden min-h-dvh relative;

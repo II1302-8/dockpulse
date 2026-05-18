@@ -74,16 +74,7 @@ async def is_harbor_member(
 
 
 async def require_any_harbormaster(user: CurrentUserDep, session: SessionDep) -> User:
-    # 403 unless user has at least one harbormaster grant anywhere
-    row = await session.execute(
-        select(UserHarborRole.user_id)
-        .where(
-            UserHarborRole.user_id == user.user_id,
-            UserHarborRole.role == "harbormaster",
-        )
-        .limit(1)
-    )
-    if row.scalar_one_or_none() is None:
+    if not await user_is_harbormaster(user, session):
         raise HTTPException(status_code=403, detail="Harbormaster role required")
     return user
 

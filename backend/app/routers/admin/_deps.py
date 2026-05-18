@@ -9,6 +9,7 @@ from app.cf_access import HEADER, AccessAuthError, AccessIdentity, verify_assert
 
 logger = logging.getLogger(__name__)
 
+
 async def require_cf_access(
     cf_jwt: Annotated[str | None, Header(alias=HEADER)] = None,
 ) -> AccessIdentity:

@@ -5,7 +5,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
-from sqlalchemy import select, update
+from sqlalchemy import select
 
 from app.dependencies import SessionDep
 from app.models import Alert
@@ -59,11 +59,8 @@ async def acknowledge_alert(alert_id: str, session: SessionDep) -> dict:
     if a is None:
         raise HTTPException(status_code=404, detail="Alert not found")
     if not a.acknowledged:
-        await session.execute(
-            update(Alert)
-            .where(Alert.alert_id == alert_id)
-            .values(acknowledged=True, updated_at=datetime.now(UTC))
-        )
+        a.acknowledged = True
+        a.updated_at = datetime.now(UTC)
         await session.commit()
         await session.refresh(a)
     return {

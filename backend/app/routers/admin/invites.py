@@ -31,7 +31,10 @@ class AdminInviteOut(BaseModel):
 async def list_invites(
     session: SessionDep,
     harbor_id: Annotated[str | None, Query()] = None,
-    status: Annotated[str | None, Query()] = None,
+    status: Annotated[
+        str | None,
+        Query(pattern="^(pending|accepted|expired|revoked|rejected)$"),
+    ] = None,
     limit: Annotated[int, Query(ge=1, le=500)] = 200,
 ) -> list[dict]:
     stmt = select(BerthInvite).order_by(BerthInvite.created_at.desc()).limit(limit)

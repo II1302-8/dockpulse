@@ -185,7 +185,7 @@ export function ActivityLogPanel({
                   {alert.message}
                 </p>
                 <div className="flex items-center justify-between border-t border-amber-200/30 pt-3">
-                  <span className="text-xs font-black uppercase tracking-wider text-amber-500/70">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-500/70">
                     {alert.type.replace(/_/g, " ")}
                   </span>
                   <button

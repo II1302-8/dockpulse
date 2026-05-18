@@ -2,7 +2,7 @@ import uuid
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, Query
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from app.dependencies import (
@@ -365,10 +365,7 @@ async def list_my_bookings(
     items = list(
         (await session.execute(stmt.order_by(Booking.from_date.desc()))).scalars().all()
     )
-    total = (
-        await session.scalar(stmt.with_only_columns(func.count(Booking.booking_id)))
-    ) or 0
-    return BookingList(items=items, total=total)
+    return BookingList.model_validate({"items": items, "total": len(items)})
 
 
 @router.get(
@@ -458,10 +455,7 @@ async def list_berth_bookings(
     items = list(
         (await session.execute(stmt.order_by(Booking.from_date.desc()))).scalars().all()
     )
-    total = (
-        await session.scalar(stmt.with_only_columns(func.count(Booking.booking_id)))
-    ) or 0
-    return BookingList(items=items, total=total)
+    return BookingList.model_validate({"items": items, "total": len(items)})
 
 
 @router.get(
@@ -499,10 +493,7 @@ async def list_harbor_bookings(
     items = list(
         (await session.execute(stmt.order_by(Booking.from_date.desc()))).scalars().all()
     )
-    total = (
-        await session.scalar(stmt.with_only_columns(func.count(Booking.booking_id)))
-    ) or 0
-    return BookingList(items=items, total=total)
+    return BookingList.model_validate({"items": items, "total": len(items)})
 
 
 # --- authorization helpers ---

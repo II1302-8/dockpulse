@@ -20,7 +20,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 from app.adoption.sweeper import sweeper_loop
 from app.auth import require_csrf
 from app.config import get_settings
-from app.db import get_engine, get_sessionmaker
+from app.db import get_sessionmaker
 from app.invites.sweeper import sweeper_loop as invite_sweeper_loop
 from app.logging_config import request_id_var, setup_logging
 from app.models import AdoptionRequest, Gateway
@@ -225,49 +225,43 @@ app.include_router(users.router)
 )
 async def health():
     db_ok = True
-    try:
-        async with get_engine().connect() as conn:
-            await conn.execute(text("SELECT 1"))
-    except Exception:
-        db_ok = False
-
     mqtt_ok = is_mqtt_connected()
 
     # adoption + gateway counters help oncall spot a degraded pipeline at a glance
     gateways_online = gateways_total = pending = err_last_15min = 0
-    if db_ok:
-        try:
-            async with get_sessionmaker()() as session:
-                gateways_total = (
-                    await session.scalar(select(func.count()).select_from(Gateway))
-                ) or 0
-                gateways_online = (
-                    await session.scalar(
-                        select(func.count())
-                        .select_from(Gateway)
-                        .where(Gateway.status == "online")
+    try:
+        async with get_sessionmaker()() as session:
+            await session.execute(text("SELECT 1"))
+            gateways_total = (
+                await session.scalar(select(func.count()).select_from(Gateway))
+            ) or 0
+            gateways_online = (
+                await session.scalar(
+                    select(func.count())
+                    .select_from(Gateway)
+                    .where(Gateway.status == "online")
+                )
+            ) or 0
+            pending = (
+                await session.scalar(
+                    select(func.count())
+                    .select_from(AdoptionRequest)
+                    .where(AdoptionRequest.status == "pending")
+                )
+            ) or 0
+            cutoff = datetime.now(UTC) - timedelta(minutes=15)
+            err_last_15min = (
+                await session.scalar(
+                    select(func.count())
+                    .select_from(AdoptionRequest)
+                    .where(
+                        AdoptionRequest.status == "err",
+                        AdoptionRequest.completed_at >= cutoff,
                     )
-                ) or 0
-                pending = (
-                    await session.scalar(
-                        select(func.count())
-                        .select_from(AdoptionRequest)
-                        .where(AdoptionRequest.status == "pending")
-                    )
-                ) or 0
-                cutoff = datetime.now(UTC) - timedelta(minutes=15)
-                err_last_15min = (
-                    await session.scalar(
-                        select(func.count())
-                        .select_from(AdoptionRequest)
-                        .where(
-                            AdoptionRequest.status == "err",
-                            AdoptionRequest.completed_at >= cutoff,
-                        )
-                    )
-                ) or 0
-        except Exception:
-            db_ok = False
+                )
+            ) or 0
+    except Exception:
+        db_ok = False
 
     status = "ok" if db_ok and mqtt_ok else "degraded"
 

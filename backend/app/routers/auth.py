@@ -41,8 +41,13 @@ _ph = PasswordHasher()
 _DUMMY_HASH = _ph.hash("dummy-password-for-timing-equalization")
 
 
-def _hash_password(password: str) -> str:
+def hash_password(password: str) -> str:
     return _ph.hash(password)
+
+
+def verify_password(password_hash: str, password: str) -> bool:
+    """Returns True or raises VerifyMismatchError."""
+    return _ph.verify(password_hash, password)
 
 
 async def _issue_session(
@@ -107,7 +112,7 @@ async def register(
     # email verification only enforced in prod, dev/staging skip the loop
     require_verification = settings.app_env == "prod"
     # pay argon2 cost up front so duplicate-email paths don't leak timing
-    password_hash = _hash_password(body.password.get_secret_value())
+    password_hash = hash_password(body.password.get_secret_value())
     result = await session.execute(select(User).where(User.email == body.email))
     existing = result.scalar_one_or_none()
 

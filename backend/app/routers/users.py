@@ -2,7 +2,6 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 import jwt
-from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 from fastapi import APIRouter, BackgroundTasks, HTTPException, Query, Request
 from sqlalchemy import func, select, update
@@ -19,6 +18,7 @@ from app.dependencies import (
 from app.email_templates import render as render_email
 from app.models import Assignment, User, UserNotificationPrefs
 from app.rate_limit import limiter
+from app.routers.auth import hash_password, verify_password
 from app.schemas import (
     AccountDeleteIn,
     NotificationPrefsOut,
@@ -33,12 +33,6 @@ from app.serializers import assigned_berth_id as _assigned_berth_id
 from app.serializers import to_user_out
 
 router = APIRouter(prefix="/api/users", tags=["users"])
-
-_ph = PasswordHasher()
-
-
-def _hash_password(password: str) -> str:
-    return _ph.hash(password)
 
 
 @router.post(
@@ -133,7 +127,7 @@ async def confirm_password_reset(body: PasswordResetConfirm, session: SessionDep
         update(User)
         .where(User.user_id == user_id)
         .values(
-            password_hash=_hash_password(body.password.get_secret_value()),
+            password_hash=hash_password(body.password.get_secret_value()),
             token_version=User.token_version + 1,
         )
     )
@@ -238,7 +232,7 @@ async def update_me(
                 detail="Current password is required to change password.",
             )
         try:
-            _ph.verify(
+            verify_password(
                 current_user.password_hash,
                 body.current_password.get_secret_value(),
             )
@@ -246,7 +240,7 @@ async def update_me(
             raise HTTPException(
                 status_code=401, detail="Current password is incorrect."
             ) from None
-        current_user.password_hash = _hash_password(body.password.get_secret_value())
+        current_user.password_hash = hash_password(body.password.get_secret_value())
 
     session.add(current_user)
     await session.commit()
@@ -274,7 +268,9 @@ async def delete_me(
         )
     # re-auth: stolen cookie / shared browser can't wipe the account
     try:
-        _ph.verify(current_user.password_hash, body.current_password.get_secret_value())
+        verify_password(
+            current_user.password_hash, body.current_password.get_secret_value()
+        )
     except VerifyMismatchError:
         raise HTTPException(
             status_code=401, detail="Current password is incorrect."

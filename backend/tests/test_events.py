@@ -216,7 +216,7 @@ async def test_notify_harbormasters_called_on_state_change(
     assert event is not None
     assert len(sent) == 1
     assert sent[0]["to"] == harbor_master.email
-    assert "occupied" in sent[0]["subject"].lower()
+    assert "unauthorized" in sent[0]["subject"].lower()
     assert event.event_id in sent[0]["idem"]
 
 

@@ -64,46 +64,32 @@ async def _notify_harbormasters(
     harbormasters = result.unique().scalars().all()
     label = berth.label or berth.berth_id
 
-    if new_status == "occupied":
-        # sensor has no boat identity so a window-less occupied could be
-        # owner or stranger. flagging both is the closest we can get; once
-        # berth invites land we can tighten this to "visitor without invite"
-        now = datetime.now(UTC)
-        window_result = await session.execute(
-            select(BerthAvailabilityWindow).where(
-                BerthAvailabilityWindow.berth_id == berth.berth_id,
-                BerthAvailabilityWindow.from_date < now,
-                BerthAvailabilityWindow.return_date > now,
-            )
-        )
-        if window_result.scalars().first() is not None:
-            return
-        subject = f"Berth {label} is now occupied"
-        html = render_email(
-            title="Unauthorized mooring detected",
-            preheader=(
-                f"Berth {label} just flipped to occupied with no active window."
-            ),
-            intro=f"Berth {label} is now occupied.",
-            body_paragraphs=[
-                "The sensor reports a boat at this berth but no availability "
-                "window is currently active. Verify the mooring is authorized.",
-            ],
-        )
-        pref_attr = "notify_arrival"
-    elif new_status == "free":
-        subject = f"Berth {label} is now free"
-        html = render_email(
-            title="Berth departure",
-            preheader=f"Berth {label} just flipped to free.",
-            intro=f"Berth {label} is now free.",
-            body_paragraphs=[
-                "The sensor reports the slot has been vacated.",
-            ],
-        )
-        pref_attr = "notify_departure"
-    else:
+    if new_status != "occupied":
         return
+    # sensor has no boat identity so a window-less occupied could be
+    # owner or stranger. flagging both is the closest we can get; once
+    # berth invites land we can tighten this to "visitor without invite"
+    now = datetime.now(UTC)
+    window_result = await session.execute(
+        select(BerthAvailabilityWindow).where(
+            BerthAvailabilityWindow.berth_id == berth.berth_id,
+            BerthAvailabilityWindow.from_date < now,
+            BerthAvailabilityWindow.return_date > now,
+        )
+    )
+    if window_result.scalars().first() is not None:
+        return
+    subject = f"Unauthorized mooring at berth {label}"
+    html = render_email(
+        title="Unauthorized mooring detected",
+        preheader=(f"Berth {label} just flipped to occupied with no active window."),
+        intro=f"Berth {label} is now occupied.",
+        body_paragraphs=[
+            "The sensor reports a boat at this berth but no availability "
+            "window is currently active. Verify the mooring is authorized.",
+        ],
+    )
+    pref_attr = "notify_arrival"
 
     coros = []
     for hm in harbormasters:

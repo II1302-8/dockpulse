@@ -10,6 +10,7 @@ from sqlalchemy.orm import joinedload, selectinload
 from app import broadcaster
 from app.email_templates import render as render_email
 from app.models import (
+    Alert,
     Berth,
     BerthAvailabilityWindow,
     Dock,
@@ -44,75 +45,115 @@ async def load_berth_with_assignment(
     return (await session.execute(stmt)).scalar_one_or_none()
 
 
+async def _handle_unauthorized_occupation(
+    session: AsyncSession, berth: Berth, label: str, now: datetime
+) -> tuple[str, str] | None:
+    """Window check + dedup alert. Returns (subject, html) or None if authorized."""
+    # sensor has no boat identity so a window-less occupied could be owner or
+    # stranger; once berth invites land we can tighten to "visitor without invite"
+    window = (
+        (
+            await session.execute(
+                select(BerthAvailabilityWindow).where(
+                    BerthAvailabilityWindow.berth_id == berth.berth_id,
+                    BerthAvailabilityWindow.from_date < now,
+                    BerthAvailabilityWindow.return_date > now,
+                )
+            )
+        )
+        .scalars()
+        .first()
+    )
+    if window is not None:
+        return None
+
+    # dedup: skip if an unacknowledged alert already exists so a stuck sensor
+    # doesn't spam the alerts table
+    existing = (
+        await session.execute(
+            select(Alert).where(
+                Alert.berth_id == berth.berth_id,
+                Alert.type == "unauthorized_mooring",
+                Alert.acknowledged.is_(False),
+            )
+        )
+    ).scalar_one_or_none()
+    if existing is None:
+        session.add(
+            Alert(
+                alert_id=str(uuid.uuid4()),
+                berth_id=berth.berth_id,
+                type="unauthorized_mooring",
+                message=(
+                    f"Berth {label} is occupied with no active availability "
+                    "window. Verify the mooring is authorized."
+                ),
+                acknowledged=False,
+                timestamp=now,
+            )
+        )
+        await session.commit()
+
+    subject = f"Berth {label} is now occupied"
+    html = render_email(
+        title="Unauthorized mooring detected",
+        preheader=f"Berth {label} just flipped to occupied with no active window.",
+        intro=f"Berth {label} is now occupied.",
+        body_paragraphs=[
+            "The sensor reports a boat at this berth but no availability "
+            "window is currently active. Verify the mooring is authorized.",
+        ],
+    )
+    return subject, html
+
+
+def _build_departure_email(label: str) -> tuple[str, str]:
+    subject = f"Berth {label} is now free"
+    html = render_email(
+        title="Berth departure",
+        preheader=f"Berth {label} just flipped to free.",
+        intro=f"Berth {label} is now free.",
+        body_paragraphs=["The sensor reports the slot has been vacated."],
+    )
+    return subject, html
+
+
 async def _notify_harbormasters(
     session: AsyncSession,
     berth: Berth,
     new_status: str,
     event_id: str,
 ) -> None:
-    # only harbormasters of the harbor that owns this berth
-    result = await session.execute(
-        select(User)
-        .join(UserHarborRole, UserHarborRole.user_id == User.user_id)
-        .join(Dock, Dock.harbor_id == UserHarborRole.harbor_id)
-        .where(
-            Dock.dock_id == berth.dock_id,
-            UserHarborRole.role == "harbormaster",
-        )
-        .options(joinedload(User.notification_prefs))
-    )
-    harbormasters = result.unique().scalars().all()
     label = berth.label or berth.berth_id
 
     if new_status == "occupied":
-        # sensor has no boat identity so a window-less occupied could be
-        # owner or stranger. flagging both is the closest we can get; once
-        # berth invites land we can tighten this to "visitor without invite"
-        now = datetime.now(UTC)
-        window_result = await session.execute(
-            select(BerthAvailabilityWindow).where(
-                BerthAvailabilityWindow.berth_id == berth.berth_id,
-                BerthAvailabilityWindow.from_date < now,
-                BerthAvailabilityWindow.return_date > now,
-            )
+        result = await _handle_unauthorized_occupation(
+            session, berth, label, datetime.now(UTC)
         )
-        if window_result.scalars().first() is not None:
+        if result is None:
             return
-        subject = f"Berth {label} is now occupied"
-        html = render_email(
-            title="Unauthorized mooring detected",
-            preheader=(
-                f"Berth {label} just flipped to occupied with no active window."
-            ),
-            intro=f"Berth {label} is now occupied.",
-            body_paragraphs=[
-                "The sensor reports a boat at this berth but no availability "
-                "window is currently active. Verify the mooring is authorized.",
-            ],
-        )
+        subject, html = result
         pref_attr = "notify_arrival"
     elif new_status == "free":
-        subject = f"Berth {label} is now free"
-        html = render_email(
-            title="Berth departure",
-            preheader=f"Berth {label} just flipped to free.",
-            intro=f"Berth {label} is now free.",
-            body_paragraphs=[
-                "The sensor reports the slot has been vacated.",
-            ],
-        )
+        subject, html = _build_departure_email(label)
         pref_attr = "notify_departure"
     else:
         return
 
-    coros = []
-    for hm in harbormasters:
-        prefs = hm.notification_prefs
-        if prefs is not None and not getattr(prefs, pref_attr):
-            continue
-        idem_key = f"berth-status/{event_id}/{hm.user_id}"
-        coros.append(send_email(hm.email, subject, html, idem_key))
+    hm_result = await session.execute(
+        select(User)
+        .join(UserHarborRole, UserHarborRole.user_id == User.user_id)
+        .join(Dock, Dock.harbor_id == UserHarborRole.harbor_id)
+        .where(Dock.dock_id == berth.dock_id, UserHarborRole.role == "harbormaster")
+        .options(joinedload(User.notification_prefs))
+    )
+    harbormasters = hm_result.unique().scalars().all()
 
+    coros = [
+        send_email(hm.email, subject, html, f"berth-status/{event_id}/{hm.user_id}")
+        for hm in harbormasters
+        if hm.notification_prefs is None or getattr(hm.notification_prefs, pref_attr)
+    ]
     results = await asyncio.gather(*coros, return_exceptions=True)
     for exc in results:
         if isinstance(exc, BaseException):

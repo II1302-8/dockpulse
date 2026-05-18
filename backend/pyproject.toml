@@ -1,58 +1,41 @@
-[build-system]
-requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "dockpulse-backend"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-  "fastapi>=0.135",
-  "uvicorn[standard]>=0.44",
-  "sqlalchemy[asyncio]>=2.0",
-  "asyncpg>=0.31",
-  "alembic>=1.18",
-  "aiomqtt>=2.5",
-  "pydantic[email]>=2.12",
-  "pydantic-settings>=2.5",
-  "pyyaml>=6.0",
-  "sse-starlette>=2.4",
   "PyJWT[crypto]>=2.8",
+  "aiomqtt>=2.5",
+  "alembic>=1.18",
   "argon2-cffi>=21.0",
+  "asyncpg>=0.31",
+  "fastapi>=0.135",
+  "pydantic-settings>=2.5",
+  "pydantic[email]>=2.12",
+  "pyyaml>=6.0",
   "resend>=2.29.0",
   "slowapi>=0.1.9",
+  "sqlalchemy[asyncio]>=2.0",
+  "sse-starlette>=2.4",
   "typer>=0.25",
+  "uvicorn[standard]>=0.44",
 ]
 
 [project.scripts]
 dpcli = "scripts.dpcli.cli:app"
 
-[tool.uv]
-package = true
-
-[tool.setuptools.packages.find]
-include = ["app*", "scripts*"]
-
 [dependency-groups]
 dev = [
+  "httpx>=0.28",
+  "pre-commit>=4.5",
   "pytest>=9.0",
   "pytest-asyncio>=0.25",
-  "httpx>=0.28",
-  "ruff>=0.11",
-  "pre-commit>=4.5",
   "pytest-cov>=7.1.0",
+  "ruff>=0.11",
 ]
 
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-asyncio_default_fixture_loop_scope = "session"
-asyncio_default_test_loop_scope = "session"
-pythonpath = ["."]
-testpaths = ["tests"]
-addopts = "--cov --cov-report=term-missing"
-filterwarnings = [
-  "ignore:Setting per-request cookies.*:DeprecationWarning",
-]
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [tool.coverage.run]
 source = ["app"]
@@ -62,6 +45,17 @@ concurrency = ["thread", "greenlet"]
 fail_under = 80
 show_missing = true
 
+[tool.pytest.ini_options]
+addopts = "--cov --cov-report=term-missing"
+filterwarnings = [
+  "ignore:Setting per-request cookies.*:DeprecationWarning",
+]
+pythonpath = ["."]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+
 [tool.ruff]
 target-version = "py312"
 line-length = 88
@@ -69,15 +63,15 @@ extend-exclude = ["alembic/versions"]
 
 [tool.ruff.lint]
 select = [
-  "F",     # pyflakes
-  "E",     # pycodestyle errors
-  "W",     # pycodestyle warnings
-  "I",     # isort
-  "N",     # pep8-naming
-  "UP",    # pyupgrade
-  "B",     # flake8-bugbear
-  "SIM",   # flake8-simplify
-  "T20",   # flake8-print (catch stray prints)
+  "F",  # pyflakes
+  "E",  # pycodestyle errors
+  "W",  # pycodestyle warnings
+  "I",  # isort
+  "N",  # pep8-naming
+  "UP",  # pyupgrade
+  "B",  # flake8-bugbear
+  "SIM",  # flake8-simplify
+  "T20",  # flake8-print (catch stray prints)
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -88,3 +82,9 @@ select = [
 
 [tool.ruff.format]
 quote-style = "double"
+
+[tool.setuptools.packages.find]
+include = ["app*", "scripts*"]
+
+[tool.uv]
+package = true

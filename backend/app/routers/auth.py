@@ -10,6 +10,7 @@ from argon2.exceptions import VerifyMismatchError
 from fastapi import APIRouter, BackgroundTasks, Cookie, HTTPException, Request, Response
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import (
     ALGORITHM,
@@ -68,7 +69,7 @@ async def _issue_session(
     )
 
 
-async def _invalidate_verification_tokens(user_id: str, session: SessionDep) -> None:
+async def _invalidate_verification_tokens(user_id: str, session: AsyncSession) -> None:
     await session.execute(
         update(UserVerification)
         .where(UserVerification.user_id == user_id, UserVerification.used.is_(False))
@@ -80,7 +81,7 @@ def _hash_verification_token(token: str) -> bytes:
     return sha256(token.encode("utf-8")).digest()
 
 
-def _create_verification_token(user_id: str, session: SessionDep, settings) -> str:
+def _create_verification_token(user_id: str, session: AsyncSession, settings) -> str:
     # plaintext returned to caller (email body); DB only sees the hash so a leak
     # can't replay live links. matches the berth_invites approach
     token = secrets.token_urlsafe(32)
@@ -269,7 +270,7 @@ async def login(
 
     target_hash = user.password_hash if user is not None else _DUMMY_HASH
     try:
-        _ph.verify(target_hash, body.password.get_secret_value())
+        verify_password(target_hash, body.password.get_secret_value())
     except VerifyMismatchError:
         raise HTTPException(status_code=401, detail="Invalid credentials") from None
     if user is None:

@@ -242,7 +242,6 @@ async def update_me(
             ) from None
         current_user.password_hash = hash_password(body.password.get_secret_value())
 
-    session.add(current_user)
     await session.commit()
     await session.refresh(current_user)
     berth_id = await _assigned_berth_id(session, current_user.user_id)

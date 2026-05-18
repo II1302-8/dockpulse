@@ -98,7 +98,8 @@ async def complete_adoption_ok(
     else:
         node = existing
     _apply_node_fields(
-        node, request,
+        node,
+        request,
         mesh_unicast_addr=mesh_unicast_addr,
         dev_key_fp=dev_key_fp,
         now=now,

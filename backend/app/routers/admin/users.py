@@ -1,19 +1,15 @@
 """user crud + harbormaster harbor-grants"""
 
 import uuid
-from typing import Annotated
 
-from argon2 import PasswordHasher
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr, Field, SecretStr
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from app.dependencies import SessionDep
 from app.models import Harbor, User, UserHarborRole
-from app.routers.admin._deps import password_hasher
-
-PasswordHasherDep = Annotated[PasswordHasher, Depends(password_hasher)]
+from app.routers.auth import hash_password
 
 router = APIRouter()
 
@@ -117,7 +113,6 @@ async def list_users(session: SessionDep) -> list[dict]:
 async def create_user(
     body: UserCreate,
     session: SessionDep,
-    ph: PasswordHasherDep,
 ) -> dict:
     existing = (
         await session.execute(select(User).where(User.email == body.email))
@@ -131,7 +126,7 @@ async def create_user(
         email=str(body.email),
         firstname=body.firstname,
         lastname=body.lastname,
-        password_hash=ph.hash(body.password.get_secret_value()),
+        password_hash=hash_password(body.password.get_secret_value()),
         phone=body.phone,
         boat_club=body.boat_club,
     )

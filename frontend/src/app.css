@@ -182,16 +182,14 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* radial gradient stands in for filter:blur(60px) so rotation stays
-    transform-only and the gpu does not re-rasterize a filtered layer
-    every frame */
-  body::before {
+  /* radial gradient stands in for filter:blur(60px) so rotation stays transform-only and the gpu does not re-rasterize a filtered layer every frame. pseudos sit on html so they paint to the canvas (across ios safe-area + url-bar zones) instead of body's render box. lvh units size against the large viewport so the blob fully covers those zones */
+  html::before {
     content: "";
     position: fixed;
     top: -10%;
     left: -10%;
-    width: 90vw;
-    height: 90vh;
+    width: 90lvw;
+    height: 90lvh;
     background: radial-gradient(
       circle closest-side at 50% 50%,
       rgba(0, 147, 233, 0.4) 0%,
@@ -205,13 +203,13 @@
     pointer-events: none;
   }
 
-  body::after {
+  html::after {
     content: "";
     position: fixed;
     bottom: -20%;
     right: -10%;
-    width: 80vw;
-    height: 80vh;
+    width: 80lvw;
+    height: 80lvh;
     background: radial-gradient(
       circle closest-side at 50% 50%,
       rgba(0, 229, 255, 0.4) 0%,
@@ -226,14 +224,14 @@
   }
 
   /* pause compositor work when tab is backgrounded (toggled in index.html) */
-  html.waves-paused body::before,
-  html.waves-paused body::after {
+  html.waves-paused::before,
+  html.waves-paused::after {
     animation-play-state: paused;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    body::before,
-    body::after {
+    html::before,
+    html::after {
       animation: none;
     }
     /* blanket kill of animations + transitions. !important wins over utility classes */

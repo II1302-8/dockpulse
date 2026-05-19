@@ -130,13 +130,10 @@ export function BookingConfirmationDialog({
     if (result.ok) {
       toast.success("Berth booked!");
       onBooked();
-    } else if (result.kind === "conflict") {
-      setBookingError(
-        "This slot was just taken by another visitor. Pick a different window.",
-      );
-      setPreflightState("conflict");
     } else {
+      // backend detail distinguishes overlap / no-window / boat-too-big / past
       setBookingError(result.error);
+      if (result.kind === "conflict") setPreflightState("conflict");
     }
     setIsSubmitting(false);
   };

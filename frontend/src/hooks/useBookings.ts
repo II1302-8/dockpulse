@@ -1,47 +1,13 @@
 import { useEffect, useState } from "react";
+import type { components } from "../api-types";
 import { apiFetch } from "../lib/api";
 
-export type BookingStatus =
-  | "confirmed"
-  | "cancelled_by_visitor"
-  | "cancelled_by_host"
-  | "completed";
-
-export type Booking = {
-  booking_id: string;
-  berth_id: string;
-  user_id: string;
-  from_date: string;
-  to_date: string;
-  status: BookingStatus;
-  created_at: string;
-  cancelled_at?: string | null;
-  cancelled_by?: string | null;
-  cancel_reason?: string | null;
-  notes?: string | null;
-};
-
-type BookingList = { items: Booking[]; total: number };
-
-export type CreateBookingForm = {
-  from_date: string;
-  to_date: string;
-  length_m?: number;
-  width_m?: number;
-  depth_m?: number;
-};
-
-export type BookingConflict = {
-  booking_id: string;
-  from_date: string;
-  to_date: string;
-};
-
-export type PreflightResult = {
-  ok: boolean;
-  conflicts: BookingConflict[];
-  window_id?: string | null;
-};
+export type Booking = components["schemas"]["BookingOut"];
+export type BookingStatus = Booking["status"];
+export type BookingList = components["schemas"]["BookingList"];
+export type BookingConflict = components["schemas"]["BookingConflict"];
+export type PreflightResult = components["schemas"]["BookingPreflightOut"];
+export type CreateBookingForm = components["schemas"]["BookingCreate"];
 
 export type CreateResult =
   | { ok: true; booking: Booking }
@@ -57,67 +23,30 @@ interface UseBookingsListResult {
   refetch: () => void;
 }
 
-export function useMyBookings(
-  status?: BookingStatus,
-  options: { from?: string; to?: string } = {},
-): UseBookingsListResult {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [refetchTrigger, setRefetchTrigger] = useState(0);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: refetchTrigger is a manual trigger
-  useEffect(() => {
-    const ac = new AbortController();
-    setIsLoading(true);
-    setError(null);
-
-    const params = new URLSearchParams();
-    if (status) params.append("status", status);
-    if (options.from) params.append("from", options.from);
-    if (options.to) params.append("to", options.to);
-    const query = params.toString() ? `?${params.toString()}` : "";
-
-    apiFetch(`/api/bookings/me${query}`, { signal: ac.signal })
-      .then((res) =>
-        res.ok
-          ? (res.json() as Promise<BookingList>)
-          : Promise.resolve({ items: [], total: 0 } as BookingList),
-      )
-      .then((data) => {
-        if (!ac.signal.aborted) setBookings(data.items ?? []);
-      })
-      .catch((err) => {
-        if (ac.signal.aborted) return;
-        console.error("Failed to fetch bookings", err);
-        setError("Could not load your bookings.");
-      })
-      .finally(() => {
-        if (!ac.signal.aborted) setIsLoading(false);
-      });
-
-    return () => ac.abort();
-  }, [status, options.from, options.to, refetchTrigger]);
-
-  function refetch() {
-    setRefetchTrigger((prev) => prev + 1);
+function buildQuery(params: Record<string, string | undefined>): string {
+  const sp = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v) sp.append(k, v);
   }
-
-  return { bookings, isLoading, error, refetch };
+  const s = sp.toString();
+  return s ? `?${s}` : "";
 }
 
-export function useHarborBookings(
-  harborId: string | null,
-  options: { status?: BookingStatus; from?: string; to?: string } = {},
+function useBookingList(
+  url: string | null,
+  params: Record<string, string | undefined>,
+  errorLabel: string,
 ): UseBookingsListResult {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refetchTrigger, setRefetchTrigger] = useState(0);
 
+  const paramKey = JSON.stringify(params);
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: refetchTrigger is a manual trigger
   useEffect(() => {
-    if (!harborId) {
+    if (!url) {
       setBookings([]);
       setIsLoading(false);
       return;
@@ -127,15 +56,7 @@ export function useHarborBookings(
     setIsLoading(true);
     setError(null);
 
-    const params = new URLSearchParams();
-    if (options.status) params.append("status", options.status);
-    if (options.from) params.append("from", options.from);
-    if (options.to) params.append("to", options.to);
-    const query = params.toString() ? `?${params.toString()}` : "";
-
-    apiFetch(`/api/harbors/${harborId}/bookings${query}`, {
-      signal: ac.signal,
-    })
+    apiFetch(`${url}${buildQuery(params)}`, { signal: ac.signal })
       .then((res) =>
         res.ok
           ? (res.json() as Promise<BookingList>)
@@ -146,21 +67,44 @@ export function useHarborBookings(
       })
       .catch((err) => {
         if (ac.signal.aborted) return;
-        console.error("Failed to fetch harbor bookings", err);
-        setError("Could not load harbor bookings.");
+        console.error(errorLabel, err);
+        setError(errorLabel);
       })
       .finally(() => {
         if (!ac.signal.aborted) setIsLoading(false);
       });
 
     return () => ac.abort();
-  }, [harborId, options.status, options.from, options.to, refetchTrigger]);
+  }, [url, paramKey, refetchTrigger]);
 
-  function refetch() {
-    setRefetchTrigger((prev) => prev + 1);
-  }
+  return {
+    bookings,
+    isLoading,
+    error,
+    refetch: () => setRefetchTrigger((n) => n + 1),
+  };
+}
 
-  return { bookings, isLoading, error, refetch };
+export function useMyBookings(
+  status?: BookingStatus,
+  options: { from?: string; to?: string } = {},
+): UseBookingsListResult {
+  return useBookingList(
+    "/api/bookings/me",
+    { status, from: options.from, to: options.to },
+    "Could not load your bookings.",
+  );
+}
+
+export function useHarborBookings(
+  harborId: string | null,
+  options: { status?: BookingStatus; from?: string; to?: string } = {},
+): UseBookingsListResult {
+  return useBookingList(
+    harborId ? `/api/harbors/${harborId}/bookings` : null,
+    { status: options.status, from: options.from, to: options.to },
+    "Could not load harbor bookings.",
+  );
 }
 
 export async function createBooking(
@@ -170,7 +114,6 @@ export async function createBooking(
   try {
     const res = await apiFetch(`/api/berths/${berthId}/bookings`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
 
@@ -220,13 +163,11 @@ export async function cancelBooking(bookingId: string): Promise<CancelResult> {
 
 export async function preflightBooking(
   berthId: string,
-  form: CreateBookingForm,
+  form: Pick<CreateBookingForm, "from_date" | "to_date">,
 ): Promise<PreflightResult> {
-  // spec BookingPreflightIn only carries date range
   const body = { from_date: form.from_date, to_date: form.to_date };
   const res = await apiFetch(`/api/berths/${berthId}/bookings:preflight`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
 

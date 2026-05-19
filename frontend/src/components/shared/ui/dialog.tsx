@@ -36,11 +36,11 @@ const DialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        // mobile: bottom-sheet, slide up from bottom
-        // sm+ : centered card with zoom
-        "fixed z-[var(--z-top)] grid w-full gap-4 border bg-background shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-        "inset-x-0 bottom-0 rounded-t-2xl p-6 pb-[max(env(safe-area-inset-bottom),1.5rem)] max-sm:data-[state=open]:slide-in-from-bottom max-sm:data-[state=closed]:slide-out-to-bottom",
-        "sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg sm:p-6 sm:pb-6 sm:data-[state=open]:zoom-in-95 sm:data-[state=closed]:zoom-out-95",
+        // centered card on every breakpoint. bottom-anchored sheets fight the
+        // ios soft keyboard - it lands on top of the form and hides the input
+        "fixed left-1/2 top-1/2 z-[var(--z-top)] grid w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 rounded-2xl border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+        // cap height + scroll so a tall form scrolls instead of clipping
+        "max-h-[calc(100dvh-2rem)] overflow-y-auto",
         className,
       )}
       {...props}

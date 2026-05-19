@@ -486,6 +486,37 @@ components:
           - type: number
           - type: 'null'
           title: Length M
+        manual_status:
+          anyOf:
+          - examples: &id005
+            - occupied
+            type: string
+          - type: 'null'
+          examples: *id005
+          title: Manual Status
+        manual_status_locked:
+          default: false
+          title: Manual Status Locked
+          type: boolean
+        manual_status_set_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Manual Status Set At
+        manual_status_set_by:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Manual Status Set By
+        sensor_status:
+          anyOf:
+          - examples: &id006
+            - free
+            type: string
+          - type: 'null'
+          examples: *id006
+          title: Sensor Status
         status:
           examples:
           - free
@@ -670,11 +701,11 @@ components:
           type: string
         berth_label:
           anyOf:
-          - examples: &id005
+          - examples: &id007
             - A-12
             type: string
           - type: 'null'
-          examples: *id005
+          examples: *id007
           title: Berth Label
         email:
           examples:
@@ -693,11 +724,11 @@ components:
           type: string
         harbor_name:
           anyOf:
-          - examples: &id006
+          - examples: &id008
             - Saltsjöbaden
             type: string
           - type: 'null'
-          examples: *id006
+          examples: *id008
           title: Harbor Name
         invite_id:
           examples:
@@ -718,6 +749,66 @@ components:
       - expires_at
       title: BerthInviteOut
       type: object
+    BerthManualStatusIn:
+      properties:
+        locked:
+          default: true
+          description: 'true: sensor cannot change displayed status until cleared. false: next sensor
+            reading consumes the override'
+          title: Locked
+          type: boolean
+        status:
+          enum:
+          - free
+          - occupied
+          title: Status
+          type: string
+      required:
+      - status
+      title: BerthManualStatusIn
+      type: object
+    BerthManualStatusOut:
+      properties:
+        berth_id:
+          title: Berth Id
+          type: string
+        manual_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Manual Status
+        manual_status_locked:
+          title: Manual Status Locked
+          type: boolean
+        manual_status_set_at:
+          anyOf:
+          - format: date-time
+            type: string
+          - type: 'null'
+          title: Manual Status Set At
+        manual_status_set_by:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Manual Status Set By
+        sensor_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Sensor Status
+        status:
+          title: Status
+          type: string
+      required:
+      - berth_id
+      - status
+      - sensor_status
+      - manual_status
+      - manual_status_locked
+      - manual_status_set_by
+      - manual_status_set_at
+      title: BerthManualStatusOut
+      type: object
     BerthOut:
       properties:
         assignment:
@@ -726,11 +817,11 @@ components:
           - type: 'null'
         battery_pct:
           anyOf:
-          - examples: &id007
+          - examples: &id009
             - 87
             type: integer
           - type: 'null'
-          examples: *id007
+          examples: *id009
           title: Battery Pct
         berth_id:
           examples:
@@ -739,11 +830,11 @@ components:
           type: string
         depth_m:
           anyOf:
-          - examples: &id008
+          - examples: &id010
             - 2.0
             type: number
           - type: 'null'
-          examples: *id008
+          examples: *id010
           title: Depth M
         dock_id:
           examples:
@@ -760,36 +851,36 @@ components:
           type: boolean
         label:
           anyOf:
-          - examples: &id009
+          - examples: &id011
             - A1
             type: string
           - type: 'null'
-          examples: *id009
+          examples: *id011
           title: Label
         last_updated:
           anyOf:
-          - examples: &id010
+          - examples: &id012
             - '2026-05-03T14:30:00Z'
             format: date-time
             type: string
           - type: 'null'
-          examples: *id010
+          examples: *id012
           title: Last Updated
         length_m:
           anyOf:
-          - examples: &id011
+          - examples: &id013
             - 8.5
             type: number
           - type: 'null'
-          examples: *id011
+          examples: *id013
           title: Length M
         sensor_raw:
           anyOf:
-          - examples: &id012
+          - examples: &id014
             - 1234
             type: integer
           - type: 'null'
-          examples: *id012
+          examples: *id014
           title: Sensor Raw
         status:
           enum:
@@ -799,11 +890,11 @@ components:
           type: string
         width_m:
           anyOf:
-          - examples: &id013
+          - examples: &id015
             - 3.2
             type: number
           - type: 'null'
-          examples: *id013
+          examples: *id015
           title: Width M
       required:
       - berth_id
@@ -928,11 +1019,11 @@ components:
           type: string
         depth_m:
           anyOf:
-          - examples: &id014
+          - examples: &id016
             - 2.0
             type: number
           - type: 'null'
-          examples: *id014
+          examples: *id016
           title: Depth M
         dock_id:
           examples:
@@ -946,27 +1037,27 @@ components:
           type: string
         label:
           anyOf:
-          - examples: &id015
+          - examples: &id017
             - A1
             type: string
           - type: 'null'
-          examples: *id015
+          examples: *id017
           title: Label
         length_m:
           anyOf:
-          - examples: &id016
+          - examples: &id018
             - 8.5
             type: number
           - type: 'null'
-          examples: *id016
+          examples: *id018
           title: Length M
         width_m:
           anyOf:
-          - examples: &id017
+          - examples: &id019
             - 3.2
             type: number
           - type: 'null'
-          examples: *id017
+          examples: *id019
           title: Width M
         window_from:
           examples:
@@ -1091,30 +1182,30 @@ components:
       properties:
         boat_depth_m:
           anyOf:
-          - examples: &id018
+          - examples: &id020
             - 1.4
             minimum: 0.0
             type: number
           - type: 'null'
-          examples: *id018
+          examples: *id020
           title: Boat Depth M
         boat_length_m:
           anyOf:
-          - examples: &id019
+          - examples: &id021
             - 8.5
             minimum: 0.0
             type: number
           - type: 'null'
-          examples: *id019
+          examples: *id021
           title: Boat Length M
         boat_width_m:
           anyOf:
-          - examples: &id020
+          - examples: &id022
             - 3.2
             minimum: 0.0
             type: number
           - type: 'null'
-          examples: *id020
+          examples: *id022
           title: Boat Width M
         from_date:
           examples:
@@ -1124,12 +1215,12 @@ components:
           type: string
         notes:
           anyOf:
-          - examples: &id021
+          - examples: &id023
             - arriving late
             maxLength: 500
             type: string
           - type: 'null'
-          examples: *id021
+          examples: *id023
           title: Notes
         to_date:
           examples:
@@ -1168,27 +1259,27 @@ components:
           type: string
         boat_depth_m:
           anyOf:
-          - examples: &id022
+          - examples: &id024
             - 1.4
             type: number
           - type: 'null'
-          examples: *id022
+          examples: *id024
           title: Boat Depth M
         boat_length_m:
           anyOf:
-          - examples: &id023
+          - examples: &id025
             - 8.5
             type: number
           - type: 'null'
-          examples: *id023
+          examples: *id025
           title: Boat Length M
         boat_width_m:
           anyOf:
-          - examples: &id024
+          - examples: &id026
             - 3.2
             type: number
           - type: 'null'
-          examples: *id024
+          examples: *id026
           title: Boat Width M
         booking_id:
           examples:
@@ -1197,28 +1288,28 @@ components:
           type: string
         cancel_reason:
           anyOf:
-          - examples: &id025
+          - examples: &id027
             - storm
             type: string
           - type: 'null'
-          examples: *id025
+          examples: *id027
           title: Cancel Reason
         cancelled_at:
           anyOf:
-          - examples: &id026
+          - examples: &id028
             - '2026-06-02T08:00:00Z'
             format: date-time
             type: string
           - type: 'null'
-          examples: *id026
+          examples: *id028
           title: Cancelled At
         cancelled_by:
           anyOf:
-          - examples: &id027
+          - examples: &id029
             - user-002
             type: string
           - type: 'null'
-          examples: *id027
+          examples: *id029
           title: Cancelled By
         created_at:
           examples:
@@ -1234,11 +1325,11 @@ components:
           type: string
         notes:
           anyOf:
-          - examples: &id028
+          - examples: &id030
             - arriving late
             type: string
           - type: 'null'
-          examples: *id028
+          examples: *id030
           title: Notes
         status:
           enum:
@@ -1301,11 +1392,11 @@ components:
           type: boolean
         window_id:
           anyOf:
-          - examples: &id029
+          - examples: &id031
             - win-0001
             type: string
           - type: 'null'
-          examples: *id029
+          examples: *id031
           title: Window Id
       required:
       - ok
@@ -1472,11 +1563,11 @@ components:
       properties:
         actor_user_id:
           anyOf:
-          - examples: &id030
+          - examples: &id032
             - user-001
             type: string
           - type: 'null'
-          examples: *id030
+          examples: *id032
           title: Actor User Id
         berth_id:
           examples:
@@ -1499,27 +1590,27 @@ components:
           type: string
         node_id:
           anyOf:
-          - examples: &id031
+          - examples: &id033
             - node-012
             type: string
           - type: 'null'
-          examples: *id031
+          examples: *id033
           title: Node Id
         sensor_raw:
           anyOf:
-          - examples: &id032
+          - examples: &id034
             - 1234
             type: integer
           - type: 'null'
-          examples: *id032
+          examples: *id034
           title: Sensor Raw
         subject_user_id:
           anyOf:
-          - examples: &id033
+          - examples: &id035
             - user-002
             type: string
           - type: 'null'
-          examples: *id033
+          examples: *id035
           title: Subject User Id
         timestamp:
           examples:
@@ -1664,12 +1755,12 @@ components:
           type: string
         last_seen:
           anyOf:
-          - examples: &id034
+          - examples: &id036
             - '2026-05-03T14:30:00Z'
             format: date-time
             type: string
           - type: 'null'
-          examples: *id034
+          examples: *id036
           title: Last Seen
         name:
           examples:
@@ -1678,12 +1769,12 @@ components:
           type: string
         provision_ttl_s:
           anyOf:
-          - examples: &id035
+          - examples: &id037
             - 180
             type: integer
           - type: 'null'
           description: Per-gateway override; null falls back to ADOPTION_TTL
-          examples: *id035
+          examples: *id037
           title: Provision Ttl S
         status:
           enum:
@@ -1959,11 +2050,11 @@ components:
           type: string
         battery_pct:
           anyOf:
-          - examples: &id036
+          - examples: &id038
             - 87
             type: integer
           - type: 'null'
-          examples: *id036
+          examples: *id038
           title: Battery Pct
         berth_id:
           examples:
@@ -1985,12 +2076,12 @@ components:
           type: string
         last_seen:
           anyOf:
-          - examples: &id037
+          - examples: &id039
             - '2026-05-03T14:30:00Z'
             format: date-time
             type: string
           - type: 'null'
-          examples: *id037
+          examples: *id039
           title: Last Seen
         mesh_orphan:
           default: false
@@ -2037,11 +2128,11 @@ components:
           type: string
         battery_pct:
           anyOf:
-          - examples: &id038
+          - examples: &id040
             - 87
             type: integer
           - type: 'null'
-          examples: *id038
+          examples: *id040
           title: Battery Pct
         berth_id:
           examples:
@@ -2063,12 +2154,12 @@ components:
           type: string
         last_seen:
           anyOf:
-          - examples: &id039
+          - examples: &id041
             - '2026-05-03T14:30:00Z'
             format: date-time
             type: string
           - type: 'null'
-          examples: *id039
+          examples: *id041
           title: Last Seen
         mesh_orphan:
           default: false
@@ -2472,43 +2563,43 @@ components:
       properties:
         assigned_berth_id:
           anyOf:
-          - examples: &id040
+          - examples: &id042
             - berth-001
             type: string
           - type: 'null'
-          examples: *id040
+          examples: *id042
           title: Assigned Berth Id
         boat_club:
           anyOf:
-          - examples: &id041
+          - examples: &id043
             - Saltsjöbadens BK
             type: string
           - type: 'null'
-          examples: *id041
+          examples: *id043
           title: Boat Club
         boat_depth_m:
           anyOf:
-          - examples: &id042
+          - examples: &id044
             - 1.4
             type: number
           - type: 'null'
-          examples: *id042
+          examples: *id044
           title: Boat Depth M
         boat_length_m:
           anyOf:
-          - examples: &id043
+          - examples: &id045
             - 8.5
             type: number
           - type: 'null'
-          examples: *id043
+          examples: *id045
           title: Boat Length M
         boat_width_m:
           anyOf:
-          - examples: &id044
+          - examples: &id046
             - 3.2
             type: number
           - type: 'null'
-          examples: *id044
+          examples: *id046
           title: Boat Width M
         email:
           examples:
@@ -2527,11 +2618,11 @@ components:
           type: string
         harbor_id:
           anyOf:
-          - examples: &id045
+          - examples: &id047
             - ksss-saltsjobaden
             type: string
           - type: 'null'
-          examples: *id045
+          examples: *id047
           title: Harbor Id
         lastname:
           examples:
@@ -2540,11 +2631,11 @@ components:
           type: string
         phone:
           anyOf:
-          - examples: &id046
+          - examples: &id048
             - +46 70 123 45 67
             type: string
           - type: 'null'
-          examples: *id046
+          examples: *id048
           title: Phone
         role:
           enum:
@@ -2742,12 +2833,12 @@ components:
       properties:
         boat_club:
           anyOf:
-          - examples: &id047
+          - examples: &id049
             - Saltsjöbadens BK
             maxLength: 100
             type: string
           - type: 'null'
-          examples: *id047
+          examples: *id049
           title: Boat Club
         email:
           examples:
@@ -2782,13 +2873,13 @@ components:
           writeOnly: true
         phone:
           anyOf:
-          - examples: &id048
+          - examples: &id050
             - +46 70 123 45 67
             maxLength: 20
             pattern: ^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$
             type: string
           - type: 'null'
-          examples: *id048
+          examples: *id050
           title: Phone
       required:
       - firstname
@@ -2801,12 +2892,12 @@ components:
       properties:
         boat_club:
           anyOf:
-          - examples: &id049
+          - examples: &id051
             - Saltsjöbadens BK
             maxLength: 100
             type: string
           - type: 'null'
-          examples: *id049
+          examples: *id051
           title: Boat Club
         boat_depth_m:
           anyOf:
@@ -2835,38 +2926,38 @@ components:
           title: Current Password
         email:
           anyOf:
-          - examples: &id050
+          - examples: &id052
             - alex@example.com
             format: email
             type: string
           - type: 'null'
-          examples: *id050
+          examples: *id052
           title: Email
         firstname:
           anyOf:
-          - examples: &id051
+          - examples: &id053
             - Alex
             maxLength: 100
             minLength: 1
             pattern: ^[\p{L}\p{M}'’ .\-]+$
             type: string
           - type: 'null'
-          examples: *id051
+          examples: *id053
           title: Firstname
         lastname:
           anyOf:
-          - examples: &id052
+          - examples: &id054
             - Alex
             maxLength: 100
             minLength: 1
             pattern: ^[\p{L}\p{M}'’ .\-]+$
             type: string
           - type: 'null'
-          examples: *id052
+          examples: *id054
           title: Lastname
         password:
           anyOf:
-          - examples: &id053
+          - examples: &id055
             - correct horse battery staple
             format: password
             maxLength: 128
@@ -2874,17 +2965,17 @@ components:
             type: string
             writeOnly: true
           - type: 'null'
-          examples: *id053
+          examples: *id055
           title: Password
         phone:
           anyOf:
-          - examples: &id054
+          - examples: &id056
             - +46 70 123 45 67
             maxLength: 20
             pattern: ^\+?(?:[\s\-().]*\d){7,15}[\s\-().]*$
             type: string
           - type: 'null'
-          examples: *id054
+          examples: *id056
           title: Phone
       title: UserPatch
       type: object
@@ -3391,6 +3482,79 @@ paths:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
       summary: Patch Berth
+      tags:
+      - admin
+  /api/admin/berths/{berth_id}/manual-status:
+    delete:
+      operationId: adminClearBerthManualStatus
+      parameters:
+      - in: path
+        name: berth_id
+        required: true
+        schema:
+          title: Berth Id
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BerthManualStatusOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Clear the admin override, revert to sensor truth
+      tags:
+      - admin
+    put:
+      operationId: adminSetBerthManualStatus
+      parameters:
+      - in: path
+        name: berth_id
+        required: true
+        schema:
+          title: Berth Id
+          type: string
+      - in: header
+        name: Cf-Access-Jwt-Assertion
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Cf-Access-Jwt-Assertion
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BerthManualStatusIn'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BerthManualStatusOut'
+          description: Successful Response
+        '422':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+          description: Validation Error
+      summary: Set an admin override on a berth's status
       tags:
       - admin
   /api/admin/berths/{berth_id}/reset:

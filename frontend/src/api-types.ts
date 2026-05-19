@@ -180,6 +180,24 @@ export interface paths {
         patch: operations["adminPatchBerth"];
         trace?: never;
     };
+    "/api/admin/berths/{berth_id}/manual-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set an admin override on a berth's status */
+        put: operations["adminSetBerthManualStatus"];
+        post?: never;
+        /** Clear the admin override, revert to sensor truth */
+        delete: operations["adminClearBerthManualStatus"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/berths/{berth_id}/reset": {
         parameters: {
             query?: never;
@@ -1776,6 +1794,25 @@ export interface components {
             /** Length M */
             length_m?: number | null;
             /**
+             * Manual Status
+             * @example occupied
+             */
+            manual_status?: string | null;
+            /**
+             * Manual Status Locked
+             * @default false
+             */
+            manual_status_locked: boolean;
+            /** Manual Status Set At */
+            manual_status_set_at?: string | null;
+            /** Manual Status Set By */
+            manual_status_set_by?: string | null;
+            /**
+             * Sensor Status
+             * @example free
+             */
+            sensor_status?: string | null;
+            /**
              * Status
              * @example free
              */
@@ -1924,6 +1961,37 @@ export interface components {
              * Status
              * @example pending
              */
+            status: string;
+        };
+        /** BerthManualStatusIn */
+        BerthManualStatusIn: {
+            /**
+             * Locked
+             * @description true: sensor cannot change displayed status until cleared. false: next sensor reading consumes the override
+             * @default true
+             */
+            locked: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "free" | "occupied";
+        };
+        /** BerthManualStatusOut */
+        BerthManualStatusOut: {
+            /** Berth Id */
+            berth_id: string;
+            /** Manual Status */
+            manual_status: string | null;
+            /** Manual Status Locked */
+            manual_status_locked: boolean;
+            /** Manual Status Set At */
+            manual_status_set_at: string | null;
+            /** Manual Status Set By */
+            manual_status_set_by: string | null;
+            /** Sensor Status */
+            sensor_status: string | null;
+            /** Status */
             status: string;
         };
         /** BerthOut */
@@ -3684,6 +3752,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BerthPatchOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminSetBerthManualStatus: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                berth_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BerthManualStatusIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BerthManualStatusOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    adminClearBerthManualStatus: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Cf-Access-Jwt-Assertion"?: string | null;
+            };
+            path: {
+                berth_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BerthManualStatusOut"];
                 };
             };
             /** @description Validation Error */

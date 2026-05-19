@@ -229,6 +229,17 @@ class Berth(AuditTimestampsMixin, Base):
     sensor_raw: Mapped[int | None] = mapped_column(Integer)
     battery_pct: Mapped[int | None] = mapped_column(Integer)
     last_updated: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # ground-truth sensor reading, preserved through admin overrides
+    sensor_status: Mapped[str | None] = mapped_column(berth_status_enum)
+    # admin override; locked=true blocks sensor from changing displayed status
+    manual_status: Mapped[str | None] = mapped_column(berth_status_enum)
+    manual_status_locked: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    manual_status_set_by: Mapped[str | None] = mapped_column(String)
+    manual_status_set_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )
 
     dock: Mapped["Dock"] = relationship(back_populates="berths")
     events: Mapped[list["Event"]] = relationship(back_populates="berth")

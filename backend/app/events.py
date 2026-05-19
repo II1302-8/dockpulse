@@ -148,16 +148,31 @@ async def process_sensor_reading(
 
     prev_status = berth.status
     prev_battery = berth.battery_pct
+    # first reading on a fresh berth has no sensor history; treat the
+    # default display as the implicit baseline so a free->free message
+    # doesn't spuriously generate an event
+    prev_sensor_status = berth.sensor_status or prev_status
 
     now = datetime.now(UTC)
     new_status = "occupied" if occupied else "free"
 
     berth.sensor_raw = sensor_raw
     berth.last_updated = now
+    berth.sensor_status = new_status
     if battery_pct is not None:
         berth.battery_pct = battery_pct
 
-    if new_status == prev_status:
+    # admin override gating: lock=true keeps berth.status pinned, lock=false
+    # lets the first sensor reading consume the override
+    override_active = berth.manual_status is not None
+    override_locks = override_active and berth.manual_status_locked
+    if override_active and not berth.manual_status_locked:
+        berth.manual_status = None
+        berth.manual_status_set_by = None
+        berth.manual_status_set_at = None
+
+    if new_status == prev_sensor_status and not override_active:
+        # nothing changed - just persist telemetry, no event row
         await session.commit()
         if berth.battery_pct != prev_battery:
             await publish_berth_update(session, berth)
@@ -175,13 +190,16 @@ async def process_sensor_reading(
         mesh_unicast_addr=mesh_unicast_addr,
         timestamp=now,
     )
-    # status mirrors the sensor regardless of reservation so the activity
-    # log + serializer see ground truth. is_reserved separately drives
-    # is_available_now in the BerthOut serializer
-    berth.status = new_status
+    # event records sensor truth even when override hides it from display
+    if not override_locks:
+        berth.status = new_status
     session.add(event)
     await session.commit()
     await publish_berth_update(session, berth)
+    if berth.status == prev_status:
+        # locked override swallowed the display update, skip the notification
+        # since harbormaster set the state deliberately
+        return event
     # skip notification noise for owner arrivals/departures on reserved
     # berths, harbormaster only cares about unauthorized activity. also skip
     # un-adopted berths so a rogue device-cert can't spam emails by posting

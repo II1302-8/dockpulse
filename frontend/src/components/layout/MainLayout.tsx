@@ -110,7 +110,7 @@ function MainLayoutContent({
       <main
         data-scroll-root
         className={cn(
-          "absolute inset-0 transition-all duration-500 pointer-events-auto overflow-y-auto",
+          "absolute inset-0 h-full min-h-dvh transition-all duration-500 pointer-events-auto overflow-y-auto",
         )}
       >
         <Outlet

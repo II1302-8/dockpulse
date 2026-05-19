@@ -148,6 +148,7 @@ export function DashboardLayoutProvider({
       }}
     >
       <div
+        className="h-full min-h-dvh"
         style={
           {
             "--sidebar-total-offset": `${sidebarOffset}px`,

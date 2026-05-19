@@ -1,13 +1,17 @@
 import { lazy, Suspense, useEffect } from "react";
 import {
   BrowserRouter,
-  Navigate,
+  Outlet,
   Route,
   Routes,
   useLocation,
+  useOutletContext,
   useParams,
 } from "react-router-dom";
-import { MainLayout } from "./components/layout/MainLayout";
+import {
+  type AuthOutletContext,
+  MainLayout,
+} from "./components/layout/MainLayout";
 import { RequireAuth } from "./components/RequireAuth";
 import { AuthProvider } from "./lib/auth-context";
 import { MARINAS } from "./lib/marinas";
@@ -54,6 +58,10 @@ const VerifyEmail = lazy(() =>
   import("./pages/VerifyEmail").then((m) => ({ default: m.VerifyEmail })),
 );
 
+const MarinaMapPage = lazy(() =>
+  import("./pages/MarinaMapPage").then((m) => ({ default: m.MarinaMapPage })),
+);
+
 // scrolls window + the MainLayout inner scroller back to top on route change
 // so navigating between pages doesn't dump you mid-page
 function ScrollToTop() {
@@ -74,6 +82,7 @@ function ScrollToTop() {
 // instead of rendering a generic dashboard for "marina admin" etc
 function MarinaGuard() {
   const { marinaSlug } = useParams<{ marinaSlug: string }>();
+  const outletContext = useOutletContext<AuthOutletContext>();
 
   if (!marinaSlug || !(marinaSlug in MARINAS)) {
     return (
@@ -83,7 +92,7 @@ function MarinaGuard() {
     );
   }
 
-  return <MainLayout />;
+  return <Outlet context={outletContext} />;
 }
 
 // cf access gates admin host at the edge so no in-app auth needed
@@ -126,8 +135,6 @@ export function App() {
             />
           )}
 
-          <Route path="/" element={<Navigate to="/saltsjobaden" replace />} />
-
           <Route
             path="/resetpassword/:token"
             element={
@@ -159,59 +166,70 @@ export function App() {
             />
           </Route>
 
-          <Route path="/:marinaSlug" element={<MarinaGuard />}>
+          <Route element={<MainLayout />}>
             <Route
               index
               element={
                 <Suspense fallback={<div className="h-full w-full" />}>
-                  <Dashboard />
+                  <MarinaMapPage />
                 </Suspense>
               }
             />
 
-            <Route
-              path="settings"
-              element={
-                <RequireAuth>
+            <Route path=":marinaSlug" element={<MarinaGuard />}>
+              <Route
+                index
+                element={
                   <Suspense fallback={<div className="h-full w-full" />}>
-                    <Settings />
+                    <Dashboard />
                   </Suspense>
-                </RequireAuth>
-              }
-            />
+                }
+              />
 
-            <Route
-              path="settings/invites"
-              element={
-                <RequireAuth>
-                  <Suspense fallback={<div className="h-full w-full" />}>
-                    <InvitesSettings />
-                  </Suspense>
-                </RequireAuth>
-              }
-            />
+              <Route
+                path="settings"
+                element={
+                  <RequireAuth>
+                    <Suspense fallback={<div className="h-full w-full" />}>
+                      <Settings />
+                    </Suspense>
+                  </RequireAuth>
+                }
+              />
 
-            <Route
-              path="activity"
-              element={
-                <RequireAuth>
-                  <Suspense fallback={<div className="h-full w-full" />}>
-                    <ActivityLogPage />
-                  </Suspense>
-                </RequireAuth>
-              }
-            />
+              <Route
+                path="settings/invites"
+                element={
+                  <RequireAuth>
+                    <Suspense fallback={<div className="h-full w-full" />}>
+                      <InvitesSettings />
+                    </Suspense>
+                  </RequireAuth>
+                }
+              />
 
-            <Route
-              path="bookings"
-              element={
-                <RequireAuth>
-                  <Suspense fallback={<div className="h-full w-full" />}>
-                    <MyBookingsPage />
-                  </Suspense>
-                </RequireAuth>
-              }
-            />
+              <Route
+                path="activity"
+                element={
+                  <RequireAuth>
+                    <Suspense fallback={<div className="h-full w-full" />}>
+                      <ActivityLogPage />
+                    </Suspense>
+                  </RequireAuth>
+                }
+              />
+
+              <Route
+                path="bookings"
+                element={
+                  <RequireAuth>
+                    <Suspense fallback={<div className="h-full w-full" />}>
+                      <MyBookingsPage />
+                    </Suspense>
+                  </RequireAuth>
+                }
+              />
+            </Route>
           </Route>
 
           <Route

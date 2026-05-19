@@ -113,7 +113,8 @@ def set_session_cookies(
         max_age=int(_refresh_ttl().total_seconds()),
         **common,
     )
-    # csrf cookie must be js-readable for the double-submit echo
+    # csrf cookie must be js-readable for the double-submit echo. ttl matches
+    # refresh so it survives access-cookie expiry and is re-set on every rotate
     response.set_cookie(
         CSRF_COOKIE,
         csrf_token,
@@ -192,8 +193,9 @@ async def require_csrf(request: Request) -> None:
     access_cookie = request.cookies.get(ACCESS_COOKIE)
     csrf_cookie = request.cookies.get(CSRF_COOKIE)
     # anonymous flows (/login, /register, /resetpassword) arrive without the
-    # access cookie — no session to forge against, so no csrf needed. once a
-    # session exists, csrf cookie + header must match
+    # access cookie — no session to forge against, so no csrf needed. /refresh
+    # and /logout also land here when only the refresh cookie is present;
+    # samesite=lax on the refresh cookie blocks cross-site POST forgery
     if access_cookie is None:
         return
     if csrf_cookie is None:

@@ -1,6 +1,7 @@
 import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
+from functools import lru_cache
 from hashlib import sha256
 from typing import Annotated
 
@@ -37,8 +38,12 @@ from app.serializers import to_user_out
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 _ph = PasswordHasher()
-# dummy hash so unknown email still pays verify cost — blocks user enum via timing
-_DUMMY_HASH = _ph.hash("dummy-password-for-timing-equalization")
+
+
+@lru_cache(maxsize=1)
+def _dummy_hash() -> str:
+    # lazy so the ~80ms argon2 cost doesn't block worker startup
+    return _ph.hash("dummy-password-for-timing-equalization")
 
 
 def _hash_password(password: str) -> str:
@@ -262,7 +267,7 @@ async def login(
     result = await session.execute(select(User).where(User.email == body.email))
     user = result.scalar_one_or_none()
 
-    target_hash = user.password_hash if user is not None else _DUMMY_HASH
+    target_hash = user.password_hash if user is not None else _dummy_hash()
     try:
         _ph.verify(target_hash, body.password.get_secret_value())
     except VerifyMismatchError:

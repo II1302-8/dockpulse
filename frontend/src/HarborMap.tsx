@@ -104,6 +104,9 @@ export function HarborMap() {
       bounds: true,
       boundsPadding: 0.15,
       beforeMouseDown: (event) => {
+        // Leave back/forward/middle mouse buttons to the browser (e.g. mouse back → history).
+        if (event.button !== 0) return true;
+
         const target = event.target as HTMLElement | null;
 
         if (

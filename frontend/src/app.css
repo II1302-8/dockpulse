@@ -336,3 +336,128 @@
       0 0 10px rgba(0, 147, 233, 0.4);
   }
 }
+
+.leaflet-container {
+  font-family: var(--font-body);
+  background: #e8f4fc;
+}
+
+.leaflet-interactive {
+  cursor: pointer;
+}
+
+/* Sweden marina picker — hover cards */
+.marina-map-tooltip.leaflet-tooltip {
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 0.65);
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 0.92);
+  box-shadow:
+    0 12px 40px rgb(10 37 64 / 0.14),
+    0 0 0 1px rgb(0 147 233 / 0.08);
+  backdrop-filter: blur(16px);
+  pointer-events: none;
+}
+
+.marina-map-tooltip.leaflet-tooltip-top::before {
+  border-top-color: rgb(255 255 255 / 0.92);
+}
+
+.marina-map-tip {
+  min-width: 10.5rem;
+  padding: 0.65rem 0.85rem 0.7rem;
+  font-family: var(--font-body);
+}
+
+.marina-map-tip--active {
+  padding: 0.75rem 0.95rem 0.8rem;
+}
+
+.marina-map-tip__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.marina-map-tip__icon {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-shrink: 0;
+  border-radius: 9999px;
+  background: rgb(0 147 233 / 0.12);
+  color: #0093e9;
+}
+
+.marina-map-tip--soon .marina-map-tip__icon {
+  background: rgb(10 37 64 / 0.06);
+  color: rgb(10 37 64 / 0.45);
+}
+
+.marina-map-tip__name {
+  font-size: 0.875rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #0a2540;
+}
+
+.marina-map-tip__region {
+  margin-top: 0.1rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgb(10 37 64 / 0.45);
+}
+
+.marina-map-tip__tagline {
+  margin-top: 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: rgb(10 37 64 / 0.55);
+}
+
+.marina-map-tip__cta {
+  margin-top: 0.5rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid rgb(10 37 64 / 0.08);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #0093e9;
+}
+
+.marina-map-tip--soon .marina-map-tip__cta {
+  color: rgb(10 37 64 / 0.4);
+}
+
+.marina-map-tip--not-planned .marina-map-tip__icon {
+  background: rgb(239 68 68 / 0.15);
+  color: #dc2626;
+}
+
+.marina-map-tip--not-planned .marina-map-tip__cta {
+  color: #dc2626;
+}
+
+.marina-map-tip--active .marina-map-tip__cta {
+  color: #0093e9;
+}
+
+.marina-map-hint {
+  font-family: var(--font-body);
+}
+
+/* Clear the floating DockPulse header (safe-area + 1rem + h-16) */
+.leaflet-top.leaflet-left {
+  top: calc(env(safe-area-inset-top) + 5.75rem);
+}
+
+@media (min-width: 768px) {
+  .leaflet-top.leaflet-left {
+    top: 6.25rem; /* md:top-6 + h-16 + gap */
+  }
+}

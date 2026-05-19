@@ -12,7 +12,7 @@ function Dashboard() {
   }, [marinaName]);
 
   return (
-    <div className="animate-in duration-1000 fade-in h-full w-full">
+    <div className="animate-in duration-1000 fade-in h-full min-h-dvh  w-full">
       <HarborMap />
     </div>
   );

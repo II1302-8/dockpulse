@@ -25,9 +25,12 @@ function Header({
   const { user } = useAuth();
   const isHarbormaster = user?.role === "harbormaster";
 
-  const marinaName = getMarinaNameCB(marinaSlug);
-  const marinaPath = marinaSlug ? `/${marinaSlug}` : "/saltsjobaden";
-  const settingsPath = `${marinaPath}/settings`;
+  const isMarinaPicker = !marinaSlug;
+  const marinaName = isMarinaPicker
+    ? "Nordic marinas"
+    : getMarinaNameCB(marinaSlug);
+  const marinaPath = marinaSlug ? `/${marinaSlug}` : "/";
+  const settingsPath = marinaSlug ? `${marinaPath}/settings` : marinaPath;
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false);
@@ -35,7 +38,7 @@ function Header({
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const desktopMenuRef = useRef<HTMLDivElement>(null);
 
-  const isOnMarinaHome = location.pathname === marinaPath;
+  const isOnSwedenMap = location.pathname === "/";
 
   useEffect(() => {
     function handleOutsidePointer(event: MouseEvent) {
@@ -152,15 +155,17 @@ function Header({
                 </button>
               )}
 
-              <Link
-                to={marinaPath}
-                onClick={closeMenus}
-                className="block w-full rounded-xl px-3 py-3 text-left text-sm font-semibold text-brand-navy hover:bg-slate-100"
-              >
-                Dashboard
-              </Link>
+              {!isMarinaPicker && (
+                <Link
+                  to={marinaPath}
+                  onClick={closeMenus}
+                  className="block w-full rounded-xl px-3 py-3 text-left text-sm font-semibold text-brand-navy hover:bg-slate-100"
+                >
+                  Dashboard
+                </Link>
+              )}
 
-              {isLoggedIn && !isHarbormaster && (
+              {isLoggedIn && !isHarbormaster && marinaSlug && (
                 <Link
                   to={`${marinaPath}/bookings`}
                   onClick={closeMenus}
@@ -170,7 +175,7 @@ function Header({
                 </Link>
               )}
 
-              {isLoggedIn && (
+              {isLoggedIn && marinaSlug && (
                 <>
                   <Link
                     to={settingsPath}
@@ -201,10 +206,15 @@ function Header({
           )}
         </div>
 
-        {isOnMarinaHome ? (
+        {isOnSwedenMap ? (
           <div className="block min-w-0 cursor-default">{logoContent}</div>
         ) : (
-          <Link to={marinaPath} className="block min-w-0" onClick={closeMenus}>
+          <Link
+            to="/"
+            className="block min-w-0"
+            onClick={closeMenus}
+            aria-label="Back to marina map"
+          >
             {logoContent}
           </Link>
         )}
@@ -230,7 +240,7 @@ function Header({
 
             {isDesktopMenuOpen && (
               <div className="absolute right-0 top-12 w-40 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
-                {!isHarbormaster && (
+                {!isHarbormaster && marinaSlug && (
                   <Link
                     to={`${marinaPath}/bookings`}
                     onClick={closeMenus}
@@ -240,13 +250,15 @@ function Header({
                   </Link>
                 )}
 
-                <Link
-                  to={settingsPath}
-                  onClick={closeMenus}
-                  className="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-brand-navy hover:bg-slate-100"
-                >
-                  Settings
-                </Link>
+                {marinaSlug && (
+                  <Link
+                    to={settingsPath}
+                    onClick={closeMenus}
+                    className="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-brand-navy hover:bg-slate-100"
+                  >
+                    Settings
+                  </Link>
+                )}
 
                 <button
                   type="button"

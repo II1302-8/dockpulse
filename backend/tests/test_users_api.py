@@ -350,9 +350,11 @@ async def test_logout_keeps_access_revokes_refresh(
     assert r.status_code == 200
 
 
-async def test_logout_requires_auth(client: AsyncClient):
+async def test_logout_is_idempotent_without_cookies(client: AsyncClient):
+    # logout reads refresh cookie directly so it stays callable after the access
+    # cookie has expired. no cookies = nothing to revoke, no-op 204
     r = await client.post("/api/auth/logout")
-    assert r.status_code == 401
+    assert r.status_code == 204
 
 
 async def test_get_notification_prefs_returns_defaults(

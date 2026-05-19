@@ -4694,8 +4694,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/HTTPValidationError'
           description: Validation Error
-      security:
-      - APIKeyCookie: []
       summary: Log this device out (other devices keep their session)
       tags:
       - auth

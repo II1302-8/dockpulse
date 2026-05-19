@@ -82,6 +82,15 @@ export async function adminPatch<T>(path: string, body: unknown): Promise<T> {
   return readJson<T>(res);
 }
 
+export async function adminPut<T>(path: string, body: unknown): Promise<T> {
+  const res = await request(path, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+  if (res.status === 204) return undefined as T;
+  return readJson<T>(res);
+}
+
 export async function adminDelete<T = void>(
   path: string,
   init?: { params?: Record<string, string> },

@@ -5,12 +5,15 @@ import {
   adminGet,
   adminPatch,
   adminPost,
+  adminPut,
 } from "../api";
 import { Button } from "../components/Button";
 import { FilterInput } from "../components/FilterInput";
 import { Input } from "../components/Input";
 import { PageHeader } from "../components/PageHeader";
 import { Table } from "../components/Table";
+
+type BerthStatus = "free" | "occupied";
 
 interface Berth {
   berth_id: string;
@@ -19,8 +22,13 @@ interface Berth {
   length_m: number | null;
   width_m: number | null;
   depth_m: number | null;
-  status: string;
+  status: BerthStatus;
   is_reserved: boolean;
+  sensor_status: BerthStatus | null;
+  manual_status: BerthStatus | null;
+  manual_status_locked: boolean;
+  manual_status_set_by: string | null;
+  manual_status_set_at: string | null;
 }
 
 interface Dock {
@@ -65,6 +73,9 @@ export function BerthsPage() {
     depth_m: "",
     is_reserved: false,
   });
+  const [overrideDraft, setOverrideDraft] = useState<
+    Record<string, { status: BerthStatus; locked: boolean }>
+  >({});
 
   const refresh = useCallback(async () => {
     try {
@@ -192,6 +203,49 @@ export function BerthsPage() {
     }
   }
 
+  function overrideFor(b: Berth): { status: BerthStatus; locked: boolean } {
+    return (
+      overrideDraft[b.berth_id] ?? {
+        // default the draft to the inverse of effective status so clicking Apply
+        // actually does something noticeable. lock defaults true (sticky)
+        status: b.status === "occupied" ? "free" : "occupied",
+        locked: true,
+      }
+    );
+  }
+
+  async function applyOverride(berthId: string) {
+    setBusyId(berthId);
+    try {
+      const draft = overrideFor({ berth_id: berthId } as Berth);
+      await adminPut(`/berths/${encodeURIComponent(berthId)}/manual-status`, {
+        status: draft.status,
+        locked: draft.locked,
+      });
+      setOverrideDraft((prev) => {
+        const { [berthId]: _gone, ...rest } = prev;
+        return rest;
+      });
+      await refresh();
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function clearOverride(berthId: string) {
+    setBusyId(berthId);
+    try {
+      await adminDelete(`/berths/${encodeURIComponent(berthId)}/manual-status`);
+      await refresh();
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   return (
     <div>
       <PageHeader
@@ -296,13 +350,16 @@ export function BerthsPage() {
             "Dock",
             "Label",
             "Dim (L×W×D)",
-            "Status",
+            "Status / override",
             "Reserved",
             "",
           ]}
           rows={visible.map((b) => {
             const isEditing = editingId === b.berth_id;
             const dims = `${b.length_m ?? "—"}×${b.width_m ?? "—"}×${b.depth_m ?? "—"}`;
+            const draft = overrideFor(b);
+            const overrideActive = b.manual_status !== null;
+            const busy = busyId === b.berth_id;
             return {
               key: b.berth_id,
               tone:
@@ -355,7 +412,93 @@ export function BerthsPage() {
                 ) : (
                   dims
                 ),
-                b.status,
+                <div key="status" className="flex flex-col gap-1 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={
+                        b.status === "occupied"
+                          ? "rounded-full bg-amber-500/10 px-2 py-0.5 font-bold uppercase text-amber-700"
+                          : "rounded-full bg-emerald-500/10 px-2 py-0.5 font-bold uppercase text-emerald-700"
+                      }
+                    >
+                      {b.status}
+                    </span>
+                    {overrideActive && (
+                      <span
+                        className="rounded-full bg-brand-blue/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-brand-blue"
+                        title={
+                          b.manual_status_set_by
+                            ? `set by ${b.manual_status_set_by}`
+                            : undefined
+                        }
+                      >
+                        manual{b.manual_status_locked ? " · locked" : ""}
+                      </span>
+                    )}
+                    {b.sensor_status && overrideActive && (
+                      <span className="text-[10px] text-brand-navy/50">
+                        sensor: {b.sensor_status}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <select
+                      value={draft.status}
+                      disabled={busy}
+                      onChange={(e) =>
+                        setOverrideDraft((prev) => ({
+                          ...prev,
+                          [b.berth_id]: {
+                            ...draft,
+                            status: e.target.value as BerthStatus,
+                          },
+                        }))
+                      }
+                      className="rounded-lg border border-black/10 bg-white px-2 py-1 text-[11px]"
+                    >
+                      <option value="free">free</option>
+                      <option value="occupied">occupied</option>
+                    </select>
+                    <label className="flex items-center gap-1 text-[11px]">
+                      <input
+                        type="checkbox"
+                        checked={draft.locked}
+                        disabled={busy}
+                        onChange={(e) =>
+                          setOverrideDraft((prev) => ({
+                            ...prev,
+                            [b.berth_id]: {
+                              ...draft,
+                              locked: e.target.checked,
+                            },
+                          }))
+                        }
+                      />
+                      lock sensor
+                    </label>
+                    <Button
+                      onClick={() => applyOverride(b.berth_id)}
+                      disabled={busy}
+                      tooltip={
+                        draft.locked
+                          ? "Pin this status, sensor cannot change it"
+                          : "Pre-stage this status, next sensor reading wins"
+                      }
+                    >
+                      Apply
+                    </Button>
+                    {overrideActive && (
+                      <Button
+                        onClick={() => clearOverride(b.berth_id)}
+                        disabled={busy}
+                        variant="secondary"
+                        tooltip="Drop override, show sensor truth"
+                      >
+                        Revert
+                      </Button>
+                    )}
+                  </div>
+                </div>,
                 isEditing ? (
                   <label
                     key="reserved"
@@ -381,7 +524,7 @@ export function BerthsPage() {
                       <Button onClick={() => setEditingId(null)}>Cancel</Button>
                       <Button
                         variant="primary"
-                        disabled={busyId === b.berth_id}
+                        disabled={busy}
                         onClick={() => savePatch(b.berth_id)}
                       >
                         Save
@@ -390,16 +533,16 @@ export function BerthsPage() {
                   ) : (
                     <>
                       <Button
-                        disabled={busyId === b.berth_id}
+                        disabled={busy}
                         onClick={() => resetStatus(b.berth_id)}
-                        tooltip="Force status=free and clear sensor_raw"
+                        tooltip="Force status=free, clear sensor_raw and any override"
                       >
                         Reset
                       </Button>
                       <Button onClick={() => startEdit(b)}>Edit</Button>
                       <Button
                         variant="danger"
-                        disabled={busyId === b.berth_id}
+                        disabled={busy}
                         onClick={() => remove(b.berth_id)}
                       >
                         Delete

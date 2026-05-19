@@ -16,6 +16,9 @@
     <title>DockPulse</title>
   </head>
   <body>
+    <!-- real DOM nodes so safari paints them across safe-area zones -->
+    <div class="bg-wave bg-wave-a" aria-hidden="true"></div>
+    <div class="bg-wave bg-wave-b" aria-hidden="true"></div>
     <div id="app"></div>
     <script>
       // pauses body wave animations when tab is hidden; toggled on <html>

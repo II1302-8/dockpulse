@@ -182,14 +182,18 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* radial gradient stands in for filter:blur(60px) so rotation stays transform-only and the gpu does not re-rasterize a filtered layer every frame. pseudos sit on html so they paint to the canvas (across ios safe-area + url-bar zones) instead of body's render box. lvh units size against the large viewport so the blob fully covers those zones */
-  html::before {
-    content: "";
+  /* radial gradient stands in for filter:blur(60px) so rotation stays transform-only and the gpu does not re-rasterize a filtered layer every frame. real DOM elements (mounted in index.html before #app) instead of pseudos because ios safari was clipping html::before/::after to body's render box, hiding the animation in safe-area + url-bar zones */
+  .bg-wave {
     position: fixed;
-    top: -10%;
-    left: -10%;
-    width: 90lvw;
-    height: 90lvh;
+    pointer-events: none;
+    will-change: transform;
+  }
+
+  .bg-wave-a {
+    top: -25lvh;
+    left: -25lvw;
+    width: 120lvw;
+    height: 120lvh;
     background: radial-gradient(
       circle closest-side at 50% 50%,
       rgba(0, 147, 233, 0.4) 0%,
@@ -198,18 +202,14 @@
     );
     border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
     animation: var(--animation-wave);
-    will-change: transform;
     z-index: -2;
-    pointer-events: none;
   }
 
-  html::after {
-    content: "";
-    position: fixed;
-    bottom: -20%;
-    right: -10%;
-    width: 80lvw;
-    height: 80lvh;
+  .bg-wave-b {
+    bottom: -25lvh;
+    right: -25lvw;
+    width: 110lvw;
+    height: 110lvh;
     background: radial-gradient(
       circle closest-side at 50% 50%,
       rgba(0, 229, 255, 0.4) 0%,
@@ -218,20 +218,16 @@
     );
     border-radius: 60% 40% 30% 70% / 50% 60% 40% 50%;
     animation: var(--animation-wave-slow);
-    will-change: transform;
     z-index: -1;
-    pointer-events: none;
   }
 
   /* pause compositor work when tab is backgrounded (toggled in index.html) */
-  html.waves-paused::before,
-  html.waves-paused::after {
+  html.waves-paused .bg-wave {
     animation-play-state: paused;
   }
 
   @media (prefers-reduced-motion: reduce) {
-    html::before,
-    html::after {
+    .bg-wave {
       animation: none;
     }
     /* blanket kill of animations + transitions. !important wins over utility classes */

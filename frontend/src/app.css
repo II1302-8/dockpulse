@@ -235,6 +235,19 @@
     body::after {
       animation: none;
     }
+    /* blanket kill of animations + transitions. !important wins over utility classes */
+    *,
+    *::before,
+    *::after {
+      /* biome-ignore lint/complexity/noImportantStyles: a11y reduced-motion */
+      animation-duration: 0.01ms !important;
+      /* biome-ignore lint/complexity/noImportantStyles: a11y reduced-motion */
+      animation-iteration-count: 1 !important;
+      /* biome-ignore lint/complexity/noImportantStyles: a11y reduced-motion */
+      transition-duration: 0.01ms !important;
+      /* biome-ignore lint/complexity/noImportantStyles: a11y reduced-motion */
+      scroll-behavior: auto !important;
+    }
   }
 
   h1,

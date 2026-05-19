@@ -81,7 +81,7 @@ export function AdoptNodeModal({ open, onClose }: Props) {
   return (
     <div
       className={cn(
-        "fixed inset-0 z-[100] bg-brand-navy/40 backdrop-blur-sm flex animate-in fade-in duration-200",
+        "fixed inset-0 z-[var(--z-overlay)] bg-brand-navy/40 backdrop-blur-sm flex animate-in fade-in duration-200",
         // bottom-sheet on phones, centered card from sm+
         "items-end justify-center sm:items-center sm:p-4",
       )}
@@ -94,7 +94,7 @@ export function AdoptNodeModal({ open, onClose }: Props) {
           "relative bg-white shadow-deep w-full sm:max-w-2xl flex flex-col overflow-hidden",
           // full-bleed sheet on phones, dvh handles ios safari toolbar
           "rounded-t-[28px] sm:rounded-[32px]",
-          "max-h-[92dvh] sm:max-h-[90vh]",
+          "max-h-[92dvh] sm:max-h-[90dvh]",
           // safe-area for the home indicator without affecting desktop
           "pb-[env(safe-area-inset-bottom)] sm:pb-0",
           "animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-4 sm:zoom-in-95 duration-300",

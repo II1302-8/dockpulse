@@ -54,7 +54,7 @@ export function MyBookingsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 pt-32 pb-12 px-4 md:px-10">
+    <div className="min-h-dvh bg-slate-50 pt-32 pb-12 px-4 md:px-10">
       <div className="mx-auto max-w-5xl">
         <header className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>

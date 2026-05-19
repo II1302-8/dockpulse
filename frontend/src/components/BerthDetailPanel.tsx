@@ -310,7 +310,7 @@ export function BerthDetailPanel({
     <>
       <aside
         className={cn(
-          "isolate pointer-events-auto fixed z-[110] flex flex-col overflow-hidden transition-all duration-300",
+          "isolate pointer-events-auto fixed z-[var(--z-panel)] flex flex-col overflow-hidden transition-all duration-300",
           "border border-white/40 bg-white/40 shadow-deep backdrop-blur-xl",
           "rounded-[32px] p-0 font-body",
           // clear the mobile bottom dock + home indicator on short viewports

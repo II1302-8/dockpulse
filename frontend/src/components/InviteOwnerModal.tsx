@@ -123,7 +123,7 @@ export function InviteOwnerModal({
     showSuggestions && (suggestions.length > 0 || isSuggesting);
 
   return (
-    <div className="fixed inset-0 z-[200] grid place-items-center bg-brand-navy/30 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[var(--z-top)] grid place-items-center bg-brand-navy/30 p-4 backdrop-blur-sm">
       <div className="w-full max-w-md rounded-[32px] border border-white/60 bg-white p-7 shadow-deep sm:p-8">
         <header className="mb-8 flex items-start justify-between gap-4">
           <div>

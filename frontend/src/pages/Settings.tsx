@@ -27,7 +27,7 @@ function Settings() {
 
   if (!user) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-4 text-center">
+      <main className="mx-auto flex min-h-dvh max-w-xl flex-col items-center justify-center px-4 text-center">
         <h1 className="text-3xl font-semibold text-brand-navy">Settings</h1>
         <p className="mt-2 text-brand-navy/60">
           You need to log in before editing your profile.

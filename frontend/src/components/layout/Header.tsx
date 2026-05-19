@@ -118,7 +118,7 @@ function Header({
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-brand-blue/20 bg-white text-brand-navy shadow-lg"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-brand-blue/20 bg-white text-brand-navy shadow-lg transition-transform active:scale-95"
             aria-label={
               isMobileMenuOpen
                 ? "Close navigation menu"
@@ -135,10 +135,7 @@ function Header({
           </button>
 
           {isMobileMenuOpen && (
-            <div
-              role="menu"
-              className="absolute left-0 top-12 w-60 rounded-2xl border border-slate-200 bg-white p-3 shadow-xl"
-            >
+            <div className="absolute left-0 top-12 w-60 rounded-2xl border border-slate-200 bg-white p-3 shadow-xl">
               {isLoggedIn && (
                 <div className="mb-2 rounded-xl bg-slate-50 px-3 py-3 text-xs font-black text-brand-navy/60">
                   {userInitials}
@@ -148,7 +145,6 @@ function Header({
               {!isLoggedIn && (
                 <button
                   type="button"
-                  role="menuitem"
                   onClick={handleLoginClick}
                   className="block w-full rounded-xl px-3 py-3 text-left text-sm font-semibold text-brand-blue hover:bg-slate-100"
                 >
@@ -158,7 +154,6 @@ function Header({
 
               <Link
                 to={marinaPath}
-                role="menuitem"
                 onClick={closeMenus}
                 className="block w-full rounded-xl px-3 py-3 text-left text-sm font-semibold text-brand-navy hover:bg-slate-100"
               >
@@ -168,7 +163,6 @@ function Header({
               {isLoggedIn && !isHarbormaster && (
                 <Link
                   to={`${marinaPath}/bookings`}
-                  role="menuitem"
                   onClick={closeMenus}
                   className="block w-full rounded-xl px-3 py-3 text-left text-sm font-semibold text-brand-navy hover:bg-slate-100"
                 >
@@ -180,7 +174,6 @@ function Header({
                 <>
                   <Link
                     to={settingsPath}
-                    role="menuitem"
                     onClick={closeMenus}
                     className="block w-full rounded-xl px-3 py-3 text-left text-sm font-semibold text-brand-navy hover:bg-slate-100"
                   >
@@ -189,7 +182,6 @@ function Header({
 
                   <button
                     type="button"
-                    role="menuitem"
                     onClick={handleLogoutClick}
                     disabled={isLoggingOut}
                     aria-busy={isLoggingOut}
@@ -227,7 +219,7 @@ function Header({
             <button
               type="button"
               onClick={() => setIsDesktopMenuOpen((prev) => !prev)}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-xs font-bold text-brand-navy/40 transition-transform hover:scale-105"
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-xs font-bold text-brand-navy/40 transition-transform hover:scale-105 active:scale-95"
               aria-label="Open user menu"
               aria-haspopup="menu"
               aria-expanded={isDesktopMenuOpen}
@@ -237,14 +229,10 @@ function Header({
             </button>
 
             {isDesktopMenuOpen && (
-              <div
-                role="menu"
-                className="absolute right-0 top-12 w-40 rounded-xl border border-slate-200 bg-white p-2 shadow-lg"
-              >
+              <div className="absolute right-0 top-12 w-40 rounded-xl border border-slate-200 bg-white p-2 shadow-lg">
                 {!isHarbormaster && (
                   <Link
                     to={`${marinaPath}/bookings`}
-                    role="menuitem"
                     onClick={closeMenus}
                     className="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-brand-navy hover:bg-slate-100"
                   >
@@ -254,7 +242,6 @@ function Header({
 
                 <Link
                   to={settingsPath}
-                  role="menuitem"
                   onClick={closeMenus}
                   className="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-brand-navy hover:bg-slate-100"
                 >
@@ -263,7 +250,6 @@ function Header({
 
                 <button
                   type="button"
-                  role="menuitem"
                   onClick={handleLogoutClick}
                   disabled={isLoggingOut}
                   aria-busy={isLoggingOut}
@@ -284,7 +270,7 @@ function Header({
           <button
             type="button"
             onClick={onLoginClickCB}
-            className="rounded-full border border-brand-blue/20 bg-white px-6 py-2 text-xs font-black text-brand-blue shadow-lg transition-transform hover:scale-105"
+            className="rounded-full border border-brand-blue/20 bg-white px-6 py-2 text-xs font-black text-brand-blue shadow-lg transition-transform hover:scale-105 active:scale-95"
           >
             Log in
           </button>

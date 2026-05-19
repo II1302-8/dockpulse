@@ -6,23 +6,11 @@ import {
   useEffect,
   useState,
 } from "react";
+import type { components } from "../api-types";
 import { apiFetch, onLoggedOut } from "./api";
 
-export type AuthUser = {
-  user_id?: string;
-  email: string;
-  firstname?: string;
-  lastname?: string;
-  phone?: string;
-  boat_club?: string;
-  role?: string;
-  email_verified?: boolean;
-  assigned_berth_id?: string | null;
-  harbor_id?: string | null;
-  boat_length_m?: number | null;
-  boat_width_m?: number | null;
-  boat_depth_m?: number | null;
-};
+// regenerated via `bun run gen:api`
+export type AuthUser = components["schemas"]["UserOut"];
 
 export type AuthState = {
   user: AuthUser | null;
@@ -40,7 +28,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => {
     try {
-      const res = await apiFetch("/api/auth/me", { skipAuthRefresh: true });
+      // let apiFetch rotate on 401 so a 15-min access expiry doesn't bounce the user
+      const res = await apiFetch("/api/auth/me");
       if (res.status === 401) {
         setUser(null);
         return;
@@ -49,8 +38,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = (await res.json()) as AuthUser;
       setUser(data);
     } catch (err) {
-      // transient network error keeps last-known state, don't drop session
       console.error("auth refresh failed", err);
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -58,6 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
+      // backend logout reads refresh cookie directly, no access rotation needed
       await apiFetch("/api/auth/logout", {
         method: "POST",
         skipAuthRefresh: true,

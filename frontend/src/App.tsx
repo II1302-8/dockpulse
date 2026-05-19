@@ -1,9 +1,10 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import {
   BrowserRouter,
   Navigate,
   Route,
   Routes,
+  useLocation,
   useParams,
 } from "react-router-dom";
 import { MainLayout } from "./components/layout/MainLayout";
@@ -53,6 +54,22 @@ const VerifyEmail = lazy(() =>
   import("./pages/VerifyEmail").then((m) => ({ default: m.VerifyEmail })),
 );
 
+// scrolls window + the MainLayout inner scroller back to top on route change
+// so navigating between pages doesn't dump you mid-page
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  // biome-ignore lint/correctness/useExhaustiveDependencies: pathname is the trigger
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    document.querySelector<HTMLElement>("[data-scroll-root]")?.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: "auto",
+    });
+  }, [pathname]);
+  return null;
+}
+
 // validates :marinaSlug against the registry so unknown slugs 404
 // instead of rendering a generic dashboard for "marina admin" etc
 function MarinaGuard() {
@@ -96,6 +113,7 @@ export function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <ScrollToTop />
         <Routes>
           {exposeAdminRoute && (
             <Route

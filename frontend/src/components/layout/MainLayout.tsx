@@ -83,7 +83,7 @@ function MainLayoutContent({
       : user?.email?.slice(0, 2).toUpperCase();
 
   return (
-    <div className="bg-transparent duration-1000 font-body h-dvh w-full relative transition-colors overflow-hidden">
+    <div className="bg-transparent font-body h-dvh w-full relative overflow-hidden">
       <Header
         isLoggedIn={Boolean(user)}
         isLoggingOut={isLoggingOut}
@@ -108,6 +108,7 @@ function MainLayoutContent({
       )}
 
       <main
+        data-scroll-root
         className={cn(
           "absolute inset-0 transition-all duration-500 pointer-events-auto overflow-y-auto",
         )}
@@ -134,7 +135,11 @@ function MainLayoutContent({
 
       <VerifyEmailBanner />
 
-      <Toaster position="top-center" richColors />
+      <Toaster
+        position="top-center"
+        richColors
+        mobileOffset={{ top: "calc(env(safe-area-inset-top) + 5.5rem)" }}
+      />
     </div>
   );
 }

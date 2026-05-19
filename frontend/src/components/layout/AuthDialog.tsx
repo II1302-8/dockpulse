@@ -317,8 +317,10 @@ export function AuthDialog({
                     id="login-email"
                     type="email"
                     autoComplete="email"
+                    enterKeyHint="next"
                     placeholder="name@marina.com"
                     required
+                    autoFocus={!lockEmail}
                     readOnly={lockEmail}
                     aria-readonly={lockEmail}
                     value={loginEmail}
@@ -399,8 +401,10 @@ export function AuthDialog({
                     id="signup-email"
                     type="email"
                     autoComplete="email"
+                    enterKeyHint="next"
                     placeholder="name@marina.com"
                     required
+                    autoFocus={!lockEmail}
                     readOnly={lockEmail}
                     aria-readonly={lockEmail}
                     value={signupForm.email}

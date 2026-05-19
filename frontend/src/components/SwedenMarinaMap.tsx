@@ -138,8 +138,7 @@ function MarinaMarker({
     };
   }, [isHovered, status]);
 
-  const radius =
-    status === "live" ? (isHovered ? 7 : 6) : isHovered ? 7 : 5;
+  const radius = status === "live" ? (isHovered ? 7 : 6) : isHovered ? 7 : 5;
 
   return (
     <CircleMarker

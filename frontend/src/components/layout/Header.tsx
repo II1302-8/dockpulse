@@ -26,7 +26,9 @@ function Header({
   const isHarbormaster = user?.role === "harbormaster";
 
   const isMarinaPicker = !marinaSlug;
-  const marinaName = isMarinaPicker ? "Nordic marinas" : getMarinaNameCB(marinaSlug);
+  const marinaName = isMarinaPicker
+    ? "Nordic marinas"
+    : getMarinaNameCB(marinaSlug);
   const marinaPath = marinaSlug ? `/${marinaSlug}` : "/";
   const settingsPath = marinaSlug ? `${marinaPath}/settings` : marinaPath;
 

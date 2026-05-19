@@ -59,20 +59,62 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
-      - uses: docker/build-push-action@v6
+
+      # build into the local docker daemon first so we can smoke the exact
+      # bytes that would be pushed. push happens in a later step only after
+      # smoke passes. catches build-time corruption before it hits ghcr
+      - name: Build (load into daemon)
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: backend/Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
+          platforms: linux/amd64
+          load: true
+          push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # cache temporarily disabled, ghcr image was corrupted (null bytes
-          # in sqlalchemy/_elements_constructors.py) and the gha cache kept
-          # replaying the bad layer. revert these three lines after one
-          # successful rebuild lands on ghcr.
+          pull: true
           no-cache: true
-          # cache-from: type=gha,scope=backend
-          # cache-to: type=gha,mode=max,scope=backend
+          provenance: false
+          sbom: false
+
+      # imports cover the historical failure modes: null bytes in .py source
+      # (sqlalchemy/_elements_constructors.py incident) and broken .so
+      # relocations (asyncpg/argon2 native extensions). loading app.main
+      # forces every router + dependency module to compile
+      - name: Smoke - imports (pre-push)
+        run: |
+          tag=$(echo '${{ steps.meta.outputs.tags }}' | head -n1)
+          docker run --rm --entrypoint /bin/sh "$tag" -c '
+            set -e
+            python -c "import sqlalchemy, asyncpg, argon2, fastapi, pydantic, jwt, alembic"
+            SECRET_KEY="$(python -c "import secrets; print(secrets.token_urlsafe(48))")" \
+              python -c "from app.main import app; assert app is not None"
+            echo "backend imports ok"
+          '
+
+      - name: Push to ghcr
+        if: github.event_name != 'pull_request'
+        run: |
+          while IFS= read -r tag; do
+            [ -z "$tag" ] && continue
+            docker push "$tag"
+          done <<< "${{ steps.meta.outputs.tags }}"
+
+      # round-trip catches registry/network corruption between push and pull
+      - name: Smoke - imports (post-push, fresh pull)
+        if: github.event_name != 'pull_request'
+        run: |
+          tag=$(echo '${{ steps.meta.outputs.tags }}' | head -n1)
+          docker image rm "$tag" || true
+          docker pull "$tag"
+          docker run --rm --entrypoint /bin/sh "$tag" -c '
+            set -e
+            python -c "import sqlalchemy, asyncpg, argon2, fastapi, pydantic, jwt, alembic"
+            SECRET_KEY="$(python -c "import secrets; print(secrets.token_urlsafe(48))")" \
+              python -c "from app.main import app; assert app is not None"
+            echo "backend imports ok after pull"
+          '
 
   frontend:
     name: Frontend
@@ -98,14 +140,55 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
-      - uses: docker/build-push-action@v6
+
+      - name: Build (load into daemon)
+        uses: docker/build-push-action@v6
         with:
           context: frontend
-          push: ${{ github.event_name != 'pull_request' }}
+          platforms: linux/amd64
+          load: true
+          push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          pull: true
+          provenance: false
+          sbom: false
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend
+
+      # nginx -t catches mangled config and truncated binaries; index.html
+      # size check catches the build-step output being clobbered
+      - name: Smoke - serve assets (pre-push)
+        run: |
+          tag=$(echo '${{ steps.meta.outputs.tags }}' | head -n1)
+          docker run --rm --entrypoint /bin/sh "$tag" -c '
+            set -e
+            nginx -t
+            test -s /usr/share/nginx/html/index.html
+            test -s /etc/nginx/conf.d/default.conf
+            echo "frontend assets ok"
+          '
+
+      - name: Push to ghcr
+        if: github.event_name != 'pull_request'
+        run: |
+          while IFS= read -r tag; do
+            [ -z "$tag" ] && continue
+            docker push "$tag"
+          done <<< "${{ steps.meta.outputs.tags }}"
+
+      - name: Smoke - serve assets (post-push, fresh pull)
+        if: github.event_name != 'pull_request'
+        run: |
+          tag=$(echo '${{ steps.meta.outputs.tags }}' | head -n1)
+          docker image rm "$tag" || true
+          docker pull "$tag"
+          docker run --rm --entrypoint /bin/sh "$tag" -c '
+            set -e
+            nginx -t
+            test -s /usr/share/nginx/html/index.html
+            echo "frontend assets ok after pull"
+          '
 
   deploy:
     name: Deploy

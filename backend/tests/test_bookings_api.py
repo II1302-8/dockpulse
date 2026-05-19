@@ -453,3 +453,85 @@ async def test_create_uses_uuid_for_booking_id(client, window, visitor, session)
     row = (await session.execute(select(Booking))).scalar_one()
     # uuid4 hex with dashes is 36 chars
     assert len(row.booking_id) == 36
+
+
+# --- past dates, boat fit, info-leak hardening ---
+
+
+async def test_create_booking_in_past_returns_422(client, window, visitor):
+    past = datetime.now(UTC) - timedelta(days=2)
+    r = await client.post(
+        "/api/berths/b1/bookings",
+        json={"from_date": _iso(past), "to_date": _iso(past + timedelta(days=1))},
+        cookies=auth_cookies(visitor.user_id),
+    )
+    assert r.status_code == 422
+    assert "past" in r.json()["detail"].lower()
+
+
+async def test_preflight_reports_in_past(client, window, visitor):
+    past = datetime.now(UTC) - timedelta(days=2)
+    r = await client.post(
+        "/api/berths/b1/bookings:preflight",
+        json={"from_date": _iso(past), "to_date": _iso(past + timedelta(days=1))},
+        cookies=auth_cookies(visitor.user_id),
+    )
+    body = r.json()
+    assert body["ok"] is False
+    assert "in_past" in {c["kind"] for c in body["conflicts"]}
+
+
+async def test_create_booking_boat_too_big_returns_409(
+    client, session: AsyncSession, window, visitor
+):
+    # shrink the berth so visitor's 12m boat overflows it
+    from app.models import Berth
+
+    berth = await session.get(Berth, "b1")
+    berth.length_m = 8.0
+    visitor.boat_length_m = 12.0
+    await session.commit()
+
+    r = await client.post(
+        "/api/berths/b1/bookings",
+        json={"from_date": _iso(BK_FROM), "to_date": _iso(BK_TO)},
+        cookies=auth_cookies(visitor.user_id),
+    )
+    assert r.status_code == 409
+    assert "length" in r.json()["detail"].lower()
+
+
+async def test_bookable_windows_omits_booking_id(client, window, visitor):
+    await _create(client, visitor)
+    r = await client.get(
+        "/api/berths/b1/bookable-windows",
+        cookies=auth_cookies(visitor.user_id),
+    )
+    assert r.status_code == 200
+    booked = r.json()[0]["booked"][0]
+    assert "booking_id" not in booked
+    assert "from_date" in booked
+
+
+async def test_preflight_overlap_omits_booking_id(client, window, visitor, boat_owner):
+    await _create(client, visitor)
+    r = await client.post(
+        "/api/berths/b1/bookings:preflight",
+        json={
+            "from_date": _iso(BK_FROM + timedelta(days=1)),
+            "to_date": _iso(BK_TO),
+        },
+        cookies=auth_cookies(boat_owner.user_id),
+    )
+    body = r.json()
+    overlap = next(c for c in body["conflicts"] if c["kind"] == "overlap")
+    assert overlap.get("booking_id") is None
+
+
+async def test_browse_endpoints_require_auth(client, window):
+    r = await client.get(
+        f"/api/harbors/h1/bookable-berths?from={_iso(BK_FROM)}&to={_iso(BK_TO)}"
+    )
+    assert r.status_code == 401
+    r = await client.get("/api/berths/b1/bookable-windows")
+    assert r.status_code == 401

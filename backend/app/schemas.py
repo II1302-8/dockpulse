@@ -246,7 +246,7 @@ class BookableBerthOut(_BaseSchema):
 
 
 class BookedRange(_BaseSchema):
-    booking_id: str = Field(examples=["bk-0001"])
+    # booking_id omitted: visitor browse should not leak other users' ids
     from_date: datetime = Field(examples=["2026-06-03T00:00:00Z"])
     to_date: datetime = Field(examples=["2026-06-06T00:00:00Z"])
 
@@ -261,8 +261,8 @@ class BookableWindowOut(_BaseSchema):
 
 class BookingConflict(_BaseSchema):
     # discriminates 'no covering window' vs 'overlaps existing booking'
-    kind: Literal["no_window", "overlap", "dates_invalid"]
-    booking_id: str | None = Field(default=None, examples=["bk-0007"])
+    # booking_id omitted to avoid leaking other users' ids across tenants
+    kind: Literal["no_window", "overlap", "dates_invalid", "in_past", "boat_too_big"]
     from_date: datetime | None = Field(default=None)
     to_date: datetime | None = Field(default=None)
 

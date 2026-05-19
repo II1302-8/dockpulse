@@ -1,10 +1,11 @@
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, HTTPException, Query
-from sqlalchemy import func, select
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 
+from app.auth import get_current_user
 from app.dependencies import (
     CurrentUserDep,
     SessionDep,
@@ -66,9 +67,33 @@ async def _is_harbormaster(session, harbor_id: str, user_id: str) -> bool:
     return row.scalar_one_or_none() is not None
 
 
-def _validate_dates(from_date: datetime, to_date: datetime) -> None:
+# grace for client clock skew; smaller than the shortest sensible booking
+_PAST_GRACE = timedelta(minutes=5)
+
+
+def _validate_dates(
+    from_date: datetime, to_date: datetime, *, allow_past: bool = False
+) -> None:
     if to_date <= from_date:
         raise HTTPException(status_code=422, detail="to_date must be after from_date")
+    if not allow_past and from_date < datetime.now(UTC) - _PAST_GRACE:
+        raise HTTPException(status_code=422, detail="from_date is in the past")
+
+
+def _boat_fit_reason(
+    berth: Berth,
+    length_m: float | None,
+    width_m: float | None,
+    depth_m: float | None,
+) -> str | None:
+    bl, bw, bd = berth.length_m, berth.width_m, berth.depth_m
+    if length_m is not None and bl is not None and length_m > bl:
+        return f"Boat length {length_m}m exceeds berth length {bl}m"
+    if width_m is not None and bw is not None and width_m > bw:
+        return f"Boat width {width_m}m exceeds berth width {bw}m"
+    if depth_m is not None and bd is not None and depth_m > bd:
+        return f"Boat depth {depth_m}m exceeds berth depth {bd}m"
+    return None
 
 
 async def _find_covering_window(
@@ -111,6 +136,7 @@ async def _find_overlapping_booking(
     response_model=list[BookableBerthOut],
     operation_id="listBookableBerths",
     summary="List berths in a harbor bookable across a date range",
+    dependencies=[Depends(get_current_user)],
 )
 async def list_bookable_berths(
     harbor_id: str,
@@ -185,6 +211,7 @@ async def list_bookable_berths(
     response_model=list[BookableWindowOut],
     operation_id="listBookableWindows",
     summary="List a berth's availability windows with booked sub-ranges",
+    dependencies=[Depends(get_current_user)],
 )
 async def list_bookable_windows(
     berth_id: str,
@@ -207,20 +234,22 @@ async def list_bookable_windows(
     if not windows:
         return []
 
+    # cap booking scan to the union of returned windows so old bookings on
+    # popular berths don't get pulled into memory
+    span_from = min(w.from_date for w in windows)
+    span_to = max(w.return_date for w in windows)
     bk_stmt = select(Booking).where(
         Booking.berth_id == berth_id,
         Booking.status.in_(_ACTIVE_STATUSES),
+        Booking.from_date < span_to,
+        Booking.to_date > span_from,
     )
     bookings = (await session.execute(bk_stmt)).scalars().all()
 
     out: list[BookableWindowOut] = []
     for w in windows:
         booked = [
-            BookedRange(
-                booking_id=b.booking_id,
-                from_date=b.from_date,
-                to_date=b.to_date,
-            )
+            BookedRange(from_date=b.from_date, to_date=b.to_date)
             for b in bookings
             if b.from_date < w.return_date and b.to_date > w.from_date
         ]
@@ -253,7 +282,8 @@ async def create_booking(
     current_user: CurrentUserDep,
 ):
     _validate_dates(body.from_date, body.to_date)
-    if not await session.get(Berth, berth_id):
+    berth = await session.get(Berth, berth_id)
+    if berth is None:
         raise HTTPException(status_code=404, detail="Berth not found")
 
     window_id = await _find_covering_window(
@@ -263,6 +293,26 @@ async def create_booking(
         raise HTTPException(
             status_code=409, detail="No availability window covers this range"
         )
+
+    # body overrides for one-off boats, fall back to profile snapshot
+    length_m = (
+        body.boat_length_m
+        if body.boat_length_m is not None
+        else current_user.boat_length_m
+    )
+    width_m = (
+        body.boat_width_m
+        if body.boat_width_m is not None
+        else current_user.boat_width_m
+    )
+    depth_m = (
+        body.boat_depth_m
+        if body.boat_depth_m is not None
+        else current_user.boat_depth_m
+    )
+    fit_reason = _boat_fit_reason(berth, length_m, width_m, depth_m)
+    if fit_reason is not None:
+        raise HTTPException(status_code=409, detail=fit_reason)
 
     conflict = await _find_overlapping_booking(
         session, berth_id, body.from_date, body.to_date
@@ -277,9 +327,9 @@ async def create_booking(
         from_date=body.from_date,
         to_date=body.to_date,
         status="confirmed",
-        boat_length_m=body.boat_length_m,
-        boat_width_m=body.boat_width_m,
-        boat_depth_m=body.boat_depth_m,
+        boat_length_m=length_m,
+        boat_width_m=width_m,
+        boat_depth_m=depth_m,
         notes=body.notes,
     )
     session.add(booking)
@@ -307,7 +357,8 @@ async def preflight_booking(
     session: SessionDep,
     current_user: CurrentUserDep,
 ):
-    if not await session.get(Berth, berth_id):
+    berth = await session.get(Berth, berth_id)
+    if berth is None:
         raise HTTPException(status_code=404, detail="Berth not found")
 
     conflicts: list[BookingConflict] = []
@@ -315,11 +366,23 @@ async def preflight_booking(
         conflicts.append(BookingConflict(kind="dates_invalid"))
         return BookingPreflightOut(ok=False, conflicts=conflicts)
 
+    if body.from_date < datetime.now(UTC) - _PAST_GRACE:
+        conflicts.append(BookingConflict(kind="in_past"))
+
     window_id = await _find_covering_window(
         session, berth_id, body.from_date, body.to_date
     )
     if window_id is None:
         conflicts.append(BookingConflict(kind="no_window"))
+
+    fit_reason = _boat_fit_reason(
+        berth,
+        current_user.boat_length_m,
+        current_user.boat_width_m,
+        current_user.boat_depth_m,
+    )
+    if fit_reason is not None:
+        conflicts.append(BookingConflict(kind="boat_too_big"))
 
     overlap = await _find_overlapping_booking(
         session, berth_id, body.from_date, body.to_date
@@ -328,7 +391,6 @@ async def preflight_booking(
         conflicts.append(
             BookingConflict(
                 kind="overlap",
-                booking_id=overlap.booking_id,
                 from_date=overlap.from_date,
                 to_date=overlap.to_date,
             )
@@ -400,8 +462,6 @@ async def cancel_booking(
     body: BookingCancelIn | None = None,
 ):
     booking = await _load_booking(session, booking_id)
-    if booking.status != "confirmed":
-        raise HTTPException(status_code=409, detail="Booking is not cancellable")
 
     role = await _resolve_role(session, booking, current_user.user_id)
     if role is None:
@@ -412,13 +472,22 @@ async def cancel_booking(
     if now >= booking.from_date:
         raise HTTPException(status_code=409, detail="Booking has already started")
 
-    booking.status = (
-        "cancelled_by_visitor" if role == "visitor" else "cancelled_by_host"
+    new_status = "cancelled_by_visitor" if role == "visitor" else "cancelled_by_host"
+    reason = body.reason if body is not None and role != "visitor" else None
+
+    # atomic flip so racing cancels don't clobber each other's cancelled_by
+    result = await session.execute(
+        update(Booking)
+        .where(Booking.booking_id == booking_id, Booking.status == "confirmed")
+        .values(
+            status=new_status,
+            cancelled_by=current_user.user_id,
+            cancelled_at=now,
+            cancel_reason=reason,
+        )
     )
-    booking.cancelled_by = current_user.user_id
-    booking.cancelled_at = now
-    reason = body.reason if body is not None else None
-    booking.cancel_reason = reason if role != "visitor" else None
+    if result.rowcount == 0:
+        raise HTTPException(status_code=409, detail="Booking is not cancellable")
     await session.commit()
     await session.refresh(booking)
     return booking

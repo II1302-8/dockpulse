@@ -2134,11 +2134,6 @@ export interface components {
         /** BookedRange */
         BookedRange: {
             /**
-             * Booking Id
-             * @example bk-0001
-             */
-            booking_id: string;
-            /**
              * From Date
              * Format: date-time
              * @example 2026-06-03T00:00:00Z
@@ -2158,18 +2153,13 @@ export interface components {
         };
         /** BookingConflict */
         BookingConflict: {
-            /**
-             * Booking Id
-             * @example bk-0007
-             */
-            booking_id?: string | null;
             /** From Date */
             from_date?: string | null;
             /**
              * Kind
              * @enum {string}
              */
-            kind: "no_window" | "overlap" | "dates_invalid";
+            kind: "no_window" | "overlap" | "dates_invalid" | "in_past" | "boat_too_big";
             /** To Date */
             to_date?: string | null;
         };

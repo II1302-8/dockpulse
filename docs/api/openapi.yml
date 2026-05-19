@@ -874,6 +874,10 @@ components:
           - type: 'null'
           examples: *id013
           title: Length M
+        manual_status_active:
+          default: false
+          title: Manual Status Active
+          type: boolean
         sensor_raw:
           anyOf:
           - examples: &id014

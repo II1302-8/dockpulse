@@ -2,7 +2,7 @@ import { Activity, BatteryLow, X } from "lucide-react";
 
 import type { components } from "../api-types";
 import { useNow } from "../hooks/useNow";
-import { isOnline } from "../lib/freshness";
+import { isBerthLive } from "../lib/freshness";
 import { cn } from "../lib/utils";
 
 type Berth = components["schemas"]["BerthOut"];
@@ -20,9 +20,7 @@ export function HarborOverview({
 }: HarborOverviewProps) {
   const now = useNow();
 
-  const onlineBerths = berths.filter((berth) =>
-    isOnline(berth.last_updated, now),
-  );
+  const onlineBerths = berths.filter((berth) => isBerthLive(berth, now));
 
   // server-derived: factors sensor + reservation + active visitor window
   const availableBerths = onlineBerths.filter(

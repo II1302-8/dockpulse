@@ -1,6 +1,6 @@
 import type { components } from "./api-types";
 import { useNow } from "./hooks/useNow";
-import { isOnline } from "./lib/freshness";
+import { isBerthLive } from "./lib/freshness";
 import { cn } from "./lib/utils";
 import {
   horizontalPier,
@@ -121,7 +121,7 @@ export function SvgMap({
     const isHighlighted = highlightedBerthIds.includes(slot.berth_id);
 
     const state: BerthState =
-      apiBerth && isOnline(apiBerth.last_updated, now)
+      apiBerth && isBerthLive(apiBerth, now)
         ? apiBerth.is_available_now
           ? "green"
           : "red"

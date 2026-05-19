@@ -110,6 +110,10 @@ class BerthOut(_BaseSchema):
     last_updated: datetime | None = Field(
         default=None, examples=["2026-05-03T14:30:00Z"]
     )
+    # true when an admin override is currently pinning the status; FE uses
+    # this to bypass the freshness gate so a long-running override doesn't
+    # decay into "Disconnected" past the 5-min last_updated window
+    manual_status_active: bool = False
     assignment: AssignmentOut | None = None
 
 

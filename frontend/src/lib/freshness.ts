@@ -10,3 +10,14 @@ export function isOnline(
   if (Number.isNaN(t)) return false;
   return now - t < thresholdMs;
 }
+
+// admin overrides count as "live" regardless of sensor freshness so a
+// long-running pinned state doesn't decay into Disconnected at 5 min
+export function isBerthLive(
+  berth: { last_updated?: string | null; manual_status_active?: boolean },
+  now: number = Date.now(),
+): boolean {
+  return (
+    Boolean(berth.manual_status_active) || isOnline(berth.last_updated, now)
+  );
+}

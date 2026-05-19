@@ -66,6 +66,7 @@ def serialize_berth(
         sensor_raw=berth.sensor_raw if include_member_fields else None,
         battery_pct=berth.battery_pct if include_member_fields else None,
         last_updated=berth.last_updated,
+        manual_status_active=berth.manual_status is not None,
         assignment=assignment,
     )
 

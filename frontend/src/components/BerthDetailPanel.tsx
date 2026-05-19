@@ -26,7 +26,7 @@ import {
 import { useNow } from "../hooks/useNow";
 import { apiFetch } from "../lib/api";
 import { fmtDate, fmtDateShort, fmtDateTime } from "../lib/date";
-import { isOnline } from "../lib/freshness";
+import { isBerthLive } from "../lib/freshness";
 import { cn } from "../lib/utils";
 import { BookingConfirmationDialog } from "./BookingConfirmationDialog";
 import { InviteOwnerModal } from "./InviteOwnerModal";
@@ -38,7 +38,7 @@ type Berth = components["schemas"]["BerthOut"];
 // status pill text reflects what a harbormaster cares about: sensor liveness
 // first, then occupancy. backend status stays free/occupied, this is presentation
 function getDisplayStatus(berth: Berth, now: number): string {
-  if (!isOnline(berth.last_updated, now)) return "Disconnected";
+  if (!isBerthLive(berth, now)) return "Disconnected";
   return berth.is_available_now ? "Available" : "Unavailable";
 }
 
@@ -121,7 +121,7 @@ export function BerthDetailPanel({
   );
 
   const isBerthBookable =
-    berth && isOnline(berth.last_updated, now) && berth.is_available_now;
+    berth && isBerthLive(berth, now) && berth.is_available_now;
   const { windows: bookableWindows, isLoading: isWindowsLoading } =
     useBookableWindows(isVisitor && isBerthBookable ? berthId : null);
 
@@ -403,7 +403,7 @@ export function BerthDetailPanel({
                 <div
                   className={cn(
                     "inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-bold uppercase tracking-wider",
-                    !isOnline(berth.last_updated, now)
+                    !isBerthLive(berth, now)
                       ? "border-slate-500/20 bg-slate-500/10 text-slate-500"
                       : !berth.is_available_now
                         ? "border-red-500/20 bg-red-500/10 text-red-500"
@@ -413,7 +413,7 @@ export function BerthDetailPanel({
                   <span
                     className={cn(
                       "h-2 w-2 rounded-full",
-                      !isOnline(berth.last_updated, now)
+                      !isBerthLive(berth, now)
                         ? "bg-slate-400"
                         : !berth.is_available_now
                           ? "animate-pulse bg-red-500 drop-shadow-[0_0_4px_rgba(239,68,68,0.5)]"

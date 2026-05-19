@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { components } from "../api-types";
 import { useNow } from "../hooks/useNow";
 import { usePolling } from "../hooks/usePolling";
-import { isOnline } from "../lib/freshness";
+import { isBerthLive } from "../lib/freshness";
 import { cn } from "../lib/utils";
 
 type Berth = components["schemas"]["BerthOut"];
@@ -46,7 +46,7 @@ export function HarborMasterOverview({
 
   // only online sensors are eligible to count as available; offline berths
   // shouldn't inflate availability the way they did when subtracted from total
-  const onlineBerths = berths.filter((b) => isOnline(b.last_updated, now));
+  const onlineBerths = berths.filter((b) => isBerthLive(b, now));
   const totalBerths = berths.length;
   const availableBerths = onlineBerths.filter((b) => b.is_available_now).length;
   const unavailableBerths = totalBerths - availableBerths;

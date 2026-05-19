@@ -2043,6 +2043,11 @@ export interface components {
              */
             length_m?: number | null;
             /**
+             * Manual Status Active
+             * @default false
+             */
+            manual_status_active: boolean;
+            /**
              * Sensor Raw
              * @example 1234
              */

@@ -238,11 +238,15 @@ async def set_manual_status(
     b = await session.get(Berth, berth_id)
     if b is None:
         raise HTTPException(status_code=404, detail="Berth not found")
+    now = datetime.now(UTC)
     b.manual_status = body.status
     b.manual_status_locked = body.locked
     b.manual_status_set_by = identity.display
-    b.manual_status_set_at = datetime.now(UTC)
+    b.manual_status_set_at = now
     b.status = body.status
+    # treat the override as a fresh state update so the frontend's freshness
+    # gate doesn't render this berth as Disconnected
+    b.last_updated = now
     await session.commit()
     await publish_berth_update(session, b)
     return _manual_status_payload(b)

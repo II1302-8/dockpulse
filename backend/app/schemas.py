@@ -62,7 +62,7 @@ _PASSWORD = Field(
     max_length=128,
     examples=["correct horse battery staple"],
 )
-_BOAT_CLUB = Field(max_length=100, examples=["Saltsjöbadens BK"])
+_BOAT_CLUB = Field(max_length=100, examples=["Västerbrohamns BK"])
 _EMAIL = Field(examples=["alex@example.com"])
 
 
@@ -131,7 +131,7 @@ class BerthInviteOut(_BaseSchema):
     berth_id: str = Field(examples=["berth-001"])
     berth_label: str | None = Field(default=None, examples=["A-12"])
     harbor_id: str = Field(examples=["harbor-001"])
-    harbor_name: str | None = Field(default=None, examples=["Saltsjöbaden"])
+    harbor_name: str | None = Field(default=None, examples=["Västerbrohamn"])
     email: EmailField
     status: str = Field(examples=["pending"])
     expires_at: datetime = Field()
@@ -144,20 +144,20 @@ class BerthInviteList(_BaseSchema):
 
 class DockOut(_BaseSchema):
     dock_id: str = Field(examples=["dock-a"])
-    harbor_id: str = Field(examples=["harbor-saltsjobaden"])
+    harbor_id: str = Field(examples=["harbor-vasterbrohamn"])
     name: str = Field(examples=["A Pier"])
 
 
 class DockWithBerthsOut(_BaseSchema):
     dock_id: str = Field(examples=["dock-a"])
-    harbor_id: str = Field(examples=["harbor-saltsjobaden"])
+    harbor_id: str = Field(examples=["harbor-vasterbrohamn"])
     name: str = Field(examples=["A Pier"])
     berths: list[BerthOut] = []
 
 
 class HarborOut(_BaseSchema):
-    harbor_id: str = Field(examples=["harbor-saltsjobaden"])
-    name: str = Field(examples=["Saltsjöbaden Marina"])
+    harbor_id: str = Field(examples=["harbor-vasterbrohamn"])
+    name: str = Field(examples=["Västerbrohamn Marina"])
 
 
 class GatewayOut(_BaseSchema):
@@ -238,7 +238,7 @@ class BookingList(_BaseSchema):
 class BookableBerthOut(_BaseSchema):
     berth_id: str = Field(examples=["berth-001"])
     dock_id: str = Field(examples=["dock-a"])
-    harbor_id: str = Field(examples=["harbor-saltsjobaden"])
+    harbor_id: str = Field(examples=["harbor-vasterbrohamn"])
     label: str | None = Field(default=None, examples=["A1"])
     length_m: float | None = Field(default=None, examples=[8.5])
     width_m: float | None = Field(default=None, examples=[3.2])
@@ -383,7 +383,7 @@ class UserOut(_BaseSchema):
     lastname: str = Field(examples=["Lindgren"])
     email: EmailField
     phone: str | None = Field(default=None, examples=["+46 70 123 45 67"])
-    boat_club: str | None = Field(default=None, examples=["Saltsjöbadens BK"])
+    boat_club: str | None = Field(default=None, examples=["Västerbrohamns BK"])
     boat_length_m: float | None = Field(default=None, examples=[8.5])
     boat_width_m: float | None = Field(default=None, examples=[3.2])
     boat_depth_m: float | None = Field(default=None, examples=[1.4])
@@ -392,7 +392,7 @@ class UserOut(_BaseSchema):
     assigned_berth_id: str | None = Field(default=None, examples=["berth-001"])
     # harbormasters: first managed harbor; lets the FE build correct urls
     # without having to map marina-slug → harbor_id on the client
-    harbor_id: str | None = Field(default=None, examples=["ksss-saltsjobaden"])
+    harbor_id: str | None = Field(default=None, examples=["ksss-vasterbrohamn"])
 
 
 class UserSearchOut(_BaseSchema):

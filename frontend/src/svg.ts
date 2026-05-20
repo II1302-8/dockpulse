@@ -1,69 +1,110 @@
-export const horizontalPier = {
-  x: 220, // Set the horizontal pier x position.
-  y: 120, // Set the horizontal pier y position.
-  width: 410, // Set the horizontal pier width.
-  height: 36, // Set the horizontal pier height.
+// L-shaped pier: vertical arm on the left + horizontal arm running right.
+// the two arms are independent shapes so the horizontal can tilt while the
+// vertical stays straight. the curve at the inside bend lives on the
+// vertical arm (rounded bottom-right corner) and is sized so the horizontal
+// arm's tilt pivots exactly at where the curve meets the bottom edge —
+// keeps the joint clean even at non-zero tilt. coords share the 0 0 850 600
+// viewBox with svgMap.tsx.
+
+const DOCK_ID = "ksss-vasterbrohamn-pier-1";
+
+// vertical arm — tall, anchored at top of viewBox, no rotation
+export const verticalArm = {
+  x: 200,
+  y: 5,
+  width: 70,
+  height: 475,
 };
 
-export const verticalPier = {
-  x: 392, // Set the vertical pier x position.
-  y: 156, // Set the vertical pier y position.
-  width: 66, // Set the vertical pier width.
-  height: 360, // Set the vertical pier height.
-  label: "Vertical Pier",
+// horizontal arm. y derives from vertical so the two arms always meet at
+// the corner regardless of how tall the vertical arm is.
+export const horizontalArm = {
+  x: 200,
+  y: verticalArm.y + verticalArm.height,
+  width: 550,
+  height: 70,
 };
 
-export const topBerths = [
-  { id: "ksss-saltsjobaden-pier-1-t1", x1: 310, y1: 120, x2: 310, y2: 78 },
-  { id: "ksss-saltsjobaden-pier-1-t2", x1: 385, y1: 120, x2: 385, y2: 78 },
-  { id: "ksss-saltsjobaden-pier-1-t3", x1: 465, y1: 120, x2: 465, y2: 78 },
-  { id: "ksss-saltsjobaden-pier-1-t4", x1: 540, y1: 120, x2: 540, y2: 78 },
-];
+// radius of the curve on vertical's bottom-right corner. bigger = softer L
+export const innerCornerRadius = 50;
 
-const berthCount = 4; // Store the number of divider lines on the vertical pier.
-const berthLength = 77; // Store the berth line length.
+const cornerX = verticalArm.x + verticalArm.width;
+const cornerY = verticalArm.y + verticalArm.height;
 
-const verticalBerthTopOffset = 40; // Leave top space on the vertical pier.
-const verticalBerthBottomOffset = 40; // Leave bottom space on the vertical pier.
-const verticalUsableHeight =
-  verticalPier.height - verticalBerthTopOffset - verticalBerthBottomOffset; // Calculate usable height between offsets.
-const verticalBerthSpacing = verticalUsableHeight / (berthCount - 1); // Calculate even spacing between lines.
+// vertical arm: rect with a rounded bottom-right corner. the curve forms
+// the entire visible bend of the L.
+export const verticalArmPath = [
+  `M ${verticalArm.x} ${verticalArm.y}`,
+  `L ${cornerX} ${verticalArm.y}`,
+  `L ${cornerX} ${cornerY - innerCornerRadius}`,
+  `A ${innerCornerRadius} ${innerCornerRadius} 0 0 1 ${cornerX - innerCornerRadius} ${cornerY}`,
+  `L ${verticalArm.x} ${cornerY}`,
+  "Z",
+].join(" ");
 
-const verticalBerthYPositions = Array.from(
-  { length: berthCount },
-  (_, index) => {
-    return (
-      verticalPier.y + verticalBerthTopOffset + index * verticalBerthSpacing
-    ); // Generate all y positions for the vertical pier divider lines.
+// horizontal arm: plain rect. left portion sits under the vertical and is
+// hidden by it; the visible bit starts at the pivot.
+export const horizontalArmPath = [
+  `M ${horizontalArm.x} ${cornerY}`,
+  `L ${horizontalArm.x + horizontalArm.width} ${cornerY}`,
+  `L ${horizontalArm.x + horizontalArm.width} ${cornerY + horizontalArm.height}`,
+  `L ${horizontalArm.x} ${cornerY + horizontalArm.height}`,
+  "Z",
+].join(" ");
+
+// pivot at the point where vertical's curve meets its bottom edge. tilting
+// here keeps horizontal's top edge anchored exactly to that endpoint, so
+// the two shapes share a tangent join at any angle.
+export const horizontalTilt = {
+  angle: 5,
+  cx: cornerX - innerCornerRadius,
+  cy: cornerY,
+};
+
+// berth slots along the inside top edge of the horizontal arm. start well
+// past the curve so the bend has breathing room.
+const SLOT_COUNT = 5;
+const slotStartX = 400;
+const slotEndX = 730;
+const slotWidth = (slotEndX - slotStartX) / SLOT_COUNT;
+const berthDepth = 80;
+const slotIds = ["b1", "b2", "b3", "b4", "b5"];
+
+export type InnerBerthSlot = {
+  id: string;
+  berth_id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  label: string;
+};
+
+export const innerBerthSlots: InnerBerthSlot[] = Array.from(
+  { length: SLOT_COUNT },
+  (_, i) => {
+    const x = slotStartX + i * slotWidth;
+    const suffix = slotIds[i];
+    return {
+      id: `inner-slot-${suffix}`,
+      berth_id: `${DOCK_ID}-${suffix}`,
+      x,
+      y: cornerY - berthDepth,
+      width: slotWidth,
+      height: berthDepth,
+      label: `Berth ${i + 1}`,
+    };
   },
 );
 
-export const leftSideBerths = verticalBerthYPositions.map((y, i) => ({
-  id: `ksss-saltsjobaden-pier-1-l${i + 1}`,
-  x1: verticalPier.x, // Start at the left edge of the vertical pier.
-  y1: y, // Use the generated y position.
-  x2: verticalPier.x - berthLength, // Extend the line to the left.
-  y2: y, // Keep the same y position.
+export const dividerLines = Array.from({ length: SLOT_COUNT + 1 }, (_, i) => ({
+  key: `divider-${i}`,
+  x1: slotStartX + i * slotWidth,
+  y1: cornerY,
+  x2: slotStartX + i * slotWidth,
+  y2: cornerY - berthDepth,
 }));
 
-export const rightSideBerths = verticalBerthYPositions.map((y, i) => ({
-  id: `ksss-saltsjobaden-pier-1-r${i + 1}`,
-  x1: verticalPier.x + verticalPier.width, // Start at the right edge of the vertical pier.
-  y1: y, // Use the generated y position.
-  x2: verticalPier.x + verticalPier.width + berthLength, // Extend the line to the right.
-  y2: y, // Keep the same y position.
-}));
-
-// Each side renders one berth slot per pair of adjacent divider lines, so
-// the slot's berth_id is the id of the *upper/left* line in the pair —
-// the trailing divider has no slot. This means N divider lines yield N-1
-// rendered berths. Anything in the API outside this set has no place on
-// the map and is dropped before counting / rendering.
-const slotBerthIds = (lines: { id: string }[]) =>
-  lines.slice(0, lines.length - 1).map((l) => l.id);
-
-export const mapBerthIds: ReadonlySet<string> = new Set([
-  ...slotBerthIds(topBerths),
-  ...slotBerthIds(leftSideBerths),
-  ...slotBerthIds(rightSideBerths),
-]);
+export const mapBerthIds: ReadonlySet<string> = new Set(
+  innerBerthSlots.map((s) => s.berth_id),
+);

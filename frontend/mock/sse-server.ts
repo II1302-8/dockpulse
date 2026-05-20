@@ -24,22 +24,19 @@ type Berth = {
   is_available_now?: boolean;
 };
 
-const DOCK_ID = "ksss-saltsjobaden-pier-1";
-const SIDES: Array<"t" | "l" | "r"> = ["t", "l", "r"];
+const DOCK_ID = "ksss-vasterbrohamn-pier-1";
 
-const BERTHS: Berth[] = SIDES.flatMap((side) =>
-  [1, 2, 3, 4].map((idx) => ({
-    berth_id: `${DOCK_ID}-${side}${idx}`,
-    dock_id: DOCK_ID,
-    label: `${side.toUpperCase()}${idx}`,
-    status: "free" as const,
-    battery_pct: 80,
-    length_m: 8.5,
-    width_m: 3.2,
-    depth_m: 2.0,
-    is_available_now: true,
-  })),
-);
+const BERTHS: Berth[] = [1, 2, 3, 4, 5].map((idx) => ({
+  berth_id: `${DOCK_ID}-b${idx}`,
+  dock_id: DOCK_ID,
+  label: `B${idx}`,
+  status: "free" as const,
+  battery_pct: 80,
+  length_m: 8.5,
+  width_m: 3.2,
+  depth_m: 2.0,
+  is_available_now: true,
+}));
 
 const PORT = Number(process.env.MOCK_SSE_PORT ?? 4011);
 const INTERVAL_MS = 3000;
@@ -502,7 +499,7 @@ const now = new Date();
 const seedBookings: MockBooking[] = [
   {
     booking_id: "seed-1",
-    berth_id: "ksss-saltsjobaden-pier-1-t1",
+    berth_id: "ksss-vasterbrohamn-pier-1-b1",
     user_id: "u-mock-visitor",
     from_date: new Date(now.getTime() + 86400000).toISOString(),
     to_date: new Date(now.getTime() + 86400000 * 2).toISOString(),
@@ -511,7 +508,7 @@ const seedBookings: MockBooking[] = [
   },
   {
     booking_id: "seed-2",
-    berth_id: "ksss-saltsjobaden-pier-1-t2",
+    berth_id: "ksss-vasterbrohamn-pier-1-b2",
     user_id: "u-mock-visitor-2",
     from_date: new Date(now.getTime() + 86400000 * 3).toISOString(),
     to_date: new Date(now.getTime() + 86400000 * 5).toISOString(),
@@ -520,7 +517,7 @@ const seedBookings: MockBooking[] = [
   },
   {
     booking_id: "seed-3",
-    berth_id: "ksss-saltsjobaden-pier-1-t3",
+    berth_id: "ksss-vasterbrohamn-pier-1-b3",
     user_id: "u-mock-visitor-3",
     from_date: new Date(now.getTime() - 86400000 * 5).toISOString(),
     to_date: new Date(now.getTime() - 86400000 * 3).toISOString(),
@@ -529,7 +526,7 @@ const seedBookings: MockBooking[] = [
   },
   {
     booking_id: "seed-4",
-    berth_id: "ksss-saltsjobaden-pier-1-t4",
+    berth_id: "ksss-vasterbrohamn-pier-1-b4",
     user_id: "u-mock-visitor-4",
     from_date: new Date(now.getTime() - 86400000 * 2).toISOString(),
     to_date: new Date(now.getTime() - 86400000).toISOString(),

@@ -84,7 +84,7 @@ export function ResetPassword() {
 
       toast.success("Password reset successfully.");
 
-      navigate("/saltsjobaden?login=1", {
+      navigate("/vasterbrohamn?login=1", {
         replace: true,
       });
     } catch (err) {
@@ -195,7 +195,7 @@ export function ResetPassword() {
         </form>
 
         <Link
-          to="/saltsjobaden?login=1"
+          to="/vasterbrohamn?login=1"
           className="mt-5 block text-center text-xs font-black uppercase tracking-widest text-brand-blue hover:text-brand-navy transition-colors"
         >
           Back to login

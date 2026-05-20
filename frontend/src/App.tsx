@@ -126,7 +126,7 @@ export function App() {
             />
           )}
 
-          <Route path="/" element={<Navigate to="/saltsjobaden" replace />} />
+          <Route path="/" element={<Navigate to="/vasterbrohamn" replace />} />
 
           <Route
             path="/resetpassword/:token"

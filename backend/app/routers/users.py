@@ -181,7 +181,7 @@ async def search_boat_clubs(
 ):
     # autocomplete source for the boat-club field, fed from values existing
     # users have already typed. matches anywhere in the string so partial
-    # words ("salt") surface "Saltsjöbadens BK"
+    # words ("väst") surface "Västerbrohamns BK"
     stmt = select(User.boat_club).where(User.boat_club.is_not(None))
     needle = q.strip().lower()
     if needle:

@@ -9,10 +9,10 @@ export interface MarinaInfo {
 }
 
 export const MARINAS: Record<string, MarinaInfo> = {
-  saltsjobaden: {
-    name: "Saltsjöbaden",
-    slug: "saltsjobaden",
-    harborId: "ksss-saltsjobaden",
+  vasterbrohamn: {
+    name: "Västerbrohamn",
+    slug: "vasterbrohamn",
+    harborId: "ksss-vasterbrohamn",
   },
 };
 

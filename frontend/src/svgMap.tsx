@@ -3,11 +3,12 @@ import { useNow } from "./hooks/useNow";
 import { isBerthLive } from "./lib/freshness";
 import { cn } from "./lib/utils";
 import {
-  horizontalPier,
-  leftSideBerths,
-  rightSideBerths,
-  topBerths,
-  verticalPier,
+  dividerLines,
+  horizontalArmPath,
+  horizontalTilt,
+  type InnerBerthSlot,
+  innerBerthSlots,
+  verticalArmPath,
 } from "./svg";
 
 const stroke = "rgba(10, 37, 64, 0.2)";
@@ -32,81 +33,6 @@ interface SvgMapProps {
   onBerthClickCB?: (berthId: string) => void;
 }
 
-type DividerLine = {
-  id: string;
-  x1: number;
-  y1: number;
-  x2: number;
-  y2: number;
-};
-
-type BerthSlot = {
-  id: string;
-  berth_id: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  label: string;
-};
-
-function getLineKey(prefix: string, line: DividerLine): string {
-  return `${prefix}-${line.x1}-${line.y1}-${line.x2}-${line.y2}`;
-}
-
-function getTopBerthSlots(lines: DividerLine[]): BerthSlot[] {
-  const slots: BerthSlot[] = [];
-
-  for (let index = 0; index < lines.length - 1; index++) {
-    const left = lines[index];
-    const right = lines[index + 1];
-    const topY = Math.min(left.y1, left.y2, right.y1, right.y2);
-    const bottomY = Math.max(left.y1, left.y2, right.y1, right.y2);
-
-    slots.push({
-      id: `top-slot-${left.id}-${right.id}`,
-      berth_id: left.id,
-      x: left.x1,
-      y: topY,
-      width: right.x1 - left.x1,
-      height: bottomY - topY,
-      label: `Top berth ${left.id.split("-").pop()}`,
-    });
-  }
-
-  return slots;
-}
-
-function getSideBerthSlots(
-  lines: DividerLine[],
-  prefix: "left" | "right",
-): BerthSlot[] {
-  const slots: BerthSlot[] = [];
-
-  for (let index = 0; index < lines.length - 1; index++) {
-    const upper = lines[index];
-    const lower = lines[index + 1];
-    const leftX = Math.min(upper.x1, upper.x2);
-    const rightX = Math.max(upper.x1, upper.x2);
-
-    slots.push({
-      id: `${prefix}-slot-${upper.id}-${lower.id}`,
-      berth_id: upper.id,
-      x: leftX,
-      y: upper.y1,
-      width: rightX - leftX,
-      height: lower.y1 - upper.y1,
-      label: `${prefix === "left" ? "Left" : "Right"} berth ${upper.id.split("-").pop()}`,
-    });
-  }
-
-  return slots;
-}
-
-const topSlots = getTopBerthSlots(topBerths);
-const leftSlots = getSideBerthSlots(leftSideBerths, "left");
-const rightSlots = getSideBerthSlots(rightSideBerths, "right");
-
 export function SvgMap({
   berths,
   selectedBerthId,
@@ -115,7 +41,7 @@ export function SvgMap({
 }: SvgMapProps) {
   const now = useNow();
 
-  const renderBerthCB = (slot: BerthSlot) => {
+  const renderBerthCB = (slot: InnerBerthSlot) => {
     const apiBerth = berths.find((b) => b.berth_id === slot.berth_id);
     const isSelected = selectedBerthId === slot.berth_id;
     const isHighlighted = highlightedBerthIds.includes(slot.berth_id);
@@ -255,68 +181,40 @@ export function SvgMap({
 
       <rect x="0" y="0" width="850" height="600" fill="transparent" />
 
-      <rect
-        x={horizontalPier.x}
-        y={horizontalPier.y}
-        width={horizontalPier.width}
-        height={horizontalPier.height}
+      <g
+        transform={`rotate(${horizontalTilt.angle} ${horizontalTilt.cx} ${horizontalTilt.cy})`}
+      >
+        <path
+          d={horizontalArmPath}
+          fill={pierFill}
+          stroke={stroke}
+          strokeWidth="3"
+          strokeLinejoin="round"
+        />
+
+        {innerBerthSlots.map(renderBerthCB)}
+
+        {dividerLines.map((line) => (
+          <line
+            key={line.key}
+            x1={line.x1}
+            y1={line.y1}
+            x2={line.x2}
+            y2={line.y2}
+            stroke={stroke}
+            strokeWidth="3"
+            style={{ pointerEvents: "none" }}
+          />
+        ))}
+      </g>
+
+      <path
+        d={verticalArmPath}
         fill={pierFill}
         stroke={stroke}
         strokeWidth="3"
+        strokeLinejoin="round"
       />
-
-      <rect
-        x={verticalPier.x}
-        y={verticalPier.y}
-        width={verticalPier.width}
-        height={verticalPier.height}
-        fill={pierFill}
-        stroke={stroke}
-        strokeWidth="3"
-      />
-
-      {topSlots.map(renderBerthCB)}
-      {leftSlots.map(renderBerthCB)}
-      {rightSlots.map(renderBerthCB)}
-
-      {topBerths.map((berth) => (
-        <line
-          key={getLineKey("top-line", berth)}
-          x1={berth.x1}
-          y1={berth.y1}
-          x2={berth.x2}
-          y2={berth.y2}
-          stroke={stroke}
-          strokeWidth="3"
-          style={{ pointerEvents: "none" }}
-        />
-      ))}
-
-      {leftSideBerths.map((berth) => (
-        <line
-          key={getLineKey("left-line", berth)}
-          x1={berth.x1}
-          y1={berth.y1}
-          x2={berth.x2}
-          y2={berth.y2}
-          stroke={stroke}
-          strokeWidth="3"
-          style={{ pointerEvents: "none" }}
-        />
-      ))}
-
-      {rightSideBerths.map((berth) => (
-        <line
-          key={getLineKey("right-line", berth)}
-          x1={berth.x1}
-          y1={berth.y1}
-          x2={berth.x2}
-          y2={berth.y2}
-          stroke={stroke}
-          strokeWidth="3"
-          style={{ pointerEvents: "none" }}
-        />
-      ))}
     </svg>
   );
 }

@@ -725,7 +725,7 @@ components:
         harbor_name:
           anyOf:
           - examples: &id008
-            - Saltsjöbaden
+            - Västerbrohamn
             type: string
           - type: 'null'
           examples: *id008
@@ -1036,7 +1036,7 @@ components:
           type: string
         harbor_id:
           examples:
-          - harbor-saltsjobaden
+          - harbor-vasterbrohamn
           title: Harbor Id
           type: string
         label:
@@ -1485,7 +1485,7 @@ components:
           type: string
         harbor_id:
           examples:
-          - harbor-saltsjobaden
+          - harbor-vasterbrohamn
           title: Harbor Id
           type: string
         name:
@@ -1532,7 +1532,7 @@ components:
           type: string
         harbor_id:
           examples:
-          - harbor-saltsjobaden
+          - harbor-vasterbrohamn
           title: Harbor Id
           type: string
         name:
@@ -1945,12 +1945,12 @@ components:
       properties:
         harbor_id:
           examples:
-          - harbor-saltsjobaden
+          - harbor-vasterbrohamn
           title: Harbor Id
           type: string
         name:
           examples:
-          - Saltsjöbaden Marina
+          - Västerbrohamn Marina
           title: Name
           type: string
       required:
@@ -2576,7 +2576,7 @@ components:
         boat_club:
           anyOf:
           - examples: &id043
-            - Saltsjöbadens BK
+            - Västerbrohamns BK
             type: string
           - type: 'null'
           examples: *id043
@@ -2623,7 +2623,7 @@ components:
         harbor_id:
           anyOf:
           - examples: &id047
-            - ksss-saltsjobaden
+            - ksss-vasterbrohamn
             type: string
           - type: 'null'
           examples: *id047
@@ -2838,7 +2838,7 @@ components:
         boat_club:
           anyOf:
           - examples: &id049
-            - Saltsjöbadens BK
+            - Västerbrohamns BK
             maxLength: 100
             type: string
           - type: 'null'
@@ -2897,7 +2897,7 @@ components:
         boat_club:
           anyOf:
           - examples: &id051
-            - Saltsjöbadens BK
+            - Västerbrohamns BK
             maxLength: 100
             type: string
           - type: 'null'

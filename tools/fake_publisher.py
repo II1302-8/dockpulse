@@ -23,13 +23,11 @@ from datetime import UTC, datetime
 
 import paho.mqtt.client as mqtt
 
-DEFAULT_HARBOR_ID = "ksss-saltsjobaden"
-DEFAULT_DOCK_ID = "ksss-saltsjobaden-pier-1"
+DEFAULT_HARBOR_ID = "ksss-vasterbrohamn"
+DEFAULT_DOCK_ID = "ksss-vasterbrohamn-pier-1"
 
-# Mirrors alembic seed migration ebf9af948b5b and the frontend harbor map.
-DEFAULT_BERTH_SUFFIXES = [
-    f"{side}{idx}" for side in ("t", "l", "r") for idx in range(1, 5)
-]
+# mirrors alembic migration c8d2e4f7a1b9 and the L-shaped harbor map
+DEFAULT_BERTH_SUFFIXES = [f"b{idx}" for idx in range(1, 6)]
 
 
 def _node_id_for(berth_id: str) -> str:

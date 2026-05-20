@@ -384,7 +384,7 @@ async def test_get_by_token_returns_berth_label_and_harbor_name(
     berth = await session.get(Berth, "b1")
     berth.label = "A-12"
     harbor = await session.get(Harbor, "h1")
-    harbor.name = "Saltsjöbaden"
+    harbor.name = "Västerbrohamn"
     await session.commit()
 
     await _create_invite(client, harbor_master)
@@ -392,7 +392,7 @@ async def test_get_by_token_returns_berth_label_and_harbor_name(
     r = await client.get(f"/api/berth-invites/by-token/{token}")
     body = r.json()
     assert body["berth_label"] == "A-12"
-    assert body["harbor_name"] == "Saltsjöbaden"
+    assert body["harbor_name"] == "Västerbrohamn"
 
 
 async def test_list_paginates(

@@ -26,7 +26,7 @@ function Header({
   const isHarbormaster = user?.role === "harbormaster";
 
   const marinaName = getMarinaNameCB(marinaSlug);
-  const marinaPath = marinaSlug ? `/${marinaSlug}` : "/saltsjobaden";
+  const marinaPath = marinaSlug ? `/${marinaSlug}` : "/vasterbrohamn";
   const settingsPath = `${marinaPath}/settings`;
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

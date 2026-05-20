@@ -20,7 +20,7 @@ async def harbors_world(session: AsyncSession, harbor_h1):
     # shared fixture seeds h1 with default name, override for ordering check
     h1 = await session.get(Harbor, "h1")
     h1.name = "Lidingö Harbor"
-    session.add(Harbor(harbor_id="h2", name="Saltsjöbaden Marina"))
+    session.add(Harbor(harbor_id="h2", name="Västerbrohamn Marina"))
     await session.commit()
 
 

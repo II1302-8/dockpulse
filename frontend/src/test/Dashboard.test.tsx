@@ -25,7 +25,7 @@ function OutletShell() {
 describe("Dashboard", () => {
   test("renders dashboard view using Prism mock API", async () => {
     render(
-      <MemoryRouter initialEntries={["/saltsjobaden"]}>
+      <MemoryRouter initialEntries={["/vasterbrohamn"]}>
         <Routes>
           <Route path="/:marinaSlug" element={<OutletShell />}>
             <Route index element={<Dashboard />} />

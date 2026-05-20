@@ -1949,7 +1949,7 @@ export interface components {
             harbor_id: string;
             /**
              * Harbor Name
-             * @example Saltsjöbaden
+             * @example Västerbrohamn
              */
             harbor_name?: string | null;
             /**
@@ -2138,7 +2138,7 @@ export interface components {
             dock_id: string;
             /**
              * Harbor Id
-             * @example harbor-saltsjobaden
+             * @example harbor-vasterbrohamn
              */
             harbor_id: string;
             /**
@@ -2430,7 +2430,7 @@ export interface components {
             dock_id: string;
             /**
              * Harbor Id
-             * @example harbor-saltsjobaden
+             * @example harbor-vasterbrohamn
              */
             harbor_id: string;
             /**
@@ -2460,7 +2460,7 @@ export interface components {
             dock_id: string;
             /**
              * Harbor Id
-             * @example harbor-saltsjobaden
+             * @example harbor-vasterbrohamn
              */
             harbor_id: string;
             /**
@@ -2696,12 +2696,12 @@ export interface components {
         HarborOut: {
             /**
              * Harbor Id
-             * @example harbor-saltsjobaden
+             * @example harbor-vasterbrohamn
              */
             harbor_id: string;
             /**
              * Name
-             * @example Saltsjöbaden Marina
+             * @example Västerbrohamn Marina
              */
             name: string;
         };
@@ -3102,7 +3102,7 @@ export interface components {
             assigned_berth_id?: string | null;
             /**
              * Boat Club
-             * @example Saltsjöbadens BK
+             * @example Västerbrohamns BK
              */
             boat_club?: string | null;
             /**
@@ -3138,7 +3138,7 @@ export interface components {
             firstname: string;
             /**
              * Harbor Id
-             * @example ksss-saltsjobaden
+             * @example ksss-vasterbrohamn
              */
             harbor_id?: string | null;
             /**
@@ -3258,7 +3258,7 @@ export interface components {
         app__schemas__UserCreate: {
             /**
              * Boat Club
-             * @example Saltsjöbadens BK
+             * @example Västerbrohamns BK
              */
             boat_club?: string | null;
             /**
@@ -3293,7 +3293,7 @@ export interface components {
         app__schemas__UserPatch: {
             /**
              * Boat Club
-             * @example Saltsjöbadens BK
+             * @example Västerbrohamns BK
              */
             boat_club?: string | null;
             /** Boat Depth M */

@@ -81,7 +81,7 @@ export function AdoptNodeModal({ open, onClose }: Props) {
   return (
     <div
       className={cn(
-        "fixed inset-0 z-[var(--z-overlay)] bg-brand-navy/40 backdrop-blur-sm flex animate-in fade-in duration-200",
+        "fixed inset-0 z-[var(--z-top)] bg-brand-navy/40 backdrop-blur-sm flex animate-in fade-in duration-200",
         // bottom-sheet on phones, centered card from sm+
         "items-end justify-center sm:items-center sm:p-4",
       )}

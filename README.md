@@ -52,3 +52,6 @@ bun run dev
 - [docs/api/openapi.yml](docs/api/openapi.yml) — HTTP API contract
 - [docs/db-diagram.md](docs/db-diagram.md) — database schema
 - [docs/mqtt-tls.md](docs/mqtt-tls.md) — MQTT mTLS, device cert issuance, prod deploy
+
+
+# Dockpulse got first place
